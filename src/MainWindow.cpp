@@ -115,9 +115,6 @@ struct EventItem {
 	}
 };
 
-static constexpr int ASCII_BACKSPACE = 0x08;
-static constexpr int ASCII_DELETE = 0xff;
-
 namespace {
 enum LogInspectionIndex {
 	ARE_YOU_SURE_YOU_WANT_TO_CONTINUE_CONNECTING,
@@ -6347,31 +6344,19 @@ bool MainWindow::applyFilter()
  * @brief フィルタに文字を追加する
  * @return
  */
-bool MainWindow::appendCharToFilterText(QString const &text, MainWindow::FilterTarget ft)
+bool MainWindow::appendCharToFilterText(QString const &add, MainWindow::FilterTarget ft)
 {
-	if (text.isEmpty()) return false;
+	if (add.isEmpty()) return false;
 	
-	QString searchtext = getIncrementalSearchText();
-	
-	uchar c = *text.utf16();
-	if (c == ASCII_BACKSPACE) {
-		int i = searchtext.size();
-		if (i > 0) {
-			searchtext.remove(i - 1, 1);
-		}
-	} else if (c == ASCII_DELETE) {
-		searchtext.clear();
-	} else if (c >= 0x20 && c < 0x80 && (!isspace(c) && isprint(c))) {
-		searchtext.append(QChar(c));
-	} else {
-		return false;
-	}
+	QString filter = getIncrementalSearchText();
+	QString newfilter = incrementalsearch::appendCharToFilterText(filter, add);
+	if (newfilter == filter) return false; // if no change, nothing to do
 	
 	m->filter_target = ft;
 	if (isPtyProcessRunning()) {
 		// ignore but return true
 	} else {
-		setIncrementalSearchText(searchtext);
+		setIncrementalSearchText(newfilter);
 	}
 	updateStatusBarText();
 	return true;

@@ -173,36 +173,20 @@ MainWindow *JumpDialog::mainwindow()
 	return global->mainwindow;
 }
 
-static constexpr int ASCII_BACKSPACE = 0x08;
-static constexpr int ASCII_DELETE = 0xff;
-
-bool JumpDialog::appendCharToFilterText(QString const &s)
+bool JumpDialog::appendCharToFilterText(QString const &add)
 {
-	if (s.isEmpty()) return false;
+	if (add.isEmpty()) return false;
 	
-	QString text = ui->lineEdit_filter->text();
+	QString filter = ui->lineEdit_filter->text();
+	QString newfilter = incrementalsearch::appendCharToFilterText(filter, add);
+	if (newfilter == filter) return false; // if no change, nothing to do	
 	
-	ushort c = *s.utf16();
-	if (c == Qt::Key_Backspace) {
-		int i = text.size();
-		if (i > 0) {
-			text.remove(i - 1, 1);
-		}
-	} else if (c == Qt::Key_Delete) {
-		text.clear();
-	} else if (c >= 0x20 && c < 128 && (!isspace(c) && isprint(c))) {
-		text.append(QChar(c).toLower());
-	} else {
-		return false;
-	}
-	
-	ui->lineEdit_filter->setText(text);
-	m->delegate.setFilterText(text);
+	ui->lineEdit_filter->setText(newfilter);
+	m->delegate.setFilterText(newfilter);
 
 	ui->tableWidget->setCurrentCell(0, 0);
 	return true;
 }
-
 
 bool JumpDialog::eventFilter(QObject *watched, QEvent *event)
 {

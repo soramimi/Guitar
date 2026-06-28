@@ -230,7 +230,10 @@ private:
 	void clearFilterText(int repo_list_select_row = -1);
 	void clearAllFilters(int select_row = -1);
 	bool applyFilter();
-	bool appendCharToFilterText(const QString &text, FilterTarget ft);
+public:
+	static QString appendCharToFilterText(QString filter, const QString &add);
+private:
+	bool appendCharToFilterText(const QString &add, FilterTarget ft);
 	MainWindow::FilterTarget filtertarget() const;
 
 	void revertCommit();
