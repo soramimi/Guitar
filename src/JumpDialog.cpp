@@ -108,7 +108,7 @@ struct JumpDialog::Private {
 	QStringList header;
 };
 
-JumpDialog::JumpDialog(QWidget *parent, const NamedCommitList &items, CommitRecords::Vector const *commit_records)
+JumpDialog::JumpDialog(QWidget *parent, const NamedCommitList &items, std::basic_string_view<CommitRecord const *> commit_records)
 	: QDialog(parent)
 	, ui(new Ui::JumpDialog)
 	, m(new Private)
@@ -123,8 +123,8 @@ JumpDialog::JumpDialog(QWidget *parent, const NamedCommitList &items, CommitReco
 	installEventFilter(this);
 
 	// make commit record map
-	for (CommitRecord const &r : *commit_records) {
-		m->commit_record_map[r.commit_id()] = &r;
+	for (CommitRecord const *r : commit_records) {
+		m->commit_record_map[r->commit_id()] = r;
 	}
 
 	ui->tableWidget->setItemDelegate(&m->delegate);

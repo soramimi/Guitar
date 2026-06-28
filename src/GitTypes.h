@@ -163,6 +163,11 @@ private:
 	std::vector<GitCommitItem> list_;
 	std::map<GitHash, size_t> index_;
 public:
+	GitCommitItemList() = default;
+	GitCommitItemList(std::vector<GitCommitItem> &&list)
+	{
+		setList(std::move(list));
+	}
 	void setList(std::vector<GitCommitItem> &&list);
 	size_t size() const;
 	void resize(size_t n);

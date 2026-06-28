@@ -28,7 +28,7 @@ CommitLogTableWidget *CommitLogTableModel::tablewidget()
 
 const CommitRecord *CommitLogTableModel::record(int row) const
 {
-	return records_.record(index_[row]);
+	return records_[index_[row]];
 }
 
 const CommitRecord *CommitLogTableModel::record(QModelIndex const &index) const
@@ -120,7 +120,7 @@ void CommitLogTableModel::private_SetFilter(std::string const &text)
 				auto Match = [&](QString const &s){
 					return global->incremental_search->match(s.toStdString(), getIncrementalSearchFilter());
 				};
-				CommitRecord const *r = records_.record(i);
+				CommitRecord const *r = records_[i];
 				Q_ASSERT(r);
 				if (Match((QS)r->commit_id())) return true;
 				if (Match(r->datetime)) return true;
@@ -153,7 +153,7 @@ int CommitLogTableModel::unfilteredIndex(int i) const
 	return (int)index_[i];
 }
 
-void CommitLogTableModel::setRecords(CommitRecords records)
+void CommitLogTableModel::setRecords(std::basic_string_view<CommitRecord const *> records)
 {
 	beginResetModel();
 	records_ = records;
@@ -396,7 +396,7 @@ void CommitLogTableWidget::adjustAppearance()
 	horizontalHeader()->setStretchLastSection(true);
 }
 
-void CommitLogTableWidget::setRecords(CommitRecords records)
+void CommitLogTableWidget::setRecords(std::basic_string_view<CommitRecord const *> records)
 {
 	model_->setRecords(records);
 

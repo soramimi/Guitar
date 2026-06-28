@@ -18,31 +18,26 @@ struct CommitRecord {
 Q_DECLARE_METATYPE(CommitRecord)
 
 class CommitRecords {
+private:
+	std::vector<CommitRecord> records_;
+	std::vector<CommitRecord const *> records_ptrs_;
 public:
-	typedef std::vector<CommitRecord> Vector;
-	std::shared_ptr<Vector> records;
-	CommitRecords()
-		: records(std::make_shared<Vector>())
-	{
-	}
 	void clear()
 	{
-		records->clear();
+		records_.clear();
 	}
-	size_t size() const
+	void setRecords(std::vector<CommitRecord> &&v)
 	{
-		return records->size();
-	}
-	CommitRecord *record(size_t i)
-	{
-		if (i < size()) {
-			return &records->at(i);
+		records_ = v;
+		const auto N = records_.size();
+		records_ptrs_.resize(N);
+		for (size_t i = 0; i < N; i++) {
+			records_ptrs_[i] = &records_[i];
 		}
-		return nullptr;
 	}
-	CommitRecord const *record(size_t i) const
+	std::basic_string_view<CommitRecord const *> records() const
 	{
-		return const_cast<CommitRecords *>(this)->record(i);
+		return {records_ptrs_.data(), records_ptrs_.size()};
 	}
 };
 

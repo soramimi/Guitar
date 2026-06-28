@@ -194,7 +194,7 @@ bool GitDiff::isSubmodule() const
 
 void GitCommitItemList::setList(std::vector<GitCommitItem> &&list)
 {
-	this->list_ = std::move(list);
+	list_ = std::move(list);
 }
 
 size_t GitCommitItemList::size() const

@@ -26,7 +26,7 @@ private:
 protected:
 	bool eventFilter(QObject *watched, QEvent *event) override;
 public:
-	explicit JumpDialog(QWidget *parent, NamedCommitList const &items, const CommitRecords::Vector *commit_records);
+	explicit JumpDialog(QWidget *parent, NamedCommitList const &items, std::basic_string_view<CommitRecord const *> commit_records);
 	~JumpDialog() override;
 	QString text() const;
 	static void sort(NamedCommitList *items);

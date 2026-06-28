@@ -1523,18 +1523,18 @@ std::optional<GitCommitItem> MainWindow::getCommitItem(GitRunner g, GitHash cons
 GitCommitItemList MainWindow::log_all2(GitRunner g, GitHash const &id, int maxcount) const
 {
 	TraceLogger trace("log_all2", { });
-#if 1
-	return g.log_all(id, maxcount);
+#if 0
+	auto items = g.log_all(id, maxcount);
 #else
-	GitCommitItemList items;
 
 	std::vector<GitHash> revlist = g.rev_list_all(id, maxcount);
 
+	std::vector<GitCommitItem> list;
 	if (0) { // シングルスレッド版
 		for (GitHash const &hash : revlist) {
 			auto item = getCommitItem(g, hash);
 			if (item) {
-				items.list.push_back(*item);
+				list.push_back(*item);
 			}
 		}
 	} else { // マルチスレッド版
@@ -1548,34 +1548,31 @@ GitCommitItemList MainWindow::log_all2(GitRunner g, GitHash const &id, int maxco
 					size_t j = in++;
 					if (j >= revlist.size()) break;
 					GitHash const &hash = revlist[j];
-#if 1
 					auto item = getCommitItem(g, hash);
 					if (item) {
 						vec.at(to++) = { j, *item };
 					}
-#else
-					GitCommitItem item;
-					item.commit_id = GitHash(hash);
-					vec.at(to++) = { j, item };
-#endif
 				}
 			});
 		}
 		for (size_t i = 0; i < threads.size(); i++) {
 			threads[i].join();
 		}
-		vec.resize(to);
-		std::sort(vec.begin(), vec.end(), [](auto const &a, auto const &b) {
-			return a.first < b.first;
+		const size_t N = to;
+		std::vector<std::pair<size_t, GitCommitItem> const *> ptrs(N);
+		for (size_t i = 0; i < N; i++) {
+			ptrs[i] = &vec[i];
+		}
+		std::sort(ptrs.begin(), ptrs.end(), [](auto const &a, auto const &b) {
+			return a->first < b->first;
 		});
-		items.list.reserve(vec.size());
-		for (auto const &pair : vec) {
-			items.list.push_back(pair.second);
+		list.reserve(N);
+		for (auto const *pair : ptrs) {
+			list.push_back(pair->second);
 		}
 	}
-
-	return items;
 #endif
+	return GitCommitItemList(std::move(list));
 }
 
 GitCommitItemList MainWindow::retrieveCommitLog(GitRunner g) const
@@ -1665,45 +1662,47 @@ void MainWindow::makeCommitLog(GitHash const &head, CommitLogExchangeData exdata
 
 	const int count = (int)commit_log->size(); // ログの数
 
-	m->commit_records.clear();
-	m->commit_records.records->reserve(count);
-
 	int selrow = 0;
 
-	for (int row = 0; row < count; row++) {
-		GitCommitItem const &commit = (*commit_log)[row];
-
-		auto [message_ex, labels] = makeCommitLabels(commit, branch_map, tag_map); // コミットコメントのツールチップ用テキストとラベル
-		(*label_map)[row] = labels;
-
-		CommitRecord rec;
-
-		bool isHEAD = (commit.commit_id == getHeadId());
-		if (Git::isUncommitted(commit)) { // 未コミットの時
-			rec.bold = true; // 太字
-			selrow = row;
-		} else {
-			bool uncommited_changes = isThereUncommittedChanges();
-			if (isHEAD && !uncommited_changes) { // HEADで、未コミットがないとき
+	{
+		std::vector<CommitRecord> records;
+		records.reserve(count);
+		for (int row = 0; row < count; row++) {
+			GitCommitItem const &commit = (*commit_log)[row];
+	
+			auto [message_ex, labels] = makeCommitLabels(commit, branch_map, tag_map); // コミットコメントのツールチップ用テキストとラベル
+			(*label_map)[row] = labels;
+	
+			CommitRecord rec;
+	
+			bool isHEAD = (commit.commit_id == getHeadId());
+			if (Git::isUncommitted(commit)) { // 未コミットの時
 				rec.bold = true; // 太字
 				selrow = row;
+			} else {
+				bool uncommited_changes = isThereUncommittedChanges();
+				if (isHEAD && !uncommited_changes) { // HEADで、未コミットがないとき
+					rec.bold = true; // 太字
+					selrow = row;
+				}
+				rec.commit_hash = commit.commit_id;
 			}
-			rec.commit_hash = commit.commit_id;
+	
+			rec.datetime = (misc::str)commit.commit_date.date().toString();
+			rec.author = (misc::str)commit.author;
+			rec.message = (misc::str)commit.message;
+			rec.tooltip = rec.message + message_ex;
+	
+			records.push_back(rec);
 		}
-
-		rec.datetime = (misc::str)commit.commit_date.date().toString();
-		rec.author = (misc::str)commit.author;
-		rec.message = (misc::str)commit.message;
-		rec.tooltip = rec.message + message_ex;
-
-		m->commit_records.records->push_back(rec);
+		m->commit_records.setRecords(std::move(records));
 	}
 
 	m->last_focused_file_list = nullptr;
 
 	{
 		bool b = ui->tableWidget_log->blockSignals(true); // surpress tableWidget_log's signals
-		ui->tableWidget_log->setRecords(m->commit_records);
+		ui->tableWidget_log->setRecords(m->commit_records.records());
 		ui->tableWidget_log->setFocus();
 
 		{
@@ -6615,7 +6614,7 @@ void MainWindow::on_action_repo_jump_triggered()
 		head.id = getHeadId();
 		items.insert(items.begin(), head);
 	}
-	JumpDialog dlg(this, items, m->commit_records.records.get());
+	JumpDialog dlg(this, items, m->commit_records.records());
 	if (dlg.exec() == QDialog::Accepted) {
 		QString text = dlg.text();
 		jump(g, text);
