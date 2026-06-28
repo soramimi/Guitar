@@ -348,7 +348,7 @@ private:
 
 	void saveApplicationSettings();
 
-	void setDiffResult(const std::vector<GitDiff> &diffs);
+	void setDiffResult(std::vector<GitDiff> &&diffs);
 	const std::vector<GitSubmoduleItem> &submodules() const;
 	void setSubmodules(const std::vector<GitSubmoduleItem> &submodules);
 	bool runOnRepositoryDir(const std::function<void(QString, QString)> &callback, const RepositoryInfo *repo);
@@ -385,7 +385,41 @@ private:
 	InteractionMode interactionMode() const;
 	void setInteractionMode(const InteractionMode &im);
 	void setUncommittedChanges(bool uncommited_changes);
-	std::vector<GitDiff> const *diffResult() const;
+
+public:
+	struct DiffResult {
+		std::vector<GitDiff> list_;
+		mutable std::vector<GitDiff const *> ptrs_;
+		DiffResult() = default;
+		DiffResult(DiffResult const &r)
+			: list_(r.list_)
+		{
+			ptrs_.clear();
+		}
+		void operator = (DiffResult const &r)
+		{
+			list_ = r.list_;
+			ptrs_.clear();
+		}
+		void setList(std::vector<GitDiff> &&list)
+		{
+			list_ = std::move(list);
+			ptrs_.clear();
+		}
+		std::basic_string_view<GitDiff const *> items() const
+		{
+			if (ptrs_.empty()) {
+				const size_t N = list_.size();
+				ptrs_.resize(N);
+				for (size_t i = 0; i < N; i++) {
+					ptrs_[i] = &list_[i];
+				}
+			}
+			return std::basic_string_view<GitDiff const *>(ptrs_.data(), ptrs_.size());
+		}
+	};
+private:
+	std::basic_string_view<const GitDiff *> diffResult() const;
 
 	void clearLabelMap();
 	GitObjectCache *getObjCache();
@@ -598,7 +632,7 @@ signals:
 	void sigPtyCloneCompleted(bool ok, QVariant const &userdata);
 	void sigPtyFetchCompleted(bool ok, QVariant const &userdata);
 	void sigPtyProcessCompleted(bool ok, PtyProcessCompleted const &data);
-	void sigSetCommitLog(const CommitLogExchangeData &log);
+	void sigSetCommitLog(CommitLogExchangeData const &log);
 
 public:
 	explicit MainWindow(QWidget *parent = nullptr);
@@ -618,7 +652,7 @@ public:
 	static void updateCommitGraph(GitCommitItemList *logs);
 	static TagList findTag(std::map<GitHash, TagList> const &tagmap, GitHash const &id);
 	static QString makeRepositoryName(QString const &loc);
-	static void addDiffItems(const std::vector<GitDiff> *diff_list, const std::function<void(const ObjectData &)> &add_item);
+	static void addDiffItems(std::basic_string_view<const GitDiff *> diff_list, const std::function<void(const ObjectData &)> &add_item);
 	static GitHash getObjectID(QListWidgetItem *item);
 	static QString getFilePath(QListWidgetItem *item);
 	static QString getSubmodulePath(QListWidgetItem *item);
@@ -650,7 +684,7 @@ public:
 	bool isGraphVisible() const;
 	bool isAvatarsVisible() const;
 	bool isAvatarEnabled() const;
-	void makeDiffList(const GitHash &id, std::vector<GitDiff> *diff_list, QListWidget *listwidget);
+	DiffResult makeDiffList(const GitHash &id, QListWidget *listwidget);
 	void execCommitViewWindow(const GitCommitItem *commit);
 	void execCommitPropertyDialog(QWidget *parent, const GitCommitItem &commit);
 	void execCommitExploreWindow(QWidget *parent, const GitCommitItem *commit);
@@ -723,10 +757,10 @@ public:
 	void setFocusToLogTable();
 	void selectLogTableRow(int row);
 	
-	void setCurrentRepositoryData(RepositoryData const &data);
+	void setCurrentRepositoryData(RepositoryData &&data);
 	const RepositoryData *currentRepositoryData() const;
 	
-	void setCommitLog(const CommitLogExchangeData &exdata);
+	void setCommitLog(CommitLogExchangeData &&exdata);
 	bool saveFileAs(QString const &srcpath, QString const &dstpath);
 	bool saveBlobAs(const GitHash &id, QString const &dstpath);
 

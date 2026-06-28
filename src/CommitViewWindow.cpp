@@ -3,10 +3,12 @@
 #include "ApplicationGlobal.h"
 #include <common/q/helper.h>
 #include <QMenu>
+#include "MainWindow.h"
 
 struct CommitViewWindow::Private {
 	GitCommitItem const *commit = nullptr;
-	std::vector<GitDiff> diff_list;
+	// std::vector<GitDiff> diff_list.list_;
+	MainWindow::DiffResult diff_list;
 };
 
 MainWindow *CommitViewWindow::mainwindow()
@@ -31,7 +33,7 @@ CommitViewWindow::CommitViewWindow(MainWindow *parent, GitCommitItem const *comm
 	ui->lineEdit_message->setText((QS)m->commit->message);
 	ui->lineEdit_id->setText(QString::fromStdString(m->commit->commit_id.toString()));
 
-	mainwindow()->makeDiffList(m->commit->commit_id, &m->diff_list, ui->listWidget_files);
+	m->diff_list = mainwindow()->makeDiffList(m->commit->commit_id, ui->listWidget_files);
 
 	ui->listWidget_files->setCurrentRow(0);
 }
@@ -44,9 +46,10 @@ CommitViewWindow::~CommitViewWindow()
 
 void CommitViewWindow::on_listWidget_files_currentRowChanged(int currentRow)
 {
-	if (currentRow >= 0 && (size_t)currentRow < m->diff_list.size()) {
-		GitDiff const &diff = m->diff_list[currentRow];
-		ui->widget_diff->updateDiffView(diff, false);
+	std::basic_string_view<GitDiff const *> items = m->diff_list.items();
+	if (currentRow >= 0 && (size_t)currentRow < items.size()) {
+		GitDiff const *diff = items[currentRow];
+		ui->widget_diff->updateDiffView(*diff, false);
 	}
 }
 

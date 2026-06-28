@@ -159,10 +159,10 @@ struct GitCommitItem {
 };
 
 class GitCommitItemList {
-private:
+private:public:
 	struct D {
 		std::vector<GitCommitItem> list;
-		std::vector<GitCommitItem *> ptrs;
+		mutable std::vector<GitCommitItem *> ptrs;
 		std::map<GitHash, size_t> map;
 	} d;
 	GitCommitItem &_at(size_t i);
@@ -170,7 +170,7 @@ private:
 	void assign(GitCommitItemList const &r)
 	{
 		d.list = r.d.list;
-		_update_ptrs();
+		d.ptrs.clear();
 		d.map = r.d.map;
 	}
 public:
@@ -206,7 +206,14 @@ public:
 	
 	std::basic_string_view<GitCommitItem *> items() const
 	{
+		const_cast<GitCommitItemList *>(this)->_update_ptrs();
 		return std::basic_string_view<GitCommitItem *>(d.ptrs.data(), d.ptrs.size());
+	}
+
+	std::basic_string_view<GitCommitItem const *> c_items() const
+	{
+		const_cast<GitCommitItemList *>(this)->_update_ptrs();
+		return std::basic_string_view<GitCommitItem const *>(d.ptrs.data(), d.ptrs.size());
 	}
 	
 	void fixCommitLogOrder();

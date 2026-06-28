@@ -194,17 +194,19 @@ bool GitDiff::isSubmodule() const
 
 void GitCommitItemList::_update_ptrs()
 {
-	const size_t N = d.list.size();
-	d.ptrs.resize(N);
-	for (size_t i = 0; i < N; i++) {
-		d.ptrs[i] = &d.list[i];
+	if (d.ptrs.empty()) {
+		const size_t N = d.list.size();
+		d.ptrs.resize(N);
+		for (size_t i = 0; i < N; i++) {
+			d.ptrs[i] = &d.list[i];
+		}
 	}
 }
 
 void GitCommitItemList::setList(std::vector<GitCommitItem> &&list)
 {
 	d.list = std::move(list);
-	_update_ptrs();
+	d.ptrs.clear();
 }
 
 size_t GitCommitItemList::size() const
@@ -235,7 +237,7 @@ bool GitCommitItemList::empty() const
 void GitCommitItemList::push_front(const GitCommitItem &item)
 {
 	d.list.insert(d.list.begin(), item);
-	d.ptrs.insert(d.ptrs.begin(), &d.list.front());
+	d.ptrs.clear();
 }
 
 std::string GitCommitItemList::previousMessage() const

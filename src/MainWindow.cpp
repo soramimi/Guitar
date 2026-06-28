@@ -156,7 +156,9 @@ struct MainWindow::Private {
 	GitUser current_git_user;
 
 	QList<RepositoryInfo> repos;
-	std::vector<GitDiff> diff_result;
+	
+	MainWindow::DiffResult diff_result;
+	
 	std::vector<GitSubmoduleItem> submodules;
 
 	CommitRecords commit_records;
@@ -387,9 +389,9 @@ ProgressWidget *MainWindow::progress_widget() const
 	return ui->widget_progress;
 }
 
-void MainWindow::setCurrentRepositoryData(RepositoryData const &data)
+void MainWindow::setCurrentRepositoryData(RepositoryData &&data)
 {
-	m->current_repository_data = data;
+	m->current_repository_data = std::move(data);
 }
 
 RepositoryData const *MainWindow::currentRepositoryData() const
@@ -1461,11 +1463,11 @@ void MainWindow::onSetCommitLog(CommitLogExchangeData const &log)
 	
 	{
 		RepositoryData data;
-		if (log.p->commit_log) data.commit_log = *log.p->commit_log;
-		if (log.p->branch_map) data.branch_map = *log.p->branch_map;
-		if (log.p->tag_map) data.tag_map = *log.p->tag_map;
-		if (log.p->label_map) data.label_map = *log.p->label_map;
-		setCurrentRepositoryData(data);
+		if (log.p->commit_log) data.commit_log = std::move(*log.p->commit_log);
+		if (log.p->branch_map) data.branch_map = std::move(*log.p->branch_map);
+		if (log.p->tag_map) data.tag_map = std::move(*log.p->tag_map);
+		if (log.p->label_map) data.label_map = std::move(*log.p->label_map);
+		setCurrentRepositoryData(std::move(data));
 	}
 
 	_updateCommitLogTableView(0); // コミットログテーブルの表示を更新
@@ -1473,9 +1475,9 @@ void MainWindow::onSetCommitLog(CommitLogExchangeData const &log)
 	updateStatusBarText();
 }
 
-void MainWindow::setCommitLog(const CommitLogExchangeData &exdata)
+void MainWindow::setCommitLog(CommitLogExchangeData &&exdata)
 {
-	emit sigSetCommitLog(exdata);
+	emit sigSetCommitLog(std::move(exdata));
 }
 
 void MainWindow::connectSetCommitLog()
@@ -1647,36 +1649,37 @@ void MainWindow::makeCommitLog(GitHash const &head, CommitLogExchangeData exdata
 
 	setHeadId(head);
 
-	GitCommitItemList *commit_log = &exdata.p->commit_log.value();
-	Q_ASSERT(commit_log);
+	GitCommitItemList &commit_log = *exdata.p->commit_log;
+	// commit_log._update_ptrs();
+	std::basic_string_view<GitCommitItem const *> items = commit_log.c_items();
 
-	std::map<GitHash, BranchList> const &branch_map = exdata.p->branch_map.value();
-	std::map<GitHash, TagList> const &tag_map = exdata.p->tag_map.value();
+	std::map<GitHash, BranchList> const &branch_map = *exdata.p->branch_map;
+	std::map<GitHash, TagList> const &tag_map = *exdata.p->tag_map;
 
-	exdata.p->label_map = std::map<int, BranchLabelList>();
-	std::map<int, BranchLabelList> *label_map = &exdata.p->label_map.value();
+	std::map<int, BranchLabelList> label_map;
+	// exdata.p->label_map = std::map<int, BranchLabelList>();
+	// std::map<int, BranchLabelList> &label_map = *exdata.p->label_map;
 
-	auto UpdateCommitGraph = std::async(std::launch::async, [&]() {
-		updateCommitGraph(commit_log);
+	// 樹形図更新を並列処理で行う
+	auto async_update_commit_graph = std::async(std::launch::async, [&]() {
+		updateCommitGraph(&commit_log);
 	});
-
-	const int count = (int)commit_log->size(); // ログの数
 
 	int selrow = 0;
 
 	{
 		std::vector<CommitRecord> records;
-		records.reserve(count);
-		for (int row = 0; row < count; row++) {
-			GitCommitItem const &commit = (*commit_log)[row];
+		records.reserve(items.size());
+		for (int row = 0; row < items.size(); row++) {
+			GitCommitItem const *commit = items[row];
 	
-			auto [message_ex, labels] = makeCommitLabels(commit, branch_map, tag_map); // コミットコメントのツールチップ用テキストとラベル
-			(*label_map)[row] = labels;
+			auto [message_ex, labels] = makeCommitLabels(*commit, branch_map, tag_map); // コミットコメントのツールチップ用テキストとラベル
+			label_map[row] = labels;
 	
 			CommitRecord rec;
 	
-			bool isHEAD = (commit.commit_id == getHeadId());
-			if (Git::isUncommitted(commit)) { // 未コミットの時
+			bool isHEAD = (commit->commit_id == getHeadId());
+			if (Git::isUncommitted(*commit)) { // 未コミットの時
 				rec.bold = true; // 太字
 				selrow = row;
 			} else {
@@ -1685,44 +1688,45 @@ void MainWindow::makeCommitLog(GitHash const &head, CommitLogExchangeData exdata
 					rec.bold = true; // 太字
 					selrow = row;
 				}
-				rec.commit_hash = commit.commit_id;
+				rec.commit_hash = commit->commit_id;
 			}
 	
-			rec.datetime = (misc::str)commit.commit_date.date().toString();
-			rec.author = (misc::str)commit.author;
-			rec.message = (misc::str)commit.message;
+			rec.datetime = (misc::str)commit->commit_date.date().toString();
+			rec.author = (misc::str)commit->author;
+			rec.message = (misc::str)commit->message;
 			rec.tooltip = rec.message + message_ex;
 	
 			records.push_back(rec);
 		}
 		m->commit_records.setRecords(std::move(records));
 	}
+	exdata.p->label_map = std::move(label_map);
 
 	m->last_focused_file_list = nullptr;
 
 	{
 		bool b = ui->tableWidget_log->blockSignals(true); // surpress tableWidget_log's signals
-		ui->tableWidget_log->setRecords(m->commit_records.records());
-		ui->tableWidget_log->setFocus();
-
 		{
-			if (select_row < 0) {
-				setCurrentLogRow(selrow);
-			} else {
-				setCurrentLogRow(select_row);
-				ui->tableWidget_log->verticalScrollBar()->setValue(scroll_pos >= 0 ? scroll_pos : 0);
+			ui->tableWidget_log->setRecords(m->commit_records.records());
+			ui->tableWidget_log->setFocus();
+			{
+				if (select_row < 0) {
+					setCurrentLogRow(selrow);
+				} else {
+					setCurrentLogRow(select_row);
+					ui->tableWidget_log->verticalScrollBar()->setValue(scroll_pos >= 0 ? scroll_pos : 0);
+				}
 			}
 		}
-
 		ui->tableWidget_log->blockSignals(b);
 	}
-	// qDebug() << __FILE__ << __LINE__;
+
 	onLogCurrentItemChanged(false); // force update tableWidget_log
 
 	updateUI();
 
-	UpdateCommitGraph.wait();
-	setCommitLog(exdata);
+	async_update_commit_graph.wait();
+	setCommitLog(std::move(exdata));
 }
 
 void MainWindow::openRepositoryMain(OpenRepositoryOption const &opt)
@@ -3688,9 +3692,9 @@ void MainWindow::setUncommittedChanges(bool uncommited_changes)
 	m->uncommited_changes = uncommited_changes;
 }
 
-std::vector<GitDiff> const *MainWindow::diffResult() const
+std::basic_string_view<GitDiff const *> MainWindow::diffResult() const
 {
-	return &m->diff_result;
+	return m->diff_result.items();
 }
 
 void MainWindow::clearLabelMap()
@@ -3768,13 +3772,13 @@ QListWidgetItem *MainWindow::newListWidgetFileItem(MainWindow::ObjectData const 
  * @param diff_list
  * @param fn_add_item
  */
-void MainWindow::addDiffItems(const std::vector<GitDiff> *diff_list, const std::function<void(ObjectData const &data)> &fn_add_item)
+void MainWindow::addDiffItems(std::basic_string_view<GitDiff const *> diff_list, const std::function<void(ObjectData const &data)> &fn_add_item)
 {
-	for (size_t idiff = 0; idiff < diff_list->size(); idiff++) {
-		GitDiff const &diff = diff_list->at(idiff);
+	for (size_t idiff = 0; idiff < diff_list.size(); idiff++) {
+		GitDiff const *diff = diff_list[idiff];
 		std::string_view header;
 
-		switch (diff.type) {
+		switch (diff->type) {
 		case GitDiff::Type::Modify:
 			header = global->prefix_chg;
 			break;
@@ -3802,10 +3806,10 @@ void MainWindow::addDiffItems(const std::vector<GitDiff> *diff_list, const std::
 		}
 
 		ObjectData data;
-		data.id = diff.blob.b_id_or_path;
-		data.path = diff.path;
-		data.submod = diff.b_submodule.item;
-		data.submod_commit = diff.b_submodule.commit;
+		data.id = diff->blob.b_id_or_path;
+		data.path = diff->path;
+		data.submod = diff->b_submodule.item;
+		data.submod_commit = diff->b_submodule.commit;
 		data.header = (misc::str)header;
 		data.idiff = (int)idiff;
 		fn_add_item(data);
@@ -4040,9 +4044,9 @@ void MainWindow::saveApplicationSettings()
 	appsettings()->saveSettings();
 }
 
-void MainWindow::setDiffResult(const std::vector<GitDiff> &diffs)
+void MainWindow::setDiffResult(std::vector<GitDiff> &&diffs)
 {
-	m->diff_result = diffs;
+	m->diff_result.setList(std::move(diffs));
 }
 
 const std::vector<GitSubmoduleItem> &MainWindow::submodules() const
@@ -4273,7 +4277,7 @@ void MainWindow::updateFileList(GitHash const &id)
 
 		auto diffs = makeDiffs(g, id, std::move(async_modules));
 		if (diffs) {
-			setDiffResult(*diffs);
+			setDiffResult(std::move(*diffs));
 		} else {
 			setDiffResult({ });
 			return;
@@ -4292,9 +4296,10 @@ void MainWindow::updateFileList(GitHash const &id)
 
 			std::map<std::string, size_t> diffmap;
 
-			for (size_t idiff = 0; idiff < diffResult()->size(); idiff++) {
-				GitDiff const &diff = diffResult()->at(idiff);
-				std::string filename = diff.path;
+			std::basic_string_view<GitDiff const *> difflist = diffResult();
+			for (size_t idiff = 0; idiff < difflist.size(); idiff++) {
+				GitDiff const *diff = difflist[idiff];
+				std::string filename = diff->path;
 				if (!filename.empty()) {
 					diffmap[filename] = idiff;
 				}
@@ -4318,7 +4323,7 @@ void MainWindow::updateFileList(GitHash const &id)
 							GitDiff const *diff = nullptr;
 							if (it != diffmap.end()) {
 								idiff = it->second;
-								diff = &diffResult()->at(idiff);
+								diff = difflist[idiff];
 							}
 							std::string path = s.path1();
 							if (s.code() == GitFileStatus::Code::Unknown) {
@@ -4409,21 +4414,22 @@ void MainWindow::initUpdateFileListTimer()
 	connect(&m->update_file_list_timer, &QTimer::timeout, this, &MainWindow::updateCurrentFileList);
 }
 
-void MainWindow::makeDiffList(GitHash const &id, std::vector<GitDiff> *diff_list, QListWidget *listwidget)
+MainWindow::DiffResult MainWindow::makeDiffList(GitHash const &id, QListWidget *listwidget)
 {
-	GitRunner g = git();
-	if (!isValidWorkingCopy(g)) return;
-
-	listwidget->clear();
-
-	auto AddItem = [&](ObjectData const &data) {
-		QListWidgetItem *item = newListWidgetFileItem(data);
-		listwidget->addItem(item);
-	};
-
-	GitDiffManager dm(getObjCache());
-	*diff_list = dm.diff(g, id, submodules());
-	addDiffItems(diff_list, AddItem);
+	DiffResult ret;
+	if (GitRunner g = git(); isValidWorkingCopy(g)) {
+		listwidget->clear();
+	
+		auto AddItem = [&](ObjectData const &data) {
+			QListWidgetItem *item = newListWidgetFileItem(data);
+			listwidget->addItem(item);
+		};
+	
+		GitDiffManager dm(getObjCache());
+		ret.setList(dm.diff(g, id, submodules()));
+		addDiffItems(ret.items(), AddItem);
+	}
+	return ret;
 }
 
 void MainWindow::execCommitViewWindow(const GitCommitItem *commit)
@@ -6104,10 +6110,10 @@ int MainWindow::selectedLogIndex() const
 GitHash MainWindow::blobID(QListWidgetItem *item) const
 {
 	auto idiff = indexOfDiff(item);
-	std::vector<GitDiff> const *diffs = diffResult();
-	if (idiff >= 0 && idiff < (int)diffs->size()) {
-		GitDiff const &diff = diffs->at(idiff);
-		return GitHash(diff.blob.b_id_or_path);
+	std::basic_string_view<GitDiff const *> diffs = diffResult();
+	if (idiff >= 0 && idiff < (int)diffs.size()) {
+		GitDiff const *diff = diffs[idiff];
+		return GitHash(diff->blob.b_id_or_path);
 	}
 	return { };
 }
@@ -6127,9 +6133,9 @@ void MainWindow::updateDiffView(QListWidgetItem *item)
 	if (!item) return;
 
 	auto idiff = indexOfDiff(item);
-	std::vector<GitDiff> const *diffs = diffResult();
-	if (idiff < (int)diffs->size()) {
-		GitDiff const &diff = diffs->at(idiff);
+	std::basic_string_view<GitDiff const *> diffs = diffResult();
+	if (idiff < (int)diffs.size()) {
+		GitDiff const *diff = diffs[idiff];
 		bool updatediffview = false;
 		bool uncommited = false;
 		{
@@ -6139,7 +6145,7 @@ void MainWindow::updateDiffView(QListWidgetItem *item)
 			updatediffview = true;
 		}
 		if (updatediffview) {
-			ui->widget_diff_view->updateDiffView(diff, uncommited);
+			ui->widget_diff_view->updateDiffView(*diff, uncommited);
 		}
 	}
 }
