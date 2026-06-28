@@ -1,4 +1,5 @@
 #include "FileTypeDetector.h"
+#include "ApplicationGlobal.h"
 #include "gzip.h"
 #include <cstring>
 
@@ -57,6 +58,11 @@ public:
 };
 
 } // namespace
+
+FileTypeDetector::Result FileTypeDetector::detect(const char *data, int64_t size) const
+{
+	return global->file_type_detector->detect(data, size);
+}
 
 std::string FileTypeDetector::mimetype_by_data(const char *data, int64_t size) const
 {

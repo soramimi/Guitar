@@ -85,13 +85,11 @@ GitContext ApplicationGlobal::gcx()
 	return gcx;
 }
 
-
-
-// QApplicationが構築される前に実行する
-void ApplicationGlobal::init1()
+// QApplicationが構築された後に実行する
+void ApplicationGlobal::selftest()
 {
 	// filetypeライブラリの基本的な動作をテスト
-
+	
 	{ // test "Hello, world" filetype registration
 		QByteArray ba("Hello, world", 12);
 		auto mime = mimetype_by_data(ba.data(), ba.size());
@@ -100,7 +98,7 @@ void ApplicationGlobal::init1()
 					 << QString::fromStdString(mime) << " expected text/plain";
 		}
 	}
-
+	
 	{ // test digits.png filetype registration
 		QFile file(":/image/digits.png");
 		(void)file.open(QFile::ReadOnly);
@@ -111,11 +109,7 @@ void ApplicationGlobal::init1()
 					 << QString::fromStdString(mime) << " expected image/png";
 		}
 	}
-}
-
-// QApplicationが構築された後に実行する
-void ApplicationGlobal::init2()
-{
+	
 	// インクリメンタル検索ライブラリを初期化
 
 	if (!global->incremental_search) {
@@ -253,26 +247,26 @@ GenerativeAI::Credential ApplicationGlobal::get_ai_credential(GenerativeAI::Mode
 
 std::string ApplicationGlobal::mimetype_by_data(char const *data, size_t size)
 {
-	return file_type_detector.mimetype_by_data(data, size);
+	return file_type_detector->detect(data, size).mimetype;
 }
 
 std::string ApplicationGlobal::mimetype_by_data(QByteArray const &ba)
 {
-	return file_type_detector.mimetype_by_data(ba.data(), ba.size());
+	return mimetype_by_data(ba.data(), ba.size());
 }
 
 std::string ApplicationGlobal::mimetype_by_data(std::vector<char> const &ba)
 {
-	return file_type_detector.mimetype_by_data(ba.data(), ba.size());
+	return mimetype_by_data(ba.data(), ba.size());
 }
 
 std::string ApplicationGlobal::mimetype_by_file(char const *path)
 {
-	return file_type_detector.mimetype_by_file(path);
+	return file_type_detector->detect(path).mimetype;
 }
 
 std::string ApplicationGlobal::mimetype_by_file(const std::string &path)
 {
-	return file_type_detector.mimetype_by_file(path);
+	return mimetype_by_file(path.c_str());
 }
 

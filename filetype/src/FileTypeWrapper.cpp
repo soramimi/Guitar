@@ -1,5 +1,5 @@
-#include "FileType.h"
-#include "lib/magic.h"
+#include "FileTypeWrapper.h"
+#include "../../filetype/lib/magic.h"
 #include <algorithm>
 #include <cstring>
 #include <fcntl.h>
@@ -21,7 +21,7 @@
 #endif
 
 extern "C" {
-#include "file/src/file.h"
+#include "../../filetype/file/src/file.h"
 }
 
 namespace {
@@ -262,11 +262,11 @@ const char *_fd_or_buf(magic_t ms, int fd, unsigned char *buf, ssize_t nbytes, s
 	return file_getbuffer(ms);
 }
 
-FileType::Result parse_mime(std::string const &mime)
+FileTypeWrapper::Result parse_mime(std::string const &mime)
 {
 	if (mime.empty()) return {};
 
-	FileType::Result ret;
+	FileTypeWrapper::Result ret;
 
 	char const *p = mime.c_str();
 	char const *q = strchr(p, ';');
@@ -337,15 +337,10 @@ public:
 	}
 };
 
-#if 0
-extern "C" unsigned char magic_mgc_gz[];
-extern "C" unsigned int magic_mgc_gz_len;
-#else
 extern "C" unsigned char magic_mgc_zst[];
 extern "C" unsigned int magic_mgc_zst_len;
-#endif
 
-bool FileType::open()
+bool FileTypeWrapper::open()
 {
 	if (magic_set_) return true;
 	magic_set_ = magic_open(MAGIC_MIME);
@@ -355,18 +350,11 @@ bool FileType::open()
 	}
 
 	// decompress the magic file
-#if 0
-	MagicReader reader((char const *)magic_mgc_gz, magic_mgc_gz_len);
-	MagicWriter writer(&mgcdata_);
-	gzip gz;
-	gz.decompress(&reader, &writer);
-#else
 	MagicReader reader((char const *)magic_mgc_zst, magic_mgc_zst_len);
 	MagicWriter writer(&mgcdata_);
 	ZS zs;
 	zs.decompress([&reader](char *ptr, int len) { return reader.read(ptr, len); },
 				  [&writer](char const *ptr, int len) { return writer.write(ptr, len); });
-#endif
 
 	void *bufs[1];
 	size_t sizes[1];
@@ -375,84 +363,11 @@ bool FileType::open()
 	return 0 == magic_load_buffers((magic_set *)magic_set_, bufs, sizes, 1);
 }
 
-#if 0
-bool FileType::open(const char *mgcptr, size_t mgclen)
-{
-	if (magic_set) return true;
-
-	bool ok = false;
-
-	magic_set = magic_open(MAGIC_MIME);
-
-	if (!magic_set) {
-		fprintf(stderr, "unable to initialize magic library\n");
-	} else {
-		mgcdata.resize(mgclen);
-		memcpy(mgcdata.data(), mgcptr, mgclen);
-		void *bufs[1];
-		size_t sizes[1];
-		bufs[0] = mgcdata.data();
-		sizes[0] = mgcdata.size();
-		if (magic_load_buffers((magic_t)magic_set, bufs, sizes, 1) == 0) {
-			ok = true;
-		}
-	}
-
-	return ok;
-}
-
-/**
- * @brief Open the file type object
- * @param mgcfile The magic file
- * @return Whether the file type object was opened successfully
- */
-bool FileType::open(const char *mgcfile)
-{
-	if (magic_set) return true;
-
-	bool ok = false;
-
-	if (0) {
-		magic_set = magic_open(MAGIC_MIME);
-		if (magic_set) {
-			if (magic_load((magic_t)magic_set, mgcfile) != 0) {
-				printf("cannot load magic database - %s\n", magic_error((magic_t)magic_set));
-				magic_close((magic_t)magic_set);
-				ok = true;
-			}
-		}
-	} else {
-		int fd = ::open(mgcfile, O_RDONLY);
-		if (fd != -1) {
-			struct stat st;
-			if (fstat(fd, &st) == 0 && st.st_size > 0) {
-				magic_set = magic_open(MAGIC_MIME);
-				if (magic_set) {
-					mgcdata.resize(st.st_size);
-					read(fd, mgcdata.data(), st.st_size);
-					void *bufs[1];
-					size_t sizes[1];
-					bufs[0] = mgcdata.data();
-					sizes[0] = st.st_size;
-					if (magic_load_buffers((magic_t)magic_set, bufs, sizes, 1) == 0) {
-						ok = true;
-					}
-				}
-			}
-			::close(fd);
-		}
-	}
-	if (!magic_set) {
-		fprintf(stderr, "unable to initialize magic library\n");
-	}
-	return ok;
-}
-#endif
 
 /**
  * @brief Close the file type object
  */
-void FileType::close()
+void FileTypeWrapper::close()
 {
 	if (magic_set_) {
 		magic_close((magic_t)magic_set_);
@@ -461,22 +376,11 @@ void FileType::close()
 }
 
 /**
- * @brief Get the slop size
- * @return The slop size
- *
- * The slop size is the size of the buffer that is added to the end of the file buffer.
- */
-size_t FileType::slop_size()
-{
-	return SLOP;
-}
-
-/**
  * @brief Determine the detect type of a detect descriptor
  * @param fd The detect descriptor
  * @return The result
  */
-FileType::Result FileType::detect(int fd) const
+FileTypeWrapper::Result FileTypeWrapper::detect(int fd) const
 {
 	if (!magic_set_) {
 		fprintf(stderr, "magic_set is null\n");
@@ -510,7 +414,7 @@ FileType::Result FileType::detect(int fd) const
  * @param filepath The path to the detect
  * @return The result
  */
-FileType::Result FileType::detect(const char *filepath) const
+FileTypeWrapper::Result FileTypeWrapper::detect(const char *filepath) const
 {
 	if (!magic_set_) {
 		fprintf(stderr, "magic_set is null\n");
@@ -535,10 +439,9 @@ FileType::Result FileType::detect(const char *filepath) const
  * @param data The buffer
  * @param size The size of the buffer
  * @param st_mode The mode of the detect
- * @param pad_slop Whether to pad the buffer with slop
  * @return The result
  */
-FileType::Result FileType::detect(const char *data, size_t size, int st_mode) const
+FileTypeWrapper::Result FileTypeWrapper::detect(const char *data, size_t size, int st_mode) const
 {
 	if (!magic_set_) {
 		fprintf(stderr, "magic_set is null\n");

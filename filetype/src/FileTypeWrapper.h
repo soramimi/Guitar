@@ -1,11 +1,11 @@
-#ifndef FILETYPE_H
-#define FILETYPE_H
+#ifndef FILETYPEWRAPPER_H
+#define FILETYPEWRAPPER_H
 
 #include <mutex>
 #include <string>
 #include <vector>
 
-class FileType {
+class FileTypeWrapper {
 public:
 	struct Result {
 		std::string mimetype;
@@ -16,17 +16,13 @@ private:
 	void *magic_set_ = nullptr;
 	std::vector<char> mgcdata_;
 	bool open();
-#if 0
-	bool open(const char *mgcptr, size_t mgclen);
-	bool open(char const *mgcfile);
-#endif
 	void close();
 public:
-	FileType()
+	FileTypeWrapper()
 	{
 		open();
 	}
-	~FileType()
+	~FileTypeWrapper()
 	{
 		close();
 	}
@@ -36,4 +32,4 @@ public:
 	Result detect(const char *data, size_t size, int filemode = 0644) const;
 };
 
-#endif // FILETYPE_H
+#endif // FILETYPEWRAPPER_H

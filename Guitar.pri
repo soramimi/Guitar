@@ -39,7 +39,8 @@ INCLUDEPATH += $$SRC
 INCLUDEPATH += $$SRC/common
 INCLUDEPATH += $$SRC/coloredit
 INCLUDEPATH += $$SRC/texteditor
-INCLUDEPATH += $$PWD/filetype/src/
+INCLUDEPATH += $$PWD/subprojects/FileTypePlugin/src
+INCLUDEPATH += $$PWD/subprojects/IncrementalSearchPlugin/src
 
 msvc:INCLUDEPATH += $$PWD/misc/winpty/include
 msvc:LIBS += $$PWD/misc/winpty/x64/lib/winpty.lib -lshlwapi
@@ -50,13 +51,6 @@ prepare.target = prepare
 prepare.commands = cd $$PWD && ruby -W0 prepare.rb
 QMAKE_EXTRA_TARGETS += prepare
 PRE_TARGETDEPS += prepare
-
-#
-
-# CONFIG += experimental_filetypeplugin
-experimental_filetypeplugin {
-	DEFINES += EXPERIMENTAL_FILETYPEPLUGIN
-}
 
 # OpenSSL
 
@@ -80,14 +74,6 @@ use_libcurl {
 	!msvc:LIBS += -lcurl
 	msvc:LIBS += -llibcurl
 }
-
-# libfiletype
-
-include(libfiletype.pri)
-
-# Incremental Search
-
-INCLUDEPATH += $$PWD/subprojects/IncrementalSearchPlugin/src
 
 # experimental: Sudachi support
 
@@ -133,7 +119,9 @@ macx {
 #
 
 SOURCES += \
+	$$PWD/src/CommitRecord.cpp \
 	$$PWD/src/IncrementalSearchHelper.cpp \
+	$$PWD/src/LoadPlugin.cpp \
 	$$SRC/AboutDialog.cpp \
 	$$SRC/AbstractGitSession.cpp \
 	$$SRC/AbstractProcess.cpp \
@@ -316,7 +304,9 @@ SOURCES += \
 	$$SRC/zip/zipextract.cpp
 
 HEADERS += \
+	$$PWD/src/CommitRecord.h \
 	$$PWD/src/IncrementalSearchHelper.h \
+	$$PWD/src/LoadPlugin.h \
 	$$SRC/AboutDialog.h \
 	$$SRC/AbstractGitSession.h \
 	$$SRC/AbstractProcess.h \

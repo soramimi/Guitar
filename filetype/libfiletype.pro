@@ -48,13 +48,13 @@ msvc {
 SOURCES += \
 	lib/magic_mgc_gz.c \
 	src/AbstractSimpleIO.cpp \
-	src/FileType.cpp \
+	src/FileTypeWrapper.cpp \
 	src/gzip.cpp \
 	src/zs.cpp
 
 HEADERS += \
 	src/AbstractSimpleIO.h \
-	src/FileType.h \
+	src/FileTypeWrapper.h \
 	src/gzip.h \
 	src/zs.h
 

@@ -8,15 +8,15 @@
 #include "IncrementalSearchHelper.h"
 #include "Theme.h"
 #include "TraceEventWriter.h"
-#include "filetype/src/FileType.h"
-// #include <MyJagger.h>
+#include <IncrementalSearchInterface.h>
 #include <QColor>
 #include <QString>
 #include <ai/GenerativeAI.h>
 #include <common/misc.h>
 #include <inet/curlclient.h>
 #include <inet/webclient.h>
-#include <IncrementalSearchInterface.h>
+#include <subprojects/FileTypePlugin/src/FileType.h>
+// #include <MyJagger.h>
 
 class MainWindow;
 class QListWidgetItem;
@@ -80,13 +80,6 @@ public:
 
 	GitContext gcx();
 
-	FileTypeDetector file_type_detector;
-	std::string mimetype_by_data(const char *data, size_t size);
-	std::string mimetype_by_data(const QByteArray &ba);
-	std::string mimetype_by_data(std::vector<char> const &ba);
-	std::string mimetype_by_file(const char *path);
-	std::string mimetype_by_file(std::string const &path);
-
 	ApplicationSettings appsettings;
 
 #ifdef USE_LIBCURL
@@ -98,8 +91,7 @@ public:
 
 	std::vector<AccountProfile> account_profiles;
 
-	void init1();
-	void init2();
+	void selftest();
 
 	void open_trace_logger();
 	void close_trace_logger();
@@ -122,6 +114,13 @@ public:
 	std::shared_ptr<IncrementalSearch> incremental_search;
 	IncrementalSearchFilter makeIncrementalSearchFilter(const std::string &filtertext);
 	QString incremental_search_text;
+	
+	std::shared_ptr<FileType> file_type_detector;
+	std::string mimetype_by_data(const char *data, size_t size);
+	std::string mimetype_by_data(const QByteArray &ba);
+	std::string mimetype_by_data(std::vector<char> const &ba);
+	std::string mimetype_by_file(const char *path);
+	std::string mimetype_by_file(std::string const &path);
 	
 	GenerativeAI::Credential get_ai_credential(const GenerativeAI::Model &model);
 

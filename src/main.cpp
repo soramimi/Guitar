@@ -1,36 +1,21 @@
 
 #include "ApplicationGlobal.h"
-#include "ApplicationSettings.h"
-#include "AvatarLoader.h"
-#include "CommitLogTableWidget.h"
-#include "FileType.h"
+#include "CommitRecord.h"
 #include "GeneratedCommitMessage.h"
+#include "LoadPlugin.h"
 #include "Logger.h"
 #include "MainWindow.h"
 #include "MySettings.h"
-#include "RepositoryModel.h"
 #include "SettingGeneralForm.h"
-#include "fmt.h"
-#include <IncrementalSearchInterface.h>
-#include <MyExperimentalLibrary.h>
+#include <FileTypeInterface.h>
 #include <QApplication>
-#include <QDebug>
 #include <QDir>
 #include <QMessageBox>
 #include <QPluginLoader>
-#include <QProxyStyle>
 #include <QStandardPaths>
 #include <QTranslator>
 #include <common/joinpath.h>
 #include <csignal>
-#include <inet/webclient.h>
-#include <string>
-
-#ifdef Q_OS_WIN
-#include <windows.h>
-#else
-#include <dlfcn.h>
-#endif
 
 #ifndef APP_GUITAR
 #error APP_GUITAR is not defined.
@@ -192,46 +177,14 @@ int main(int argc, char *argv[])
 	}
 
 	global->profiles_xml_path = joinpath(global->app_config_dir, "profiles.xml");
-
-	global->init1();
-
-	// load incremental search plugin
+	
+	// load plugins
 	{
-		QString name = "incrementalsearchplugin";
-#ifdef QT_DEBUG
-		name += 'd';
-#endif
-#ifdef Q_OS_WIN
-		QString path = name;
-#else
-		QString path = QCoreApplication::applicationDirPath() / "../lib/lib" + name + ".so";
-#endif
-		logprintf(LOG_DEFAULT, "loading the plugin %s", path.toStdString().c_str());
-		QPluginLoader loader(path);
-		IncrementalSearchInterface *plugin = dynamic_cast<IncrementalSearchInterface *>(loader.instance());
-		if (plugin) {
-			global->incremental_search = std::shared_ptr<IncrementalSearch>(plugin->create());
-			if (global->incremental_search->open()) {
-				logprintf(LOG_DEFAULT, "%s is loaded successfully.", name.toStdString().c_str());
-			} else {
-				logprintf(LOG_DEFAULT, "%s is loaded but failed to open. This may cause some features to not work properly.", name.toStdString().c_str());
-			}
-		} else {
-			logprint(LOG_DEFAULT, loader.errorString().toStdString().c_str());
-		}
+		global->file_type_detector = loadPlugin<FileType, FileTypeInterface>("filetypeplugin"); // file type detector plugin
+		global->incremental_search = loadPlugin<IncrementalSearch, IncrementalSearchInterface>("incrementalsearchplugin"); // incremental search plugin
 	}
 
-	// experimental shared library loading test
-#ifdef EXPERIMENTAL_FILETYPEPLUGIN
-	if (1) {
-		MyExperimentalLibrary lib;
-		if (lib.open()) {
-			// lib.hoge();
-		}
-	}
-#endif
-
-	global->init2();
+	global->selftest();
 
 	QApplication::setOrganizationName(global->organization_name);
 	QApplication::setApplicationName(global->application_name);
