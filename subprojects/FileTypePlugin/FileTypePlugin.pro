@@ -6,9 +6,18 @@ CONFIG(debug,debug|release):TARGET = filetypeplugind
 TEMPLATE = lib
 CONFIG += plugin
 
-DESTDIR = $$PWD/../../lib
+gcc:DESTDIR = $$PWD/../../lib
+msvc:DESTDIR = $$PWD/../../_bin
 
 gcc:DEFINES += HAVE_STRCASESTR
+msvc:QMAKE_CXXFLAGS += /FI $$PWD/file-msvc/unistd.h
+
+msvc:DEFINES += DLLEXPORT=__declspec(dllexport)
+msvc:INCLUDEPATH += C:/vcpkg/installed/x64-windows/include
+
+msvc:INCLUDEPATH += file-msvc
+gcc:INCLUDEPATH += file-gcc
+INCLUDEPATH += file
 
 unix:LIBS += -ldl
 win32:LIBS += -lole32 -loleaut32
@@ -26,6 +35,8 @@ msvc {
 }
 
 #
+
+msvc:LIBS += -LC:/vcpkg/installed/x64-windows/lib
 
 msvc:CONFIG(release, debug|release):LIBS += $$PWD/lib/file.lib $$PWD/lib/oniguruma.lib
 msvc:CONFIG(debug, debug|release):LIBS += $$PWD/lib/filed.lib $$PWD/lib/onigurumad.lib
@@ -50,13 +61,11 @@ SOURCES += \
 	lib/magic_mgc_gz.c \
 	src/AbstractSimpleIO.cpp \
 	src/FileTypeWrapper.cpp \
-	src/gzip.cpp \
 	src/zs.cpp
 
 HEADERS += \
 	src/AbstractSimpleIO.h \
 	src/FileTypeWrapper.h \
-	src/gzip.h \
 	src/zs.h
 
 # SOURCES += lib/magic_mgc_gz.c

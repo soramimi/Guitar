@@ -33,11 +33,11 @@ template <typename ImplType, typename Interface> std::shared_ptr<ImplType> loadP
 			logprintf(LOG_DEFAULT, "%s is loaded successfully.", c_name);
 		} else {
 			logprintf(LOG_DEFAULT, "Failed to load the plugin %s", name);
-			exit(1);
 			return {};
 		}
 	} else {
 		logprint(LOG_DEFAULT, loader.errorString().toStdString().c_str());
+		return {};
 	}
 	
 	return ret;

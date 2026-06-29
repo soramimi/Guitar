@@ -1,5 +1,5 @@
 #include "gzip.h"
-#include <zlib.h>
+// #include <zlib.h>
 #include <cstdint>
 #include <string.h>
 

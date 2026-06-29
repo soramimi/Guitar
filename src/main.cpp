@@ -182,6 +182,8 @@ int main(int argc, char *argv[])
 	{
 		global->file_type_detector = loadPlugin<FileType, FileTypeInterface>("filetypeplugin"); // file type detector plugin
 		global->incremental_search = loadPlugin<IncrementalSearch, IncrementalSearchInterface>("incrementalsearchplugin"); // incremental search plugin
+		if (!global->file_type_detector) exit(1);
+		if (!global->incremental_search) exit(1);
 	}
 
 	global->selftest();
