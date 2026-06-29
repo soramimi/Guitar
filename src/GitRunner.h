@@ -150,8 +150,8 @@ public:
 	GitSignPolicy signPolicy(GitSource source);
 	bool setSignPolicy(GitSource source, GitSignPolicy policy);
 	bool configGpgProgram(const std::string &path, bool global);
-
-	bool reflog(std::vector<GitReflogItem> *out, int maxcount = 100);
+	
+	std::optional<std::vector<GitReflogItem> > reflog(int maxcount = 100);
 	std::vector<char> blame(const std::string &path);
 
 

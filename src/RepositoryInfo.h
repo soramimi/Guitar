@@ -15,8 +15,8 @@ Q_DECLARE_METATYPE(RepositoryInfo)
 class RepositoryBookmark {
 public:
 	RepositoryBookmark() = default;
-	static bool save(QString const &path, QList<RepositoryInfo> const *items);
-	static QList<RepositoryInfo> load(QString const &path);
+	static bool save(QString const &path, const std::vector<RepositoryInfo> &items);
+	static std::vector<RepositoryInfo> load(QString const &path);
 };
 
 #endif // REPOSITORYINFO_H

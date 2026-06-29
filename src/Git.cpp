@@ -720,7 +720,6 @@ GitCommitItemList Git::log_file(std::string const &path, int maxcount)
 {
 	PROFILE;
 
-	// GitCommitItemList items;
 	std::vector<GitCommitItem> list;
 
 	std::string cmd = "log --pretty=format:\"id:%H#gpg:%G?#parent:%P#author:%an#mail:%ae#date:%ci##%s\"";
@@ -738,8 +737,7 @@ GitCommitItemList Git::log_file(std::string const &path, int maxcount)
 		}
 	}
 
-	return {std::move(list)};
-	// return items;
+	return list;
 }
 
 GitCommitItemList Git::log_all(GitHash const &id, int maxcount)
@@ -1524,12 +1522,12 @@ void Git::removeRemote(std::string const &name)
 	git(cmd);
 }
 
-bool Git::reflog(ReflogItemList *out, int maxcount)
+std::optional<Git::ReflogItemList> Git::reflog(int maxcount)
 {
-	out->clear();
+	ReflogItemList ret;
 	std::string cmd = fmt("reflog --no-abbrev --raw -n %d")(maxcount);
 	auto result = git(cmd);
-	if (!result) return false;
+	if (!result) return std::nullopt;
 	std::vector<char> ba = toByteArray(result);
 	if (!ba.empty()) {
 		GitReflogItem item;
@@ -1570,7 +1568,7 @@ bool Git::reflog(ReflogItemList *out, int maxcount)
 					bool start = isxdigit(d);
 					if (start || c == 0) {
 						if (!item.id.empty()) {
-							out->push_back(item);
+							ret.push_back(item);
 						}
 					}
 					if (start) {
@@ -1599,7 +1597,7 @@ bool Git::reflog(ReflogItemList *out, int maxcount)
 			}
 		}
 	}
-	return true;
+	return ret;
 }
 
 // Git::FileStatus
@@ -1782,55 +1780,15 @@ void GitDiff::makeForSingleFile(GitDiff *diff, std::string const &id_a, std::str
 
 //
 
-void parseDiff(std::string_view const &s, GitDiff const *info, GitDiff *out)
+std::vector<GitSubmoduleItem> parseGitSubModules(const QByteArray &ba)
 {
-	std::vector<std::string_view> lines = misc::splitLinesV(s);
-
-	out->diff = std::string("diff --git ") + ("a/" + info->path) + ' ' + ("b/" + info->path);
-	out->index = std::string("index ") + info->blob.a_id_or_path + ".." + info->blob.b_id_or_path + ' ' + info->mode;
-	out->path = info->path;
-	out->blob = info->blob;
-
-	bool atat = false;
-	for (std::string_view const &v : lines) {
-		std::string line = std::string{v};
-		int c = (unsigned char)line.c_str()[0];
-		if (c == '@') {
-			if (strncmp(line.c_str(), "@@ ", 3) == 0) {
-				out->hunks.push_back(GitHunk());
-				out->hunks.back().at = line;
-				atat = true;
-			}
-		} else {
-			if (atat && c == '\\') { // e.g. \ No newline at end of file...
-				// ignore this line
-			} else {
-				if (atat) {
-					if (c == ' ' || c == '-' || c == '+') {
-						// nop
-					} else {
-						atat = false;
-					}
-				}
-				if (atat) {
-					if (!out->hunks.isEmpty()) {
-						out->hunks.back().lines.push_back(line);
-					}
-				}
-			}
-		}
-	}
-}
-
-
-void parseGitSubModules(const QByteArray &ba, std::vector<GitSubmoduleItem> *out)
-{
-	*out = {};
+	std::vector<GitSubmoduleItem> ret;
+	
 	std::vector<std::string> lines = (misc::strlist)misc::splitLinesV({ba.data(), (size_t)ba.size()});
 	GitSubmoduleItem submod;
 	auto Push = [&](){
 		if (!submod.name.empty()) {
-			out->push_back(submod);
+			ret.push_back(submod);
 		}
 		submod = {};
 	};
@@ -1863,6 +1821,8 @@ void parseGitSubModules(const QByteArray &ba, std::vector<GitSubmoduleItem> *out
 		}
 	}
 	Push();
+	
+	return ret;	
 }
 
 std::shared_ptr<AbstractGitSession> GitContext::connect() const

@@ -168,7 +168,7 @@ IncrementalSearchFilter RepositoryTreeWidget::makeIncrementalSearchFilter(std::s
 	return {global->makeIncrementalSearchFilter(filtertext)};
 }
 
-void RepositoryTreeWidget::updateList(RepositoryListStyle style, QList<RepositoryInfo> const &repos, QString const &filtertext, int select_row)
+void RepositoryTreeWidget::updateList(RepositoryListStyle style, std::vector<RepositoryInfo> const &repos, QString const &filtertext, int select_row)
 {
 	RepositoryTreeWidget *tree = this;
 	tree->clear();

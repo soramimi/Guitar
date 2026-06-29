@@ -531,9 +531,9 @@ bool GitRunner::configGpgProgram(std::string const &path, bool global)
 	return gitptr()->configGpgProgram(path, global);
 }
 
-bool GitRunner::reflog(std::vector<GitReflogItem> *out, int maxcount)
+std::optional<std::vector<GitReflogItem>> GitRunner::reflog(int maxcount)
 {
-	return gitptr()->reflog(out, maxcount);
+	return gitptr()->reflog(maxcount);
 }
 
 std::vector<char> GitRunner::blame(std::string const &path)

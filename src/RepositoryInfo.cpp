@@ -5,7 +5,7 @@
 #include <QFile>
 // #include <QStringRef>
 
-bool RepositoryBookmark::save(QString const &path, QList<RepositoryInfo> const *items)
+bool RepositoryBookmark::save(QString const &path, std::vector<RepositoryInfo> const &items)
 {
 	QFile file(path);
 	if (file.open(QFile::WriteOnly)) {
@@ -13,7 +13,7 @@ bool RepositoryBookmark::save(QString const &path, QList<RepositoryInfo> const *
 		writer.setAutoFormatting(true);
 		writer.writeStartDocument();
 		writer.writeStartElement("repositories");
-		for (RepositoryInfo const &item : *items) {
+		for (RepositoryInfo const &item : items) {
 			if (item.name.isEmpty() && item.local_dir.isEmpty()) {
 				continue;
 			}
@@ -41,9 +41,9 @@ bool RepositoryBookmark::save(QString const &path, QList<RepositoryInfo> const *
 	return false;
 }
 
-QList<RepositoryInfo> RepositoryBookmark::load(QString const &path)
+std::vector<RepositoryInfo> RepositoryBookmark::load(QString const &path)
 {
-	QList<RepositoryInfo> items;
+	std::vector<RepositoryInfo> items;
 	QFile file(path);
 	if (file.open(QFile::ReadOnly)) {
 		RepositoryInfo item;

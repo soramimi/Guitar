@@ -58,7 +58,7 @@ public:
 	void setFilter(IncrementalSearchFilter filter);
 	void setRepositoryListStyle(RepositoryListStyle style);
 	RepositoryListStyle currentRepositoryListStyle() const;
-	void updateList(RepositoryTreeWidget::RepositoryListStyle style, const QList<RepositoryInfo> &repos, const QString &filtertext, int select_row);
+	void updateList(RepositoryTreeWidget::RepositoryListStyle style, const std::vector<RepositoryInfo> &repos, const QString &filtertext, int select_row);
 	static RepositoryTreeWidgetItem *item_cast(QTreeWidgetItem *item);
 	static int repoIndex(QTreeWidgetItem *item);
 	static void setRepoIndex(QTreeWidgetItem *item, int index);

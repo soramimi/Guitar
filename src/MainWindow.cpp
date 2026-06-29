@@ -155,7 +155,7 @@ struct MainWindow::Private {
 
 	GitUser current_git_user;
 
-	QList<RepositoryInfo> repos;
+	std::vector<RepositoryInfo> repos;
 	
 	MainWindow::DiffResult diff_result;
 	
@@ -202,7 +202,7 @@ struct MainWindow::Private {
 
 	QObject *last_focused_file_list = nullptr;
 
-	QListWidgetItem *last_selected_file_item = nullptr;
+	QListWidgetItem const *last_selected_file_item = nullptr;
 
 	bool searching = false;
 	QString search_text;
@@ -1063,29 +1063,6 @@ void MainWindow::setStatusInfo(StatusInfo const &info)
 	emit signalShowStatusInfo(info);
 }
 
-void MainWindow::buildRepoTree(QString const &group, QTreeWidgetItem *item, QList<RepositoryInfo> *repos)
-{
-	QString name = RepositoryTreeWidget::treeItemName(item);
-	if (RepositoryTreeWidget::isGroupItem(item)) {
-		int n = item->childCount();
-		for (int i = 0; i < n; i++) {
-			QTreeWidgetItem *child = item->child(i);
-			QString sub = group / name;
-			buildRepoTree(sub, child, repos);
-		}
-	} else {
-		RepositoryTreeIndex index = repositoryTreeIndex(item);
-		std::optional<RepositoryInfo> repo = repositoryItem(index);
-		if (repo) {
-			RepositoryInfo newrepo = *repo;
-			newrepo.name = name;
-			newrepo.group = group;
-			item->setData(0, RepositoryTreeWidgetItem::IndexRole, repos->size());
-			repos->push_back(newrepo);
-		}
-	}
-}
-
 std::map<GitHash, TagList> const &MainWindow::tagmap() const
 {
 	return currentRepositoryData()->tag_map;
@@ -1111,12 +1088,12 @@ TagList MainWindow::queryCurrentCommitTagList() const
 	return findTag(commit.commit_id);
 }
 
-QList<RepositoryInfo> const &MainWindow::repositoryList() const
+std::vector<RepositoryInfo> const &MainWindow::repositoryList() const
 {
 	return m->repos;
 }
 
-void MainWindow::setRepositoryList(QList<RepositoryInfo> &&list)
+void MainWindow::setRepositoryList(std::vector<RepositoryInfo> &&list)
 {
 	m->repos = std::move(list);
 }
@@ -1129,24 +1106,49 @@ void MainWindow::setRepositoryList(QList<RepositoryInfo> &&list)
 bool MainWindow::saveRepositoryBookmarks()
 {
 	QString path = getBookmarksFilePath();
-	return RepositoryBookmark::save(path, &repositoryList());
+	return RepositoryBookmark::save(path, repositoryList());
 }
 
 /**
  * @brief MainWindow::reflectRepositories()
  * @param repos
  *
- * リポジトリツリーの状態をリポジトリリストに反映する
+ * リポジトリツリーの状態をリポジトリリストに反映し、保存する
  */
 void MainWindow::reflectRepositories()
 {
-	QList<RepositoryInfo> newrepos;
+	std::vector<RepositoryInfo> newrepos;
+	
+	auto BuildTree = [&](auto self, QString const &group, QTreeWidgetItem *item)->void{
+		QString name = RepositoryTreeWidget::treeItemName(item);
+		if (RepositoryTreeWidget::isGroupItem(item)) {
+			int n = item->childCount();
+			for (int i = 0; i < n; i++) {
+				QTreeWidgetItem *child = item->child(i);
+				QString sub = group / name;
+				self(self, sub, child); // recursive
+			}
+		} else {
+			RepositoryTreeIndex index = repositoryTreeIndex(item);
+			std::optional<RepositoryInfo> repo = repositoryItem(index);
+			if (repo) {
+				RepositoryInfo newrepo = *repo;
+				newrepo.name = name;
+				newrepo.group = group;
+				item->setData(0, RepositoryTreeWidgetItem::IndexRole, (int)newrepos.size());
+				newrepos.push_back(newrepo);
+			}
+		}
+	};
+	
 	int n = ui->treeWidget_repos->topLevelItemCount();
 	for (int i = 0; i < n; i++) {
 		QTreeWidgetItem *item = ui->treeWidget_repos->topLevelItem(i);
-		buildRepoTree(QString(), item, &newrepos);
+		BuildTree(BuildTree, QString(), item);
 	}
+	
 	setRepositoryList(std::move(newrepos));
+	
 	saveRepositoryBookmarks();
 }
 
@@ -1167,7 +1169,7 @@ void MainWindow::onRepositoriesTreeDropped()
  *
  * 0〜9の小さい数字を描画する
  */
-void MainWindow::drawDigit(QPainter *pr, int x, int y, int n) const
+void MainWindow::drawDigit(QPainter *pr, int x, int y, int n)
 {
 	int w = DIGIT_WIDTH;
 	int h = DIGIT_HEIGHT;
@@ -1335,7 +1337,7 @@ void MainWindow::saveRepositoryBookmark(RepositoryInfo item)
 
 	item.group = preferredRepositoryGroup();
 
-	QList<RepositoryInfo> repos = repositoryList();
+	std::vector<RepositoryInfo> repos = repositoryList();
 
 	bool done = false;
 	for (auto &repo : repos) {
@@ -2058,7 +2060,7 @@ void MainWindow::addExistingLocalRepositoryWithGroup(const QString &dir, const Q
 			item.local_dir = info1.absoluteFilePath();
 			item.name = makeRepositoryName(item.local_dir);
 			item.group = group;
-			m->repos.append(item);
+			m->repos.push_back(item);
 		}
 	}
 }
@@ -3471,7 +3473,7 @@ MainWindow::RepositoryTreeIndex MainWindow::repositoryTreeIndex(QTreeWidgetItem 
 
 std::optional<RepositoryInfo> MainWindow::repositoryItem(RepositoryTreeIndex const &index) const
 {
-	QList<RepositoryInfo> const &repos = repositoryList();
+	std::vector<RepositoryInfo> const &repos = repositoryList();
 	if (index.row >= 0 && index.row < repos.size()) {
 		return repos[index.row];
 	}
@@ -3509,7 +3511,7 @@ void MainWindow::updateRepositoryList(RepositoryTreeWidget::RepositoryListStyle 
 
 	QString path = getBookmarksFilePath();
 	setRepositoryList(RepositoryBookmark::load(path));
-	QList<RepositoryInfo> const &repos = repositoryList();
+	std::vector<RepositoryInfo> const &repos = repositoryList();
 
 	RepositoryTreeWidget *tree = ui->treeWidget_repos;
 	tree->updateList(style, repos, search_text, select_row);
@@ -3579,7 +3581,7 @@ std::vector<GitSubmoduleItem> MainWindow::updateSubmodules(GitRunner g, GitHash 
 				if (item.type == GitTreeItem::Type::BLOB && item.name == ".gitmodules") {
 					GitObject obj = objcache.catFile(g, GitHash(item.id));
 					if (!obj.content.isEmpty()) {
-						parseGitSubModules(obj.content, &submodules);
+						submodules = parseGitSubModules(obj.content);
 					}
 				}
 			}
@@ -3913,7 +3915,7 @@ void MainWindow::removeRepositoryFromBookmark(RepositoryTreeIndex const &index, 
 		int r = QMessageBox::warning(this, tr("Confirm Remove"), tr("Are you sure you want to remove the repository from bookmarks?") + '\n' + tr("(Files will NOT be deleted)"), QMessageBox::Ok, QMessageBox::Cancel);
 		if (r != QMessageBox::Ok) return;
 	}
-	QList<RepositoryInfo> repos = repositoryList();
+	std::vector<RepositoryInfo> repos = repositoryList();
 	if (index.row >= 0 && index.row < repos.size()) {
 		repos.erase(repos.begin() + index.row); // 消す
 		setRepositoryList(std::move(repos));
@@ -4122,37 +4124,37 @@ NamedCommitList MainWindow::namedCommitItems(int flags)
 	return items;
 }
 
-GitHash MainWindow::getObjectID(QListWidgetItem *item)
+GitHash MainWindow::getObjectID(QListWidgetItem const *item)
 {
 	if (!item) return { };
 	return GitHash(item->data(ObjectIdRole).toString().toStdString());
 }
 
-QString MainWindow::getFilePath(QListWidgetItem *item)
+QString MainWindow::getFilePath(QListWidgetItem const *item)
 {
 	if (!item) return { };
 	return item->data(FilePathRole).toString();
 }
 
-QString MainWindow::getSubmodulePath(QListWidgetItem *item)
+QString MainWindow::getSubmodulePath(QListWidgetItem const *item)
 {
 	if (!item) return { };
 	return item->data(SubmodulePathRole).toString();
 }
 
-QString MainWindow::getSubmoduleCommitId(QListWidgetItem *item)
+QString MainWindow::getSubmoduleCommitId(QListWidgetItem const *item)
 {
 	if (!item) return { };
 	return item->data(SubmoduleCommitIdRole).toString();
 }
 
-int MainWindow::indexOfLog(QListWidgetItem *item)
+int MainWindow::indexOfLog(QListWidgetItem const *item)
 {
 	if (!item) return -1;
 	return item->data(IndexRole).toInt();
 }
 
-int MainWindow::indexOfDiff(QListWidgetItem *item)
+int MainWindow::indexOfDiff(QListWidgetItem const *item)
 {
 	if (!item) return -1;
 	return item->data(DiffIndexRole).toInt();
@@ -4582,6 +4584,30 @@ void MainWindow::rebaseBranch(GitCommitItem const *commit)
 		g.rebaseBranch(commit->commit_id.toString());
 		reopenRepository(true, { });
 	}
+}
+
+void MainWindow::blame(QListWidgetItem const *item)
+{
+	QList<BlameItem> list;
+	QString path = getFilePath(item);
+	{
+		GitRunner g = git();
+		std::string s = (misc::str)g.blame(path.toStdString());
+		if (!s.empty()) {
+			list = BlameWindow::parseBlame(s);
+		}
+	}
+	if (!list.isEmpty()) {
+		GlobalSetOverrideWaitCursor();
+		BlameWindow win(this, path, list);
+		GlobalRestoreOverrideCursor();
+		win.exec();
+	}
+}
+
+void MainWindow::blame()
+{
+	blame(currentFileItem());
 }
 
 void MainWindow::on_action_rebase_continue_triggered()
@@ -5062,9 +5088,13 @@ void MainWindow::on_tableWidget_log_customContextMenuRequested(const QPoint &pos
 	QAction *a_revert = is_valid_commit_id ? menu.addAction(tr("Revert")) : nullptr;
 
 	menu.addSeparator();
-
-	QAction *a_delbranch = (is_valid_commit_id && !local_branches.empty()) ? menu.addAction(tr("Delete branch...")) : nullptr;
-	QAction *a_delrembranch = remoteBranches(selected_commit.commit_id, nullptr).isEmpty() ? nullptr : menu.addAction(tr("Delete remote branch..."));
+	
+	QAction *a_delete_branch = (is_valid_commit_id && !local_branches.empty()) ? menu.addAction(tr("Delete branch...")) : nullptr;
+	
+	QAction *a_delete_remote_branch = nullptr;
+	if (RemoteBranches remote_branches = remoteBranches(selected_commit.commit_id); !remote_branches.branches.isEmpty()) {
+		a_delete_remote_branch = menu.addAction(tr("Delete remote branch..."));
+	}
 
 	menu.addSeparator();
 
@@ -5097,11 +5127,11 @@ void MainWindow::on_tableWidget_log_customContextMenuRequested(const QPoint &pos
 			checkout(this, selected_commit);
 			return;
 		}
-		if (a == a_delbranch) {
+		if (a == a_delete_branch) {
 			deleteBranch(selected_commit);
 			return;
 		}
-		if (a == a_delrembranch) {
+		if (a == a_delete_remote_branch) {
 			deleteRemoteBranch(selected_commit);
 			return;
 		}
@@ -5341,7 +5371,7 @@ void MainWindow::on_listWidget_staged_customContextMenuRequested(const QPoint &p
 	GitRunner g = git();
 	if (!isValidWorkingCopy(g)) return;
 
-	QListWidgetItem *item = ui->listWidget_staged->currentItem();
+	QListWidgetItem const *item = ui->listWidget_staged->currentItem();
 	if (item) {
 		QString path = getFilePath(item);
 		QString fullpath = currentWorkingCopyDir() / path;
@@ -5374,7 +5404,7 @@ QStringList MainWindow::selectedFiles_(QListWidget *listwidget) const
 {
 	QStringList list;
 	QList<QListWidgetItem *> items = listwidget->selectedItems();
-	for (QListWidgetItem *item : items) {
+	for (QListWidgetItem const *item : items) {
 		QString path = getFilePath(item);
 		list.push_back(path);
 	}
@@ -5397,7 +5427,7 @@ void MainWindow::for_each_selected_files(std::function<void(QString const &)> co
 	}
 }
 
-void MainWindow::execFileHistory(QListWidgetItem *item)
+void MainWindow::execFileHistory(QListWidgetItem const *item)
 {
 	if (item) {
 		QString path = getFilePath(item);
@@ -5411,7 +5441,7 @@ void MainWindow::execFileHistory(QListWidgetItem *item)
  * @brief オブジェクトプロパティ
  * @param item
  */
-void MainWindow::showObjectProperty(QListWidgetItem *item)
+void MainWindow::showObjectProperty(QListWidgetItem const *item)
 {
 	if (item) {
 		QString submodpath = getSubmodulePath(item);
@@ -6030,7 +6060,7 @@ void MainWindow::on_toolButton_stage_clicked()
 			g.add_A();
 		} else {
 			std::vector<std::string> list;
-			for (QListWidgetItem *item : items) {
+			for (QListWidgetItem const *item : items) {
 				std::string path = getFilePath(item).toStdString();
 				list.push_back(path);
 			}
@@ -6122,7 +6152,7 @@ GitHash MainWindow::blobID(QListWidgetItem *item) const
  * @brief ファイル差分表示を更新する
  * @param item
  */
-void MainWindow::updateDiffView(QListWidgetItem *item)
+void MainWindow::updateDiffView(QListWidgetItem const *item)
 {
 	ASSERT_MAIN_THREAD();
 
@@ -6715,36 +6745,11 @@ void MainWindow::on_action_exit_triggered()
 
 void MainWindow::on_action_reflog_triggered()
 {
-	GitRunner g = git();
-	Git::ReflogItemList reflog;
-	g.reflog(&reflog);
-
-	ReflogWindow dlg(this, this, reflog);
-	dlg.exec();
-}
-
-void MainWindow::blame(QListWidgetItem *item)
-{
-	QList<BlameItem> list;
-	QString path = getFilePath(item);
-	{
-		GitRunner g = git();
-		std::string s = (misc::str)g.blame(path.toStdString());
-		if (!s.empty()) {
-			list = BlameWindow::parseBlame(s);
-		}
+	auto reflog = git().reflog();
+	if (reflog) {
+		ReflogWindow dlg(this, this, *reflog);
+		dlg.exec();
 	}
-	if (!list.isEmpty()) {
-		GlobalSetOverrideWaitCursor();
-		BlameWindow win(this, path, list);
-		GlobalRestoreOverrideCursor();
-		win.exec();
-	}
-}
-
-void MainWindow::blame()
-{
-	blame(currentFileItem());
 }
 
 void MainWindow::on_action_repository_property_triggered()
@@ -6839,11 +6844,10 @@ void MainWindow::deleteRemoteBranch(GitCommitItem const &commit)
 	GitRunner g = git();
 	if (!isValidWorkingCopy(g)) return;
 
-	QStringList all_branches;
-	QStringList remote_branches = remoteBranches(commit.commit_id, &all_branches);
-	if (remote_branches.isEmpty()) return;
+	RemoteBranches remote_branches = remoteBranches(commit.commit_id);
+	if (remote_branches.branches.isEmpty()) return;
 
-	DeleteBranchDialog dlg(this, true, all_branches, remote_branches);
+	DeleteBranchDialog dlg(this, true, remote_branches.all_branches, remote_branches.branches);
 	if (dlg.exec() == QDialog::Accepted) {
 		// setLogEnabled(g, true);
 		QStringList names = dlg.selectedBranchNames();
@@ -6858,26 +6862,24 @@ void MainWindow::deleteRemoteBranch(GitCommitItem const &commit)
 	}
 }
 
-QStringList MainWindow::remoteBranches(GitHash const &id, QStringList *all)
+MainWindow::RemoteBranches MainWindow::remoteBranches(GitHash const &id)
 {
-	if (all) all->clear();
-
-	QStringList list;
+	RemoteBranches ret;
 
 	GitRunner g = git();
 	if (isValidWorkingCopy(g)) {
 		NamedCommitList named_commits = namedCommitItems(Branches | Remotes);
 		for (NamedCommitItem const &item : named_commits) {
 			if (item.id == id && !item.remote.empty()) {
-				list.push_back(QString::fromStdString(item.remote / item.name));
+				ret.branches.push_back(QString::fromStdString(item.remote / item.name));
 			}
-			if (all && !item.remote.empty() && item.name != "HEAD") {
-				all->push_back(QString::fromStdString(item.remote / item.name));
+			if (&ret.all_branches && !item.remote.empty() && item.name != "HEAD") {
+				ret.all_branches.push_back(QString::fromStdString(item.remote / item.name));
 			}
 		}
 	}
 
-	return list;
+	return ret;
 }
 
 void runCommand(QString const &cmd)

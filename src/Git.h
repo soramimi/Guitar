@@ -47,7 +47,7 @@ public:
 
 private:
 	std::vector<std::string> make_branch_list_(const std::optional<GitResult> &result);
-		std::vector<GitFileStatus> status_s_u_(std::string *out);
+	std::vector<GitFileStatus> status_s_u_(std::string *out);
 	bool commit_(const std::string &msg, bool amend, bool sign, AbstractPtyProcess *pty);
 	static void parseAheadBehind(const std::string &s, GitBranch *b);
 	Git();
@@ -71,8 +71,8 @@ public:
 	{
 		return session_->gitinfo();
 	}
-
-		std::vector<char> toByteArray(const std::optional<GitResult> &var) const;
+	
+	std::vector<char> toByteArray(const std::optional<GitResult> &var) const;
 	bool isValidGitCommand() const
 	{
 		return session_->is_connected();
@@ -131,12 +131,12 @@ public:
 	std::optional<GitCommitItem> log_signature(GitHash const &id);
 	GitCommitItemList log(int maxcount);
 	std::optional<GitCommitItem> queryCommitItem(const GitHash &id);
-
-        static GitCloneData preclone(const std::string &url, const std::string &path);
+	
+	static GitCloneData preclone(const std::string &url, const std::string &path);
 	bool clone(GitCloneData const &data, AbstractPtyProcess *pty);
 
 	std::vector<GitFileStatus> status_s_u(std::string *out = nullptr);
-	std::optional<std::vector<char> > cat_file(GitHash const &id);
+	std::optional<std::vector<char>> cat_file(GitHash const &id);
 	void resetFile(const std::string &path);
 	void resetAllFiles();
 	
@@ -211,7 +211,7 @@ public:
 
 	using ReflogItemList = std::vector<GitReflogItem>;
 
-	bool reflog(ReflogItemList *out, int maxcount = 100);
+	std::optional<Git::ReflogItemList> reflog(int maxcount = 100);
 	std::vector<char> blame(const std::string &path);
 
 	std::string signingKey(GitSource purpose);
@@ -261,8 +261,6 @@ struct NamedCommitItem {
 };
 using NamedCommitList = std::vector<NamedCommitItem>;
 
-void parseDiff(const std::string_view &s, GitDiff const *info, GitDiff *out);
-
-void parseGitSubModules(QByteArray const &ba, std::vector<GitSubmoduleItem> *out);
+std::vector<GitSubmoduleItem> parseGitSubModules(QByteArray const &ba);
 
 #endif // GIT_H
