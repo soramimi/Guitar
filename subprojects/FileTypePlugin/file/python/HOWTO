@@ -1,0 +1,7 @@
+pip-compile pyproject.toml
+pip-sync
+python3.10 -m pip install .
+python3.10 -m build
+twine check dist/*
+twine upload -r testpypi dist/*
+twine upload dist/*

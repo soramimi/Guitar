@@ -1,0 +1,15 @@
+.deps
+Makefile
+config.h
+config.log
+config.status
+libtool
+stamp-h1
+.libs
+*.lo
+*.la
+Makefile.in
+file
+test
+.gitignore
+magic.h
