@@ -7,6 +7,10 @@
 **Guitar** is a fast, lightweight Git GUI client written in C++ with Qt 6.  
 It provides an intuitive graphical interface for everyday Git workflows on Windows, macOS, and Linux.
 
+> **Notice (2026-07-02):** 
+> AppImage support is planned to be discontinued because ongoing maintenance has become difficult. I am looking for someone to take over maintenance in my place.  
+> （AppImage対応はメンテナンス継続が困難なため、対応を終了する予定です。私の代わりのメンテナーを募集します。）
+
 > **Notice (2026-04-07):** There are no plans to release a Mac version in the future. CI and nightly-build have also been discontinued.  
 > （今後mac版をリリースする予定はありません。CIとnightly-buildも廃止されました。）
 
@@ -17,8 +21,8 @@ It provides an intuitive graphical interface for everyday Git workflows on Windo
 | | |
 |---|---|
 | **License** | Open Source, Free Software — [GPL v2](LICENSE.txt) (commercial use also free) |
-| **Platforms** | Windows, macOS, Linux, Haiku, Raspbian |
-| **Language** | C++17 |
+| **Platforms** | Windows, Linux |
+| **Language** | C++20 |
 | **Framework** | Qt 6 |
 
 ---
