@@ -34,7 +34,7 @@ run "ruby prepare.rb"
 
 FileUtils.cp $script_dir + "/zlib/_bin/libz.lib", "_bin/"
 
-Dir.chdir("filetype") {
+Dir.chdir("subprojects/FileTypePlugin") {
 	run "build-msvc.bat"
 }
 

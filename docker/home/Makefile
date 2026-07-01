@@ -4,15 +4,19 @@ clean:
 	cd /Guitar && rm -fr _bin _build
 	cd /Guitar/filetype && rm -fr _bin _build
 
-build: clean incrementalsearchplugin
+build: clean filetypeplugin incrementalsearchplugin
 	cd /Guitar ; ruby prepare.rb
-	cd /Guitar/filetype/ && bash build-gcc.sh
 	mkdir /Guitar/_build && cd /Guitar/_build && qmake6 "CONFIG+=release" /Guitar/Guitar.pro && make -j8
 
-build5: clean incrementalsearchplugin5
+build5: clean filetypeplugin5 incrementalsearchplugin5
 	cd /Guitar ; ruby prepare.rb
-	cd /Guitar/filetype/ && QMAKE=qmake bash build-gcc.sh
 	mkdir /Guitar/_build && cd /Guitar/_build && qmake "CONFIG+=release" /Guitar/Guitar.pro && make -j8
+
+filetypeplugin:
+	cd /Guitar/subprojects/FileTypePlugin/ && bash build-gcc.sh
+
+filetypeplugin5:
+	cd /Guitar/subprojects/FileTypePlugin/ && QMAKE=qmake bash build-gcc.sh
 
 incrementalsearchplugin:
 	cd /Guitar/subprojects/IncrementalSearchPlugin/ && bash build-gcc.sh

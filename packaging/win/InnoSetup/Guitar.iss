@@ -52,6 +52,7 @@ Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{
 Source: "{#ProjectRoot}\_release\soramimi.jp\Guitar\{#MyAppExeName}"; DestDir: "{app}"; Flags: ignoreversion
 Source: "{#ProjectRoot}\_release\soramimi.jp\Guitar\D3Dcompiler_47.dll"; DestDir: "{app}"; Flags: ignoreversion
 Source: "{#ProjectRoot}\_release\soramimi.jp\Guitar\Guitar.exe"; DestDir: "{app}"; Flags: ignoreversion
+Source: "{#ProjectRoot}\_release\soramimi.jp\Guitar\filetypeplugin.dll"; DestDir: "{app}"; Flags: ignoreversion
 Source: "{#ProjectRoot}\_release\soramimi.jp\Guitar\incrementalsearchplugin.dll"; DestDir: "{app}"; Flags: ignoreversion
 Source: "{#ProjectRoot}\_release\soramimi.jp\Guitar\zlib1.dll"; DestDir: "{app}"; Flags: ignoreversion
 Source: "{#ProjectRoot}\_release\soramimi.jp\Guitar\zstd.dll"; DestDir: "{app}"; Flags: ignoreversion

@@ -32,26 +32,19 @@ C:\Qt\6.11.0\msvc2022_64\bin\qmake.exe "CONFIG+=release" ../liboniguruma.pro
 C:\Qt\Tools\QtCreator\bin\jom\jom.exe
 cd ..
 
-echo --- libfiletype debug
+echo --- FileTypePlugin debug
 rmdir /s /q _build
 mkdir _build
 cd _build
-C:\Qt\6.11.0\msvc2022_64\bin\qmake.exe "CONFIG+=debug" ../libfiletype.pro
+C:\Qt\6.11.0\msvc2022_64\bin\qmake.exe "CONFIG+=debug" ../FileTypePlugin.pro
 C:\Qt\Tools\QtCreator\bin\jom\jom.exe
 cd ..
 
-echo --- libfiletype release
+echo --- FileTypePlugin release
 rmdir /s /q _build
 mkdir _build
 cd _build
-C:\Qt\6.11.0\msvc2022_64\bin\qmake.exe "CONFIG+=release" ../libfiletype.pro
+C:\Qt\6.11.0\msvc2022_64\bin\qmake.exe "CONFIG+=release" ../FileTypePlugin.pro
 C:\Qt\Tools\QtCreator\bin\jom\jom.exe
 cd ..
-
-
-rem cd lib
-rem lib /OUT:filetype.lib filetype.lib file.lib oniguruma.lib
-rem del file.* oniguruma.*
-rem cd ..
-
 

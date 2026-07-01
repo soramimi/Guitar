@@ -30,13 +30,13 @@ template <typename ImplType, typename Interface> std::shared_ptr<ImplType> loadP
 	if (plugin) {
 		ret = std::shared_ptr<ImplType>(plugin->create());
 		if (ret->open()) {
-			logprintf(LOG_DEFAULT, "%s is loaded successfully.", c_name);
+			qDebug() << QString::asprintf("%s is loaded successfully.", c_name);
 		} else {
-			logprintf(LOG_DEFAULT, "Failed to load the plugin %s", name);
+			qDebug() << QString::asprintf("Failed to load the plugin %s", c_name);
 			return {};
 		}
 	} else {
-		logprint(LOG_DEFAULT, loader.errorString().toStdString().c_str());
+		qDebug() << loader.errorString();
 		return {};
 	}
 	

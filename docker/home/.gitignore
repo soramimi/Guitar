@@ -1,0 +1,7 @@
+.bash_history
+.bashrc
+.container.sh
+.profile
+.viminfo
+*.AppImage
+_appdir

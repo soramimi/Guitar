@@ -1,25 +1,24 @@
 
 NPROC := $(shell nproc)
 
-all: build appimage
+all: build filetypeplugin incrementalsearchplugin appimage
 
 appimage:
 	rm -f Guitar-*.AppImage
 	mkdir -p _appdir/usr/bin
+	mkdir -p _appdir/usr/lib
 	mkdir -p _appdir/usr/share/applications
 	mkdir -p _appdir/usr/share/icons/hicolor/256x256/apps
 	mkdir -p _appdir/usr/share/icons/hicolor/scalable/apps
 
-	cp _build/Guitar _appdir/usr/bin/Guitar
+	cp ../../_bin/Guitar _appdir/usr/bin/
+	cp ../../lib/libfiletypeplugin.so _appdir/usr/lib/
+	cp ../../lib/libincrementalsearchplugin.so _appdir/usr/lib/
 	strip _appdir/usr/bin/Guitar
 	cp ../../LinuxDesktop/Guitar.svg _appdir/usr/share/icons/hicolor/scalable/apps/Guitar.svg
 	cp ../../src/resources/image/guitar.png _appdir/usr/share/icons/hicolor/256x256/apps/Guitar.png
 	cp Guitar.desktop _appdir/Guitar.desktop
-	#mkdir -p _appdir/usr/bin/platforminputcontexts/
-	#cp /home/soramimi/develop/fcitx-qt5/build/qt5/platforminputcontext/libfcitxplatforminputcontextplugin.so _appdir/usr/bin/platforminputcontexts/
-
 	./linuxdeploy-x86_64.AppImage --appdir _appdir -i _appdir/usr/share/icons/hicolor/scalable/apps/Guitar.svg -d _appdir/Guitar.desktop --output appimage
-
 	mv Guitar-*.AppImage Guitar-x86_64.AppImage
 
 clean:
@@ -28,8 +27,21 @@ clean:
 	rm -fr _build
 
 build:
-	-mkdir _build
-	cd _build; /usr/bin/qmake "CONFIG+=release" ../../../Guitar.pri; make -j8
+	-rm -fr _build
+	mkdir _build
+	cd _build; /usr/bin/qmake "CONFIG+=release" ../../../Guitar.pro; make -j8
+
+filetypeplugin:
+	-rm -fr _build
+	mkdir _build
+	cd _build; /usr/bin/qmake "CONFIG+=release" ../../../subprojects/FileTypePlugin/libfile.pro; make -j8
+	cd _build; /usr/bin/qmake "CONFIG+=release" ../../../subprojects/FileTypePlugin/liboniguruma.pro; make -j8
+	cd _build; /usr/bin/qmake "CONFIG+=release" ../../../subprojects/FileTypePlugin/FileTypePlugin.pro; make -j8
+
+incrementalsearchplugin:
+	-rm -fr _build
+	mkdir _build
+	cd _build; /usr/bin/qmake "CONFIG+=release" ../../../subprojects/IncrementalSearchPlugin/IncrementalSearchPlugin.pro; make -j8
 
 archlinux:
 	sudo pacman -S --noconfirm base-devel double-conversion libb2 ruby

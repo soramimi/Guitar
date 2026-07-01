@@ -33,6 +33,6 @@ make2 libfile release
 make2 libfile debug
 make2 liboniguruma release
 make2 liboniguruma debug
-#make2 libfiletype release
-#make2 libfiletype debug
+make2 FileTypePlugin release
+make2 FileTypePlugin debug
 

@@ -6,8 +6,7 @@ CONFIG(debug,debug|release):TARGET = filetypeplugind
 TEMPLATE = lib
 CONFIG += plugin
 
-gcc:DESTDIR = $$PWD/../../lib
-msvc:DESTDIR = $$PWD/../../_bin
+DESTDIR = $$PWD/../../lib
 
 gcc:DEFINES += HAVE_STRCASESTR
 msvc:QMAKE_CXXFLAGS += /FI $$PWD/file-msvc/unistd.h

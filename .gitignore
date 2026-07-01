@@ -68,3 +68,4 @@ IncrementalSearch/dicedit/utf8dic
 subprojects/IncrementalSearchPlugin/mecab/mecab/autom4te.cache/requests
 subprojects/IncrementalSearchPlugin/mecab/mecab/libtool
 *.so*
+lib/

@@ -25,6 +25,7 @@ FileUtils.mkpath($dstdir + "/usr/lib")
 FileUtils.mkpath($dstdir + "/usr/share/applications")
 FileUtils.mkpath($dstdir + "/usr/share/icons/guitar")
 FileUtils.cp("#{$project_root}/_bin/Guitar", $dstdir + "/usr/bin/")
+FileUtils.cp("#{$project_root}/lib/libfiletypeplugin.so", $dstdir + "/usr/lib/")
 FileUtils.cp("#{$project_root}/lib/libincrementalsearchplugin.so", $dstdir + "/usr/lib/")
 system "strip #{$dstdir}/usr/bin/Guitar"
 FileUtils.cp("#{$project_root}/LinuxDesktop/Guitar.svg", $dstdir + "/usr/share/icons/guitar/")
