@@ -1,4 +1,5 @@
 #!/bin/bash
+set -euo pipefail
 
 # このスクリプト内の相対パスが安定するよう、リポジトリのルートへ移動する。
 BASEDIR=$(realpath $(dirname $0))
@@ -61,13 +62,22 @@ pushd mecab/mecab
 make -j8
 popd
 
-# qmake と make で本体をビルドする。
-rm -fr _build
-mkdir _build
-pushd _build
-${QMAKE} "CONFIG+=release" ../IncrementalSearchPlugin.pro
-make -j16
-popd
+function make2 () {
+	echo --- $1 $2
+	rm -fr _build
+	mkdir _build
+	pushd _build
+	${QMAKE} "CONFIG+=$2" ../$1.pro
+	make -j10
+	popd
+}
+
+if [ "${NO_DEBUG:=}" = "" ]; then
+	make2 IncrementalSearchPlugin debug
+fi
+if [ "${NO_RELEASE:=}" = "" ]; then
+	make2 IncrementalSearchPlugin release
+fi
 
 popd
 

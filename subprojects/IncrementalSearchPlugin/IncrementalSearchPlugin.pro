@@ -12,10 +12,10 @@ gcc:QMAKE_CXXFLAGS += -include $$PWD/config.h
 INCLUDEPATH += $$PWD/src
 INCLUDEPATH += $$PWD/mecab/mecab/src
 
-DEFINES += NOMINMAX
-
 DEFINES += HAVE_STDINT_H
 DEFINES += HAVE_CONFIG_H
+
+DEFINES += USE_CUSTOM_DICTIONARY_LOADER
 
 unix:LIBS += -ldl
 win32:LIBS += -lole32 -loleaut32

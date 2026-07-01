@@ -69,3 +69,10 @@ subprojects/IncrementalSearchPlugin/mecab/mecab/autom4te.cache/requests
 subprojects/IncrementalSearchPlugin/mecab/mecab/libtool
 *.so*
 lib/
+subprojects/IncrementalSearchPlugin/mecab/mecab/src/.libs/
+subprojects/IncrementalSearchPlugin/mecab/mecab/src/mecab
+subprojects/IncrementalSearchPlugin/mecab/mecab/src/mecab-cost-train
+subprojects/IncrementalSearchPlugin/mecab/mecab/src/mecab-dict-gen
+subprojects/IncrementalSearchPlugin/mecab/mecab/src/mecab-dict-index
+subprojects/IncrementalSearchPlugin/mecab/mecab/src/mecab-system-eval
+subprojects/IncrementalSearchPlugin/mecab/mecab/src/mecab-test-gen

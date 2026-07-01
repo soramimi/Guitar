@@ -1,4 +1,5 @@
 #!/bin/bash
+set -euo pipefail
 
 : "${QMAKE:=qmake6}"
 
@@ -26,13 +27,22 @@ function make2 () {
 #  371 |         if (sandbox && enable_landlock(flags, action) == -1)
 #      |             ^~~~~~~
 
+set +e
 make1 file
+set -e
+
 make1 oniguruma
 
-make2 libfile release
-make2 libfile debug
-make2 liboniguruma release
-make2 liboniguruma debug
-make2 FileTypePlugin release
-make2 FileTypePlugin debug
+if [ "${NO_DEBUG:=}" = "" ]; then
+	make2 libfile debug
+	make2 liboniguruma debug
+	make2 FileTypePlugin debug
+fi
+
+if [ "${NO_RELEASE:=}" = "" ]; then
+	make2 libfile release
+	make2 liboniguruma release
+	make2 FileTypePlugin release
+fi
+
 

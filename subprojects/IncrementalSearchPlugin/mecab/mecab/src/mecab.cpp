@@ -5,8 +5,9 @@
 //  Copyright(C) 2004-2006 Nippon Telegraph and Telephone Corporation
 #include "mecab.h"
 // #include "winmain.h"
-#include <cstdarg>
 #include "common.h"
+#include <cstdarg>
+#include <vector>
 
 void x_logprintf(char const *file, int line, const char *format, ...)
 {
@@ -15,7 +16,8 @@ void x_logprintf(char const *file, int line, const char *format, ...)
 	va_start(ap, format);
 	char *text = nullptr;
 	int n = vasprintf(&text, format, ap);
-	while (n > 0 && isspace((unsigned char)text[n - 1])) n--;
+	while (n > 0 && isspace((unsigned char)text[n - 1]))
+		n--;
 	text[n] = 0;
 	va_end(ap);
 	if (text) {
@@ -27,4 +29,9 @@ void x_logprintf(char const *file, int line, const char *format, ...)
 		}
 		free(text);
 	}
+}
+
+int main(int argc, char **argv)
+{
+	return 0;
 }

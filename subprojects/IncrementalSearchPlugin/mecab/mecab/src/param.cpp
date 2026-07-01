@@ -3,13 +3,13 @@
 //
 //  Copyright(C) 2001-2006 Taku Kudo <taku@chasen.org>
 //  Copyright(C) 2004-2006 Nippon Telegraph and Telephone Corporation
-#include <cstdio>
-#include <fstream>
-#include "common.h"
 #include "param.h"
+#include "common.h"
 #include "string_buffer.h"
 #include "utils.h"
+#include <cstdio>
 #include <fcntl.h>
+#include <fstream>
 #include <sys/stat.h>
 
 #ifdef _WIN32
@@ -23,51 +23,64 @@
 
 bool x_get_resource_i8(char const *name, std::vector<char> *buf);
 
+#ifndef USE_CUSTOM_DICTIONARY_LOADER
+bool x_get_resource_i8(char const *path, std::vector<char> *buf)
+{
+	return false;
+}
+bool x_get_resource_i16(char const *path, std::vector<short int> *buf)
+{
+	return false;
+}
+#endif
+
 namespace MeCab {
 namespace {
-void init_param(std::string *help,
-				std::string *version,
-				const std::string &system_name,
-				const Option *opts) {
-	*help = std::string(COPYRIGHT) + "\nUsage: " +
-			system_name + " [options] files\n";
+	void init_param(std::string *help,
+		std::string *version,
+		const std::string &system_name,
+		const Option *opts)
+	{
+		*help = std::string(COPYRIGHT) + "\nUsage: " + system_name + " [options] files\n";
 
-	*version = std::string(PACKAGE) + " of " + VERSION + '\n';
+		*version = std::string(PACKAGE) + " of " + VERSION + '\n';
 
-	size_t max = 0;
-	for (size_t i = 0; opts[i].name; ++i) {
-		size_t l = 1 + std::strlen(opts[i].name);
-		if (opts[i].arg_description)
-			l += (1 + std::strlen(opts[i].arg_description));
-		max = std::max(l, max);
-	}
-
-	for (size_t i = 0; opts[i].name; ++i) {
-		size_t l = std::strlen(opts[i].name);
-		if (opts[i].arg_description)
-			l += (1 + std::strlen(opts[i].arg_description));
-		*help += " -";
-		*help += opts[i].short_name;
-		*help += ", --";
-		*help += opts[i].name;
-		if (opts[i].arg_description) {
-			*help += '=';
-			*help += opts[i].arg_description;
+		size_t max = 0;
+		for (size_t i = 0; opts[i].name; ++i) {
+			size_t l = 1 + std::strlen(opts[i].name);
+			if (opts[i].arg_description)
+				l += (1 + std::strlen(opts[i].arg_description));
+			max = std::max(l, max);
 		}
-		for (; l <= max; l++) *help += ' ';
-		*help += opts[i].description;
+
+		for (size_t i = 0; opts[i].name; ++i) {
+			size_t l = std::strlen(opts[i].name);
+			if (opts[i].arg_description)
+				l += (1 + std::strlen(opts[i].arg_description));
+			*help += " -";
+			*help += opts[i].short_name;
+			*help += ", --";
+			*help += opts[i].name;
+			if (opts[i].arg_description) {
+				*help += '=';
+				*help += opts[i].arg_description;
+			}
+			for (; l <= max; l++)
+				*help += ' ';
+			*help += opts[i].description;
+			*help += '\n';
+		}
+
 		*help += '\n';
+		return;
 	}
+} // namespace
 
-	*help += '\n';
-	return;
-}
-}  // namespace
-
-void Param::dump_config(std::ostream *os) const {
+void Param::dump_config(std::ostream *os) const
+{
 	for (std::map<std::string, std::string>::const_iterator it = conf_.begin();
-		 it != conf_.end();
-		 ++it) {
+		it != conf_.end();
+		++it) {
 		*os << it->first << ": " << it->second << std::endl;
 	}
 }
@@ -126,27 +139,33 @@ bool Param::load(const char *filename)
 		CHECK_FALSE(pos != std::string::npos) << "format error: " << line;
 
 		size_t s1, s2;
-		for (s1 = pos+1; s1 < line.size() && isspace(line[s1]); s1++);
-		for (s2 = pos-1; static_cast<long>(s2) >= 0 && isspace(line[s2]); s2--);
+		for (s1 = pos + 1; s1 < line.size() && isspace(line[s1]); s1++)
+			;
+		for (s2 = pos - 1; static_cast<long>(s2) >= 0 && isspace(line[s2]); s2--)
+			;
 		const std::string value = line.substr(s1, line.size() - s1);
-		const std::string key   = line.substr(0, s2 + 1);
+		const std::string key = line.substr(0, s2 + 1);
 		set<std::string>(key.c_str(), value, false);
 	}
 
 	return true;
 }
 
-bool Param::open(int argc, char **argv, const Option *opts) {
+bool Param::open(int argc, char **argv, const Option *opts)
+{
 	int ind = 0;
 	int _errno = 0;
 
-#define GOTO_ERROR(n) {                         \
-	_errno = n;                                 \
-	goto ERROR; } while (0)
+#define GOTO_ERROR(n) \
+	{                 \
+		_errno = n;   \
+		goto ERROR;   \
+	}                 \
+	while (0)
 
 	if (argc <= 0) {
 		system_name_ = "unknown";
-		return true;  // this is not error
+		return true; // this is not error
 	}
 
 	system_name_ = std::string(argv[0]);
@@ -154,8 +173,7 @@ bool Param::open(int argc, char **argv, const Option *opts) {
 	init_param(&help_, &version_, system_name_, opts);
 
 	for (size_t i = 0; opts[i].name; ++i) {
-		if (opts[i].default_value) set<std::string>
-				(opts[i].name, opts[i].default_value);
+		if (opts[i].default_value) set<std::string>(opts[i].name, opts[i].default_value);
 	}
 
 	for (ind = 1; ind < argc; ind++) {
@@ -163,16 +181,16 @@ bool Param::open(int argc, char **argv, const Option *opts) {
 			// long options
 			if (argv[ind][1] == '-') {
 				char *s;
-				for (s = &argv[ind][2]; *s != '\0' && *s != '='; s++);
+				for (s = &argv[ind][2]; *s != '\0' && *s != '='; s++)
+					;
 				size_t len = (size_t)(s - &argv[ind][2]);
-				if (len == 0) return true;  // stop the scanning
+				if (len == 0) return true; // stop the scanning
 
 				bool hit = false;
 				size_t i = 0;
 				for (i = 0; opts[i].name; ++i) {
 					size_t nlen = std::strlen(opts[i].name);
-					if (nlen == len && std::strncmp(&argv[ind][2],
-													opts[i].name, len) == 0) {
+					if (nlen == len && std::strncmp(&argv[ind][2], opts[i].name, len) == 0) {
 						hit = true;
 						break;
 					}
@@ -182,9 +200,9 @@ bool Param::open(int argc, char **argv, const Option *opts) {
 
 				if (opts[i].arg_description) {
 					if (*s == '=') {
-						set<std::string>(opts[i].name, s+1);
+						set<std::string>(opts[i].name, s + 1);
 					} else {
-						if (argc == (ind+1)) GOTO_ERROR(1);
+						if (argc == (ind + 1)) GOTO_ERROR(1);
 						set<std::string>(opts[i].name, argv[++ind]);
 					}
 				} else {
@@ -209,7 +227,7 @@ bool Param::open(int argc, char **argv, const Option *opts) {
 					if (argv[ind][2] != '\0') {
 						set<std::string>(opts[i].name, &argv[ind][2]);
 					} else {
-						if (argc == (ind+1)) GOTO_ERROR(1);
+						if (argc == (ind + 1)) GOTO_ERROR(1);
 						set<std::string>(opts[i].name, argv[++ind]);
 					}
 				} else {
@@ -218,7 +236,7 @@ bool Param::open(int argc, char **argv, const Option *opts) {
 				}
 			}
 		} else {
-			rest_.push_back(std::string(argv[ind]));  // others
+			rest_.push_back(std::string(argv[ind])); // others
 		}
 	}
 
@@ -226,37 +244,48 @@ bool Param::open(int argc, char **argv, const Option *opts) {
 
 ERROR:
 	switch (_errno) {
-	case 0: WHAT << "unrecognized option `" << argv[ind] << "`"; break;
-	case 1: WHAT << "`" << argv[ind] << "` requires an argument";  break;
-	case 2: WHAT << "`" << argv[ind] << "` doesn't allow an argument"; break;
+	case 0:
+		WHAT << "unrecognized option `" << argv[ind] << "`";
+		break;
+	case 1:
+		WHAT << "`" << argv[ind] << "` requires an argument";
+		break;
+	case 2:
+		WHAT << "`" << argv[ind] << "` doesn't allow an argument";
+		break;
 	}
 	return false;
 }
 
-void Param::clear() {
+void Param::clear()
+{
 	conf_.clear();
 	rest_.clear();
 }
 
-bool Param::open(const char *arg, const Option *opts) {
+bool Param::open(const char *arg, const Option *opts)
+{
 	scoped_fixed_array<char, BUF_SIZE> str;
 	std::strncpy(str.get(), arg, str.size());
-	char* ptr[64];
+	char *ptr[64];
 	unsigned int size = 1;
-	ptr[0] = const_cast<char*>(PACKAGE);
+	ptr[0] = const_cast<char *>(PACKAGE);
 
 	for (char *p = str.get(); *p;) {
-		while (isspace(*p)) *p++ = '\0';
+		while (isspace(*p))
+			*p++ = '\0';
 		if (*p == '\0') break;
 		ptr[size++] = p;
 		if (size == sizeof(ptr)) break;
-		while (*p && !isspace(*p)) p++;
+		while (*p && !isspace(*p))
+			p++;
 	}
 
 	return open(size, ptr, opts);
 }
 
-int Param::help_version() const {
+int Param::help_version() const
+{
 	if (get<bool>("help")) {
 		std::cout << help();
 		return 0;

@@ -55,44 +55,59 @@ extern "C" {
 #define O_BINARY 0
 #endif
 
+#ifdef USE_CUSTOM_DICTIONARY_LOADER
 bool x_get_resource_i8(char const *name, std::vector<char> *buf);
 bool x_get_resource_i16(char const *name, std::vector<short int> *buf);
+#else
+static inline bool x_get_resource_i8(char const *path, std::vector<char> *buf)
+{
+	return false;
+}
+static inline bool x_get_resource_i16(char const *path, std::vector<short int> *buf)
+{
+	return false;
+}
+#endif
 
-template <typename T> bool _t_get_resource(char const *name, std::vector<T> *buf);
-template <> inline bool _t_get_resource<short int>(char const *name, std::vector<short int> *buf)
+template <typename T>
+bool _t_get_resource(char const *name, std::vector<T> *buf);
+template <>
+inline bool _t_get_resource<short int>(char const *name, std::vector<short int> *buf)
 {
 	return x_get_resource_i16(name, buf);
 }
 
-template <> inline bool _t_get_resource<char>(char const *name, std::vector<char> *buf)
+template <>
+inline bool _t_get_resource<char>(char const *name, std::vector<char> *buf)
 {
 	return x_get_resource_i8(name, buf);
 }
 
 namespace MeCab {
 
-template <class T> class Mmap {
+template <class T>
+class Mmap {
 private:
 	std::vector<T> text;
-	size_t       length;
-	std::string  fileName;
+	size_t length;
+	std::string fileName;
 	whatlog what_;
 
-	int    fd;
-	int    flag;
+	int fd;
+	int flag;
 
 public:
-	T&       operator[](size_t n)       { return *(text.data() + n); }
-	const T& operator[](size_t n) const { return *(text.data() + n); }
-	T*       begin()           { return text.data(); }
-	const T* begin()    const  { return text.data(); }
-	T*       end()           { return text.data() + size(); }
-	const T* end()    const  { return text.data() + size(); }
-	size_t size()               { return length/sizeof(T); }
-	const char *what()          { return what_.str(); }
-	const char *file_name()     { return fileName.c_str(); }
-	size_t file_size()          { return length; }
-	bool empty()                { return(length == 0); }
+	T &operator[](size_t n) { return *(text.data() + n); }
+	const T &operator[](size_t n) const { return *(text.data() + n); }
+	T *begin() { return text.data(); }
+	const T *begin() const { return text.data(); }
+	T *end() { return text.data() + size(); }
+	const T *end() const { return text.data() + size(); }
+	size_t size() { return length / sizeof(T); }
+	const char *what() { return what_.str(); }
+	const char *file_name() { return fileName.c_str(); }
+	size_t file_size() { return length; }
+	bool empty() { return (length == 0); }
 
 	bool open(const char *filename)
 	{
@@ -111,7 +126,7 @@ public:
 		fileName = std::string(filename);
 
 		// if (std::strcmp(mode, "r") == 0) {
-			flag = O_RDONLY;
+		flag = O_RDONLY;
 		// } else if (std::strcmp(mode, "r+") == 0) {
 		// 	flag = O_RDWR;
 		// } else {
@@ -119,16 +134,16 @@ public:
 		// }
 
 		CHECK_FALSE((fd = ::open(filename, flag | O_BINARY)) >= 0)
-				<< "open failed: " << filename;
+			<< "open failed: " << filename;
 
 		CHECK_FALSE(::fstat(fd, &st) >= 0)
-				<< "failed to get file size: " << filename;
+			<< "failed to get file size: " << filename;
 
 		length = st.st_size;
 
 		text.resize(length);
 		CHECK_FALSE(::read(fd, text.data(), length) >= 0)
-				<< "read() failed: " << filename;
+			<< "read() failed: " << filename;
 		::close(fd);
 		fd = -1;
 

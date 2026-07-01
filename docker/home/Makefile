@@ -2,7 +2,12 @@ main:
 
 clean:
 	cd /Guitar && rm -fr _bin _build
-	cd /Guitar/filetype && rm -fr _bin _build
+
+build-all: clean filetypeplugin incrementalsearchplugin
+	cd /Guitar && QMAKE=qmake6 ruby scripts/make_all.rb
+
+build-all5: clean filetypeplugin5 incrementalsearchplugin5
+	cd /Guitar && QMAKE=qmake ruby scripts/make_all.rb
 
 build: clean filetypeplugin incrementalsearchplugin
 	cd /Guitar ; ruby prepare.rb

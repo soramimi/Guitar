@@ -39,9 +39,9 @@ jobs:
     - name: Prepare environment
       run: ruby prepare.rb
       
-    - name: Build libfiletype
+    - name: Build FileTypePlugin
       run: |
-        cd filetype
+        cd subprojects/FileTypePlugin
         bash build-gcc.sh
         cd ..
 
@@ -50,15 +50,10 @@ jobs:
         cd subprojects/IncrementalSearchPlugin
         bash build-gcc.sh
         cd ..
-        
+
     - name: Build Guitar
       run: |
-        rm -fr _build_guitar
-        mkdir _build_guitar
-        cd _build_guitar
-        qmake6 "CONFIG+=release" ../Guitar.pro
-        make -j$(nproc)
-        cd ..
+        ruby scripts/make_all.rb
         
     - name: Download linuxdeploy
       run: |
