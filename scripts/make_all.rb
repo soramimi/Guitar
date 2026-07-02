@@ -10,11 +10,25 @@
 #
 # Windows path constants below can be adjusted to match your local Qt installation.
 
+require 'fileutils'
+
 # Resolve key directory paths relative to this script.
 $script_dir = __dir__
 $project_dir = File.realpath("#{$script_dir}/..")
 $bin_dir = $project_dir + "/_bin"
 $lib_dir = $project_dir + "/lib"
+$release_dir = "#{$project_dir}/_release"
+
+# Run the project's preparation script (code generation, etc.) before building.
+load "#{$project_dir}/prepare.rb"
+$branch_name = `git rev-parse --abbrev-ref HEAD`.strip
+
+$suffix = ""
+if $branch_name == "main" or $branch_name == "master"
+	$suffix = ""
+else
+	$suffix = $branch_name.gsub(/[^0-9A-Za-z]/, "-")
+end
 
 # Platform detection flags.
 $is_win = false  # true when building with MSVC on Windows
@@ -23,6 +37,9 @@ $is_gcc = false  # true when building with GCC on Linux
 # Build configuration flags.
 $make_debug = false    # set to true to also build the debug configuration
 $make_release = true   # set to false to skip the release configuration
+
+# Deployment configuration.
+load "#{$script_dir}/deployconf.rb"
 
 # Windows-specific tool paths (MSVC / Qt installation locations).
 $qt_win = ""
@@ -36,11 +53,7 @@ $platform = $1
 case $platform
 when "mswin", "mingw", "cygwin"
 	$is_win = true
-	# Adjust these paths to match your local Qt and Visual Studio installation.
-	$qt_win = "C:/Qt/6.11.0/msvc2022_64"
-	$windeployqt = $qt_win + "/bin/windeployqt.exe"
-	$jom_win = "C:/Qt/Tools/QtCreator/bin/jom/jom.exe"
-	$vcvars_bat = "C:/Program Files/Microsoft Visual Studio/2022/Community/VC/Auxiliary/Build/vcvars64.bat"
+	load "#{$script_dir}/winconf.rb"
 when "linux"
 	$is_gcc = true
 when "darwin"
@@ -51,10 +64,8 @@ else
 	exit 1
 end
 
-require 'fileutils'
-
-# Run the project's preparation script (code generation, etc.) before building.
-load "#{$project_dir}/prepare.rb"
+$win_installer_name = "Setup-Guitar-#{$version_a}.#{$version_b}.#{$version_c}#{$suffix}-windows-x64"
+$win_installer_exe = "#{$win_installer_name}.exe"
 
 # Set environment variables used by the platform-specific build scripts.
 if $is_win
@@ -127,6 +138,24 @@ def make_guitar_app()
 	end
 end
 
+def make_installer()
+	if $is_win then
+		run "\"#{$innosetup}\" #{$project_dir}/scripts/Guitar.iss /DProjectRoot=\"#{$project_dir}\" /O\"#{$release_dir}\" /F\"#{$win_installer_name}\""
+	end
+	if $is_gcc then
+		puts "Linux installer not implemented yet."
+	end
+end
+
+def deploy()
+	if $is_win then
+		run "curl -T #{$release_dir}/#{$win_installer_exe} ftp://#{$destination_path}/#{$win_installer_exe}"
+	end
+	if $is_gcc then
+		puts "Linux deployment not implemented yet."
+	end
+end
+
 # Remove all build output directories to start fresh.
 def clean()
 	FileUtils.rm_rf($bin_dir)
@@ -140,6 +169,11 @@ def main()
 	make_filetypeplugin()
 	make_incrementalsearchplugin()
 	make_guitar_app()
+	make_installer()
+	f = ENV["DEPLOY"] || false
+	if f then
+		deploy()
+	end
 end
 
 main()

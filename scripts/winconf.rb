@@ -1,0 +1,5 @@
+$qt_win = "C:/Qt/6.11.0/msvc2022_64"
+$windeployqt = "#{$qt_win}/bin/windeployqt.exe"
+$jom_win = "C:/Qt/Tools/QtCreator/bin/jom/jom.exe"
+$vcvars_bat = "C:/Program Files/Microsoft Visual Studio/2022/Community/VC/Auxiliary/Build/vcvars64.bat"
+$innosetup = "C:/Program Files (x86)/Inno Setup 6/ISCC.exe"
