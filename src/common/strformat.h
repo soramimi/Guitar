@@ -20,6 +20,8 @@
 #include <vector>
 #include <string_view>
 #include <cstddef>
+#include <limits>
+#include <type_traits>
 
 #ifndef STRFORMAT_NO_LOCALE
 #include <locale.h>
@@ -296,22 +298,20 @@ struct NumberParser {
 	}
 };
 
-#ifdef _MSC_VER
-#pragma warning(push)
-#pragma warning(disable: 4146) // unary minus operator applied to unsigned type, result still unsigned
-#endif
-
 template <typename T> static inline T parse_number(char const *ptr, std::function<T(char const *p, int radix)> conv)
 {
 	NumberParser t(ptr);
 	T v = conv(t.p, t.radix);
-	if (t.sign) v = -v;
+	if (t.sign) {
+		if constexpr (std::is_integral_v<T>) {
+			// negate in the unsigned domain to avoid signed overflow on INT_MIN
+			v = static_cast<T>(0 - static_cast<std::make_unsigned_t<T>>(v));
+		} else {
+			v = -v;
+		}
+	}
 	return v;
 }
-
-#ifdef _MSC_VER
-#pragma warning(pop)
-#endif
 
 struct Option_ {
 #ifdef STRFORMAT_NO_LOCALE
@@ -385,6 +385,7 @@ public:
 	enum Flags {
 		Locale = 0x0001,
 	};
+	static constexpr int max_precision = 1000;
 private:
 #if 0
 	StdAlloc allocator;
@@ -522,16 +523,17 @@ private:
 		if (val == 0) {
 			*--ptr = '0';
 		} else {
-			bool sign = (val < 0);
-			uint32_t v;
-			if (sign) {
-				v = (uint32_t)-val;
-			} else {
-				v = (uint32_t)val;;
+			if (val == std::numeric_limits<decltype(val)>::min()) {
+				*--ptr = '8';
+				val /= 10;
 			}
-			while (v != 0) {
-				int c = v % 10 + '0';
-				v /= 10;
+			bool sign = (val < 0);
+			if (sign) {
+				val = -val;
+			}
+			while (val != 0) {
+				int c = val % 10 + '0';
+				val /= 10;
 				*--ptr = c;
 			}
 			if (sign) {
@@ -572,7 +574,7 @@ private:
 		if (val == 0) {
 			*--ptr = '0';
 		} else {
-			if (val == INT64_MIN) {
+			if (val == std::numeric_limits<decltype(val)>::min()) {
 				*--ptr = '8';
 				val /= 10;
 			}
@@ -749,7 +751,7 @@ private:
 				q.head = q.next;
 			}
 		};
-		while (*q.next) {
+		while (q.next < q.text.end()) {
 			if (*q.next == '%') {
 				if (q.next[1] == '%') {
 					q.next++;
@@ -773,6 +775,7 @@ private:
 	Part *format_f(double value, bool trim_zeros)
 	{
 		int pr = q.precision < 0 ? 6 : q.precision;
+		if (pr > max_precision) pr = max_precision;
 		return format_double(value, pr, trim_zeros, q.plus);
 	}
 #endif
@@ -1011,10 +1014,12 @@ private:
 						if (!isdigit(c)) break;
 						if (value < 0) {
 							value = 0;
-						} else {
-							value *= 10;
 						}
-						value += c - '0';
+						if (value <= (std::numeric_limits<int>::max() - (c - '0')) / 10) {
+							value = value * 10 + (c - '0');
+						} else {
+							value = std::numeric_limits<int>::max();
+						}
 						q.next++;
 					}
 				}
@@ -1094,6 +1099,7 @@ private:
 #endif
 	void set_flags(int flags)
 	{
+		(void)flags;
 #ifndef STRFORMAT_NO_LOCALE
 		use_locale(flags & Locale);
 #endif
@@ -1140,6 +1146,7 @@ public:
 
 	string_formatter &reset(int flags, std::string_view text)
 	{
+		(void)flags;
 		clear();
 		q.text = text.empty() ? std::string_view("") : text;
 		q.head = q.text.data();
