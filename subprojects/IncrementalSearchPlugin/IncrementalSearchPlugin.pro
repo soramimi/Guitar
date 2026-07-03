@@ -1,11 +1,13 @@
 include(../../common.pri)
+
+!win32:DESTDIR = $$PWD/lib
+win32:DESTDIR = $$PWD/../../_bin
 CONFIG(debug,debug|release):TARGET = incrementalsearchplugind
 CONFIG(release,debug|release):TARGET = incrementalsearchplugin
+
 TEMPLATE = lib
 CONFIG += plugin
 QT = core
-
-DESTDIR = $$PWD/../../lib
 
 gcc:QMAKE_CXXFLAGS += -include $$PWD/config.h
 
@@ -20,12 +22,12 @@ DEFINES += USE_CUSTOM_DICTIONARY_LOADER
 unix:LIBS += -ldl
 win32:LIBS += -lole32 -loleaut32
 
-msvc {
+win32 {
 	LIBS += -lzlib
 	LIBS += -lzstd
 }
 
-!msvc {
+!win32 {
 	LIBS += -lz
 	LIBS += -lzstd
 }
@@ -137,6 +139,6 @@ SOURCES += \
 DISTFILES += \
 	incrementalsearchplugin.json
 
-!msvc {
+!win32 {
 	LIBS += -ldl
 }

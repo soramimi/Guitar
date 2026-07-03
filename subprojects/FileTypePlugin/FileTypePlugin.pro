@@ -1,20 +1,21 @@
+include(../../common.pri)
 
-QT = core
-
+!win32:DESTDIR = $$PWD/lib
+win32:DESTDIR = $$PWD/../../_bin
 CONFIG(release,debug|release):TARGET = filetypeplugin
 CONFIG(debug,debug|release):TARGET = filetypeplugind
+
 TEMPLATE = lib
 CONFIG += plugin
-
-DESTDIR = $$PWD/../../lib
+QT = core
 
 gcc:DEFINES += HAVE_STRCASESTR
-msvc:QMAKE_CXXFLAGS += /FI $$PWD/file-msvc/unistd.h
+win32:QMAKE_CXXFLAGS += /FI $$PWD/file-msvc/unistd.h
 
-msvc:DEFINES += DLLEXPORT=__declspec(dllexport)
-msvc:INCLUDEPATH += C:/vcpkg/installed/x64-windows/include
+win32:DEFINES += DLLEXPORT=__declspec(dllexport)
+win32:INCLUDEPATH += C:/vcpkg/installed/x64-windows/include
 
-msvc:INCLUDEPATH += file-msvc
+win32:INCLUDEPATH += file-msvc
 gcc:INCLUDEPATH += file-gcc
 INCLUDEPATH += file
 
@@ -23,24 +24,24 @@ win32:LIBS += -lole32 -loleaut32
 
 # zlib
 
-msvc {
+win32 {
 	LIBS += -lzlib
 	LIBS += -lzstd
 }
 
-!msvc {
+!win32 {
 	LIBS += -lz
 	LIBS += -lzstd
 }
 
 #
 
-msvc:LIBS += -LC:/vcpkg/installed/x64-windows/lib
+win32:LIBS += -LC:/vcpkg/installed/x64-windows/lib
 
-msvc:CONFIG(release, debug|release):LIBS += $$PWD/lib/file.lib $$PWD/lib/oniguruma.lib
-msvc:CONFIG(debug, debug|release):LIBS += $$PWD/lib/filed.lib $$PWD/lib/onigurumad.lib
-!msvc:CONFIG(release, debug|release):LIBS += $$PWD/lib/libfile.a $$PWD/lib/liboniguruma.a
-!msvc:CONFIG(debug, debug|release):LIBS += $$PWD/lib/libfiled.a $$PWD/lib/libonigurumad.a
+win32:CONFIG(release, debug|release):LIBS += $$PWD/lib/file.lib $$PWD/lib/oniguruma.lib
+win32:CONFIG(debug, debug|release):LIBS += $$PWD/lib/filed.lib $$PWD/lib/onigurumad.lib
+!win32:CONFIG(release, debug|release):LIBS += $$PWD/lib/libfile.a $$PWD/lib/liboniguruma.a
+!win32:CONFIG(debug, debug|release):LIBS += $$PWD/lib/libfiled.a $$PWD/lib/libonigurumad.a
 
 HEADERS += \
 	src/FileType.h \

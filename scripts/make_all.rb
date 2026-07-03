@@ -24,7 +24,7 @@ load "#{$project_dir}/prepare.rb"
 $branch_name = `git rev-parse --abbrev-ref HEAD`.strip
 
 $suffix = ""
-if $branch_name == "main" or $branch_name == "master"
+if $branch_name == "main" or $branch_name == "master" or $branch_name == "HEAD" then
 	$suffix = ""
 else
 	$suffix = $branch_name.gsub(/[^0-9A-Za-z]/, "-")

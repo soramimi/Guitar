@@ -1,7 +1,7 @@
 
 QT += core gui widgets svg network
 
-msvc:lessThan(QT_MAJOR_VERSION, 6) {
+win32:lessThan(QT_MAJOR_VERSION, 6) {
 	QT += winextras
 }
 
@@ -14,7 +14,7 @@ unsafe {
 	LIBS += -lssh
 }
 
-msvc:INCLUDEPATH += C:/vcpkg/installed/x64-windows/include
+win32:INCLUDEPATH += C:/vcpkg/installed/x64-windows/include
 
 SRC = $$PWD/src
 
@@ -42,8 +42,8 @@ INCLUDEPATH += $$SRC/texteditor
 INCLUDEPATH += $$PWD/subprojects/FileTypePlugin/src
 INCLUDEPATH += $$PWD/subprojects/IncrementalSearchPlugin/src
 
-msvc:INCLUDEPATH += $$PWD/misc/winpty/include
-msvc:LIBS += $$PWD/misc/winpty/x64/lib/winpty.lib -lshlwapi
+win32:INCLUDEPATH += $$PWD/misc/winpty/include
+win32:LIBS += $$PWD/misc/winpty/x64/lib/winpty.lib -lshlwapi
 
 # execute 'ruby prepare.rb' automatically
 
@@ -64,15 +64,15 @@ linux {
 haiku:LIBS += -lssl -lcrypto -lnetwork
 macx:INCLUDEPATH += /opt/homebrew/include
 macx:LIBS += /opt/homebrew/lib/libssl.a /opt/homebrew/lib/libcrypto.a
-msvc:LIBS += -llibcrypto -llibssl
+win32:LIBS += -llibcrypto -llibssl
 
 # network library
 
 # CONFIG += use_libcurl
 use_libcurl {
 	DEFINES += USE_LIBCURL
-	!msvc:LIBS += -lcurl
-	msvc:LIBS += -llibcurl
+	!win32:LIBS += -lcurl
+	win32:LIBS += -llibcurl
 }
 
 # experimental: Sudachi support
@@ -86,12 +86,12 @@ use_cudachi {
 
 # zlib
 
-msvc {
+win32 {
 	LIBS += -lzlib
 	LIBS += -lzstd
 }
 
-!msvc {
+!win32 {
 	LIBS += -lz
 	LIBS += -lzstd
 }
@@ -112,7 +112,7 @@ macx {
 	QMAKE_BUNDLE_DATA += macres
 }
 
-!msvc {
+!win32 {
 	LIBS += -ldl
 }
 
