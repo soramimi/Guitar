@@ -1,5 +1,6 @@
 #include <ai/AiApiBridge.h>
 #include "Logger.h"
+#include <QMessageBox>
 #include <ai/CommitMessageGenerator.h>
 #include <common/jstream.h>
 #include <inet/inetclient.h>
@@ -790,6 +791,8 @@ AiResult AiApiBridge::request(GenerativeAI::EndPoint::Type eptype, std::string c
 			
 			{ // experimental: 1Password support
 				if (cred.api_key.starts_with("op://")) {
+					bool ok = false;
+					std::string errmsg;
 					if (global->onepassword) {
 						QString account_name;
 						QString secret_path = QString::fromStdString(cred.api_key.substr(5));
@@ -800,14 +803,20 @@ AiResult AiApiBridge::request(GenerativeAI::EndPoint::Type eptype, std::string c
 							QString key = global->onepassword->getapikey(account_name, secret_path);
 							if (!key.isEmpty()) {
 								cred.api_key = key.toStdString();
+								ok = true;
 							} else {
-								logprintf(LOG_DEFAULT, "Error: Failed to retrieve AI API key from 1Password. Please check your 1Password configuration.\n");
+								errmsg = "Failed to retrieve AI API key from 1Password. Please check your 1Password configuration.";
 							}
 						} else {
-							logprintf(LOG_DEFAULT, "Error: Invalid 1Password API key format. Expected 'op://account_name/secret_path'.\n");
+							errmsg = "Invalid 1Password API key format. Expected 'op://account_name/secret_path'.";
 						}
 					} else {
-						logprintf(LOG_DEFAULT, "Error: 1Password integration is not available. Cannot retrieve AI API key.\n");
+						errmsg  = "1Password integration is not available. Cannot retrieve AI API key.";
+					}
+					if (!ok) {
+						// QMessageBox::critical(nullptr, "AI API Key Retrieval Error", errmsg);
+						logprintf(LOG_DEFAULT, "AI API Key Retrieval Error: %s\n", errmsg.c_str());
+						return AiResult::Error("AI API Key Retrieval Error", errmsg);
 					}
 				}
 			}

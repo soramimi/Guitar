@@ -279,6 +279,16 @@ struct AiResult {
 	{
 		return !d.error_status.empty() || !d.error_message.empty();
 	}
+	
+	static AiResult Error(std::string const &stat, std::string const &msg)
+	{
+		AiResult ret;
+		ret.d.completed = false;
+		ret.d.error_status = stat;
+		ret.d.error_message = msg;
+		return ret;
+	}
+	
 };
 
 class AiApiBridge {

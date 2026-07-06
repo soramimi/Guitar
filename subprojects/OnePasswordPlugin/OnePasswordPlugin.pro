@@ -2,7 +2,7 @@ include(../../common.pri)
 
 # DESTDIR = $$PWD/_bin
 !win32:DESTDIR = $$PWD/../../lib
-# win32:DESTDIR = $$PWD/../../_bin
+win32:DESTDIR = $$PWD/../../_bin
 
 CONFIG(release,debug|release):TARGET = onepasswordplugin
 CONFIG(debug,debug|release):TARGET = onepasswordplugind
