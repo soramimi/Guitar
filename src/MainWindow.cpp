@@ -1700,7 +1700,17 @@ void MainWindow::makeCommitLog(GitHash const &head, CommitLogExchangeData exdata
 	
 			records.push_back(rec);
 		}
+<<<<<<< HEAD
 		m->commit_records.setRecords(std::move(records));
+=======
+
+		rec.datetime = (misc::str)commit.commit_date.toString();
+		rec.author = (misc::str)commit.author;
+		rec.message = (misc::str)commit.message;
+		rec.tooltip = rec.message + message_ex;
+
+		m->commit_records.records->push_back(rec);
+>>>>>>> d47ca3af (Show full datetime in commit log and bump version to 1.4.1)
 	}
 	exdata.p->label_map = std::move(label_map);
 

@@ -4,7 +4,7 @@ $product_name = "Guitar"
 $copyright_year = 2026
 $version_a = 1
 $version_b = 4
-$version_c = 0
+$version_c = 1
 $version_d = 0
 
 # Future plans
@@ -15,6 +15,8 @@ $version_d = 0
 #
 
 # History
+# v1.4.1 2026-07-06
+# - 
 #
 # v1.4.0 2026-06-09
 # - Implement MeCab-based incremental search for Japanese romanization, replacing Migemo
