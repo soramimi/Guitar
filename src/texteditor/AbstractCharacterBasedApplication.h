@@ -1,7 +1,6 @@
 #ifndef ABSTRACTCHARACTERBASEDAPPLICATION_H
 #define ABSTRACTCHARACTERBASEDAPPLICATION_H
 
-#include <QList>
 #include <QRect>
 #include <QString>
 #include <QByteArray>
@@ -10,23 +9,24 @@
 #include <functional>
 #include <QKeyEvent>
 #include <QColor>
+#include <variant>
 
-class MyTextCodec {
-private:
-public:
-	MyTextCodec() = default;
-	MyTextCodec(char const *name) //@ TODO:
-	{
-	}
-	QString toUnicode(QByteArray const &ba) const
-	{
-		return QString::fromUtf8(ba);
-	}
-	QByteArray fromUnicode(QString const &s) const
-	{
-		return s.toUtf8();
-	}
-};
+// class MyTextCodec {
+// private:
+// public:
+// 	MyTextCodec() = default;
+// 	MyTextCodec(char const *name) //@ TODO:
+// 	{
+// 	}
+// 	QString toUnicode(QByteArray const &ba) const
+// 	{
+// 		return QString::fromUtf8(ba);
+// 	}
+// 	QByteArray fromUnicode(QString const &s) const
+// 	{
+// 		return s.toUtf8();
+// 	}
+// };
 
 namespace EscapeCode {
 enum EscapeCode {
@@ -45,6 +45,8 @@ enum EscapeCode {
 
 class Document {
 public:
+	typedef std::variant<std::vector<char>, std::string_view> varline_t;
+	
 	struct CharAttr_ {
 		size_t offset = 0;
 		int color = -1;
@@ -60,41 +62,92 @@ public:
 		int hunk_number = -1;
 		int line_number = 0;
 		size_t byte_offset = 0;
-		QByteArray text;
-
+		varline_t text_ = std::string_view();
+		
 		Line() = default;
-
-		explicit Line(QByteArray const &ba)
-			: type(Normal)
-			, text(ba)
-		{
-		}
-
-		explicit Line(std::string const &str, Type type = Normal)
+		
+		explicit Line(std::vector<char> const &ba, Type type = Normal)
 			: type(type)
+			, text_(ba)
 		{
-			text.append(str.c_str(), (int)str.size());
 		}
-
+		
+		explicit Line(QByteArray const &ba, Type type = Normal)
+			: type(type)
+			, text_(std::vector<char>(ba.data(), ba.data() + ba.size()))
+		{
+		}
+		
+		static Line View(std::string_view v, Type type = Normal)
+		{
+			Line line;
+			line.type = type;
+			line.text_ = v;
+			return line;
+		}
+		
 		bool endsWithNewLine() const
 		{
-			int c = text.isEmpty() ? 0 : text.at(text.size() - 1);
+			int c = text().empty() ? 0 : text().back();
 			return c == '\n' || c == '\r';
-
+		}
+		
+		std::string_view text() const
+		{
+			if (std::holds_alternative<std::string_view>(text_)) {
+				return std::get<std::string_view>(text_);
+			} else {
+				std::vector<char> const &vec = std::get<std::vector<char>>(text_);
+				return std::string_view(vec.data(), vec.size());
+			}
+		}
+		
+		void set_text(const std::vector<char> &new_text)
+		{
+			text_ = new_text;
+		}
+		
+		std::vector<char> *to_vector()
+		{
+			if (std::string_view *sv = std::get_if<std::string_view>(&text_)) {
+				text_ = std::vector<char>(sv->data(), sv->data() + sv->size());
+			}
+			std::vector<char> *v = std::get_if<std::vector<char>>(&text_);
+			assert(v);
+			return v;
+		}
+		
+		void append_text(std::string_view new_text)
+		{
+			if (!new_text.empty()) {
+				std::vector<char> *v = to_vector();
+				v->insert(v->end(), new_text.data(), new_text.data() + new_text.size());
+			}
+		}
+		
+		void append_text(const std::vector<char> &new_text)
+		{
+			if (!new_text.empty()) {
+				append_text(std::string_view(new_text.data(), new_text.size()));
+			}
+		}
+		
+		void append_text(char c)
+		{
+			append_text(std::string_view(&c, 1));
 		}
 	};
-
-	QList<Line> lines;
-	void retrieveLastText(std::vector<char> *out, int maxlen) const;
+	
+	
+	QByteArray all;
+	std::vector<varline_t> raw_lines;
+	
+	std::vector<Line> lines;
 };
 
 class TextEditorEngine {
 public:
 	Document document;
-	TextEditorEngine()
-	{
-		document.lines.push_back(Document::Line(QByteArray()));
-	}
 };
 
 struct SelectionAnchor {
@@ -102,7 +155,7 @@ struct SelectionAnchor {
 		False,
 		True,
 	};
-
+	
 	Enabled enabled = False;
 	int row = 0;
 	int col = 0;
@@ -145,7 +198,7 @@ struct SelectionAnchor {
 	}
 };
 
-using TextEditorEnginePtr = std::shared_ptr<TextEditorEngine>;
+using TextEditorEngine_sp = std::shared_ptr<TextEditorEngine>;
 
 struct TextEditorContext {
 	QRect cursor_rect;
@@ -165,9 +218,9 @@ struct TextEditorContext {
 	int viewport_org_y = 1;
 	int viewport_width = 80;
 	int viewport_height = 23;
-	int tab_span = 4;
+	int tab_indent_size = 4;
 	int bottom_line_y = -1;
-	TextEditorEnginePtr engine;
+	TextEditorEngine_sp engine;
 };
 
 struct RowCol {
@@ -184,24 +237,19 @@ using DialogHandler = std::function<void (bool, QString const &)>;
 
 class AbstractCharacterBasedApplication {
 public:
-//	enum RenderingMode {
-//		CharacterMode,
-//		GraphicMode,
-//	};
-
 	static const int LEFT_MARGIN = 8;
 	static const int RIGHT_MARGIN = 10;
-
+	
 	enum class WriteMode {
 		Insert,
 		Overwrite,
 	};
-
+	
 	enum class State {
 		Normal,
 		Exit,
 	};
-
+	
 	struct CharAttr {
 		uint16_t index;
 		uint16_t flags = 0;
@@ -230,40 +278,40 @@ public:
 			Underline2 = 0x0008,
 		};
 	};
-
+	
 	struct Option {
 		CharAttr char_attr;
 		QRect clip;
 	};
-
+	
 	struct Character {
 		uint16_t c = 0;
 		CharAttr a;
 	};
-
+	
 	struct Char {
+		char32_t unicode = 0;
 		int left_x = 0;
 		int right_x = 0;
-		uint32_t unicode = 0;
 		CharAttr attr;
 		Char() = default;
-		Char(uint32_t unicode)
+		Char(char32_t unicode)
 			: unicode(unicode)
 		{
 		}
-		operator uint32_t () const
+		operator char32_t () const
 		{
 			return unicode;
 		}
 	};
-
+	
 	enum LineFlag {
 		LineChanged = 1,
 	};
-
+	
 	static int charWidth(uint32_t c);
-
-	class FormattedLine2 {
+	
+	class FormattedLine {
 	public:
 		QString text;
 		enum Attr {
@@ -271,7 +319,7 @@ public:
 			Selected = 0x01000000,
 		};
 		uint32_t atts;
-		FormattedLine2(QString const &text, int atts)
+		FormattedLine(QString const &text, int atts)
 			: text(text)
 			, atts(atts)
 		{
@@ -281,10 +329,9 @@ public:
 			return atts & Selected;
 		}
 	};
-
-	QList<FormattedLine2> formatLine_(const Document::Line &line, int tab_span, int anchor_a = -1, int anchor_b = -1) const;
-	QList<FormattedLine2> formatLine2_(int row_index) const;
-
+	
+	std::vector<FormattedLine> formatLine_(const Document::Line &line, int tab_indent_size, int anchor_a = -1, int anchor_b = -1) const;
+	
 private:
 	struct Private;
 	Private *m;
@@ -293,65 +340,66 @@ protected:
 	SelectionAnchor selection_end;
 	const int reference_char_width_ = 1; // TODO: remove
 protected:
-
+	
 	int char_screen_w() const;
 	int char_screen_h() const;
 	std::vector<Character> *char_screen();
 	std::vector<Character> const *char_screen() const;
 	std::vector<uint8_t> *line_flags();
-
+	
 	void initEditor();
-
+	
 	void fetchCurrentLine() const;
-	QByteArray fetchLine(int row) const;
+	std::string_view fetchLine(int row) const;
 	void clearParsedLine();
-
+	
 	int currentColX() const;
 	void setCurrentRow(int row);
 	void setCurrentCol(int col);
-
+	
 	int cursorCol() const;
 	int cursorRow() const;
-
+	
 	int editorViewportWidth() const;
 	int editorViewportHeight() const;
-
+	
 	virtual int print(int x, int y, QString const &text, Option const &opt);
-
+	
 	std::shared_ptr<TextEditorContext> editor_cx;
 	std::shared_ptr<TextEditorContext> dialog_cx;
-
+	
 	TextEditorContext *cx();
 	TextEditorContext const *cx() const;
-
+	
 	Document *document();
+	Document const *document() const;
 	int documentLines() const;
-
+	
 	bool isSingleLineMode() const;
-
+	
 	void ensureCurrentLineVisible();
 	int decideColumnScrollPos() const;
-
+	
 	int calcVisualWidth(Document::Line const &line) const;
-
+	
 	int leftMargin_() const;
-
+	
 	void makeBuffer();
 	int printArea(const TextEditorContext *cx, SelectionAnchor const *sel_a = nullptr, SelectionAnchor const *sel_b = nullptr);
-
+	
 	virtual void updateVisibility(bool ensure_current_line_visible, bool change_col, bool auto_scroll) = 0;
 	void commitLine(const std::vector<Char> &vec);
-
+	
 	void doDelete();
 	void doBackspace();
-
+	
 	bool isDialogMode();
 	void setDialogMode(bool f);
 	void closeDialog(bool result);
 	void setDialogOption(QString const &title, QString const &value, const DialogHandler &handler);
 	void execDialog(QString const &dialog_title, const QString &dialog_value, const DialogHandler &handler);
 private:
-	int internalParseLine(const QByteArray &parsed_line, int current_col, std::vector<Char> *vec, int increase_hint) const;
+	int internalParseLine(std::string_view parsed_line, int current_col, std::vector<Char> *out) const;
 	void internalWrite(const ushort *begin, const ushort *end);
 	void pressLetterWithControl(int c);
 	void invalidateAreaBelowTheCurrentLine();
@@ -371,14 +419,14 @@ private:
 	void initEngine(const std::shared_ptr<TextEditorContext>& cx);
 	void writeCR();
 	bool deleteIfSelected();
-	static int findSyntax(const QList<Document::CharAttr_> *list, size_t offset);
-	static void insertSyntax(QList<Document::CharAttr_> *list, size_t offset, const Document::CharAttr_ &a);
+	static int findSyntax(const std::vector<Document::CharAttr_> *list, size_t offset);
+	static void insertSyntax(std::vector<Document::CharAttr_> *list, size_t offset, const Document::CharAttr_ &a);
 	void setCursorCol_(int col, bool auto_scroll = true, bool by_mouse = false);
 protected:
 	void deselect();
-	std::vector<Char> *parseCurrentLine(std::vector<Char> *vec, int increase_hint, bool force);
-	void parseLine(int row, std::vector<Char> *vec) const;
-
+	std::vector<Char> *parseCurrentLine(std::vector<Char> *chars, bool force);
+	void parseLine(int row, std::vector<Char> *chars) const;
+	
 	virtual void setCursorRow(int row, bool auto_scroll = true, bool by_mouse = false);
 	virtual void setCursorCol(int col)
 	{
@@ -400,28 +448,28 @@ protected:
 	int scrollBottomLimit2() const;
 	bool isPaintingSuppressed() const;
 	void setPaintingSuppressed(bool f);
-
+	
 	void addNewLineToBottom();
 	void appendNewLine(std::vector<Char> *vec);
 	void writeNewLine();
 	void updateCursorPos(bool auto_scroll);
-
+	
 	QString statusLine() const;
-
+	
 	void preparePaintScreen();
 	void setRecentlyUsedPath(QString const &path);
 	QString recentlyUsedPath();
 	void clearRect(int x, int y, int w, int h);
-    void paintLineNumbers(std::function<void(int, QString const &, Document::Line const *)> const &draw);
+	void paintLineNumbers(std::function<void(int, QString const &, Document::Line const *)> const &draw);
 	bool isAutoLayout() const;
 	void invalidateArea(int top_y = 0);
 	void savePos();
 	void restorePos();
 public:
-
+	
 	int currentRow() const;
 	int currentCol() const;
-
+	
 	virtual void layoutEditor();
 	void scrollUp();
 	void scrollDown();
@@ -435,14 +483,14 @@ public:
 	void movePageUp();
 	void movePageDown();
 	void scrollToTop();
-
+	
 	AbstractCharacterBasedApplication();
 	virtual ~AbstractCharacterBasedApplication();
-	TextEditorEnginePtr engine() const;
+	TextEditorEngine_sp engine() const;
 	int screenWidth() const;
 	int screenHeight() const;
 	void setScreenSize(int w, int h, bool update_layout);
-	void setTextEditorEngine(const TextEditorEnginePtr &e);
+	void setTextEditorEngine(const TextEditorEngine_sp &e);
 	void openFile(QString const &path);
 	void saveFile(QString const &path);
 	void loadExampleFile();
@@ -454,7 +502,7 @@ public:
 	void showHeader(bool f);
 	void showFooter(bool f);
 	void setAutoLayout(bool f);
-	void setDocument(const QList<Document::Line> *source);
+	void setDocument(const std::vector<Document::Line> *source);
 	void setSelectionAnchor(SelectionAnchor::Enabled enabled, bool update_anchor, bool auto_scroll);
 	void setNormalTextEditorMode(bool f);
 	void setToggleSelectionAnchorEnabled(bool f);
@@ -476,14 +524,12 @@ public:
 	void write(char const *ptr, int len, bool by_keyboard);
 	void write(std::string const &text);
 	void write(QKeyEvent *e);
-	void setTextCodec(std::shared_ptr<MyTextCodec> codec);
 	void setCursorVisible(bool show);
 	bool isCursorVisible();
 	void setModifierKeys(Qt::KeyboardModifiers const &keymod);
 	bool isControlModifierPressed() const;
 	bool isShiftModifierPressed() const;
 	void clearShiftModifier();
-	void retrieveLastText(std::vector<char> *out, int maxlen) const;
 	bool isChanged() const;
 	void setChanged(bool f);
 	void logicalMoveToBottom();
@@ -501,8 +547,7 @@ protected:
 };
 
 class AbstractTextEditorApplication : public AbstractCharacterBasedApplication {
-
+	
 };
-
 
 #endif // ABSTRACTCHARACTERBASEDAPPLICATION_H

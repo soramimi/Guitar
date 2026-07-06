@@ -33,7 +33,7 @@ struct CommitExploreWindow::Private {
 	GitTreeItemList tree_item_list;
 	GitObject content_object;
 	ObjectContent content;
-	TextEditorEnginePtr text_editor_engine;
+	TextEditorEngine_sp text_editor_engine;
 };
 
 CommitExploreWindow::CommitExploreWindow(QWidget *parent, GitObjectCache *objcache, GitCommitItem const *commit)

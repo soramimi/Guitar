@@ -41,7 +41,7 @@
      <x>0</x>
      <y>0</y>
      <width>593</width>
-     <height>23</height>
+     <height>21</height>
     </rect>
    </property>
    <widget class="QMenu" name="menu_File">
@@ -57,6 +57,9 @@
   <action name="action_file_open">
    <property name="text">
     <string>&amp;Open...</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+O</string>
    </property>
   </action>
   <action name="action_file_save">

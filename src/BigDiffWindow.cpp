@@ -6,7 +6,7 @@
 #include <common/q/helper.h>
 
 struct BigDiffWindow::Private {
-	TextEditorEnginePtr text_editor_engine;
+	TextEditorEngine_sp text_editor_engine;
 	FileDiffWidget::InitParam_ param;
 };
 
@@ -32,11 +32,11 @@ BigDiffWindow::~BigDiffWindow()
 	delete ui;
 }
 
-void BigDiffWindow::setTextCodec(std::shared_ptr<MyTextCodec> codec)
-{
-	m->text_editor_engine = std::make_shared<TextEditorEngine>();
-	ui->widget_diff->setTextCodec(codec);
-}
+// void BigDiffWindow::setTextCodec(std::shared_ptr<MyTextCodec> codec)
+// {
+// 	m->text_editor_engine = std::make_shared<TextEditorEngine>();
+// 	ui->widget_diff->setTextCodec(codec);
+// }
 
 void BigDiffWindow::updateDiffView()
 {

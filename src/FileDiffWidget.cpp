@@ -28,8 +28,8 @@ struct FileDiffWidget::Private {
 	FileDiffWidget::InitParam_ init_param_;
 	// GitCommitItemList commit_item_list;
 	std::vector<std::string> original_lines;
-	TextEditorEnginePtr engine_left;
-	TextEditorEnginePtr engine_right;
+	TextEditorEngine_sp engine_left;
+	TextEditorEngine_sp engine_right;
 	TextDiffLineList left_lines;
 	TextDiffLineList right_lines;
 	int max_line_length = 0;
@@ -37,7 +37,7 @@ struct FileDiffWidget::Private {
 	int term_cursor_row = 0;
 	int term_cursor_col = 0;
 
-	std::shared_ptr<MyTextCodec> text_codec;
+	// std::shared_ptr<MyTextCodec> text_codec;
 
 	std::vector<std::pair<LineFragment, LineFragment>> linefragmentpair;
 };
@@ -267,19 +267,22 @@ void FileDiffWidget::makeSideBySideDiffData(GitDiff const &diff, std::vector<std
 				if (line.size() < 1) continue;
 				int c = (unsigned char)line.c_str()[0];
 				line = line.substr(1);
+				std::vector<char> vec(line.begin(), line.end());
 				if (c == '-') {
 					minus++;
-					TextDiffLine l(line, TextDiffLine::Del);
+					TextDiffLine l(vec, TextDiffLine::Del);
 					l.hunk_number = hunk_number;
 					tmp_left.push_back(l);
 				} else if (c == '+') {
 					plus++;
-					TextDiffLine l(line, TextDiffLine::Add);
+					TextDiffLine l(vec, TextDiffLine::Add);
+					l.to_vector();
 					l.hunk_number = hunk_number;
 					tmp_right.push_back(l);
 				} else {
 					FlushBlank();
-					TextDiffLine l(line, TextDiffLine::Normal);
+					TextDiffLine l(vec, TextDiffLine::Normal);
+					l.to_vector();
 					l.hunk_number = hunk_number;
 					tmp_left.push_back(l);
 					tmp_right.push_back(l);
@@ -288,11 +291,11 @@ void FileDiffWidget::makeSideBySideDiffData(GitDiff const &diff, std::vector<std
 			FlushBlank();
 			auto ComplementNewLine = [](std::vector<TextDiffLine> *lines){
 				for (TextDiffLine &line : *lines) {
-					int n = line.text.size();
+					size_t n = line.text().size();
 					if (n > 0) {
-						int c = line.text[n - 1] & 0xff;
+						int c = line.text()[n - 1] & 0xff;
 						if (c != '\r' && c != '\n') {
-							line.text.push_back('\n');
+							line.append_text('\n');
 						}
 					}
 				}
@@ -301,22 +304,26 @@ void FileDiffWidget::makeSideBySideDiffData(GitDiff const &diff, std::vector<std
 			ComplementNewLine(&tmp_right);
 			for (auto it = tmp_left.rbegin(); it != tmp_left.rend(); it++) {
 				TextDiffLine l(*it);
+#if 0
 				if (m->text_codec) {
-					if (!l.text.isEmpty()) {
+					if (!l.text.empty()) {
 						QString s = QString::fromUtf8(l.text.data(), l.text.size());
 						l.text = m->text_codec->fromUnicode(s);
 					}
 				}
+#endif
 				left_lines->push_back(l);
 			}
 			for (auto it = tmp_right.rbegin(); it != tmp_right.rend(); it++) {
 				TextDiffLine l(*it);
+#if 0
 				if (m->text_codec) {
-					if (!l.text.isEmpty()) {
+					if (!l.texteEmpty()) {
 						QString s = QString::fromUtf8(l.text.data(), l.text.size());
 						l.text = m->text_codec->fromUnicode(s);
 					}
 				}
+#endif
 				right_lines->push_back(l);
 			}
 			linenum = hi.pos;
@@ -326,8 +333,10 @@ void FileDiffWidget::makeSideBySideDiffData(GitDiff const &diff, std::vector<std
 			linenum--;
 			if (linenum < (size_t)original_lines.size()) {
 				std::string line = original_lines[linenum];
-				left_lines->push_back(TextDiffLine(line, TextDiffLine::Normal));
-				right_lines->push_back(TextDiffLine(line, TextDiffLine::Normal));
+				std::vector<char> vec(line.begin(), line.end());
+				TextDiffLine l(vec, TextDiffLine::Normal);
+				left_lines->push_back(l);
+				right_lines->push_back(l);
 			}
 		}
 	}
@@ -494,7 +503,7 @@ void FileDiffWidget::setLeftOnly(GitDiff const &diff, QByteArray const &ba)
 		TextDiffLineList right_lines;
 
 		for (std::string const &line : m->original_lines) {
-			left_lines.push_back(TextDiffLine(line, TextDiffLine::Del));
+			left_lines.push_back(TextDiffLine::View(line, TextDiffLine::Del));
 			right_lines.push_back(TextDiffLine());
 		}
 
@@ -523,7 +532,7 @@ bool FileDiffWidget::setSubmodule(GitDiff const &diff)
 				text += '\n';
 				text += (QS)submodule_commit->message;
 				for (QString const &line : misc::splitLines(text)) {
-					out->push_back(Document::Line(line.toStdString()));
+					out->push_back(Document::Line::View(line.toStdString()));
 				}
 			}
 		};
@@ -559,7 +568,7 @@ void FileDiffWidget::setRightOnly(GitDiff const &diff, QByteArray const &ba)
 
 		for (std::string const &line : m->original_lines) {
 			left_lines.push_back(TextDiffLine());
-			right_lines.push_back(TextDiffLine(line, TextDiffLine::Add));
+			right_lines.push_back(TextDiffLine::View(line, TextDiffLine::Add));
 		}
 
 		setDiffText(diff, left_lines, right_lines);
@@ -616,6 +625,7 @@ void FileDiffWidget::setSideBySide_(GitDiff const &diff, QByteArray const &ba_a,
 
 std::string FileDiffWidget::diffObjects(std::string const &a_id, std::string const &b_id)
 {
+#if 0
 	if (m->text_codec) {
 		GitRunner g = git();
 		GitObject obj_a = catFile(g, a_id);
@@ -642,6 +652,7 @@ std::string FileDiffWidget::diffObjects(std::string const &a_id, std::string con
 			}
 		}
 	}
+#endif
 	return GitDiffManager::diffObjects(git(), a_id, b_id);
 }
 
@@ -843,8 +854,8 @@ void FileDiffWidget::reflectScrollBar(/*bool updateformat*/)
 	if (updateformat) {
 
 		// 左と右のテキストを取得
-		TextEditorView::FormattedLines *llines = ui->widget_diff_left->getTextEditorView()->fetchLines();
-		TextEditorView::FormattedLines *rlines = ui->widget_diff_right->getTextEditorView()->fetchLines();
+		TextEditorView::FormattedLines *llines = ui->widget_diff_left->getTextEditorView()->fetchLines2(false);
+		TextEditorView::FormattedLines *rlines = ui->widget_diff_right->getTextEditorView()->fetchLines2(false);
 
 		// サイドバイサイドのとき文字差分を求める
 		if (viewstyle() == SideBySideText) {
@@ -854,8 +865,15 @@ void FileDiffWidget::reflectScrollBar(/*bool updateformat*/)
 			const size_t n = std::min(llines->size(), rlines->size());
 
 			for (std::size_t i = 0; i < n; i++) {
-				std::vector<Char> *lchars = llines->chars(i);
-				std::vector<Char> *rchars = rlines->chars(i);
+				auto Find = [&](TextEditorView::FormattedLines *lines, FileViewWidget *w)-> std::vector<Char> * {
+					int row = i + w->texteditor()->scrollTopRow();
+					auto it = lines->lines.find(row);
+					return it == lines->lines.end() ? nullptr : it->second.chars.get();
+				};
+				std::vector<Char> *lchars = Find(llines, ui->widget_diff_left);
+				std::vector<Char> *rchars = Find(rlines, ui->widget_diff_right);
+				if (!lchars) continue;
+				if (!rchars) continue;
 				size_t l = 0;
 				size_t r = 0;
 
@@ -931,20 +949,20 @@ void FileDiffWidget::onMoved(int cur_row, int cur_col, int scr_row, int scr_col)
 	onUpdateSliderBar();
 }
 
-void FileDiffWidget::setTextCodec(std::shared_ptr<MyTextCodec> codec)
-{
-	m->text_codec = codec;
-	ui->widget_diff_left->setTextCodec(codec);
-	ui->widget_diff_right->setTextCodec(codec);
-	emit textcodecChanged();
-}
+// void FileDiffWidget::setTextCodec(std::shared_ptr<MyTextCodec> codec)
+// {
+// 	m->text_codec = codec;
+// 	ui->widget_diff_left->setTextCodec(codec);
+// 	ui->widget_diff_right->setTextCodec(codec);
+// 	emit textcodecChanged();
+// }
 
-void FileDiffWidget::setTextCodec(char const *name)
-{
-	std::shared_ptr<MyTextCodec> codec = std::make_shared<MyTextCodec>(name);
-	// MyTextCodec *codec = name ? MyTextCodec::codecForName(name) : nullptr;
-	setTextCodec(codec);
-}
+// void FileDiffWidget::setTextCodec(char const *name)
+// {
+// 	std::shared_ptr<MyTextCodec> codec = std::make_shared<MyTextCodec>(name);
+// 	// MyTextCodec *codec = name ? MyTextCodec::codecForName(name) : nullptr;
+// 	setTextCodec(codec);
+// }
 
 void FileDiffWidget::on_toolButton_menu_clicked()
 {

@@ -45,10 +45,10 @@ FileViewWidget::FileViewWidget(QWidget *parent)
 	setMouseTracking(true);
 }
 
-void FileViewWidget::setTextCodec(std::shared_ptr<MyTextCodec> codec)
-{
-	texteditor()->setTextCodec(codec);
-}
+// void FileViewWidget::setTextCodec(std::shared_ptr<MyTextCodec> codec)
+// {
+// 	texteditor()->setTextCodec(codec);
+// }
 
 void FileViewWidget::bind(FileDiffWidget *fdw, QScrollBar *vsb, QScrollBar *hsb, TextEditorThemePtr const &theme)
 {
@@ -83,7 +83,7 @@ int FileViewWidget::lineHeight() const
 	return texteditor()->lineHeight();
 }
 
-void FileViewWidget::setDiffMode(TextEditorEnginePtr const &editor_engine, QScrollBar *vsb, QScrollBar *hsb)
+void FileViewWidget::setDiffMode(TextEditorEngine_sp const &editor_engine, QScrollBar *vsb, QScrollBar *hsb)
 {
 	texteditor()->setTextEditorEngine(editor_engine);
 	return texteditor()->bindScrollBar(vsb, hsb);
@@ -132,7 +132,7 @@ void FileViewWidget::setImage(std::string const &mimetype, QByteArray const &ba,
 #endif
 }
 
-void FileViewWidget::setText(const QList<Document::Line> *source, std::string const &object_id, QString const &object_path)
+void FileViewWidget::setText(const std::vector<Document::Line> *source, std::string const &object_id, QString const &object_path)
 {
 	setViewType(FileViewType::Text);
 	this->source_id = object_id;
@@ -149,11 +149,11 @@ void FileViewWidget::setText(const QList<Document::Line> *source, std::string co
 void FileViewWidget::setText(QByteArray const &ba, std::string const &object_id, QString const &object_path)
 {
 	std::vector<std::string_view> lines = misc::splitLinesKeepNewLineV((std::string_view{ba.data(), (size_t)ba.size()}));
-	QList<Document::Line> source;
+	std::vector<Document::Line> source;
 	source.reserve(lines.size());
 	int num = 0;
 	for (std::string_view const &line : lines) {
-		Document::Line t(std::string{line});
+		auto t = Document::Line::View(line);
 		t.line_number = ++num;
 		source.push_back(t);
 	}

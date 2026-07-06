@@ -34,49 +34,62 @@ class TextEditorView : public QWidget, public AbstractTextEditorApplication {
 public:
 	class FormattedLine {
 	public:
-		std::shared_ptr<std::vector<Char>> sp;
+		std::shared_ptr<std::vector<Char>> chars;
 		FormattedLine()
-			: sp(std::make_shared<std::vector<Char>>())
+			: chars(std::make_shared<std::vector<Char>>())
 		{
 		}
 	};
 	class FormattedLines {
 	public:
-		std::vector<TextEditorView::FormattedLine> lines;
+		std::unordered_map<int, TextEditorView::FormattedLine> lines;
 		void clear()
 		{
 			lines.clear();
 		}
-		std::vector<Char> *append()
-		{
-			lines.emplace_back();
-			return lines.back().sp.get();
-		}
+		// void add(size_t i)
+		// {
+		// 	if (i == lines.size()) {
+		// 		lines.emplace_back();
+		// 	}
+		// }
 		size_t size() const
 		{
 			return lines.size();
 		}
-		FormattedLine &operator [] (size_t i)
+		// FormattedLine &operator [] (size_t i)
+		// {
+		// 	return lines[i];
+		// }
+		// FormattedLine const &operator [] (size_t i) const
+		// {
+		// 	return lines[i];
+		// }
+		std::vector<Char> *chars(size_t i, bool create_if_not_exists = false)
 		{
-			return lines[i];
-		}
-		FormattedLine const &operator [] (size_t i) const
-		{
-			return lines[i];
-		}
-		std::vector<Char> *chars(size_t i)
-		{
-			return lines[i].sp.get();
+			auto it = lines.find(i);
+			if (it == lines.end()) {
+				if (create_if_not_exists) {
+					it = lines.insert(lines.end(), std::make_pair(i, FormattedLine()));
+				} else {
+					return nullptr;
+				}
+			}
+			return it->second.chars.get();
 		}
 		std::vector<Char> const *chars(size_t i) const
 		{
-			return lines[i].sp.get();
+			auto it = lines.find(i);
+			if (it == lines.end()) {
+				return nullptr;
+			}
+			return it->second.chars.get();
 		}
 	};
 private:
 	struct Private;
 	Private *m;
-
+	
 	void paintScreen(QPainter *painter);
 	void drawCursor(int row, int col, QPainter *pr, QColor const &color);
 	void drawCursor(QPainter *pr);
@@ -90,13 +103,15 @@ public://@
 	void internalUpdateScrollBar();
 private:
 	void moveCursorByMouse();
-	int calcPixelPosX(int row, int col, bool adjust_scroll, std::vector<Char> *chars) const;
-	void parse(int row, std::vector<Char> *chars) const;
-	int scrollPosX() const;
 	void calcPixelPosX(std::vector<Char> *chars, const QFontMetrics &fm) const;
+	int posX_px(int row, int col, bool adjust_scroll, std::vector<Char> *chars) const;
+	void parseRow(int row) const;
+	int scrollPosX() const;
 	int view_y_from_row(int row) const;
+	std::unordered_map<int, FormattedLine> _fetchLines(int row, int count) const;
 public:
-	FormattedLines *fetchLines();
+	std::unordered_map<int, TextEditorView::FormattedLine> fetchLines() const;
+	FormattedLines *fetchLines2(bool all);
 	int basisCharWidth() const;
 protected:
 	void paintEvent(QPaintEvent *) override;
@@ -115,25 +130,25 @@ protected:
 public:
 	explicit TextEditorView(QWidget *parent = nullptr);
 	~TextEditorView() override;
-
+	
 	void setTheme(const TextEditorThemePtr &theme);
 	TextEditorTheme const *theme() const;
-
+	
 	int lineHeight() const;
-
+	
 	void updateVisibility(bool ensure_current_line_visible, bool change_col, bool auto_scroll) override;
-
+	
 	bool event(QEvent *event) override;
-
+	
 	void bindScrollBar(QScrollBar *vsb, QScrollBar *hsb);
 	void setupForLogWidget(const TextEditorThemePtr &theme);
-
+	
 	RowCol mapFromPixel(const QPoint &pt);
-
+	
 	QVariant inputMethodQuery(Qt::InputMethodQuery q) const override;
 	void inputMethodEvent(QInputMethodEvent *e) override;
 	void reflectScrollBar();
-
+	
 	void move(int cur_row, int cur_col, int scr_row, int scr_col, bool auto_scroll);
 	void layoutEditor() override;
 	void setFocusFrameVisible(bool f);
@@ -143,24 +158,19 @@ public:
 	int scroll_unit_ = ScrollByCharacter;
 	void setScrollUnit(int n);
 	int scrollUnit() const;
-
+	
 	void setTextFont(const QFont &font);
 	void updateLayout();
-
+	
 	struct PointInView {
 		int x = 0;
 		int y = 0;
 		int height = 0;
 	};
 	PointInView pointInView(int row, int col) const;
-
-	// TODO:
-	bool something_bad_flag = false;
-	void setSomethingBadFlag(bool f)
-	{
-		something_bad_flag = f;
-	}
-
+	
+	int scrollTopRow() const;
+	
 signals:
 	void moved(int cur_row, int cur_col, int scr_row, int scr_col);
 	void updateScrollBar();

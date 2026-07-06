@@ -95,7 +95,6 @@ public:
 	{
 		Header *h = (Header *)default_buffer;
 		*h = {};
-		size_t n = sizeof(Header);
 		h->capacity = sizeof(default_buffer) - sizeof(Header);
 	}
 	~QuickAlloc()

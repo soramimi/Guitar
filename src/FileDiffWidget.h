@@ -21,7 +21,7 @@ enum class ViewType {
 class MainWindow;
 
 using TextDiffLine = Document::Line;
-using TextDiffLineList = QList<Document::Line>;
+using TextDiffLineList = std::vector<Document::Line>;
 
 struct ObjectContent {
 	QString id;
@@ -152,8 +152,8 @@ public:
 	void setFocusAcceptable(Qt::FocusPolicy focuspolicy);
 	QPixmap makeDiffPixmap(DiffPane pane, int width, int height);
 	void setViewType(FileViewType type);
-	void setTextCodec(std::shared_ptr<MyTextCodec> codec);
-	void setTextCodec(char const *name);
+	// void setTextCodec(std::shared_ptr<MyTextCodec> codec);
+	// void setTextCodec(char const *name);
 private slots:
 	void onVerticalScrollValueChanged(int);
 	void onHorizontalScrollValueChanged(int);

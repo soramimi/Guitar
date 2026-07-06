@@ -77,7 +77,7 @@ public:
 class abstract_unicode_reader {
 public:
 	virtual ~abstract_unicode_reader() = default;
-	virtual uint32_t next() = 0;
+	virtual char32_t next() = 0;
 
 	void to_utf8(std::function<bool(char, int)> const &fn)
 	{
@@ -98,10 +98,10 @@ public:
 			if (!fn((uint16_t)c)) break;
 		}
 	}
-	void to_utf32(std::function<bool(uint32_t)> const &fn)
+	void to_utf32(std::function<bool(char32_t)> const &fn)
 	{
 		while (1) {
-			uint32_t c = next();
+			char32_t c = next();
 			if (c == 0) break;
 			if (!fn(c)) break;
 		}
@@ -111,14 +111,14 @@ public:
 class utf32 : public abstract_unicode_reader {
 private:
 	struct {
-		uint32_t const *ptr;
-		uint32_t const *end;
+		char32_t const *ptr;
+		char32_t const *end;
 	} data;
 public:
-	utf32(uint32_t const *ptr, uint32_t const *end);
-	utf32(uint32_t const *ptr);
-	utf32(uint32_t const *ptr, size_t len);
-	uint32_t next() override;
+	utf32(char32_t const *ptr, char32_t const *end);
+	utf32(char32_t const *ptr);
+	utf32(char32_t const *ptr, size_t len);
+	char32_t next() override;
 };
 
 class utf16 : public abstract_unicode_reader {
@@ -131,7 +131,7 @@ public:
 	utf16(uint16_t const *ptr, uint16_t const *end);
 	utf16(uint16_t const *ptr);
 	utf16(uint16_t const *ptr, size_t len);
-	uint32_t next() override;
+	char32_t next() override;
 };
 
 class utf8 : public abstract_unicode_reader {
@@ -141,7 +141,7 @@ public:
 	utf8(char const *ptr, char const *end);
 	utf8(char const *ptr);
 	utf8(char const *ptr, size_t len);
-	uint32_t next() override;
+	char32_t next() override;
 	size_t offset() const
 	{
 		return reader.offset();

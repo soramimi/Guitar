@@ -19,16 +19,15 @@ $bin_dir = $project_dir + "/_bin"
 $lib_dir = $project_dir + "/lib"
 $release_dir = "#{$project_dir}/_release"
 
+$deploy = ENV["DEPLOY"] || false
+$suffix = ENV["BRANCH_NAME"] || ""
+if $suffix == "master" or $suffix == "main" then
+	$suffix = ""
+end
+
 # Run the project's preparation script (code generation, etc.) before building.
 load "#{$project_dir}/prepare.rb"
 $branch_name = `git rev-parse --abbrev-ref HEAD`.strip
-
-$suffix = ""
-if $branch_name == "main" or $branch_name == "master" or $branch_name == "HEAD" then
-	$suffix = ""
-else
-	$suffix = $branch_name.gsub(/[^0-9A-Za-z]/, "-")
-end
 
 # Platform detection flags.
 $is_win = false  # true when building with MSVC on Windows
@@ -170,8 +169,7 @@ def main()
 	make_incrementalsearchplugin()
 	make_guitar_app()
 	make_installer()
-	f = ENV["DEPLOY"] || false
-	if f then
+	if $deploy != nil then
 		deploy()
 	end
 end

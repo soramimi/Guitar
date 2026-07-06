@@ -5,7 +5,6 @@ rem to collect Qt runtime DLLs and copies additional DLLs from the lib directory
 rem
 rem Environment variables (all optional — defaults shown below):
 rem   BINDIR       Output directory for built executables (default: project\_bin\)
-rem   LIBDIR       Directory containing extra DLLs to copy into BINDIR (default: project\lib\)
 rem   QMAKE        Path to qmake.exe
 rem   JOM          Path to jom.exe (parallel nmake replacement)
 rem   VCVARS_BAT   Path to vcvars64.bat (MSVC environment setup script)
@@ -63,10 +62,6 @@ rem Extract bundled Windows helper tools (e.g. credential helpers) into BINDIR.
 7z x -o%BUILDDIR% %DIR%\misc\win32tools.zip
 if errorlevel 1 exit /b 1
 copy %BUILDDIR%\win32tools\* %BINDIR% /Y
-if errorlevel 1 exit /b 1
-
-rem Copy plugin DLLs from the lib directory to BINDIR.
-copy %LIBDIR%\*.dll %BINDIR% /Y
 if errorlevel 1 exit /b 1
 
 rem Run windeployqt to copy the required Qt runtime DLLs alongside each executable.

@@ -207,7 +207,7 @@ int CursesOreApplication::main2()
 	signal(SIGINT, siginthandler);
 
 	initEditor();
-	cx()->engine = TextEditorEnginePtr(new TextEditorEngine);
+	cx()->engine = TextEditorEngine_sp(new TextEditorEngine);
 
 	setlocale(LC_ALL, "");
 	initscr();

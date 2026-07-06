@@ -156,9 +156,9 @@ struct MainWindow::Private {
 	GitUser current_git_user;
 
 	std::vector<RepositoryInfo> repos;
-	
+
 	MainWindow::DiffResult diff_result;
-	
+
 	std::vector<GitSubmoduleItem> submodules;
 
 	CommitRecords commit_records;
@@ -295,7 +295,7 @@ MainWindow::MainWindow(QWidget *parent)
 	{
 		QFont font = QFontDatabase::systemFont(QFontDatabase::FixedFont);
 		ui->widget_log->view()->setTextFont(font);
-		ui->widget_log->view()->setSomethingBadFlag(true); // TODO:
+		// ui->widget_log->view()->setSomethingBadFlag(true); // TODO:
 	}
 	ui->widget_log->view()->setupForLogWidget(themeForTextEditor());
 	onLogVisibilityChanged();
@@ -706,7 +706,7 @@ bool MainWindow::eventFilter(QObject *watched, QEvent *event)
 			const bool alt = (e->modifiers() & Qt::AltModifier);
 			const bool ctrl = (e->modifiers() & Qt::ControlModifier);
 			const bool shift = (e->modifiers() & Qt::ShiftModifier);
-			const bool mods = alt || ctrl || shift; //(e->modifiers() & Qt::KeyboardModifierMask);
+			// const bool mods = alt || ctrl || shift; //(e->modifiers() & Qt::KeyboardModifierMask);
 			const bool enter = (k == Qt::Key_Enter || k == Qt::Key_Return);
 
 			auto AppendCharToFilterText = [&](){
@@ -721,7 +721,7 @@ bool MainWindow::eventFilter(QObject *watched, QEvent *event)
 				QString text = e->text();
 				return !(alt || ctrl) && appendCharToFilterText(text, target);
 			};
-			
+
 			if (k == Qt::Key_Escape) {
 				clearAllFilters();
 				updateRepositoryList(RepositoryTreeWidget::RepositoryListStyle::Standard);
@@ -1118,7 +1118,7 @@ bool MainWindow::saveRepositoryBookmarks()
 void MainWindow::reflectRepositories()
 {
 	std::vector<RepositoryInfo> newrepos;
-	
+
 	auto BuildTree = [&](auto self, QString const &group, QTreeWidgetItem *item)->void{
 		QString name = RepositoryTreeWidget::treeItemName(item);
 		if (RepositoryTreeWidget::isGroupItem(item)) {
@@ -1140,15 +1140,15 @@ void MainWindow::reflectRepositories()
 			}
 		}
 	};
-	
+
 	int n = ui->treeWidget_repos->topLevelItemCount();
 	for (int i = 0; i < n; i++) {
 		QTreeWidgetItem *item = ui->treeWidget_repos->topLevelItem(i);
 		BuildTree(BuildTree, QString(), item);
 	}
-	
+
 	setRepositoryList(std::move(newrepos));
-	
+
 	saveRepositoryBookmarks();
 }
 
@@ -1462,7 +1462,7 @@ const GitCommitItem *MainWindow::getLog(int index) const
 void MainWindow::onSetCommitLog(CommitLogExchangeData const &log)
 {
 	ASSERT_MAIN_THREAD();
-	
+
 	{
 		RepositoryData data;
 		if (log.p->commit_log) data.commit_log = std::move(*log.p->commit_log);
@@ -1672,14 +1672,14 @@ void MainWindow::makeCommitLog(GitHash const &head, CommitLogExchangeData exdata
 	{
 		std::vector<CommitRecord> records;
 		records.reserve(items.size());
-		for (int row = 0; row < items.size(); row++) {
+		for (int row = 0; row < (int)items.size(); row++) {
 			GitCommitItem const *commit = items[row];
-	
+
 			auto [message_ex, labels] = makeCommitLabels(*commit, branch_map, tag_map); // コミットコメントのツールチップ用テキストとラベル
 			label_map[row] = labels;
-	
+
 			CommitRecord rec;
-	
+
 			bool isHEAD = (commit->commit_id == getHeadId());
 			if (Git::isUncommitted(*commit)) { // 未コミットの時
 				rec.bold = true; // 太字
@@ -1692,25 +1692,14 @@ void MainWindow::makeCommitLog(GitHash const &head, CommitLogExchangeData exdata
 				}
 				rec.commit_hash = commit->commit_id;
 			}
-	
-			rec.datetime = (misc::str)commit->commit_date.date().toString();
+
+			rec.datetime = (misc::str)commit->commit_date.toString();
 			rec.author = (misc::str)commit->author;
 			rec.message = (misc::str)commit->message;
 			rec.tooltip = rec.message + message_ex;
-	
 			records.push_back(rec);
 		}
-<<<<<<< HEAD
 		m->commit_records.setRecords(std::move(records));
-=======
-
-		rec.datetime = (misc::str)commit.commit_date.toString();
-		rec.author = (misc::str)commit.author;
-		rec.message = (misc::str)commit.message;
-		rec.tooltip = rec.message + message_ex;
-
-		m->commit_records.records->push_back(rec);
->>>>>>> d47ca3af (Show full datetime in commit log and bump version to 1.4.1)
 	}
 	exdata.p->label_map = std::move(label_map);
 
@@ -3472,7 +3461,7 @@ MainWindow::RepositoryTreeIndex MainWindow::repositoryTreeIndex(QTreeWidgetItem 
 	if (item) {
 		bool ok = false;
 		int i = item->data(0, RepositoryTreeWidgetItem::IndexRole).toInt(&ok);
-		if (ok && i >= 0 && i < repositoryList().size()) {
+		if (ok && i >= 0 && i < (int)repositoryList().size()) {
 			RepositoryTreeIndex index;
 			index.row = i;
 			return index;
@@ -3484,7 +3473,7 @@ MainWindow::RepositoryTreeIndex MainWindow::repositoryTreeIndex(QTreeWidgetItem 
 std::optional<RepositoryInfo> MainWindow::repositoryItem(RepositoryTreeIndex const &index) const
 {
 	std::vector<RepositoryInfo> const &repos = repositoryList();
-	if (index.row >= 0 && index.row < repos.size()) {
+	if (index.row >= 0 && index.row < (int)repos.size()) {
 		return repos[index.row];
 	}
 	return std::nullopt;
@@ -3926,7 +3915,7 @@ void MainWindow::removeRepositoryFromBookmark(RepositoryTreeIndex const &index, 
 		if (r != QMessageBox::Ok) return;
 	}
 	std::vector<RepositoryInfo> repos = repositoryList();
-	if (index.row >= 0 && index.row < repos.size()) {
+	if (index.row >= 0 && index.row < (int)repos.size()) {
 		repos.erase(repos.begin() + index.row); // 消す
 		setRepositoryList(std::move(repos));
 		saveRepositoryBookmarks(); // 保存
@@ -4431,12 +4420,12 @@ MainWindow::DiffResult MainWindow::makeDiffList(GitHash const &id, QListWidget *
 	DiffResult ret;
 	if (GitRunner g = git(); isValidWorkingCopy(g)) {
 		listwidget->clear();
-	
+
 		auto AddItem = [&](ObjectData const &data) {
 			QListWidgetItem *item = newListWidgetFileItem(data);
 			listwidget->addItem(item);
 		};
-	
+
 		GitDiffManager dm(getObjCache());
 		ret.setList(dm.diff(g, id, submodules()));
 		addDiffItems(ret.items(), AddItem);
@@ -5098,9 +5087,9 @@ void MainWindow::on_tableWidget_log_customContextMenuRequested(const QPoint &pos
 	QAction *a_revert = is_valid_commit_id ? menu.addAction(tr("Revert")) : nullptr;
 
 	menu.addSeparator();
-	
+
 	QAction *a_delete_branch = (is_valid_commit_id && !local_branches.empty()) ? menu.addAction(tr("Delete branch...")) : nullptr;
-	
+
 	QAction *a_delete_remote_branch = nullptr;
 	if (RemoteBranches remote_branches = remoteBranches(selected_commit.commit_id); !remote_branches.branches.isEmpty()) {
 		a_delete_remote_branch = menu.addAction(tr("Delete remote branch..."));
@@ -5878,7 +5867,7 @@ void MainWindow::changeSshKey(const QString &local_dir, const QString &ssh_key, 
 #endif
 
 	auto repos = repositoryList();
-	for (int i = 0; i < repos.size(); i++) {
+	for (int i = 0; i < (int)repos.size(); i++) {
 		RepositoryInfo *item = &(repos)[i];
 		QString repodir = item->local_dir;
 #ifdef Q_OS_WIN
@@ -6392,11 +6381,11 @@ bool MainWindow::applyFilter()
 bool MainWindow::appendCharToFilterText(QString const &add, MainWindow::FilterTarget ft)
 {
 	if (add.isEmpty()) return false;
-	
+
 	QString filter = getIncrementalSearchText();
 	QString newfilter = incrementalsearch::appendCharToFilterText(filter, add);
 	if (newfilter == filter) return false; // if no change, nothing to do
-	
+
 	m->filter_target = ft;
 	if (isPtyProcessRunning()) {
 		// ignore but return true
@@ -6883,7 +6872,7 @@ MainWindow::RemoteBranches MainWindow::remoteBranches(GitHash const &id)
 			if (item.id == id && !item.remote.empty()) {
 				ret.branches.push_back(QString::fromStdString(item.remote / item.name));
 			}
-			if (&ret.all_branches && !item.remote.empty() && item.name != "HEAD") {
+			if (!item.remote.empty() && item.name != "HEAD") {
 				ret.all_branches.push_back(QString::fromStdString(item.remote / item.name));
 			}
 		}

@@ -185,7 +185,7 @@ void RepositoryTreeWidget::updateList(RepositoryListStyle style, std::vector<Rep
 
 		std::map<QString, RepositoryTreeWidgetItem *> parentmap;
 
-		for (int i = 0; i < repos.size(); i++) {
+		for (int i = 0; i < (int)repos.size(); i++) {
 			RepositoryInfo const &repo = repos.at(i);
 
 			if (global->incremental_search) {
@@ -281,7 +281,7 @@ void RepositoryTreeWidget::updateList(RepositoryListStyle style, std::vector<Rep
 			{
 				// 最終コミット日時を取得
 				constexpr int THREADS_COUNT = 8;
-				for (int i = 0; i < repos.size(); i++) {
+				for (int i = 0; i < (int)repos.size(); i++) {
 					items.push_back({i, &repos.at(i), {}});
 				}
 				std::atomic<size_t> index(0);

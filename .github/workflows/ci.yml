@@ -33,21 +33,6 @@ jobs:
           libcurl4-openssl-dev \
           mecab-utils
           
-    - name: Prepare environment
-      run: ruby prepare.rb
-      
-    - name: Build FileTypePlugin
-      run: |
-        cd subprojects/FileTypePlugin
-        bash build-gcc.sh
-        cd ..
-
-    - name: Build IncrementalsearchPlugin
-      run: |
-        cd subprojects/IncrementalSearchPlugin
-        bash build-gcc.sh
-        cd ..
-        
     - name: Build Guitar
       run: |
         ruby scripts/make_all.rb

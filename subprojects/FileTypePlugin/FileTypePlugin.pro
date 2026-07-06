@@ -1,6 +1,6 @@
 include(../../common.pri)
 
-!win32:DESTDIR = $$PWD/lib
+!win32:DESTDIR = $$PWD/../../lib
 win32:DESTDIR = $$PWD/../../_bin
 CONFIG(release,debug|release):TARGET = filetypeplugin
 CONFIG(debug,debug|release):TARGET = filetypeplugind

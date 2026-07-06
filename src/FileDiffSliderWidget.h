@@ -9,7 +9,7 @@
 #include <functional>
 
 using TextDiffLine = Document::Line;
-using TextDiffLineList = QList<Document::Line>;
+using TextDiffLineList = std::vector<Document::Line>;
 
 enum class DiffPane {
 	Left,

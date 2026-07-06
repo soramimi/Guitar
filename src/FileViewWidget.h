@@ -51,15 +51,15 @@ using X_ImageViewWidget = ImageViewWidget;
 public:
 	explicit FileViewWidget(QWidget *parent = nullptr);
 
-	void setTextCodec(std::shared_ptr<MyTextCodec> codec);
+	// void setTextCodec(std::shared_ptr<MyTextCodec> codec);
 
 	void setViewType(FileViewType type);
 	
 	void setImage(const std::string &mimetype, const QByteArray &ba, const std::string &object_id, const QString &path);
-	void setText(const QList<Document::Line> *source, std::string const &object_id, const QString &object_path);
+	void setText(const std::vector<Document::Line> *source, std::string const &object_id, const QString &object_path);
 	void setText(const QByteArray &ba, const std::string &object_id, const QString &object_path);
 
-	void setDiffMode(const TextEditorEnginePtr &editor_engine, QScrollBar *vsb, QScrollBar *hsb);
+	void setDiffMode(TextEditorEngine_sp const &editor_engine, QScrollBar *vsb, QScrollBar *hsb);
 
 	int lineHeight() const;
 

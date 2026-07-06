@@ -10,10 +10,8 @@ namespace Ui {
 class MainWindow;
 }
 
-class MainWindow : public QMainWindow
-{
+class MainWindow : public QMainWindow {
 	Q_OBJECT
-
 private:
 	struct Private;
 	Private *m;
@@ -29,7 +27,7 @@ private:
 	void leftArrow();
 	void rightArrow();
 
-	TextEditorEnginePtr engine();
+	TextEditorEngine_sp engine();
 	Document *document();
 	TextEditorView *texteditor();
 protected:

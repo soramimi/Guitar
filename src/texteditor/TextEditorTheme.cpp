@@ -2,40 +2,38 @@
 #include "TextEditorTheme.h"
 #include <memory>
 
-#define COLOR(X) ((QRgb)0x##X)
-
 TextEditorThemePtr TextEditorTheme::Light()
 {
 	TextEditorThemePtr t = std::make_shared<TextEditorTheme>();
-	t->fg_default             = COLOR(000000);
-	t->bg_default             = COLOR(f0f0f0);
-	t->fg_line_number         = COLOR(606060);
-	t->bg_line_number         = COLOR(d0d0d0);
-	t->fg_cursor              = COLOR(0050ff);
-	t->bg_current_line        = COLOR(c0c0c0);
-	t->bg_current_line_number = COLOR(b0b0b0);
-	t->bg_diff_unknown        = COLOR(d0d0d0);
-	t->bg_diff_line_del       = COLOR(f0d0d0);
-	t->bg_diff_line_add       = COLOR(c0f0c0);
-	t->bg_diff_char_del       = COLOR(f090c0);
-	t->bg_diff_char_add       = COLOR(80d0c0);
+	t->fg_default             = (QRgb)0x000000;
+	t->bg_default             = (QRgb)0xf0f0f0;
+	t->fg_line_number         = (QRgb)0x606060;
+	t->bg_line_number         = (QRgb)0xd0d0d0;
+	t->fg_cursor              = (QRgb)0x0050ff;
+	t->bg_current_line        = (QRgb)0xc0c0c0;
+	t->bg_current_line_number = (QRgb)0xb0b0b0;
+	t->bg_diff_unknown        = (QRgb)0xc0c0c0;
+	t->bg_diff_line_del       = (QRgb)0xf0d0d0;
+	t->bg_diff_line_add       = (QRgb)0xc0f0c0;
+	t->bg_diff_char_del       = (QRgb)0xf090c0;
+	t->bg_diff_char_add       = (QRgb)0x80d0c0;
 	return t;
 }
 
 TextEditorThemePtr TextEditorTheme::Dark()
 {
 	TextEditorThemePtr t = std::make_shared<TextEditorTheme>();
-	t->fg_default             = COLOR(ffffff);
-	t->bg_default             = COLOR(303030);
-	t->fg_line_number         = COLOR(b0b0b0);
-	t->bg_line_number         = COLOR(404040);
-	t->fg_cursor              = COLOR(0050ff);
-	t->bg_current_line_number = COLOR(606060);
-	t->bg_diff_unknown        = COLOR(000000);
-	t->bg_diff_line_del       = COLOR(500000);
-	t->bg_diff_line_add       = COLOR(004000);
-	t->bg_diff_char_del       = COLOR(c03070);
-	t->bg_diff_char_add       = COLOR(00a040);
+	t->fg_default             = (QRgb)0xffffff;
+	t->bg_default             = (QRgb)0x303030;
+	t->fg_line_number         = (QRgb)0xb0b0b0;
+	t->bg_line_number         = (QRgb)0x404040;
+	t->fg_cursor              = (QRgb)0x0050ff;
+	t->bg_current_line_number = (QRgb)0x606060;
+	t->bg_diff_unknown        = (QRgb)0x202020;
+	t->bg_diff_line_del       = (QRgb)0x500000;
+	t->bg_diff_line_add       = (QRgb)0x004000;
+	t->bg_diff_char_del       = (QRgb)0xc03070;
+	t->bg_diff_char_add       = (QRgb)0x00a040;
 	return t;
 }
 

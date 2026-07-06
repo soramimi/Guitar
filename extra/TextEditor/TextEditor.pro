@@ -21,6 +21,11 @@ macx:LIBS += -lncurses
 
 SOURCES += \
 	../../src/common/misc.cpp \
+	../../src/common/q/Dir.cpp \
+	../../src/common/q/FileInfo.cpp \
+	../../src/common/qmisc.cpp \
+	../../src/common/realpath.cpp \
+	../../src/common/unicode_conversion.cpp \
 	../../src/texteditor/AbstractCharacterBasedApplication.cpp \
 	../../src/texteditor/TextEditorTheme.cpp \
 	../../src/texteditor/TextEditorView.cpp \
@@ -35,6 +40,11 @@ SOURCES += \
 HEADERS  += \
 	../../src/common/joinpath.h \
 	../../src/common/misc.h \
+	../../src/common/q/Dir.h \
+	../../src/common/q/FileInfo.h \
+	../../src/common/qmisc.h \
+	../../src/common/realpath.h \
+	../../src/common/unicode_conversion.h \
 	../../src/texteditor/AbstractCharacterBasedApplication.h \
 	../../src/texteditor/TextEditorTheme.h \
 	../../src/texteditor/TextEditorView.h \

@@ -69,7 +69,6 @@ subprojects/IncrementalSearchPlugin/mecab/mecab/autom4te.cache/requests
 subprojects/IncrementalSearchPlugin/mecab/mecab/libtool
 *.so*
 lib/
-<<<<<<< HEAD
 subprojects/IncrementalSearchPlugin/mecab/mecab/src/.libs/
 subprojects/IncrementalSearchPlugin/mecab/mecab/src/mecab
 subprojects/IncrementalSearchPlugin/mecab/mecab/src/mecab-cost-train
@@ -77,6 +76,4 @@ subprojects/IncrementalSearchPlugin/mecab/mecab/src/mecab-dict-gen
 subprojects/IncrementalSearchPlugin/mecab/mecab/src/mecab-dict-index
 subprojects/IncrementalSearchPlugin/mecab/mecab/src/mecab-system-eval
 subprojects/IncrementalSearchPlugin/mecab/mecab/src/mecab-test-gen
-=======
 docker/home/run.sh
->>>>>>> 15fcd56f (Add GCC-specific oniguruma config.h and update include path for non-MSVC builds)

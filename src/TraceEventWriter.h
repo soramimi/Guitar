@@ -15,7 +15,7 @@ public:
 		std::string name;
 		std::string category;
 		char phase = 0;
-		uint64_t timestamp;
+		uint64_t timestamp = 0;
 		int64_t duration = 0; // only for complete events
 		int32_t pid;
 		int32_t tid;

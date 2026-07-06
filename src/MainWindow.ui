@@ -1430,6 +1430,9 @@
    <property name="text">
     <string>Pu&amp;ll</string>
    </property>
+   <property name="shortcut">
+    <string>Ctrl+U</string>
+   </property>
   </action>
   <action name="action_fetch">
    <property name="icon">

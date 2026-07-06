@@ -16,7 +16,7 @@
 struct MainWindow::Private {
 	bool need_to_layout;
 	QRect cursor_rect;
-	TextEditorEnginePtr engine;
+	TextEditorEngine_sp engine;
 	QString last_used_file;
 	QTimer tm;
 };
@@ -84,7 +84,7 @@ bool MainWindow::event(QEvent *e)
 	return r;
 }
 
-TextEditorEnginePtr MainWindow::engine()
+TextEditorEngine_sp MainWindow::engine()
 {
 	return m->engine;
 }

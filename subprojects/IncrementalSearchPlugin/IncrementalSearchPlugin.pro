@@ -1,6 +1,6 @@
 include(../../common.pri)
 
-!win32:DESTDIR = $$PWD/lib
+!win32:DESTDIR = $$PWD/../../lib
 win32:DESTDIR = $$PWD/../../_bin
 CONFIG(debug,debug|release):TARGET = incrementalsearchplugind
 CONFIG(release,debug|release):TARGET = incrementalsearchplugin

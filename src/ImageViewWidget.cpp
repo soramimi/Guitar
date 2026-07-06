@@ -135,8 +135,8 @@ void ImageViewWidget::clear()
 
 QString ImageViewWidget::formatText(Document::Line const &line)
 {
-	QByteArray const &ba = line.text;
-	if (ba.isEmpty()) return QString();
+	std::string_view ba = line.text();
+	if (ba.empty()) return {};
 	std::vector<char> vec;
 	vec.reserve(ba.size() + 100);
 	char const *begin = ba.data();

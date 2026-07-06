@@ -137,25 +137,25 @@ uint32_t utf8decoder::next()
 
 //
 
-utf32::utf32(const uint32_t *ptr, const uint32_t *end)
+utf32::utf32(const char32_t *ptr, const char32_t *end)
 {
 	data.ptr = ptr;
 	data.end = end;
 }
 
-utf32::utf32(const uint32_t *ptr)
+utf32::utf32(const char32_t *ptr)
 {
 	data.ptr = ptr;
 	for (data.end = ptr; *data.end; data.end++);
 }
 
-utf32::utf32(const uint32_t *ptr, size_t len)
+utf32::utf32(const char32_t *ptr, size_t len)
 {
 	data.ptr = ptr;
 	data.end = ptr + len;
 }
 
-uint32_t utf32::next()
+char32_t utf32::next()
 {
 	if (data.ptr && data.ptr < data.end) {
 		return *data.ptr++;
@@ -183,7 +183,7 @@ utf16::utf16(const uint16_t *ptr, size_t len)
 	data.end = ptr + len;
 }
 
-uint32_t utf16::next()
+char32_t utf16::next()
 {
 	if (data.ptr && data.ptr < data.end) {
 		uint32_t code = *data.ptr++;
@@ -358,7 +358,7 @@ utf8::utf8(char const *ptr, size_t len)
 {
 }
 
-uint32_t utf8::next()
+char32_t utf8::next()
 {
 	return reader.next();
 }

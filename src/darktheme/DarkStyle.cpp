@@ -1196,7 +1196,7 @@ void DarkStyle::drawPrimitive(PrimitiveElement element, const QStyleOption *opti
 	if (element == PE_IndicatorCheckBox) {
 		{
 			QRect rect = indicatorRect(option, widget, option->rect);
-			qDebug() << "PE_IndicatorCheckBox" << rect;
+			// qDebug() << "PE_IndicatorCheckBox" << rect;
 			int x = rect.x();
 			int y = rect.y();
 			int extent = rect.height();
@@ -1242,7 +1242,7 @@ void DarkStyle::drawPrimitive(PrimitiveElement element, const QStyleOption *opti
 
 void DarkStyle::drawControl(ControlElement ce, const QStyleOption *option, QPainter *p, const QWidget *widget) const
 {
-	qDebug() << ce;
+	// qDebug() << ce;
 	bool disabled = !(option->state & State_Enabled);
 #ifdef Q_OS_MAC
 	if (ce == CE_ToolBar) {
