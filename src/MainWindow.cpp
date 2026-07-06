@@ -1693,7 +1693,7 @@ void MainWindow::makeCommitLog(GitHash const &head, CommitLogExchangeData exdata
 			rec.commit_hash = commit.commit_id;
 		}
 
-		rec.datetime = (misc::str)commit.commit_date.date().toString();
+		rec.datetime = (misc::str)commit.commit_date.toString();
 		rec.author = (misc::str)commit.author;
 		rec.message = (misc::str)commit.message;
 		rec.tooltip = rec.message + message_ex;
