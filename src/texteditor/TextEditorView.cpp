@@ -306,6 +306,7 @@ int TextEditorView::posX_px(int row, int col, bool adjust_scroll, std::vector<Ch
 
 void TextEditorView::parseRow(int row) const
 {
+	(void)row;
 	// auto *chars = m->formatted_lines.chars(row, true);
 	// if (chars) {
 	// 	posX_px(row, 0, false, chars);
@@ -792,13 +793,12 @@ void TextEditorView::paintEvent(QPaintEvent *)
 		for (int pass = 0; pass < 3; pass++) {
 			int view_row = 0; // 描画行番号（ビューポートの左上隅を0とした行位置）
 			int line_row = scrollTopRow(); // 行インデックス（view_row位置に描画すべき論理行インデックス）
-			for (std::size_t i = 0; i < editor_cx->viewport_height && line_row < doc.lines.size(); i++) {
+			for (int i = 0; i < (int)editor_cx->viewport_height && line_row < (int)doc.lines.size(); i++) {
 				auto it = map.find(line_row);
 				if (it == map.end()) continue;
 				
 				const QRect rect_line(vsplit_x, view_y_from_row(line_row), text_area_w, lineHeight()); // 行全体の矩形
 				const QRect rect_text(0, view_y_from_row(line_row), width(), lineHeight()); // テキスト領域矩形
-				
 				
 				const bool iscurrentline = has_focus && line_row == editor_cx->current_row; // 現在の行？
 				const int text_origin_y = view_row * line_height; // テキスト原点座標Y（ピクセル単位）
@@ -822,7 +822,7 @@ void TextEditorView::paintEvent(QPaintEvent *)
 						}
 					}
 					if (0) {
-						if (line_row >= 0 && line_row < doc.lines.size()) {
+						if (line_row >= 0 && line_row < (int)doc.lines.size()) {
 							int x0 = 0;
 							for (auto const &chr : chars) {
 								int x1 = chr.right_x;
@@ -985,15 +985,15 @@ void TextEditorView::paintEvent(QPaintEvent *)
 	{
 		int bottom = editor_cx->bottom_line_y;
 
-		int view_y = editor_cx->viewport_org_y;
-		int view_h = editor_cx->viewport_height + 1;
-		view_y *= lineHeight();
-		view_h *= lineHeight();
+		// int view_y = editor_cx->viewport_org_y;
+		// int view_h = editor_cx->viewport_height + 1;
+		// view_y *= lineHeight();
+		// view_h *= lineHeight();
 
 		paintLineNumbers([&](int y, QString const &text, Document::Line const *line){
 			if (bottom >= 0 && y > bottom) return;
 
-			const bool iscurrentline = y == (editor_cx->viewport_org_y + editor_cx->current_row - scrollTopRow());
+			// const bool iscurrentline = y == (editor_cx->viewport_org_y + editor_cx->current_row - scrollTopRow());
 
 			// if (isCursorVisible() && iscurrentline) { // 現在の行の背景
 			// 	pr.fillRect(0, y * lineHeight(), linenum_width - 2, lineHeight(), theme()->bg_current_line_number);

@@ -206,7 +206,7 @@ bool JumpDialog::eventFilter(QObject *watched, QEvent *event)
 			const int k = e->key();
 			const bool alt = (e->modifiers() & Qt::AltModifier);
 			const bool ctrl = (e->modifiers() & Qt::ControlModifier);
-			const bool shift = (e->modifiers() & Qt::ShiftModifier);
+			// const bool shift = (e->modifiers() & Qt::ShiftModifier);
 			// const bool mods = alt || ctrl || shift; //(e->modifiers() & Qt::KeyboardModifierMask);
 			const bool enter = (k == Qt::Key_Enter || k == Qt::Key_Return);
 			if (enter) {

@@ -390,9 +390,9 @@ void FileDiffWidget::setDiffText(GitDiff const &diff, TextDiffLineList const &le
 
 	auto Do = [](TextDiffLineList const &lines, Document::Line::Type type, std::vector<LineFragment> *blocks){
 		int i = 0;
-		while (i < lines.size()) {
+		while (i < (int)lines.size()) {
 			int n = 1;
-			while (i + n < lines.size()) {
+			while (i + n < (int)lines.size()) {
 				if (lines[i + n].type != lines[i].type) break;
 				n++;
 			}

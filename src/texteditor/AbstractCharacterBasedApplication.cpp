@@ -283,9 +283,9 @@ std::vector<FormattedLine> AbstractCharacterBasedApplication::formatLine_(Docume
 	
 	auto Color = [&](size_t offset, size_t *next_offset){
 		int i = findSyntax(&m->syntax_table, offset);
-		if (i < m->syntax_table.size() && m->syntax_table[i].offset <= offset) {
+		if (i < (int)m->syntax_table.size() && m->syntax_table[i].offset <= offset) {
 			if (next_offset) {
-				if (i + 1 < m->syntax_table.size()) {
+				if (i + 1 < (int)m->syntax_table.size()) {
 					*next_offset = m->syntax_table[i + 1].offset;
 				} else {
 					*next_offset = (size_t)-1;
@@ -340,8 +340,8 @@ std::vector<FormattedLine> AbstractCharacterBasedApplication::formatLine_(Docume
 		{
 			size_t o = line.byte_offset;
 			int i = findSyntax(&m->syntax_table, o);
-			if (i < m->syntax_table.size() && m->syntax_table[i].offset <= o) {
-				if (i + 1 < m->syntax_table.size()) {
+			if (i < (int)m->syntax_table.size() && m->syntax_table[i].offset <= o) {
+				if (i + 1 < (int)m->syntax_table.size()) {
 					o = m->syntax_table[i + 1].offset;
 					if (o != (size_t)-1) {
 						next_offset = o;
@@ -399,7 +399,7 @@ std::vector<FormattedLine> AbstractCharacterBasedApplication::formatLine_(Docume
 
 bool AbstractCharacterBasedApplication::isValidRowIndex(int row_index) const
 {
-	return row_index >= 0 && row_index < engine()->document.lines.size();
+	return row_index >= 0 && row_index < (int)engine()->document.lines.size();
 }
 
 /**
@@ -623,7 +623,7 @@ bool AbstractCharacterBasedApplication::isCurrentLineWritable() const
 	if (isReadOnly()) return false;
 
 	int row = currentRow();
-	if (row >= 0 && row < cx()->engine->document.lines.size()) {
+	if (row >= 0 && row < (int)cx()->engine->document.lines.size()) {
 		if (cx()->engine->document.lines[row].type != Document::Line::Unknown) {
 			return true;
 		}
@@ -1566,7 +1566,7 @@ void AbstractCharacterBasedApplication::moveCursorRight()
 		if (i < (int)m->parsed_current_line_chars.size()) {
 			c = m->parsed_current_line_chars[i].unicode;
 		}
-		if (c == '\r' || c == '\n' || c == -1) {
+		if (c == '\r' || c == '\n' || c == (char32_t)-1) {
 			if (!isSingleLineMode()) {
 				int nextrow = currentRow() + 1;
 				int lines = document()->lines.size();
@@ -1919,7 +1919,7 @@ void AbstractCharacterBasedApplication::paintLineNumbers(std::function<void(int,
 						num++;
 					}
 					m->valid_line_index++;
-					if (m->valid_line_index < editor_cx->engine->document.lines.size()) {
+					if (m->valid_line_index < (int)editor_cx->engine->document.lines.size()) {
 						Document::Line *p = &Line(m->valid_line_index);
 						p->byte_offset = offset;
 						p->line_number = num;

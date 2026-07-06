@@ -73,12 +73,12 @@ bool MainWindow::event(QEvent *e)
 	if (e->type() == QEvent::WindowActivate) {
 		if (m->need_to_layout) {
 			m->need_to_layout = false;
-			int w = texteditor()->basisCharWidth() * texteditor()->screenWidth();
-			int h = texteditor()->lineHeight() * texteditor()->screenHeight();
-			int sb = style()->pixelMetric(QStyle::PM_ScrollBarExtent);
-			w += sb;
-			h += sb;
-			h += ui->menuBar->height();
+			// int w = texteditor()->basisCharWidth() * texteditor()->screenWidth();
+			// int h = texteditor()->lineHeight() * texteditor()->screenHeight();
+			// int sb = style()->pixelMetric(QStyle::PM_ScrollBarExtent);
+			// w += sb;
+			// h += sb;
+			// h += ui->menuBar->height();
 		}
 	}
 	return r;
