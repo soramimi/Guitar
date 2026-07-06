@@ -39,8 +39,9 @@ INCLUDEPATH += $$SRC
 INCLUDEPATH += $$SRC/common
 INCLUDEPATH += $$SRC/coloredit
 INCLUDEPATH += $$SRC/texteditor
-INCLUDEPATH += $$PWD/subprojects/FileTypePlugin/src
-INCLUDEPATH += $$PWD/subprojects/IncrementalSearchPlugin/src
+# INCLUDEPATH += $$PWD/subprojects/FileTypePlugin/src
+# INCLUDEPATH += $$PWD/subprojects/IncrementalSearchPlugin/src
+# INCLUDEPATH += $$PWD/subprojects/OnePasswordPlugin/src
 
 win32:INCLUDEPATH += $$PWD/misc/winpty/include
 win32:LIBS += $$PWD/misc/winpty/x64/lib/winpty.lib -lshlwapi

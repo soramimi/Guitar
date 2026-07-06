@@ -12,7 +12,7 @@
 #include <QApplication>
 #include <QListWidgetItem>
 #include "Logger.h"
-#include <MyMecab.h>
+#include "../subprojects/IncrementalSearchPlugin/src/MyMecab.h"
 
 namespace ver {
 #include "../version.c"

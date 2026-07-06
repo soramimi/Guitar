@@ -5,7 +5,7 @@
 #include "Git.h"
 #include "IncrementalSearchHelper.h"
 #include "RepositoryTreeWidget.h"
-#include <IncrementalSearch.h>
+#include "../subprojects/IncrementalSearchPlugin/src/IncrementalSearchPlugin.h"
 #include <QTableWidget>
 #include <memory>
 

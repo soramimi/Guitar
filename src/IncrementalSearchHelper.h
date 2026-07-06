@@ -5,7 +5,7 @@
 #include <optional>
 #include <QString>
 #include <memory>
-#include <MyMecab.h>
+#include "../subprojects/IncrementalSearchPlugin/src/MyMecab.h"
 #include <regex>
 
 class QRect;

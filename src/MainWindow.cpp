@@ -7494,11 +7494,8 @@ void MainWindow::on_action_restart_trace_logger_triggered()
 
 void MainWindow::test()
 {
-	AiApiBridge api;
-	std::optional<AiResult::Models> models = api.queryModels();
-	if (models) {
-		for (AiResult::Model const &model : models->list) {
-			qDebug() << QString::fromStdString(model.id);
-		}
+	if (global->onepassword) {
+		QString apikey = global->onepassword->getapikey("SHINICHI FUCHITA", "op://API_KEY/ANTHROPIC_API_KEY/credential");
+		qDebug() << apikey;
 	}
 }

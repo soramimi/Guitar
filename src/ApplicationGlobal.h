@@ -8,7 +8,6 @@
 #include "IncrementalSearchHelper.h"
 #include "Theme.h"
 #include "TraceEventWriter.h"
-#include <IncrementalSearchInterface.h>
 #include <QColor>
 #include <QString>
 #include <ai/GenerativeAI.h>
@@ -16,6 +15,11 @@
 #include <inet/curlclient.h>
 #include <inet/webclient.h>
 #include <subprojects/FileTypePlugin/src/FileType.h>
+#include <subprojects/FileTypePlugin/src/FileTypeInterface.h>
+#include <subprojects/IncrementalSearchPlugin/src/IncrementalSearch.h>
+#include <subprojects/IncrementalSearchPlugin/src/IncrementalSearchInterface.h>
+#include <subprojects/OnePasswordPlugin/src/OnePassword.h>
+#include <subprojects/OnePasswordPlugin/src/OnePasswordInterface.h>
 // #include <MyJagger.h>
 
 class MainWindow;
@@ -121,6 +125,8 @@ public:
 	std::string mimetype_by_data(std::vector<char> const &ba);
 	std::string mimetype_by_file(const char *path);
 	std::string mimetype_by_file(std::string const &path);
+	
+	std::shared_ptr<OnePassword> onepassword;
 	
 	GenerativeAI::Credential get_ai_credential(const GenerativeAI::Model &model);
 

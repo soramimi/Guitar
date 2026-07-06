@@ -787,6 +787,31 @@ AiResult AiApiBridge::request(GenerativeAI::EndPoint::Type eptype, std::string c
 		{
 			// APIキーなどの認証情報を取得してリクエストヘッダーを組み立てる
 			GenerativeAI::Credential cred = global_get_ai_credential(model());
+			
+			{ // experimental: 1Password support
+				if (cred.api_key.starts_with("op://")) {
+					if (global->onepassword) {
+						QString account_name;
+						QString secret_path = QString::fromStdString(cred.api_key.substr(5));
+						int at = secret_path.indexOf('@');
+						if (at >= 0) {
+							account_name = secret_path.left(at);
+							secret_path = "op://" + secret_path.mid(at + 1);
+							QString key = global->onepassword->getapikey(account_name, secret_path);
+							if (!key.isEmpty()) {
+								cred.api_key = key.toStdString();
+							} else {
+								logprintf(LOG_DEFAULT, "Error: Failed to retrieve AI API key from 1Password. Please check your 1Password configuration.\n");
+							}
+						} else {
+							logprintf(LOG_DEFAULT, "Error: Invalid 1Password API key format. Expected 'op://account_name/secret_path'.\n");
+						}
+					} else {
+						logprintf(LOG_DEFAULT, "Error: 1Password integration is not available. Cannot retrieve AI API key.\n");
+					}
+				}
+			}
+			
 			GenerativeAI::Request ai_req = GenerativeAI::make_request(model().provider_id(), model(), cred);
 			
 			web_req.set_location(ai_req.endpoint.url(eptype));

@@ -7,7 +7,7 @@
 #include "MainWindow.h"
 #include "MySettings.h"
 #include "SettingGeneralForm.h"
-#include <FileTypeInterface.h>
+#include "../subprojects/FileTypePlugin/src/FileTypeInterface.h"
 #include <QApplication>
 #include <QDir>
 #include <QMessageBox>
@@ -182,8 +182,13 @@ int main(int argc, char *argv[])
 	{
 		global->file_type_detector = loadPlugin<FileType, FileTypeInterface>("filetypeplugin"); // file type detector plugin
 		global->incremental_search = loadPlugin<IncrementalSearch, IncrementalSearchInterface>("incrementalsearchplugin"); // incremental search plugin
+		global->onepassword = loadPlugin<OnePassword, OnePasswordInterface>("onepasswordplugin"); // 1password plugin
 		if (!global->file_type_detector) exit(1);
 		if (!global->incremental_search) exit(1);
+		if (!global->onepassword) {
+			logprintf(LOG_DEFAULT, "OnePasswordPlugin is not loaded. This may cause some features to not work properly.");
+			// exit(1); // これは必須ではないので、ロードできなくても続行する
+		}
 	}
 
 	global->selftest();
