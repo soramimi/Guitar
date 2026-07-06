@@ -11,6 +11,7 @@ CONFIG -= qt
 
 DEFINES += ONIG_STATIC=1 USE_POSIX_API=1
 DEFINES += HAVE_CONFIG_H=1
+!msvc:INCLUDEPATH += oniguruma-gcc
 msvc:INCLUDEPATH += oniguruma-msvc
 
 HEADERS += \
