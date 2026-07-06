@@ -31,7 +31,10 @@
    </property>
    <item>
     <widget class="QStackedWidget" name="stackedWidget">
-     <widget class="QWidget" name="page">
+     <property name="currentIndex">
+      <number>1</number>
+     </property>
+     <widget class="QWidget" name="page_side_by_side">
       <layout class="QGridLayout" name="gridLayout">
        <property name="leftMargin">
         <number>0</number>
@@ -57,7 +60,7 @@
           <number>0</number>
          </property>
          <property name="orientation">
-          <enum>Qt::Horizontal</enum>
+          <enum>Qt::Orientation::Horizontal</enum>
          </property>
         </widget>
        </item>
@@ -70,7 +73,7 @@
           <number>0</number>
          </property>
          <property name="orientation">
-          <enum>Qt::Vertical</enum>
+          <enum>Qt::Orientation::Vertical</enum>
          </property>
         </widget>
        </item>
@@ -89,7 +92,7 @@
           </size>
          </property>
          <property name="focusPolicy">
-          <enum>Qt::NoFocus</enum>
+          <enum>Qt::FocusPolicy::NoFocus</enum>
          </property>
          <property name="text">
           <string/>
@@ -105,14 +108,14 @@
        <item row="0" column="2">
         <widget class="FileViewWidget" name="widget_diff_right" native="true">
          <property name="focusPolicy">
-          <enum>Qt::NoFocus</enum>
+          <enum>Qt::FocusPolicy::NoFocus</enum>
          </property>
         </widget>
        </item>
        <item row="0" column="1">
         <widget class="FileViewWidget" name="widget_diff_left" native="true">
          <property name="focusPolicy">
-          <enum>Qt::NoFocus</enum>
+          <enum>Qt::FocusPolicy::NoFocus</enum>
          </property>
         </widget>
        </item>
@@ -131,7 +134,7 @@
           </size>
          </property>
          <property name="focusPolicy">
-          <enum>Qt::NoFocus</enum>
+          <enum>Qt::FocusPolicy::NoFocus</enum>
          </property>
         </widget>
        </item>
@@ -150,7 +153,7 @@
           </size>
          </property>
          <property name="focusPolicy">
-          <enum>Qt::NoFocus</enum>
+          <enum>Qt::FocusPolicy::NoFocus</enum>
          </property>
          <property name="text">
           <string/>
@@ -160,6 +163,61 @@
            <width>15</width>
            <height>15</height>
           </size>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </widget>
+     <widget class="QWidget" name="page_inline">
+      <layout class="QGridLayout" name="gridLayout_2">
+       <property name="leftMargin">
+        <number>0</number>
+       </property>
+       <property name="topMargin">
+        <number>0</number>
+       </property>
+       <property name="rightMargin">
+        <number>0</number>
+       </property>
+       <property name="bottomMargin">
+        <number>0</number>
+       </property>
+       <property name="spacing">
+        <number>0</number>
+       </property>
+       <item row="0" column="0">
+        <widget class="FileViewWidget" name="widget_diff_inline" native="true"/>
+       </item>
+       <item row="0" column="1">
+        <widget class="QScrollBar" name="verticalScrollBar_inline">
+         <property name="orientation">
+          <enum>Qt::Orientation::Vertical</enum>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="0">
+        <widget class="QScrollBar" name="horizontalScrollBar_inline">
+         <property name="orientation">
+          <enum>Qt::Orientation::Horizontal</enum>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="1">
+        <widget class="QToolButton" name="toolButton">
+         <property name="minimumSize">
+          <size>
+           <width>16</width>
+           <height>16</height>
+          </size>
+         </property>
+         <property name="maximumSize">
+          <size>
+           <width>16</width>
+           <height>16</height>
+          </size>
+         </property>
+         <property name="text">
+          <string/>
          </property>
         </widget>
        </item>

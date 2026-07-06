@@ -109,8 +109,7 @@ private:
 
 	int fileviewHeight() const;
 
-	void setDiffText(const GitDiff &diff, TextDiffLineList const &left, TextDiffLineList const &right);
-
+	void setDiffText(GitDiff const &diff, TextDiffLineList const &left_lines, TextDiffLineList const &right_lines, TextDiffLineList const &inline_lines);
 
 	void setLeftOnly(const GitDiff &diff, QByteArray const &ba);
 	void setRightOnly(const GitDiff &diff, QByteArray const &ba);
@@ -121,7 +120,7 @@ private:
 
 	FileViewType setupPreviewWidget();
 
-	void makeSideBySideDiffData(const GitDiff &diff, const std::vector<std::string> &original_lines, TextDiffLineList *left_lines, TextDiffLineList *right_lines);
+	void makeSideBySideDiffData(const GitDiff &diff, const std::vector<std::string> &original_lines, TextDiffLineList *left_lines, TextDiffLineList *right_lines, TextDiffLineList *inline_lines);
 	void onUpdateSliderBar();
 	void reflectScrollBar();
 	void reflectScrollBarV();
@@ -166,6 +165,9 @@ private slots:
 	void onMoved(int cur_row, int cur_col, int scr_row, int scr_col);
 	void on_toolButton_menu_clicked();
 
+	void onVerticalScrollValueChanged_inline(int value);
+	void onHorizontalScrollValueChanged_inline(int value);
+	
 signals:
 	//	void moveNextItem();
 	//	void movePreviousItem();
