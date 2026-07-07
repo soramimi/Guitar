@@ -790,7 +790,7 @@ AiResult AiApiBridge::request(GenerativeAI::EndPoint::Type eptype, std::string c
 			GenerativeAI::Credential cred = global_get_ai_credential(model());
 			
 			{ // experimental: 1Password support
-				if (cred.api_key.starts_with("op://")) {
+				if (misc::starts_with(cred.api_key, "op://")) {
 					bool ok = false;
 					std::string errmsg;
 					if (global->onepassword) {
