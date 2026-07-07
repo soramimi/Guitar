@@ -57,13 +57,19 @@ public:
 		}
 	};
 
+	enum TwoFileDiffStyle {
+		SideBySide,
+		Inline,		
+	};
+
 	enum ViewStyle {
 		None,
 		SingleFile,
 		LeftOnly,
 		RightOnly,
-		SideBySideText,
-		SideBySideImage,
+		SideBySideTextDiff,
+		SideBySideImageDiff,
+		InlineTextDiff,
 	};
 
 	struct LineFragment {
@@ -113,8 +119,13 @@ private:
 
 	void setLeftOnly(const GitDiff &diff, QByteArray const &ba);
 	void setRightOnly(const GitDiff &diff, QByteArray const &ba);
-	void setSideBySide(const GitDiff &diff, QByteArray const &ba, bool uncommitted, QString const &workingdir);
-	void setSideBySide_(const GitDiff &diff, QByteArray const &ba_a, QByteArray const &ba_b, QString const &workingdir);
+private:
+	void _setTwoFilesDiff(const GitDiff &diff, QByteArray const &ba, bool uncommitted, QString const &workingdir, ViewStyle viewstyle);
+public:
+	void setSideBySideDiff(const GitDiff &diff, QByteArray const &ba, bool uncommitted, QString const &workingdir);
+	void setInlineDiff(GitDiff const &diff, QByteArray const &ba, bool uncommitted, QString const &workingdir);
+	
+	void setSideBySideBlobDiff(const GitDiff &diff, QByteArray const &ba_a, QByteArray const &ba_b, QString const &workingdir);
 
 	bool isValidID(std::string const &id);
 
@@ -144,8 +155,8 @@ public:
 	void updateControls();
 	void scrollToBottom();
 
-	void updateDiffView(const GitDiff &info, bool uncommited);
-	void updateDiffView(const std::string &id_left, const std::string &id_right, const std::string &path = {});
+	void updateDiffView(const GitDiff &info, bool uncommited, TwoFileDiffStyle diffstyle);
+	void updateDiffView(const std::string &id_left, const std::string &id_right, const std::string &path, TwoFileDiffStyle diffstyle);
 
 	void setMaximizeButtonEnabled(bool f);
 	void setFocusAcceptable(Qt::FocusPolicy focuspolicy);

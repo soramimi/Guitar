@@ -1878,33 +1878,35 @@ int AbstractCharacterBasedApplication::printArea(TextEditorContext const *cx, co
 
 void AbstractCharacterBasedApplication::paintLineNumbers(std::function<void(int, QString const &, Document::Line const *)> const &draw)
 {
-	auto Line = [&](int index)->Document::Line &{
-		return editor_cx->engine->document.lines[index];
+	auto Line = [&](int index)->Document::Line const &{
+		Document *doc = &editor_cx->engine->document;
+		return doc->lines[index];
 	};
 	int rightpadding = 2;
 	int left_margin = editor_cx->viewport_org_x;
 	int num = 1;
 	size_t offset = 0;
 	for (int i = 0; i <= editor_cx->viewport_height; i++) {
-		char tmp[100];
-		Q_ASSERT(left_margin < (int)sizeof(tmp));
-		memset(tmp, ' ', left_margin);
-		tmp[left_margin] = 0;
+		QString tmp;
+		// Q_ASSERT(left_margin < (int)sizeof(tmp));
+		// memset(tmp, ' ', left_margin);
+		// tmp[left_margin] = 0;
 		int row = editor_cx->scroll_row_pos + i;
-		auto LineNumberText = [&](char *ptr, int linenum){
-			sprintf(ptr, "%*u ", left_margin - rightpadding, linenum);
+		auto LineNumberText = [&](int linenum){
+			if (linenum < 1) return QString();
+			return QString::asprintf("%*u ", left_margin - rightpadding, linenum);
 		};
-		Document::Line *line = nullptr;
+		Document::Line const *line = nullptr;
 		if (row < (int)editor_cx->engine->document.lines.size()) {
 			if (m->valid_line_index < 0) {
 				m->valid_line_index = 0;
-				Document::Line *p = &Line(0);
-				if (p->type != Document::Line::Unknown) {
-					p->byte_offset = offset;
-					p->line_number = num;
-					offset += p->text().size();
-					num++;
-				}
+				// Document::Line *p = &Line(0);
+				// if (p->type != Document::Line::Unknown) {
+				// 	p->byte_offset = offset;
+				// 	p->line_number = num;
+				// 	offset += p->text().size();
+				// 	num++;
+				// }
 			}
 			if (row >= m->valid_line_index) {
 				{
@@ -1919,11 +1921,11 @@ void AbstractCharacterBasedApplication::paintLineNumbers(std::function<void(int,
 						num++;
 					}
 					m->valid_line_index++;
-					if (m->valid_line_index < (int)editor_cx->engine->document.lines.size()) {
-						Document::Line *p = &Line(m->valid_line_index);
-						p->byte_offset = offset;
-						p->line_number = num;
-					}
+					// if (m->valid_line_index < (int)editor_cx->engine->document.lines.size()) {
+					// 	Document::Line *p = &Line(m->valid_line_index);
+					// 	p->byte_offset = offset;
+					// 	p->line_number = num;
+					// }
 				}
 			}
 			if (left_margin > 1) {
@@ -1933,11 +1935,11 @@ void AbstractCharacterBasedApplication::paintLineNumbers(std::function<void(int,
 					linenum = line->line_number;
 				}
 				if (linenum != (unsigned int)-1 && line->type != Document::Line::Unknown) {
-					LineNumberText(tmp, linenum);
+					tmp = LineNumberText(linenum);
 				}
 			}
 		} else if (row == 0 && editor_cx->engine->document.lines.empty()) {
-			LineNumberText(tmp, 1);
+			tmp = LineNumberText(1);
 		}
 		int y = editor_cx->viewport_org_y + i;
 		draw(y, tmp, line);

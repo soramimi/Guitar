@@ -189,7 +189,7 @@ void FileDiffWidget::scrollToBottom()
 
 void FileDiffWidget::updateSliderCursor()
 {
-	if (viewstyle() == SideBySideText) {
+	if (viewstyle() == SideBySideTextDiff) {
 		ui->widget_diff_slider->clear(true);
 	}
 }
@@ -303,7 +303,7 @@ void FileDiffWidget::makeSideBySideDiffData(GitDiff const &diff, std::vector<std
 				for (TextDiffLine &line : *lines) {
 					size_t n = line.text().size();
 					if (n > 0) {
-						int c = line.text()[n - 1] & 0xff;
+						int c = (unsigned char)line.text().back();
 						if (c != '\r' && c != '\n') {
 							line.append_text('\n');
 						}
@@ -354,11 +354,12 @@ void FileDiffWidget::setDiffText(GitDiff const &diff, TextDiffLineList const &le
 	enum Pane {
 		Left,
 		Right,
-		Inline,
+		InlineTextDiff,
 	};
 	auto SetLineNumber = [&](TextDiffLineList const &lines, Pane pane, TextDiffLineList *out){
 		out->clear();
 		int linenum = 1;
+
 		for (TextDiffLine const &line : lines) {
 			TextDiffLine item = line;
 
@@ -367,13 +368,15 @@ void FileDiffWidget::setDiffText(GitDiff const &diff, TextDiffLineList const &le
 				item.line_number = linenum++;
 				break;
 			case TextDiffLine::Add:
-				if (pane == Pane::Right) {
+				if (pane == Pane::Right || pane == Pane::InlineTextDiff) {
 					item.line_number = linenum++;
 				}
 				break;
 			case TextDiffLine::Del:
 				if (pane == Pane::Left) {
 					item.line_number = linenum++;
+				} else if (pane == Pane::InlineTextDiff) {
+					item.line_number = 0; // 削除行はインラインビューでは行番号を表示しない
 				}
 				break;
 			default:
@@ -386,8 +389,9 @@ void FileDiffWidget::setDiffText(GitDiff const &diff, TextDiffLineList const &le
 	};
 	SetLineNumber(left_lines, Pane::Left, &m->left_lines);
 	SetLineNumber(right_lines, Pane::Right, &m->right_lines);
-	SetLineNumber(inline_lines, Pane::Inline, &m->inline_lines);
+	SetLineNumber(inline_lines, Pane::InlineTextDiff, &m->inline_lines);
 
+#if 0
 	std::vector<LineFragment> left_dels;
 	std::vector<LineFragment> right_adds;
 	std::vector<LineFragment> inline_blocks;
@@ -408,11 +412,12 @@ void FileDiffWidget::setDiffText(GitDiff const &diff, TextDiffLineList const &le
 	};
 	Do(m->left_lines, Document::Line::Del, &left_dels);
 	Do(m->right_lines, Document::Line::Add, &right_adds);
-	Do(m->right_lines, Document::Line::Normal, &inline_blocks);
-
+	Do(m->inline_lines, Document::Line::Normal, &inline_blocks);
+#endif
+	
 	ui->widget_diff_left->setText(&m->left_lines, (QS)diff.blob.a_id_or_path, (QS)diff.path);
 	ui->widget_diff_right->setText(&m->right_lines, (QS)diff.blob.b_id_or_path, (QS)diff.path);
-	ui->widget_diff_inline->setText(&m->inline_lines, (QS)diff.blob.b_id_or_path, (QS)diff.path);
+	ui->widget_diff_inline->setText(&m->inline_lines, {}, (QS)diff.path);
 	reflectScrollBar();
 	ui->widget_diff_slider->clear(true);
 }
@@ -567,15 +572,24 @@ void FileDiffWidget::setRightOnly(GitDiff const &diff, QByteArray const &ba)
 	}
 }
 
-void FileDiffWidget::setSideBySide(GitDiff const &diff, QByteArray const &ba, bool uncommitted, QString const &workingdir)
+void FileDiffWidget::_setTwoFilesDiff(GitDiff const &diff, QByteArray const &ba, bool uncommitted, QString const &workingdir, ViewStyle viewstyle)
 {
 	m->init_param_ = InitParam_();
-	m->init_param_.view_style = FileDiffWidget::ViewStyle::SideBySideText;
+	m->init_param_.view_style = viewstyle;
 	m->init_param_.bytes_a = ba;
 	m->init_param_.diff = diff;
 	m->init_param_.uncommitted = uncommitted;
 	m->init_param_.workingdir = workingdir;
 
+	switch (viewstyle) {
+	case ViewStyle::SideBySideTextDiff:
+		ui->stackedWidget->setCurrentWidget(ui->page_side_by_side);
+		break;
+	case ViewStyle::InlineTextDiff:
+		ui->stackedWidget->setCurrentWidget(ui->page_inline);
+		break;
+	}
+	
 	setOriginalLines_(ba, {}, {});
 
 	if (setSubmodule(diff)) {
@@ -594,10 +608,20 @@ void FileDiffWidget::setSideBySide(GitDiff const &diff, QByteArray const &ba, bo
 	}
 }
 
-void FileDiffWidget::setSideBySide_(GitDiff const &diff, QByteArray const &ba_a, QByteArray const &ba_b, QString const &workingdir)
+void FileDiffWidget::setSideBySideDiff(GitDiff const &diff, QByteArray const &ba, bool uncommitted, QString const &workingdir)
+{
+	_setTwoFilesDiff(diff, ba, uncommitted, workingdir, FileDiffWidget::ViewStyle::SideBySideTextDiff);
+}
+
+void FileDiffWidget::setInlineDiff(GitDiff const &diff, QByteArray const &ba, bool uncommitted, QString const &workingdir)
+{
+	_setTwoFilesDiff(diff, ba, uncommitted, workingdir, FileDiffWidget::ViewStyle::InlineTextDiff);
+}
+
+void FileDiffWidget::setSideBySideBlobDiff(GitDiff const &diff, QByteArray const &ba_a, QByteArray const &ba_b, QString const &workingdir)
 {
 	m->init_param_ = InitParam_();
-	m->init_param_.view_style = FileDiffWidget::ViewStyle::SideBySideImage;
+	m->init_param_.view_style = FileDiffWidget::ViewStyle::SideBySideImageDiff;
 	m->init_param_.bytes_a = ba_a;
 	m->init_param_.bytes_b = ba_b;
 	m->init_param_.diff = diff;
@@ -643,7 +667,7 @@ bool FileDiffWidget::isValidID(std::string const &id)
  * @param info
  * @param uncommited
  */
-void FileDiffWidget::updateDiffView(GitDiff const &info, bool uncommited)
+void FileDiffWidget::updateDiffView(GitDiff const &info, bool uncommited, TwoFileDiffStyle diffstyle)
 {
 	ASSERT_MAIN_THREAD();
 	
@@ -656,7 +680,7 @@ void FileDiffWidget::updateDiffView(GitDiff const &info, bool uncommited)
 		std::string mime_a = global->mimetype_by_data(obj_a.content);
 		std::string mime_b = global->mimetype_by_data(obj_b.content);
 		if (misc::isImage(mime_a) && misc::isImage(mime_b)) {
-			setSideBySide_(info, obj_a.content, obj_b.content, QString::fromStdString(g.workingDir()));
+			setSideBySideBlobDiff(info, obj_a.content, obj_b.content, QString::fromStdString(g.workingDir()));
 			return;
 		}
 	}
@@ -674,7 +698,13 @@ void FileDiffWidget::updateDiffView(GitDiff const &info, bool uncommited)
 		if (isValidID(diff.blob.a_id_or_path)) { // 左が有効
 			obj = catFile(g, diff.blob.a_id_or_path);
 			if (isValidID(diff.blob.b_id_or_path)) { // 右が有効
-				setSideBySide(diff, obj.content, uncommited, QString::fromStdString(g.workingDir())); // 通常のdiff表示
+				if (diffstyle == TwoFileDiffStyle::SideBySide) {
+					// 左右分割diff表示
+					setSideBySideDiff(diff, obj.content, uncommited, QString::fromStdString(g.workingDir()));
+				} else if (diffstyle == TwoFileDiffStyle::Inline) {
+					// インラインdiff表示
+					setInlineDiff(diff, obj.content, uncommited, QString::fromStdString(g.workingDir()));
+				}
 			} else {
 				setLeftOnly(diff, obj.content); // 右が無効の時は、削除されたファイル
 			}
@@ -691,7 +721,7 @@ void FileDiffWidget::updateDiffView(GitDiff const &info, bool uncommited)
  * @param id_right
  * @param path
  */
-void FileDiffWidget::updateDiffView(std::string const &id_left, std::string const &id_right, std::string const &path)
+void FileDiffWidget::updateDiffView(std::string const &id_left, std::string const &id_right, std::string const &path, TwoFileDiffStyle diffstyle)
 {
 	GitRunner g = git();
 	if (!g.isValidWorkingCopy()) return;
@@ -709,7 +739,7 @@ void FileDiffWidget::updateDiffView(std::string const &id_left, std::string cons
 	}
 
 	GitObject obj = catFile(g, diff.blob.a_id_or_path);
-	setSideBySide(diff, obj.content, false, QString::fromStdString(g.workingDir()));
+	setSideBySideDiff(diff, obj.content, false, QString::fromStdString(g.workingDir()));
 
 	ui->widget_diff_slider->clear(false);
 
@@ -741,6 +771,7 @@ void FileDiffWidget::keyPressEvent(QKeyEvent *event)
 void FileDiffWidget::scrollTo(int value)
 {
 	ui->verticalScrollBar->setValue(value);
+	ui->verticalScrollBar_inline->setValue(value);
 }
 
 /**
@@ -801,9 +832,19 @@ void FileDiffWidget::setFocusAcceptable(Qt::FocusPolicy focuspolicy)
 
 void FileDiffWidget::onUpdateSliderBar()
 {
-	int total = m->engine_left->document.lines.size();
-	int value = ui->verticalScrollBar->value();
-	int page = ui->verticalScrollBar->pageStep();
+	int total;
+	int value;
+	int page;
+	if (viewstyle() == SideBySideTextDiff) {
+		total = m->engine_left->document.lines.size();
+		value = ui->verticalScrollBar->value();
+		page = ui->verticalScrollBar->pageStep();
+	} else if (viewstyle() == InlineTextDiff) {
+		total = m->engine_inline->document.lines.size();
+		value = ui->verticalScrollBar_inline->value();
+		page = ui->verticalScrollBar_inline->pageStep();
+		
+	}
 	ui->widget_diff_slider->setScrollPos(total, value, page);
 }
 
@@ -823,9 +864,10 @@ void FileDiffWidget::reflectScrollBar(/*bool updateformat*/)
 		// 左と右のテキストを取得
 		TextEditorView::FormattedLines *llines = ui->widget_diff_left->getTextEditorView()->fetchLines2(false);
 		TextEditorView::FormattedLines *rlines = ui->widget_diff_right->getTextEditorView()->fetchLines2(false);
+		ui->widget_diff_inline->getTextEditorView()->fetchLines2(false);
 
 		// サイドバイサイドのとき文字差分を求める
-		if (viewstyle() == SideBySideText) {
+		if (viewstyle() == SideBySideTextDiff) {
 			using Char = AbstractCharacterBasedApplication::Char;
 			using Attr = AbstractCharacterBasedApplication::CharAttr;
 

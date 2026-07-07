@@ -155,13 +155,13 @@ void FileHistoryWindow::updateDiffView()
 		std::string id_left = FindFileID(*commit_left);
 		std::string id_right = FindFileID(*commit_right);
 
-		ui->widget_diff_view->updateDiffView(id_left, id_right, m->path.toStdString());
+		ui->widget_diff_view->updateDiffView(id_left, id_right, m->path.toStdString(), FileDiffWidget::SideBySide);
 	} else if (row >= 0 && row < (int)items.size()) {
 		GitCommitItem const *commit = items[row];    // newer
 		std::string id = FindFileID(*commit);
 
 		GitDiff diff(id, m->path.toStdString(), {});
-		ui->widget_diff_view->updateDiffView(diff, false);
+		ui->widget_diff_view->updateDiffView(diff, false, FileDiffWidget::SideBySide);
 	}
 }
 

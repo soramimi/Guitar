@@ -40,7 +40,7 @@ BigDiffWindow::~BigDiffWindow()
 
 void BigDiffWindow::updateDiffView()
 {
-	ui->widget_diff->updateDiffView(m->param.diff, m->param.uncommitted);
+	ui->widget_diff->updateDiffView(m->param.diff, m->param.uncommitted, FileDiffWidget::SideBySide);
 }
 
 void BigDiffWindow::init(FileDiffWidget::InitParam_ const &param)
@@ -72,11 +72,14 @@ void BigDiffWindow::init(FileDiffWidget::InitParam_ const &param)
 	case FileDiffWidget::ViewStyle::RightOnly:
 		ui->widget_diff->setRightOnly(m->param.diff, m->param.bytes_b);
 		break;
-	case FileDiffWidget::ViewStyle::SideBySideText:
-		ui->widget_diff->setSideBySide(m->param.diff, m->param.bytes_a, m->param.uncommitted, m->param.workingdir);
+	case FileDiffWidget::ViewStyle::InlineTextDiff:
+		ui->widget_diff->setInlineDiff(m->param.diff, m->param.bytes_a, m->param.uncommitted, m->param.workingdir);
 		break;
-	case FileDiffWidget::ViewStyle::SideBySideImage:
-		ui->widget_diff->setSideBySide_(m->param.diff, m->param.bytes_a, m->param.bytes_b, m->param.workingdir);
+	case FileDiffWidget::ViewStyle::SideBySideTextDiff:
+		ui->widget_diff->setSideBySideDiff(m->param.diff, m->param.bytes_a, m->param.uncommitted, m->param.workingdir);
+		break;
+	case FileDiffWidget::ViewStyle::SideBySideImageDiff:
+		ui->widget_diff->setSideBySideBlobDiff(m->param.diff, m->param.bytes_a, m->param.bytes_b, m->param.workingdir);
 		break;
 	}
 }
