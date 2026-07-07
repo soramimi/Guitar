@@ -17,7 +17,7 @@
    <item>
     <widget class="QStackedWidget" name="stackedWidget">
      <property name="currentIndex">
-      <number>1</number>
+      <number>0</number>
      </property>
      <widget class="QWidget" name="page_first">
       <layout class="QVBoxLayout" name="verticalLayout_4">
@@ -280,11 +280,11 @@
   <tabstop>lineEdit_remote_name</tabstop>
   <tabstop>lineEdit_remote_repository_url</tabstop>
   <tabstop>pushButton_test_repo</tabstop>
-  <tabstop>comboBox_search</tabstop>
   <tabstop>comboBox_local_working_folder</tabstop>
   <tabstop>pushButton_manage_local_fonder</tabstop>
   <tabstop>lineEdit_local_path</tabstop>
   <tabstop>pushButton_browse_local_path</tabstop>
+  <tabstop>comboBox_search</tabstop>
   <tabstop>pushButton_prev</tabstop>
   <tabstop>pushButton_ok</tabstop>
   <tabstop>pushButton_cancel</tabstop>
