@@ -117,6 +117,16 @@ macx {
 	LIBS += -ldl
 }
 
+# CONFIG += jemalloc
+jemalloc {
+	DEFINES += USE_JEMALLOC
+	INCLUDEPATH += /usr/local/include
+	SOURCES += $$PWD/src/myallocator.cpp
+	HEADERS += $$PWD/src/myallocator.h
+	LIBS += -lstdc++
+	LIBS += /usr/local/lib/libjemalloc.a
+}
+
 #
 
 SOURCES += \
