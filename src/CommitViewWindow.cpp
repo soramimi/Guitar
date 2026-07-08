@@ -49,7 +49,7 @@ void CommitViewWindow::on_listWidget_files_currentRowChanged(int currentRow)
 	std::basic_string_view<GitDiff const *> items = m->diff_list.items();
 	if (currentRow >= 0 && (size_t)currentRow < items.size()) {
 		GitDiff const *diff = items[currentRow];
-		ui->widget_diff->updateDiffView(*diff, false, FileDiffWidget::SideBySide);
+		ui->widget_diff->updateDiffView(*diff, false);
 	}
 }
 

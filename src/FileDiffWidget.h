@@ -57,19 +57,19 @@ public:
 		}
 	};
 
-	enum TwoFileDiffStyle {
-		SideBySide,
-		Inline,		
-	};
+	// enum DiffViewStyle {
+	// 	SideBySide,
+	// 	Inline,		
+	// };
 
 	enum ViewStyle {
 		None,
-		SingleFile,
+		// SingleFile,
 		LeftOnly,
 		RightOnly,
+		InlineTextDiff,
 		SideBySideTextDiff,
 		SideBySideImageDiff,
-		InlineTextDiff,
 	};
 
 	struct LineFragment {
@@ -104,7 +104,9 @@ private:
 	MainWindow *mainwindow();
 
 	ViewStyle viewstyle() const;
-
+	void setViewStyle(ViewStyle diffstyle);
+	// DiffViewStyle diffviewStyle() const;
+	
 	GitRunner git();
 	GitObject catFile(GitRunner g, const std::string &id);
 
@@ -120,7 +122,7 @@ private:
 	void setLeftOnly(const GitDiff &diff, QByteArray const &ba);
 	void setRightOnly(const GitDiff &diff, QByteArray const &ba);
 private:
-	void _setTwoFilesDiff(const GitDiff &diff, QByteArray const &ba, bool uncommitted, QString const &workingdir, ViewStyle viewstyle);
+	void _setTwoFilesDiff(const GitDiff &diff, QByteArray const &ba, bool uncommitted, QString const &workingdir);
 public:
 	void setSideBySideDiff(const GitDiff &diff, QByteArray const &ba, bool uncommitted, QString const &workingdir);
 	void setInlineDiff(GitDiff const &diff, QByteArray const &ba, bool uncommitted, QString const &workingdir);
@@ -150,25 +152,23 @@ public:
 
 	void clearDiffView();
 
-	void setSingleFile(QByteArray const &ba, QString const &id, QString const &path);
+	// void setSingleFile(QByteArray const &ba, QString const &id, QString const &path);
 
 	void updateControls();
 	void scrollToBottom();
 
-	void updateDiffView(const GitDiff &info, bool uncommited, TwoFileDiffStyle diffstyle);
-	void updateDiffView(const std::string &id_left, const std::string &id_right, const std::string &path, TwoFileDiffStyle diffstyle);
+	void updateDiffView(const GitDiff &info, bool uncommited);
+	void updateDiffView(const std::string &id_left, const std::string &id_right, const std::string &path);
 
 	void setMaximizeButtonEnabled(bool f);
 	void setFocusAcceptable(Qt::FocusPolicy focuspolicy);
 	QPixmap makeDiffPixmap(DiffPane pane, int width, int height);
 	void setViewType(FileViewType type);
-	// void setTextCodec(std::shared_ptr<MyTextCodec> codec);
-	// void setTextCodec(char const *name);
 private slots:
-	void onVerticalScrollValueChanged(int);
-	void onHorizontalScrollValueChanged(int);
+	void onVerticalScrollValueChanged(int value);
+	void onHorizontalScrollValueChanged(int value);
 	void onDiffWidgetWheelScroll(int lines);
-	void onScrollValueChanged2(int value);
+	// void onScrollValueChanged2(int value);
 	void onDiffWidgetResized();
 	void on_toolButton_fullscreen_clicked();
 

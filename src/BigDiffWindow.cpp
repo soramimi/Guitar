@@ -40,7 +40,7 @@ BigDiffWindow::~BigDiffWindow()
 
 void BigDiffWindow::updateDiffView()
 {
-	ui->widget_diff->updateDiffView(m->param.diff, m->param.uncommitted, FileDiffWidget::SideBySide);
+	ui->widget_diff->updateDiffView(m->param.diff, m->param.uncommitted);
 }
 
 void BigDiffWindow::init(FileDiffWidget::InitParam_ const &param)

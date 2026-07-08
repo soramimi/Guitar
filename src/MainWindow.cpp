@@ -6174,7 +6174,7 @@ void MainWindow::updateDiffView(QListWidgetItem const *item)
 			updatediffview = true;
 		}
 		if (updatediffview) {
-			ui->widget_diff_view->updateDiffView(*diff, uncommited, FileDiffWidget::SideBySide);
+			ui->widget_diff_view->updateDiffView(*diff, uncommited);
 		}
 	}
 }
