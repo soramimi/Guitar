@@ -145,6 +145,11 @@ private:
 		QString header;
 		size_t idiff;
 		bool staged = false;
+		
+		bool isUntracked() const
+		{
+			return header.isEmpty();
+		}
 	};
 
 private:
