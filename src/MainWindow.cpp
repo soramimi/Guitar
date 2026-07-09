@@ -3801,9 +3801,9 @@ void MainWindow::addDiffItems(std::basic_string_view<GitDiff const *> diff_list,
 		case GitDiff::Type::Unmerged:
 			header = global->prefix_unmerged;
 			break;
-		default:
-			header = global->prefix_empty;
-			break;
+		// default:
+		// 	header = global->prefix_empty;
+		// 	break;
 		}
 
 		ObjectData data;
@@ -4195,7 +4195,12 @@ void MainWindow::onAddFileObjectData(MainWindowExchangeData const &data)
 
 	std::vector<MainWindow::ObjectData> objects = data.object_data;
 	std::sort(objects.begin(), objects.end(), [](ObjectData const &a, ObjectData const &b) {
-		return misc::stricmp(a.path, b.path) < 0;
+		auto Compare = [](ObjectData const &a, ObjectData const &b){
+			if (!a.isUntracked() && b.isUntracked()) return -1;
+			if (a.isUntracked() && !b.isUntracked()) return 1;
+			return misc::stricmp(a.path, b.path);
+		};
+		return Compare(a, b) < 0;
 	});
 
 	for (ObjectData const &obj : objects) {
@@ -4309,7 +4314,7 @@ void MainWindow::updateFileList(GitHash const &id)
 			std::atomic_size_t index { 0 };
 			std::vector<std::thread> threads(8);
 			const size_t ncount = m->uncommitted_changes_file_list.size();
-			std::vector<MainWindow::ObjectData> object_data(ncount);
+			std::vector<ObjectData> object_data(ncount);
 			for (size_t j = 0; j < threads.size(); j++) {
 				threads[j] = std::thread([&](GitRunner g) {
 					while (1) {
@@ -4342,6 +4347,8 @@ void MainWindow::updateFileList(GitHash const &id)
 								path = s.path2(); // renamed newer path
 							} else if (s.code_x() == 'M' || s.code_y() == 'M') {
 								header = global->prefix_chg;
+							// } else {
+							// 	header = global->prefix_empty;
 							}
 							ObjectData obj;
 							obj.path = (misc::str)path;

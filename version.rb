@@ -15,8 +15,10 @@ $version_d = 0
 #
 
 # History
-# v1.4.1 2026-07-06
-# - 
+#
+# v1.4.1 2026-07-09
+# - Show full datetime in commit log
+# - Fix sorting order for file listing
 #
 # v1.4.0 2026-06-09
 # - Implement MeCab-based incremental search for Japanese romanization, replacing Migemo

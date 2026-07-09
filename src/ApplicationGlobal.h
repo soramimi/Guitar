@@ -111,7 +111,7 @@ public:
 	constexpr static std::string_view prefix_add = "(add) ";
 	constexpr static std::string_view prefix_del = "(del) ";
 	constexpr static std::string_view prefix_unmerged = "(unmerged) ";
-	constexpr static std::string_view prefix_empty = "() ";
+	// constexpr static std::string_view prefix_empty = "() ";
 
 	std::shared_ptr<AbstractInetClient> inet_client();
 
