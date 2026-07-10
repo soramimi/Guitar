@@ -117,30 +117,6 @@ macx {
 	LIBS += -ldl
 }
 
-# experimental jemalloc support
-# CONFIG += jemalloc
-# ↑Windowsでうまくうごかない 2026-07-08
-jemalloc {
-	DEFINES += USE_JEMALLOC
-	SOURCES += $$PWD/src/myallocator.cpp
-	HEADERS += $$PWD/src/myallocator.h
-	gcc {
-		INCLUDEPATH += /usr/local/include
-		LIBS += -lstdc++
-		LIBS += /usr/local/lib/libjemalloc.a
-	}
-	win32 {
-		DEFINES += JEMALLOC_EXPORT=
-		DEFINES += JEMALLOC_NO_PRIVATE_NAMESPACE
-		INCLUDEPATH += C:\cygwin64\home\soramimi\jemalloc-5.3.1\include
-		INCLUDEPATH += C:\cygwin64\home\soramimi\jemalloc-5.3.1\include\msvc_compat
-		CONFIG(debug,debug|release):LIBS += C:\cygwin64\home\soramimi\jemalloc-5.3.1\msvc\x64\Debug\jemallocd.lib
-		CONFIG(release,debug|release):LIBS += C:\cygwin64\home\soramimi\jemalloc-5.3.1\msvc\x64\Release\jemalloc.lib
-		# CONFIG(debug,debug|release):LIBS += C:\cygwin64\home\soramimi\jemalloc-5.3.1\msvc\x64\Debug-static\jemalloc-vc145-Debug-static.lib
-		# CONFIG(release,debug|release):LIBS += C:\cygwin64\home\soramimi\jemalloc-5.3.1\msvc\x64\Release-static\jemalloc-vc145-Release-static.lib
-	}
-}
-
 #
 
 SOURCES += \
