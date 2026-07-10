@@ -4,73 +4,45 @@
 
 #include <string>
 #include <vector>
+#include <string_view>
 
-class JoinPath {
-public:
+namespace JoinPath {
 
-	template <typename T> static void trimquot(T const **begin, T const **end)
-	{
-		if (*begin + 1 < *end && (*begin)[0] == '"' && (*end)[-1] == '"') {
-			(*begin)++;
-			(*end)--;
-		}
+template <typename T> static std::basic_string_view<T> trimquot(std::basic_string_view<T> s)
+{
+	if (s.size() < 2) return s;
+	if (s.front() == '"' && s.back() == '"') {
+		return s.substr(1, s.size() - 2);
 	}
+	return s;
+}
 
-	template <typename T, typename U> static void joinpath_(T const *left, T const *right, U *vec)
-	{
-		size_t llen = 0;
-		size_t rlen = 0;
-		if (left) {
-			T const *leftend = left + std::char_traits<T>::length(left);
-			trimquot(&left, &leftend);
-			while (left < leftend && (leftend[-1] == '/' || leftend[-1] == '\\')) {
-				leftend--;
-			}
-			llen = leftend - left;
-		}
-		if (right) {
-			T const *rightend = right + std::char_traits<T>::length(right);
-			trimquot(&right, &rightend);
-			while (right < rightend && (right[0] == '/' || right[0] == '\\')) {
-				right++;
-			}
-			rlen = rightend - right;
-		}
-		vec->resize(llen + 1 + rlen);
-		if (llen > 0) {
-			std::char_traits<T>::copy(&vec->at(0), left, llen);
-		}
-		vec->at(llen) = '/';
-		if (rlen > 0) {
-			std::char_traits<T>::copy(&vec->at(llen + 1), right, rlen);
-		}
+template <typename T> static std::basic_string<T> joinpath(std::basic_string_view<T> left, std::basic_string_view<T> right)
+{
+	left = trimquot(left);
+	while (!left.empty() && (left.back() == '/' || left.back() == '\\')) {
+		left.remove_suffix(1);
 	}
-
-	static std::string joinpath(char const *left, char const *right)
-	{
-		std::vector<char> vec;
-		joinpath_(left, right, &vec);
-		return std::string(vec.begin(), vec.end());
+	right = trimquot(right);
+	while (!right.empty() && (right.front() == '/' || right.front() == '\\')) {
+		right.remove_prefix(1);
 	}
+	std::basic_string<T> ret;
+	ret.reserve(left.size() + 1 + right.size());
+	ret.append(left.data(), left.size());
+	ret.push_back('/');
+	ret.append(right.data(), right.size());
+	return ret;
+}
 
-	static std::string joinpath(std::string const &left, std::string const &right)
-	{
-		return joinpath(left.c_str(), right.c_str());
-	}
+}
 
-};
-
-static inline std::string joinpath(char const *left, char const *right)
+static inline std::string joinpath(std::string_view const &left, std::string_view const &right)
 {
 	return JoinPath::joinpath(left, right);
 }
 
-static inline std::string joinpath(std::string const &left, std::string const &right)
-{
-	return JoinPath::joinpath(left, right);
-}
-
-static inline std::string operator / (std::string const &left, std::string const &right)
+static inline std::string operator / (std::string_view const &left, std::string_view const &right)
 {
 	return joinpath(left, right);
 }
@@ -79,10 +51,9 @@ static inline std::string operator / (std::string const &left, std::string const
 // #include <QString>
 static inline QString qjoinpath(char16_t const *left, char16_t const *right)
 {
-	std::vector<char16_t> vec;
-	JoinPath::joinpath_(left, right, &vec);
-	if (vec.empty()) return QString();
-	return QString::fromUtf16(&vec[0], vec.size());
+	auto s = JoinPath::joinpath<char16_t>(left, right);
+	if (s.empty()) return QString();
+	return QString::fromUtf16(s.data(), s.size());
 }
 
 inline QString joinpath(QString const &left, QString const &right)
