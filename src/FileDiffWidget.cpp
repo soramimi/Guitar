@@ -228,7 +228,7 @@ void FileDiffWidget::makeSideBySideDiffData(GitDiff const &diff, std::vector<std
 
 	m->original_lines = original_lines;
 
-	size_t linenum = original_lines.size();
+	size_t linenum = 0;
 
 	std::vector<HunkItem> hunks;
 	int number = 0;
@@ -240,7 +240,7 @@ void FileDiffWidget::makeSideBySideDiffData(GitDiff const &diff, std::vector<std
 			char const *p = at.c_str() + 4;
 			auto ParseNumber = [&](){
 				size_t v = 0;
-				while (isdigit(*p & 0xff)) {
+				while (isdigit((unsigned char)*p)) {
 					v = v * 10 + size_t(*p - '0');
 					p++;
 				}
@@ -265,54 +265,64 @@ void FileDiffWidget::makeSideBySideDiffData(GitDiff const &diff, std::vector<std
 		}
 	}
 	std::sort(hunks.begin(), hunks.end(), [](HunkItem const &l, HunkItem const &r){
-		return l.pos + l.len < r.pos + r.len;
+		return l.pos < r.pos;
 	});
-	size_t h = hunks.size();
-	while (linenum > 0 || h > 0) {
-		while (h > 0) {
-			int hunk_number = int(h - 1);
-			HunkItem const &hi = hunks[hunk_number];
-			if (hi.pos + hi.len < linenum) {
-				break;
+	size_t hunk_number = 0;
+	while (linenum < original_lines.size() || hunk_number < hunks.size()) {
+		size_t endline = original_lines.size();
+		if (hunk_number <  hunks.size()) {
+			if (endline > hunks[hunk_number].pos) {
+				endline = hunks[hunk_number].pos;
 			}
+		}
+		if (linenum < endline) {
+			std::string line = original_lines[linenum];
+			std::vector<char> vec(line.begin(), line.end());
+			TextDiffLine l(vec, TextDiffLine::Normal);
+			left_lines->push_back(l);
+			right_lines->push_back(l);
+			inline_lines->push_back(l);
+			linenum++;
+		}
+		while (hunk_number < hunks.size()) {
+			HunkItem const &hunk = hunks[hunk_number];
+			if (hunk.pos > linenum) break;
 			std::vector<TextDiffLine> tmp_left;
 			std::vector<TextDiffLine> tmp_right;
 			std::vector<TextDiffLine> tmp_inline;
-			int minus = 0;
-			int plus = 0;
+			int del = 0;
+			int add = 0;
 			auto FlushBlank = [&](){
-				while (minus < plus) {
+				while (del < add) {
 					tmp_left.emplace_back();
-					minus++;
+					del++;
 				}
-				while (minus > plus) {
+				while (del > add) {
 					tmp_right.emplace_back();
-					plus++;
+					add++;
 				}
-				minus = plus = 0;
+				del = add = 0;
 			};
-			for (std::string line : hi.lines) {
-				if (line.size() < 1) continue;
-				int c = (unsigned char)line.c_str()[0];
+			for (std::string line : hunk.lines) {
+				if (line.empty()) continue;
+				int c = (unsigned char)*line.c_str();
 				line = line.substr(1);
 				std::vector<char> vec(line.begin(), line.end());
 				if (c == '-') {
-					minus++;
+					del++;
 					TextDiffLine l(vec, TextDiffLine::Del);
 					l.hunk_number = hunk_number;
 					tmp_left.push_back(l);
 					tmp_inline.push_back(l);
 				} else if (c == '+') {
-					plus++;
+					add++;
 					TextDiffLine l(vec, TextDiffLine::Add);
-					l.to_vector();
 					l.hunk_number = hunk_number;
 					tmp_right.push_back(l);
 					tmp_inline.push_back(l);
 				} else {
 					FlushBlank();
 					TextDiffLine l(vec, TextDiffLine::Normal);
-					l.to_vector();
 					l.hunk_number = hunk_number;
 					tmp_left.push_back(l);
 					tmp_right.push_back(l);
@@ -334,37 +344,22 @@ void FileDiffWidget::makeSideBySideDiffData(GitDiff const &diff, std::vector<std
 			ComplementNewLine(&tmp_left);
 			ComplementNewLine(&tmp_right);
 			ComplementNewLine(&tmp_inline);
-			for (auto it = tmp_left.rbegin(); it != tmp_left.rend(); it++) {
+			for (auto it = tmp_left.begin(); it != tmp_left.end(); it++) {
 				TextDiffLine l(*it);
 				left_lines->push_back(l);
 			}
-			for (auto it = tmp_right.rbegin(); it != tmp_right.rend(); it++) {
+			for (auto it = tmp_right.begin(); it != tmp_right.end(); it++) {
 				TextDiffLine l(*it);
 				right_lines->push_back(l);
 			}
-			for (auto it = tmp_inline.rbegin(); it != tmp_inline.rend(); it++) {
+			for (auto it = tmp_inline.begin(); it != tmp_inline.end(); it++) {
 				TextDiffLine l(*it);
 				inline_lines->push_back(l);
 			}
-			linenum = hi.pos;
-			h--;
-		}
-		if (linenum > 0) {
-			linenum--;
-			if (linenum < (size_t)original_lines.size()) {
-				std::string line = original_lines[linenum];
-				std::vector<char> vec(line.begin(), line.end());
-				TextDiffLine l(vec, TextDiffLine::Normal);
-				left_lines->push_back(l);
-				right_lines->push_back(l);
-				inline_lines->push_back(l);
-			}
+			linenum = hunk.pos + hunk.len;
+			hunk_number++;
 		}
 	}
-
-	std::reverse(left_lines->begin(), left_lines->end());
-	std::reverse(right_lines->begin(), right_lines->end());
-	std::reverse(inline_lines->begin(), inline_lines->end());
 }
 
 void FileDiffWidget::setDiffText(GitDiff const &diff, TextDiffLineList const &left_lines, TextDiffLineList const &right_lines, TextDiffLineList const &inline_lines)
