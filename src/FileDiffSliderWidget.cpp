@@ -57,12 +57,12 @@ QPixmap FileDiffSliderWidget::makeDiffPixmap(int width, int height, TextDiffLine
 		QPixmap pixmap = QPixmap(w, h * scale);
 		pixmap.fill(theme->diff_slider_normal_bg);
 		QPainter pr(&pixmap);
-		auto Loop = [&](std::function<QColor(TextDiffLine::Type)> const &getcolor){
+		auto Loop = [&](std::function<QColor(Document::LineType)> const &getcolor){
 			int i = 0;
 			while (i < (int)lines.size()) {
-				auto type = (TextDiffLine::Type)lines[i].type;
+				auto type = (Document::LineType)lines[i].type;
 				int j = i + 1;
-				if (type != TextDiffLine::Normal) {
+				if (type != Document::LineType::Normal) {
 					while (j < (int)lines.size()) {
 						if (lines[j].type != type) break;
 						j++;
@@ -76,16 +76,16 @@ QPixmap FileDiffSliderWidget::makeDiffPixmap(int width, int height, TextDiffLine
 				i = j;
 			}
 		};
-		Loop([&](TextDiffLine::Type t)->QColor{
+		Loop([&](Document::LineType t)->QColor{
 			switch (t) {
-			case TextDiffLine::Unknown: return theme->diff_slider_unknown_bg;
+			case Document::LineType::Unknown: return theme->diff_slider_unknown_bg;
 			}
 			return QColor();
 		});
-		Loop([&](TextDiffLine::Type t)->QColor{
+		Loop([&](Document::LineType t)->QColor{
 			switch (t) {
-			case TextDiffLine::Add: return theme->diff_slider_add_bg;
-			case TextDiffLine::Del: return theme->diff_slider_del_bg;
+			case Document::LineType::Add: return theme->diff_slider_add_bg;
+			case Document::LineType::Del: return theme->diff_slider_del_bg;
 			}
 			return QColor();
 		});

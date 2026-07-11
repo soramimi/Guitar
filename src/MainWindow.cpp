@@ -3801,9 +3801,6 @@ void MainWindow::addDiffItems(std::basic_string_view<GitDiff const *> diff_list,
 		case GitDiff::Type::Unmerged:
 			header = global->prefix_unmerged;
 			break;
-		// default:
-		// 	header = global->prefix_empty;
-		// 	break;
 		}
 
 		ObjectData data;

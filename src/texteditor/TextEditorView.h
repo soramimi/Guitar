@@ -35,55 +35,26 @@ public:
 	class FormattedLine {
 	public:
 		std::shared_ptr<std::vector<Char>> chars;
+		std::shared_ptr<std::vector<CharAttr>> atts2;
+		bool has_diff_flags = false;
 		FormattedLine()
 			: chars(std::make_shared<std::vector<Char>>())
+			, atts2(std::make_shared<std::vector<CharAttr>>())
 		{
 		}
 	};
 	class FormattedLines {
 	public:
+		int row_start = 0;
+		int row_count = 0;
 		std::unordered_map<int, TextEditorView::FormattedLine> lines;
 		void clear()
 		{
 			lines.clear();
 		}
-		// void add(size_t i)
-		// {
-		// 	if (i == lines.size()) {
-		// 		lines.emplace_back();
-		// 	}
-		// }
 		size_t size() const
 		{
 			return lines.size();
-		}
-		// FormattedLine &operator [] (size_t i)
-		// {
-		// 	return lines[i];
-		// }
-		// FormattedLine const &operator [] (size_t i) const
-		// {
-		// 	return lines[i];
-		// }
-		std::vector<Char> *chars(size_t i, bool create_if_not_exists = false)
-		{
-			auto it = lines.find(i);
-			if (it == lines.end()) {
-				if (create_if_not_exists) {
-					it = lines.insert(lines.end(), std::make_pair(i, FormattedLine()));
-				} else {
-					return nullptr;
-				}
-			}
-			return it->second.chars.get();
-		}
-		std::vector<Char> const *chars(size_t i) const
-		{
-			auto it = lines.find(i);
-			if (it == lines.end()) {
-				return nullptr;
-			}
-			return it->second.chars.get();
 		}
 	};
 private:
@@ -104,11 +75,10 @@ public://@
 private:
 	void moveCursorByMouse();
 	void calcPixelPosX(std::vector<Char> *chars, const QFontMetrics &fm) const;
-	int posX_px(int row, int col, bool adjust_scroll, std::vector<Char> *chars) const;
-	void parseRow(int row) const;
+	int posX_px(int row, int col, bool adjust_scroll, std::vector<Char> *chars, std::vector<CharAttr> *attrs = nullptr) const;
 	int scrollPosX() const;
 	int view_y_from_row(int row) const;
-	std::unordered_map<int, FormattedLine> _fetchLines(int row, int count) const;
+	FormattedLines _fetchLines(int row, int count) const;
 public:
 	std::unordered_map<int, TextEditorView::FormattedLine> fetchLines() const;
 	FormattedLines *fetchLines2(bool all);
@@ -127,6 +97,7 @@ protected:
 	void timerEvent(QTimerEvent *) override;
 	void setCursorCol(int col) override;
 	void setCursorRow(int row, bool auto_scroll, bool by_mouse) override;
+	void invalidateLineFormat(int row) override;
 public:
 	explicit TextEditorView(QWidget *parent = nullptr);
 	~TextEditorView() override;

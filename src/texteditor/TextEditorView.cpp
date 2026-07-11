@@ -17,6 +17,11 @@
 
 #define PROPORTIONAL_FONT_SUPPORT 0
 
+struct ParsedLineItem {
+	std::vector<AbstractTextEditorApplication::Char> chars;
+	std::vector<CharAttr> attrs;
+};
+
 struct TextEditorView::Private {
 	QPixmap reference_pixmap;
 
@@ -44,6 +49,8 @@ struct TextEditorView::Private {
 	std::function<void(void)> custom_context_menu_requested;
 
 	TextEditorView::FormattedLines formatted_lines;
+	
+	std::unordered_map<int, ParsedLineItem> parsed_line_cache;	
 };
 
 TextEditorView::TextEditorView(QWidget *parent)
@@ -172,8 +179,6 @@ void TextEditorView::updateLayout()
 			index++;
 		}
 	}
-
-	// fetchLines();
 }
 
 void AbstractCharacterBasedApplication::loadExampleFile()
@@ -219,23 +224,20 @@ int TextEditorView::basisCharWidth() const
 
 static inline QString appendUnicode(QString const &s, char32_t u)
 {
-#if 0
-	char16_t tmp[3];
-	if (u >= 0x10000 && u < 0x110000) {
-		// サロゲートペア
-		uint16_t h = (u - 0x10000) / 0x400 + 0xd800;
-		uint16_t l = (u - 0x10000) % 0x400 + 0xDC00;
-		tmp[0] = h;
-		tmp[1] = l;
-		tmp[2] = 0;
-	} else {
-		tmp[0] = u;
-		tmp[1] = 0;
-	}
-	return s + QString::fromUtf16(tmp);
-#else
 	return s + QString::fromUcs4(&u, 1);
-#endif
+}
+
+void TextEditorView::invalidateLineFormat(int row)
+{
+	if (row == -1) {
+		m->parsed_line_cache.clear(); //@ TODO
+	} else {
+		auto it = m->parsed_line_cache.find(row);
+		if (it != m->parsed_line_cache.end()) {
+			m->parsed_line_cache.erase(it);
+		}
+	}
+	
 }
 
 /**
@@ -277,40 +279,37 @@ void TextEditorView::calcPixelPosX(std::vector<Char> *chars, QFontMetrics const 
  * @param chars（nullptr可）
  * @return
  */
-int TextEditorView::posX_px(int row, int col, bool adjust_scroll, std::vector<Char> *chars) const
+int TextEditorView::posX_px(int row, int col, bool adjust_scroll, std::vector<Char> *chars, std::vector<CharAttr> *attrs) const
 {
-	if (!chars) {
-		std::vector<Char> tmp_chars; // nullptrなら作業用バッファを作る
-		return posX_px(row, col, adjust_scroll, &tmp_chars);
-	}
+	if (row < 0) return 0;
 
-	parseLine(row, chars);
-
-	{
-		QPainter pr(&m->reference_pixmap);
-		pr.setFont(m->text_font);
-		calcPixelPosX(chars, pr.fontMetrics()); // 文字のX座標を計算
+	auto it = m->parsed_line_cache.find(row);
+	if (it == m->parsed_line_cache.end()) {
+		it = m->parsed_line_cache.insert(m->parsed_line_cache.end(), std::make_pair(row, ParsedLineItem()));
+		const_cast<TextEditorView *>(this)->parseLine(row, &it->second.chars, &it->second.attrs);
+		
+		// 文字のX座標を計算
+		{
+			QPainter pr(&m->reference_pixmap);
+			pr.setFont(m->text_font);
+			calcPixelPosX(&it->second.chars, pr.fontMetrics());
+		}
 	}
+	
+	ParsedLineItem *line = &it->second;
+	if (chars) *chars = line->chars;
+	if (attrs) *attrs = line->attrs;
 
 	int x = 0;
-	if (col > 0 && col - 1 < (int)chars->size()) {
-		x = (int)chars->at(col - 1).right_x;
+	if (col > 0 && col - 1 < (int)line->chars.size()) {
+		x = (int)line->chars[col - 1].right_x;
 	}
 
 	if (adjust_scroll) { // 原点とスクロール位置に応じてずらす
 		x += cx()->viewport_org_x * basisCharWidth() - scrollPosX();
 	}
-
+	
 	return x;
-}
-
-void TextEditorView::parseRow(int row) const
-{
-	(void)row;
-	// auto *chars = m->formatted_lines.chars(row, true);
-	// if (chars) {
-	// 	posX_px(row, 0, false, chars);
-	// }
 }
 
 /**
@@ -329,7 +328,7 @@ RowCol TextEditorView::mapFromPixel(QPoint const &pt)
 		t.row = maxrow - 1;
 		if (maxrow > 0) {
 			std::vector<Char> chars;
-			parseLine(t.row, &chars);
+			parseLine(t.row, &chars, nullptr);
 			if (!chars.empty()) {
 				t.col = (int)chars.size();
 			}
@@ -395,7 +394,8 @@ void TextEditorView::setCursorCol(int col)
 	AbstractCharacterBasedApplication::setCursorCol(col);
 
 	// 水平ピクセル座標を更新
-	auto *chars = parseCurrentLine(nullptr, true);
+	parseCurrentLine(nullptr, nullptr, true);
+	auto *chars = parsedCurrentLine();
 	cx()->current_col_pixel_x = posX_px(currentRow(), currentCol(), true, chars);
 }
 
@@ -657,8 +657,6 @@ int TextEditorView::view_y_from_row(int row) const
 	return (editor_cx->viewport_org_y + row - scrollTopRow()) * lineHeight();
 }
 
-
-
 /**
  * @brief 行と桁からビュー座標を求める
  * @param row
@@ -703,20 +701,24 @@ void TextEditorView::drawCursor(QPainter *pr)
  * @brief ビューに表示されている範囲のテキストを取得
  * @return
  */
-std::unordered_map<int, TextEditorView::FormattedLine> TextEditorView::_fetchLines(int row, int count) const
+TextEditorView::FormattedLines TextEditorView::_fetchLines(int row, int count) const
 {
-	std::unordered_map<int, TextEditorView::FormattedLine> map;
+	TextEditorView::FormattedLines ret;
+	ret.row_start = row;
+	ret.row_count = count;
 	for (int i = 0; i < count; i++) { // 見えている行数だけループ
-		TextEditorView::FormattedLine line;
-		posX_px(row, 0, false, line.chars.get());
-		map[row] = line;
+		if (row >= 0) {
+			TextEditorView::FormattedLine line;
+			posX_px(row, 0, false, line.chars.get());
+			ret.lines[row] = line;
+		}
 		row++;
 	}
-	return map;
+	return ret;
 }
 std::unordered_map<int, TextEditorView::FormattedLine> TextEditorView::fetchLines() const
 {
-	return _fetchLines(0, editor_cx->viewport_height);
+	return _fetchLines(0, editor_cx->viewport_height).lines;
 }
 
 TextEditorView::FormattedLines *TextEditorView::fetchLines2(bool all)
@@ -731,7 +733,7 @@ TextEditorView::FormattedLines *TextEditorView::fetchLines2(bool all)
 		row_count = std::min(bottom, documentLines()) - row_start;
 	}
 	
-	m->formatted_lines.lines = _fetchLines(row_start, row_count);
+	m->formatted_lines = _fetchLines(row_start, row_count);
 	return &m->formatted_lines;
 }
 
@@ -806,19 +808,21 @@ void TextEditorView::paintEvent(QPaintEvent *)
 				
 				TextEditorView::FormattedLine const &line = it->second;
 				std::vector<Char> const &chars = *line.chars;
+				std::vector<CharAttr> const &atts2 = *line.atts2;
+				
 				
 				// 背景の描画
 				auto DrawBackground = [&](){
 					
 					{ // diff差分背景
-						Document::Line::Type type = doc.lines[line_row].type;
+						Document::LineType type = doc.lines[line_row].type;
 						auto FillBG = [&](QColor color){
 							pr.fillRect(rect_text, color);
 						};
 						switch (type) {
-						case Document::Line::Add:     FillBG(theme()->bg_diff_line_add); break; // 追加された行の背景
-						case Document::Line::Del:     FillBG(theme()->bg_diff_line_del); break; // 削除された行の背景
-						case Document::Line::Unknown: FillBG(theme()->bg_diff_unknown);  break;
+						case Document::LineType::Add:     FillBG(theme()->bg_diff_line_add); break; // 追加された行の背景
+						case Document::LineType::Del:     FillBG(theme()->bg_diff_line_del); break; // 削除された行の背景
+						case Document::LineType::Unknown: FillBG(theme()->bg_diff_unknown);  break;
 						}
 					}
 					if (0) {
@@ -993,19 +997,14 @@ void TextEditorView::paintEvent(QPaintEvent *)
 		paintLineNumbers([&](int y, QString const &text, Document::Line const *line){
 			if (bottom >= 0 && y > bottom) return;
 
-			// const bool iscurrentline = y == (editor_cx->viewport_org_y + editor_cx->current_row - scrollTopRow());
-
-			// if (isCursorVisible() && iscurrentline) { // 現在の行の背景
-			// 	pr.fillRect(0, y * lineHeight(), linenum_width - 2, lineHeight(), theme()->bg_current_line_number);
-			// }
 			pr.setBackground(Qt::transparent);
 			pr.setPen(theme()->fg_line_number);
 			drawText(&pr, 0, y * lineHeight(), text);
 			if (line) {
 				char const *mark = nullptr;
-				if (line->type == Document::Line::Add) {
+				if (line->type == Document::LineType::Add) {
 					mark = "+";
-				} else if (line->type == Document::Line::Del) {
+				} else if (line->type == Document::LineType::Del) {
 					mark = "-";
 				}
 				if (mark) {

@@ -51,8 +51,6 @@ using X_ImageViewWidget = ImageViewWidget;
 public:
 	explicit FileViewWidget(QWidget *parent = nullptr);
 
-	// void setTextCodec(std::shared_ptr<MyTextCodec> codec);
-
 	void setViewType(FileViewType type);
 	
 	void setImage(const std::string &mimetype, const QByteArray &ba, const std::string &object_id, const QString &path);

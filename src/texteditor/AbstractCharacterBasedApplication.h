@@ -43,42 +43,67 @@ enum EscapeCode {
 };
 }
 
+struct CharAttr {
+	enum Index {
+		Normal,
+		Invert,
+		Hilite,
+	};
+	enum Flag {
+		Selected = 0x0001,
+		CurrentLine = 0x0002,
+		Underline1 = 0x0004, //! wip
+		Underline2 = 0x0008,
+	};
+	uint16_t index = 0;
+	uint16_t flags = 0;
+	QColor color;
+	CharAttr(int index = Normal)
+		: index(index)
+	{
+	}
+	bool operator == (CharAttr const &r) const
+	{
+		return index == r.index && color == r.color;
+	}
+	bool operator != (CharAttr const &r) const
+	{
+		return !operator == (r);
+	}
+};
+
 class Document {
 public:
 	typedef std::variant<std::vector<char>, std::string_view> varline_t;
 	
-	struct CharAttr_ {
-		size_t offset = 0;
-		int color = -1;
+	enum LineType {
+		Unknown,
+		Normal,
+		Add,
+		Del,
 	};
 	struct Line {
-		enum Type {
-			Unknown,
-			Normal,
-			Add,
-			Del,
-		};
-		Type type = Unknown;
-		int hunk_number = -1;
+		LineType type = Unknown;
 		int line_number = 0;
 		size_t byte_offset = 0;
 		varline_t text_ = std::string_view();
+		std::optional<std::vector<CharAttr>> attr_;
 		
 		Line() = default;
 		
-		explicit Line(std::vector<char> const &ba, Type type = Normal)
+		explicit Line(std::vector<char> const &ba, LineType type = Normal)
 			: type(type)
 			, text_(ba)
 		{
 		}
 		
-		explicit Line(QByteArray const &ba, Type type = Normal)
+		explicit Line(QByteArray const &ba, LineType type = Normal)
 			: type(type)
 			, text_(std::vector<char>(ba.data(), ba.data() + ba.size()))
 		{
 		}
 		
-		static Line View(std::string_view v, Type type = Normal)
+		static Line View(std::string_view v, LineType type = Normal)
 		{
 			Line line;
 			line.type = type;
@@ -105,6 +130,7 @@ public:
 		void set_text(const std::vector<char> &new_text)
 		{
 			text_ = new_text;
+			attr_ = std::nullopt; // invalidate cached attributes
 		}
 		
 		std::vector<char> *to_vector()
@@ -250,35 +276,6 @@ public:
 		Exit,
 	};
 	
-	struct CharAttr {
-		uint16_t index;
-		uint16_t flags = 0;
-		QColor color;
-		CharAttr(int index = Normal)
-			: index(index)
-		{
-		}
-		bool operator == (CharAttr const &r) const
-		{
-			return index == r.index && color == r.color;
-		}
-		bool operator != (CharAttr const &r) const
-		{
-			return !operator == (r);
-		}
-		enum Index {
-			Normal,
-			Invert,
-			Hilite,
-		};
-		enum Flag {
-			Selected = 0x0001,
-			CurrentLine = 0x0002,
-			Underline1 = 0x0004, //! wip
-			Underline2 = 0x0008,
-		};
-	};
-	
 	struct Option {
 		CharAttr char_attr;
 		QRect clip;
@@ -349,8 +346,10 @@ protected:
 	
 	void initEditor();
 	
-	void fetchCurrentLine() const;
-	std::string_view fetchLine(int row) const;
+public:
+	Document::Line *fetchLine(int row);
+protected:
+	void fetchCurrentLine();
 	void clearParsedLine();
 	
 	int currentColX() const;
@@ -399,7 +398,7 @@ protected:
 	void setDialogOption(QString const &title, QString const &value, const DialogHandler &handler);
 	void execDialog(QString const &dialog_title, const QString &dialog_value, const DialogHandler &handler);
 private:
-	int internalParseLine(std::string_view parsed_line, int current_col, std::vector<Char> *out) const;
+	int internalParseLine(Document::Line *parsed_line, int current_col, std::vector<Char> *out, std::vector<CharAttr> *out2);
 	void internalWrite(const ushort *begin, const ushort *end);
 	void pressLetterWithControl(int c);
 	void invalidateAreaBelowTheCurrentLine();
@@ -419,13 +418,14 @@ private:
 	void initEngine(const std::shared_ptr<TextEditorContext>& cx);
 	void writeCR();
 	bool deleteIfSelected();
-	static int findSyntax(const std::vector<Document::CharAttr_> *list, size_t offset);
-	static void insertSyntax(std::vector<Document::CharAttr_> *list, size_t offset, const Document::CharAttr_ &a);
+	// static int findSyntax(const std::vector<Document::CharAttr_> *list, size_t offset);
+	// static void insertSyntax(std::vector<Document::CharAttr_> *list, size_t offset, const Document::CharAttr_ &a);
 	void setCursorCol_(int col, bool auto_scroll = true, bool by_mouse = false);
+	virtual void invalidateLineFormat(int row = -1);
 protected:
 	void deselect();
-	std::vector<Char> *parseCurrentLine(std::vector<Char> *chars, bool force);
-	void parseLine(int row, std::vector<Char> *chars) const;
+	void parseCurrentLine(std::vector<Char> *chars, std::vector<CharAttr> *attrs, bool force);
+	void parseLine(int row, std::vector<Char> *chars, std::vector<CharAttr> *attrs);
 	
 	virtual void setCursorRow(int row, bool auto_scroll = true, bool by_mouse = false);
 	virtual void setCursorCol(int col)
@@ -536,6 +536,7 @@ public:
 	void logicalMoveToBottom2();
 	void appendBulk(std::string_view const &str);
 	void clear();
+	std::vector<AbstractCharacterBasedApplication::Char> *parsedCurrentLine();
 protected:
 	void write_(char const *ptr, bool by_keyboard);
 	void write_(QString const &text, bool by_keyboard);

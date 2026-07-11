@@ -64,22 +64,24 @@ void BigDiffWindow::init(FileDiffWidget::InitParam_ const &param)
 	};
 	ui->lineEdit_left->setText(Text((QS)m->param.diff.blob.a_id_or_path));
 	ui->lineEdit_right->setText(Text((QS)m->param.diff.blob.b_id_or_path));
-
+	
+	bool uncommitted = m->param.uncommitted;
+	auto workingdir = m->param.workingdir;
 	switch (m->param.view_style) {
 	case FileDiffWidget::ViewStyle::LeftOnly:
-		ui->widget_diff->setLeftOnly(m->param.diff, m->param.bytes_a);
+		ui->widget_diff->setLeftOnlyDiff(m->param.diff, m->param.bytes_a, uncommitted, workingdir);
 		break;
 	case FileDiffWidget::ViewStyle::RightOnly:
-		ui->widget_diff->setRightOnly(m->param.diff, m->param.bytes_b);
+		ui->widget_diff->setRightOnlyDiff(m->param.diff, m->param.bytes_b, uncommitted, workingdir);
 		break;
 	case FileDiffWidget::ViewStyle::InlineTextDiff:
-		ui->widget_diff->setInlineDiff(m->param.diff, m->param.bytes_a, m->param.uncommitted, m->param.workingdir);
+		ui->widget_diff->setInlineDiff(m->param.diff, m->param.bytes_a, uncommitted, workingdir);
 		break;
 	case FileDiffWidget::ViewStyle::SideBySideTextDiff:
-		ui->widget_diff->setSideBySideDiff(m->param.diff, m->param.bytes_a, m->param.uncommitted, m->param.workingdir);
+		ui->widget_diff->setSideBySideDiff(m->param.diff, m->param.bytes_a, uncommitted, workingdir);
 		break;
-	case FileDiffWidget::ViewStyle::SideBySideImageDiff:
-		ui->widget_diff->setSideBySideBlobDiff(m->param.diff, m->param.bytes_a, m->param.bytes_b, m->param.workingdir);
+	case FileDiffWidget::ViewStyle::SideBySideBinaryDiff:
+		ui->widget_diff->setSideBySideBlobDiff(m->param.diff, m->param.bytes_a, m->param.bytes_b, uncommitted, m->param.workingdir);
 		break;
 	}
 }

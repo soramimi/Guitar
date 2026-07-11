@@ -69,29 +69,35 @@ public:
 		RightOnly,
 		InlineTextDiff,
 		SideBySideTextDiff,
-		SideBySideImageDiff,
+		SideBySideBinaryDiff,
 	};
 
 	struct LineFragment {
-		Document::Line::Type type = Document::Line::Unknown;
+		Document::LineType type = Document::LineType::Unknown;
 		int line_index;
 		int line_count;
 		LineFragment() = default;
-		LineFragment(Document::Line::Type type, int line_index, int line_count)
+		LineFragment(Document::LineType type, int line_index, int line_count)
 			: type(type)
 			, line_index(line_index)
 			, line_count(line_count)
 		{
 		}
 	};
-
+	
+	struct TextDiffData {
+		std::vector<std::string> original_lines;
+		TextDiffLineList left_lines;
+		TextDiffLineList right_lines;
+		TextDiffLineList inline_lines;
+	};
 
 private:
 	Ui::FileDiffWidget *ui;
 
 	struct Private;
 	Private *m;
-
+	
 	struct InitParam_ {
 		ViewStyle view_style = ViewStyle::None;
 		QByteArray bytes_a;
@@ -105,7 +111,6 @@ private:
 
 	ViewStyle viewstyle() const;
 	void setViewStyle(ViewStyle diffstyle);
-	// DiffViewStyle diffviewStyle() const;
 	
 	GitRunner git();
 	GitObject catFile(GitRunner g, const std::string &id);
@@ -117,23 +122,24 @@ private:
 
 	int fileviewHeight() const;
 
-	void setDiffText(GitDiff const &diff, TextDiffLineList const &left_lines, TextDiffLineList const &right_lines, TextDiffLineList const &inline_lines);
-
-	void setLeftOnly(const GitDiff &diff, QByteArray const &ba);
-	void setRightOnly(const GitDiff &diff, QByteArray const &ba);
+	void setDiffText(GitDiff const &diff, TextDiffData const &data);
+	
+	void setLeftOnlyDiff(const GitDiff &diff, QByteArray const &ba, bool uncommited, QString const &workingdir);
+	void setRightOnlyDiff(const GitDiff &diff, QByteArray const &ba, bool uncommited, const QString &workingdir);
 private:
-	void _setTwoFilesDiff(const GitDiff &diff, QByteArray const &ba, bool uncommitted, QString const &workingdir);
+	TextDiffData makeSideBySideDiffData(const GitDiff &diff, const std::vector<std::string> &original_lines);
+	void _setDiff(ViewStyle viewstyle, const GitDiff &diff, QByteArray const &ba, bool uncommitted, QString const &workingdir);
+	bool isSideBySideView() const;
 public:
 	void setSideBySideDiff(const GitDiff &diff, QByteArray const &ba, bool uncommitted, QString const &workingdir);
 	void setInlineDiff(GitDiff const &diff, QByteArray const &ba, bool uncommitted, QString const &workingdir);
 	
-	void setSideBySideBlobDiff(const GitDiff &diff, QByteArray const &ba_a, QByteArray const &ba_b, QString const &workingdir);
-
+	void setSideBySideBlobDiff(const GitDiff &diff, QByteArray const &ba_a, QByteArray const &ba_b, bool uncommitted, QString const &workingdir);
+	
 	bool isValidID(std::string const &id);
-
+	
 	FileViewType setupPreviewWidget();
 
-	void makeSideBySideDiffData(const GitDiff &diff, const std::vector<std::string> &original_lines, TextDiffLineList *left_lines, TextDiffLineList *right_lines, TextDiffLineList *inline_lines);
 	void onUpdateSliderBar();
 	void reflectScrollBar();
 	void reflectScrollBarV();

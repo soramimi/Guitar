@@ -68,13 +68,6 @@ struct GitHubRepositoryInfo {
 	QString repository_name;
 };
 
-class HunkItem {
-public:
-	int hunk_number = -1;
-	size_t pos, len;
-	std::vector<std::string> lines;
-};
-
 class AbstractGitCommand;
 
 class MainWindowExchangeData;
