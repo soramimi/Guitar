@@ -810,7 +810,6 @@ void TextEditorView::paintEvent(QPaintEvent *)
 				std::vector<Char> const &chars = *line.chars;
 				std::vector<CharAttr> const &atts2 = *line.atts2;
 				
-				
 				// 背景の描画
 				auto DrawBackground = [&](){
 					

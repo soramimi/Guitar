@@ -38,22 +38,7 @@ void CommitPropertyDialog::init()
 
 	const GitHash commit_id = m->commit.commit_id;
 	
-	std::string message = m->commit.message;
-	QString detail;
-	{
-		std::string s = mainwindow()->git().queryEntireCommitMessage(commit_id);
-		if (misc::starts_with(s, message)) {
-			s = s.substr(message.length());
-		}
-		detail = QS(s).trimmed();
-	}
-	if (detail.isEmpty()) {
-		ui->plainTextEdit_message_detail->setVisible(false);
-	} else {
-		ui->plainTextEdit_message_detail->setPlainText(detail);
-	}
-	
-	ui->lineEdit_message->setText((QS)message);
+	ui->plainTextEdit_message->setPlainText((QS)m->commit.message);
 	ui->lineEdit_commit_id->setText((QS)commit_id.toString());
 	ui->lineEdit_date->setText((QS)m->commit.commit_date.toString());
 	ui->lineEdit_author->setText((QS)m->commit.author);
@@ -65,6 +50,7 @@ void CommitPropertyDialog::init()
 	}
 	ui->plainTextEdit_parent_ids->setPlainText(text);
 
+	bool pgp_none = false;
 	std::optional<GitCommitItem> sig = mainwindow()->git().log_signature(commit_id);
 	if (sig) {
 		QString status;
@@ -94,6 +80,7 @@ void CommitPropertyDialog::init()
 			break;
 		case 'N':
 			status = tr("None");
+			pgp_none = true;
 			break;
 		}
 		if (status.isEmpty()) {
@@ -125,6 +112,14 @@ void CommitPropertyDialog::init()
 		ui->frame_sign->setVisible(true);
 	} else {
 		ui->frame_sign->setVisible(false);
+	}
+
+	if (pgp_none) {
+		ui->stackedWidget_pgp_sig->setCurrentWidget(ui->page_pgp_none);
+		ui->frame_pgp->setVisible(false);
+	} else {
+		ui->stackedWidget_pgp_sig->setCurrentWidget(ui->page_pgp_show);
+		ui->frame_pgp->setVisible(true);
 	}
 
 	global->avatar_loader.connectAvatarReady(this, &CommitPropertyDialog::avatarReady);

@@ -766,7 +766,7 @@ static void characterWiseDiff(int row, int count, TextEditorView::FormattedLines
 	using Char = AbstractCharacterBasedApplication::Char;
 	using Attr = CharAttr;
 	
-	for (std::size_t i = 0; i < count; i++) {
+	for (int i = 0; i < count; i++) {
 		struct Line {
 			std::vector<Char> *chrs = nullptr;
 			std::vector<Attr> *atts = nullptr;
@@ -913,8 +913,6 @@ static void characterWiseDiff(int row, int count, TextEditorView::FormattedLines
  */
 void FileDiffWidget::reflectScrollBar()
 {
-	PROFILE;
-	
 	if (isSideBySideView()) {
 		ui->widget_diff_left->reflectScrollBar();
 		ui->widget_diff_right->reflectScrollBar();

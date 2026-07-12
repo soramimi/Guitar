@@ -75,6 +75,29 @@ QVariant CommitLogTableModel::headerData(int section, Qt::Orientation orientatio
 	return QVariant();
 }
 
+/**
+ * @brief コミットメッセージのテキストを整形する
+ * @param text
+ * @return
+ */
+static QString fixCommitMessageText(QString text)
+{
+        QStringList lines = text.split('\n'); // 改行で分割
+        text.clear();
+        for (int i = 0; i < lines.size(); i++) {
+                QString t = lines[i].trimmed();
+                if (t.isEmpty()) { // 空行があったら " ..." を追加して、ここで終了
+                        text += " ...";
+                        break;
+                }
+                if (!text.isEmpty()) { // 2行目以降は " ;; " を追加
+                        text += " ;; ";
+                }
+                text += t;
+        }
+        return text;
+}
+
 QVariant CommitLogTableModel::data(const QModelIndex &index, int role) const
 {
 	auto row = index.row();
@@ -88,7 +111,7 @@ QVariant CommitLogTableModel::data(const QModelIndex &index, int role) const
 			case 1: return QVariant((QS)rec->commit_id().substr(0, 7));
 			case 2: return QVariant(rec->datetime);
 			case 3: return QVariant(rec->author);
-			case 4: return QVariant(rec->message);
+			case 4: return QVariant(fixCommitMessageText(rec->message));
 			}
 		} else if (role == Qt::ToolTipRole) {
 			if (col == 4) {

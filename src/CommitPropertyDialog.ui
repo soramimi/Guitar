@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>724</width>
-    <height>632</height>
+    <height>591</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -15,16 +15,7 @@
   </property>
   <layout class="QVBoxLayout" name="verticalLayout_2">
    <item>
-    <widget class="ReadOnlyLineEdit" name="lineEdit_message">
-     <property name="font">
-      <font>
-       <bold>true</bold>
-      </font>
-     </property>
-    </widget>
-   </item>
-   <item>
-    <widget class="QPlainTextEdit" name="plainTextEdit_message_detail">
+    <widget class="QPlainTextEdit" name="plainTextEdit_message">
      <property name="focusPolicy">
       <enum>Qt::FocusPolicy::NoFocus</enum>
      </property>
@@ -123,6 +114,12 @@
       </item>
       <item>
        <widget class="QGroupBox" name="groupBox">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
         <property name="minimumSize">
          <size>
           <width>0</width>
@@ -133,82 +130,177 @@
          <string>GPG Signature</string>
         </property>
         <layout class="QVBoxLayout" name="verticalLayout_3">
+         <property name="spacing">
+          <number>0</number>
+         </property>
+         <property name="leftMargin">
+          <number>0</number>
+         </property>
+         <property name="topMargin">
+          <number>0</number>
+         </property>
+         <property name="rightMargin">
+          <number>0</number>
+         </property>
+         <property name="bottomMargin">
+          <number>0</number>
+         </property>
          <item>
-          <widget class="QTextEdit" name="textEdit_sign_text">
-           <property name="readOnly">
-            <bool>true</bool>
+          <widget class="QStackedWidget" name="stackedWidget_pgp_sig">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
            </property>
-          </widget>
-         </item>
-         <item>
-          <layout class="QHBoxLayout" name="horizontalLayout_2">
-           <item>
-            <layout class="QFormLayout" name="formLayout_2">
-             <item row="0" column="0">
-              <widget class="QLabel" name="label">
+           <property name="currentIndex">
+            <number>1</number>
+           </property>
+           <widget class="QWidget" name="page_pgp_show">
+            <layout class="QVBoxLayout" name="verticalLayout_5">
+             <item>
+              <widget class="QFrame" name="frame_pgp">
+               <property name="sizePolicy">
+                <sizepolicy hsizetype="Preferred" vsizetype="Maximum">
+                 <horstretch>0</horstretch>
+                 <verstretch>0</verstretch>
+                </sizepolicy>
+               </property>
+               <property name="minimumSize">
+                <size>
+                 <width>0</width>
+                 <height>100</height>
+                </size>
+               </property>
+               <property name="frameShape">
+                <enum>QFrame::Shape::NoFrame</enum>
+               </property>
+               <property name="frameShadow">
+                <enum>QFrame::Shadow::Raised</enum>
+               </property>
+               <layout class="QVBoxLayout" name="verticalLayout_4">
+                <property name="leftMargin">
+                 <number>0</number>
+                </property>
+                <property name="topMargin">
+                 <number>0</number>
+                </property>
+                <property name="rightMargin">
+                 <number>0</number>
+                </property>
+                <property name="bottomMargin">
+                 <number>0</number>
+                </property>
+                <item>
+                 <widget class="QTextEdit" name="textEdit_sign_text">
+                  <property name="sizePolicy">
+                   <sizepolicy hsizetype="Expanding" vsizetype="Maximum">
+                    <horstretch>0</horstretch>
+                    <verstretch>0</verstretch>
+                   </sizepolicy>
+                  </property>
+                  <property name="readOnly">
+                   <bool>true</bool>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <layout class="QHBoxLayout" name="horizontalLayout_2">
+                  <item>
+                   <layout class="QFormLayout" name="formLayout_2">
+                    <item row="0" column="0">
+                     <widget class="QLabel" name="label">
+                      <property name="text">
+                       <string>Status</string>
+                      </property>
+                     </widget>
+                    </item>
+                    <item row="0" column="1">
+                     <widget class="ReadOnlyLineEdit" name="lineEdit_sign_status"/>
+                    </item>
+                    <item row="1" column="0">
+                     <widget class="QLabel" name="label_7">
+                      <property name="text">
+                       <string>Name</string>
+                      </property>
+                     </widget>
+                    </item>
+                    <item row="1" column="1">
+                     <widget class="ReadOnlyLineEdit" name="lineEdit_sign_name"/>
+                    </item>
+                    <item row="2" column="0">
+                     <widget class="QLabel" name="label_8">
+                      <property name="text">
+                       <string>Mail</string>
+                      </property>
+                     </widget>
+                    </item>
+                    <item row="2" column="1">
+                     <widget class="ReadOnlyLineEdit" name="lineEdit_sign_mail"/>
+                    </item>
+                   </layout>
+                  </item>
+                  <item>
+                   <widget class="SimpleImageWidget" name="widget_sign_icon" native="true">
+                    <property name="sizePolicy">
+                     <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
+                      <horstretch>0</horstretch>
+                      <verstretch>0</verstretch>
+                     </sizepolicy>
+                    </property>
+                    <property name="minimumSize">
+                     <size>
+                      <width>24</width>
+                      <height>0</height>
+                     </size>
+                    </property>
+                    <property name="maximumSize">
+                     <size>
+                      <width>24</width>
+                      <height>16777215</height>
+                     </size>
+                    </property>
+                   </widget>
+                  </item>
+                  <item>
+                   <widget class="SimpleImageWidget" name="widget_sign_avatar" native="true">
+                    <property name="minimumSize">
+                     <size>
+                      <width>80</width>
+                      <height>80</height>
+                     </size>
+                    </property>
+                   </widget>
+                  </item>
+                 </layout>
+                </item>
+               </layout>
+              </widget>
+             </item>
+            </layout>
+           </widget>
+           <widget class="QWidget" name="page_pgp_none">
+            <layout class="QHBoxLayout" name="horizontalLayout_4">
+             <item>
+              <widget class="QLabel" name="label_9">
                <property name="text">
                 <string>Status</string>
                </property>
               </widget>
              </item>
-             <item row="0" column="1">
-              <widget class="ReadOnlyLineEdit" name="lineEdit_sign_status"/>
-             </item>
-             <item row="1" column="0">
-              <widget class="QLabel" name="label_7">
+             <item>
+              <widget class="ReadOnlyLineEdit" name="lineEdit_sign_status_2">
                <property name="text">
-                <string>Name</string>
+                <string>None</string>
+               </property>
+               <property name="readOnly">
+                <bool>true</bool>
                </property>
               </widget>
-             </item>
-             <item row="1" column="1">
-              <widget class="ReadOnlyLineEdit" name="lineEdit_sign_name"/>
-             </item>
-             <item row="2" column="0">
-              <widget class="QLabel" name="label_8">
-               <property name="text">
-                <string>Mail</string>
-               </property>
-              </widget>
-             </item>
-             <item row="2" column="1">
-              <widget class="ReadOnlyLineEdit" name="lineEdit_sign_mail"/>
              </item>
             </layout>
-           </item>
-           <item>
-            <widget class="SimpleImageWidget" name="widget_sign_icon" native="true">
-             <property name="sizePolicy">
-              <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
-               <horstretch>0</horstretch>
-               <verstretch>0</verstretch>
-              </sizepolicy>
-             </property>
-             <property name="minimumSize">
-              <size>
-               <width>24</width>
-               <height>0</height>
-              </size>
-             </property>
-             <property name="maximumSize">
-              <size>
-               <width>24</width>
-               <height>16777215</height>
-              </size>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="SimpleImageWidget" name="widget_sign_avatar" native="true">
-             <property name="minimumSize">
-              <size>
-               <width>80</width>
-               <height>80</height>
-              </size>
-             </property>
-            </widget>
-           </item>
-          </layout>
+           </widget>
+          </widget>
          </item>
         </layout>
        </widget>
@@ -355,7 +447,6 @@
   </customwidget>
  </customwidgets>
  <tabstops>
-  <tabstop>lineEdit_message</tabstop>
   <tabstop>lineEdit_date</tabstop>
   <tabstop>lineEdit_author</tabstop>
   <tabstop>lineEdit_mail</tabstop>
