@@ -115,7 +115,7 @@ QVariant CommitLogTableModel::data(const QModelIndex &index, int role) const
 			}
 		} else if (role == Qt::ToolTipRole) {
 			if (col == 4) {
-				return QVariant(escapeTooltipText(rec->tooltip));
+				return QVariant(rec->tooltip_html);
 			}
 		} else if (role == Qt::FontRole) {
 			if (col == 4) {

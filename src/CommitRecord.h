@@ -9,7 +9,7 @@ struct CommitRecord {
 	QString datetime;
 	QString author;
 	QString message;
-	QString tooltip;
+	QString tooltip_html;
 	std::string commit_id() const
 	{
 		return commit_hash.toString();

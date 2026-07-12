@@ -1659,8 +1659,6 @@ void MainWindow::makeCommitLog(GitHash const &head, CommitLogExchangeData exdata
 	std::map<GitHash, TagList> const &tag_map = *exdata.p->tag_map;
 
 	std::map<int, BranchLabelList> label_map;
-	// exdata.p->label_map = std::map<int, BranchLabelList>();
-	// std::map<int, BranchLabelList> &label_map = *exdata.p->label_map;
 
 	// 樹形図更新を並列処理で行う
 	auto async_update_commit_graph = std::async(std::launch::async, [&]() {
@@ -1696,7 +1694,36 @@ void MainWindow::makeCommitLog(GitHash const &head, CommitLogExchangeData exdata
 			rec.datetime = (misc::str)commit->commit_date.toString();
 			rec.author = (misc::str)commit->author;
 			rec.message = (misc::str)commit->message;
-			rec.tooltip = rec.message + message_ex;
+			{ // tooltip
+				QStringList lines = rec.message.split('\n');
+				auto HtmlLine = [](QString const &s) {
+					return "<div style='white-space:nowrap'>" + s.toHtmlEscaped() + "</div>";
+				};
+				QString html;
+				if (lines.size() == 1) { // 1行のとき
+					html = HtmlLine(rec.message);
+					if (!message_ex.isEmpty()) { // ラベルなど付加情報
+						html += "<b>" + HtmlLine(message_ex) + "</b>";
+					}
+				} else if (lines.size() > 1) { // 複数行のとき
+					for (QString const &s : lines) {
+						if (s.isEmpty()) {
+							if (0) { // ↓全行書くのはやめ
+								html += "<br>";
+							} else { // 空行があったらそこで打ち切る
+								html += "<div>...</div>";
+								break;
+							}
+						} else {
+							html += HtmlLine(s);
+						}
+					}
+					if (!message_ex.isEmpty()) { // ラベルなど付加情報
+						html += "<b>" + HtmlLine(message_ex) + "</b>";
+					}
+				}
+				rec.tooltip_html = html;
+			}
 			records.push_back(rec);
 		}
 		m->commit_records.setRecords(std::move(records));
