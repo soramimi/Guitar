@@ -31,7 +31,7 @@ const FileDiffWidget::DiffData *FileHistoryWindow::diffdata() const
 
 int FileHistoryWindow::totalTextLines() const
 {
-	return diffdata()->left->lines.size();
+	return (int)diffdata()->left->lines.size();
 }
 
 FileHistoryWindow::FileHistoryWindow(MainWindow *parent)
@@ -106,7 +106,7 @@ void FileHistoryWindow::collectFileHistory()
 	
 	std::basic_string_view<GitCommitItem *> items = m->commit_item_list.items();
 	
-	ui->tableWidget_log->setRowCount(items.size());
+	ui->tableWidget_log->setRowCount((int)items.size());
 
 	for (int row = 0; row < (int)items.size(); row++) {
 		GitCommitItem const *commit = items[row];

@@ -585,7 +585,7 @@ private:
 			using U = std::make_unsigned_t<decltype(val)>;
 			U u = (U)val;
 			if (sign) {
-				u = -u;
+				u = 0u - u;
 			}
 			while (u != 0) {
 				int c = u % 10 + '0';
@@ -633,7 +633,9 @@ private:
 			bool sign = (val < 0);
 			using U = std::make_unsigned_t<decltype(val)>;
 			U u = (U)val;
-			if (sign) u = -u;
+			if (sign) {
+				u = 0u - u;
+			}
 
 			while (u != 0) {
 				int c = u % 10 + '0';

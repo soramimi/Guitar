@@ -194,7 +194,7 @@ GitObject FileDiffWidget::catFile(GitRunner g, std::string const &id)
 
 int FileDiffWidget::totalTextLines() const
 {
-	return m->engine_left->document.lines.size();
+	return (int)m->engine_left->document.lines.size();
 }
 
 void FileDiffWidget::clearDiffView()
@@ -257,7 +257,8 @@ FileDiffWidget::TextDiffData FileDiffWidget::makeSideBySideDiffData(GitDiff cons
 				char const *p = at.data() + 4;
 				auto ParseNumber = [&](){
 					size_t v = 0;
-					while (p < at.end() && isdigit((unsigned char)*p)) {
+					char const *end = at.data() + at.size();
+					while (p < end && isdigit((unsigned char)*p)) {
 						v = v * 10 + size_t(*p - '0');
 						p++;
 					}
@@ -742,11 +743,11 @@ void FileDiffWidget::onUpdateSliderBar()
 	int value = 0;
 	int page = 0;
 	if (isSideBySideView()) {
-		total = m->engine_left->document.lines.size();
+		total = (int)m->engine_left->document.lines.size();
 		value = ui->verticalScrollBar->value();
 		page = ui->verticalScrollBar->pageStep();
 	} else if (viewstyle() == InlineTextDiff) {
-		total = m->engine_inline->document.lines.size();
+		total = (int)m->engine_inline->document.lines.size();
 		value = ui->verticalScrollBar_inline->value();
 		page = ui->verticalScrollBar_inline->pageStep();
 		
