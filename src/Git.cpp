@@ -634,7 +634,7 @@ std::optional<GitCommitItem> Git::parseCommit(std::vector<char> const &ba)
 			if (n >= 4) {
 				out.commit_date = DateTime::fromSecsSinceEpoch(misc::toi<long long>(arr[n - 2]));
 				out.email = std::string(arr[n - 3]);
-				if (misc::starts_with(out.email, '<') && misc::starts_with(out.email, '>')) {
+				if (misc::starts_with(out.email, '<') && misc::ends_with(out.email, '>')) {
 					size_t m = out.email.size();
 					out.email = out.email.substr(1, m - 2);
 				}
