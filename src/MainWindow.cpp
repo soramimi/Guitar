@@ -1652,8 +1652,7 @@ void MainWindow::makeCommitLog(GitHash const &head, CommitLogExchangeData exdata
 	setHeadId(head);
 
 	GitCommitItemList &commit_log = *exdata.p->commit_log;
-	// commit_log._update_ptrs();
-	std::basic_string_view<GitCommitItem const *> items = commit_log.c_items();
+	std::span<GitCommitItem const *const> items = commit_log.c_items();
 
 	std::map<GitHash, BranchList> const &branch_map = *exdata.p->branch_map;
 	std::map<GitHash, TagList> const &tag_map = *exdata.p->tag_map;
@@ -3720,7 +3719,7 @@ void MainWindow::setUncommittedChanges(bool uncommited_changes)
 	m->uncommited_changes = uncommited_changes;
 }
 
-std::basic_string_view<GitDiff const *> MainWindow::diffResult() const
+std::span<GitDiff const *> MainWindow::diffResult() const
 {
 	return m->diff_result.items();
 }
@@ -3800,7 +3799,7 @@ QListWidgetItem *MainWindow::newListWidgetFileItem(MainWindow::ObjectData const 
  * @param diff_list
  * @param fn_add_item
  */
-void MainWindow::addDiffItems(std::basic_string_view<GitDiff const *> diff_list, const std::function<void(ObjectData const &data)> &fn_add_item)
+void MainWindow::addDiffItems(std::span<GitDiff const *> diff_list, const std::function<void(ObjectData const &data)> &fn_add_item)
 {
 	for (size_t idiff = 0; idiff < diff_list.size(); idiff++) {
 		GitDiff const *diff = diff_list[idiff];
@@ -4326,7 +4325,7 @@ void MainWindow::updateFileList(GitHash const &id)
 
 			std::map<std::string, size_t> diffmap;
 
-			std::basic_string_view<GitDiff const *> difflist = diffResult();
+			std::span<GitDiff const *> difflist = diffResult();
 			for (size_t idiff = 0; idiff < difflist.size(); idiff++) {
 				GitDiff const *diff = difflist[idiff];
 				std::string filename = diff->path;
@@ -6170,7 +6169,7 @@ int MainWindow::selectedLogIndex() const
 GitHash MainWindow::blobID(QListWidgetItem *item) const
 {
 	auto idiff = indexOfDiff(item);
-	std::basic_string_view<GitDiff const *> diffs = diffResult();
+	std::span<GitDiff const *> diffs = diffResult();
 	if (idiff >= 0 && idiff < (int)diffs.size()) {
 		GitDiff const *diff = diffs[idiff];
 		return GitHash(diff->blob.b_id_or_path);
@@ -6193,7 +6192,7 @@ void MainWindow::updateDiffView(QListWidgetItem const *item)
 	if (!item) return;
 
 	auto idiff = indexOfDiff(item);
-	std::basic_string_view<GitDiff const *> diffs = diffResult();
+	std::span<GitDiff const *> diffs = diffResult();
 	if (idiff < (int)diffs.size()) {
 		GitDiff const *diff = diffs[idiff];
 		bool updatediffview = false;
@@ -7436,7 +7435,7 @@ GitCommitItemList const &MainWindow::commitlog() const
 	return currentRepositoryData()->commit_log;
 }
 
-std::basic_string_view<GitCommitItem *> MainWindow::commitlogItems() const
+std::span<GitCommitItem const *const> MainWindow::commitlogItems() const
 {
 	return commitlog().items();
 }

@@ -1,6 +1,7 @@
 QMAKE_PROJECT_DEPTH = 0
 
 CPP_STD = c++20
+CONFIG += $$CPP_STD
 gcc:QMAKE_CXXFLAGS += -std=$$CPP_STD -Wall -Wextra
 
 msvc:DEFINES += NOMINMAX

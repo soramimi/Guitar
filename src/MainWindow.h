@@ -13,6 +13,7 @@
 #include "UserEvent.h"
 #include <QMainWindow>
 #include <memory>
+#include <span>
 
 class AddRepositoryDialog;
 class ApplicationSettings;
@@ -411,7 +412,7 @@ public:
 			list_ = std::move(list);
 			ptrs_.clear();
 		}
-		std::basic_string_view<GitDiff const *> items() const
+		std::span<GitDiff const *> items() const
 		{
 			if (ptrs_.empty()) {
 				const size_t N = list_.size();
@@ -420,11 +421,11 @@ public:
 					ptrs_[i] = &list_[i];
 				}
 			}
-			return std::basic_string_view<GitDiff const *>(ptrs_.data(), ptrs_.size());
+			return std::span<GitDiff const *>(ptrs_.data(), ptrs_.size());
 		}
 	};
 private:
-	std::basic_string_view<const GitDiff *> diffResult() const;
+	std::span<const GitDiff *> diffResult() const;
 
 	void clearLabelMap();
 	GitObjectCache *getObjCache();
@@ -657,7 +658,7 @@ public:
 	static void updateCommitGraph(GitCommitItemList *logs);
 	static TagList findTag(std::map<GitHash, TagList> const &tagmap, GitHash const &id);
 	static QString makeRepositoryName(QString const &loc);
-	static void addDiffItems(std::basic_string_view<const GitDiff *> diff_list, const std::function<void(const ObjectData &)> &add_item);
+	static void addDiffItems(std::span<const GitDiff *> diff_list, const std::function<void(const ObjectData &)> &add_item);
 	static GitHash getObjectID(const QListWidgetItem *item);
 	static QString getFilePath(const QListWidgetItem *item);
 	static QString getSubmodulePath(const QListWidgetItem *item);
@@ -755,7 +756,7 @@ public:
 private:
 	const GitCommitItemList &commitlog() const;
 public:
-	std::basic_string_view<GitCommitItem *> commitlogItems() const;
+	std::span<GitCommitItem const *const> commitlogItems() const;
 	
 	const GitCommitItem *currentCommitItem();
 	void clearLogContents();

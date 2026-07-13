@@ -200,16 +200,16 @@ public:
 	int find_index(GitHash const &id) const;
 	GitCommitItem const *find(GitHash const &id) const;
 	
-	std::basic_string_view<GitCommitItem *> items() const
+	std::span<GitCommitItem const *const> items() const
 	{
 		const_cast<GitCommitItemList *>(this)->_update_ptrs();
-		return std::basic_string_view<GitCommitItem *>(d.ptrs.data(), d.ptrs.size());
+		return std::span<GitCommitItem const *const>(d.ptrs.data(), d.ptrs.size());
 	}
 
-	std::basic_string_view<GitCommitItem const *> c_items() const
+	std::span<GitCommitItem const *const> c_items() const
 	{
 		const_cast<GitCommitItemList *>(this)->_update_ptrs();
-		return std::basic_string_view<GitCommitItem const *>(d.ptrs.data(), d.ptrs.size());
+		return std::span<GitCommitItem const *const>(d.ptrs.data(), d.ptrs.size());
 	}
 	
 	void fixCommitLogOrder();

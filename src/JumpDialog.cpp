@@ -108,7 +108,7 @@ struct JumpDialog::Private {
 	QStringList header;
 };
 
-JumpDialog::JumpDialog(QWidget *parent, const NamedCommitList &items, std::basic_string_view<CommitRecord const *> commit_records)
+JumpDialog::JumpDialog(QWidget *parent, const NamedCommitList &items, std::span<CommitRecord const *const> commit_records)
 	: QDialog(parent)
 	, ui(new Ui::JumpDialog)
 	, m(new Private)

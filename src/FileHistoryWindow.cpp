@@ -104,7 +104,7 @@ void FileHistoryWindow::collectFileHistory()
 		ui->tableWidget_log->setHorizontalHeaderItem(i, item);
 	}
 	
-	std::basic_string_view<GitCommitItem *> items = m->commit_item_list.items();
+	std::span<GitCommitItem const *const> items = m->commit_item_list.items();
 	
 	ui->tableWidget_log->setRowCount((int)items.size());
 
@@ -145,7 +145,7 @@ void FileHistoryWindow::updateDiffView()
 		return mainwindow()->findFileID(commit.commit_id, m->path).toStdString();
 	};
 	
-	std::basic_string_view<GitCommitItem *> items = m->commit_item_list.items();
+	std::span<GitCommitItem const *const> items = m->commit_item_list.items();
 	
 	int row = ui->tableWidget_log->currentRow();
 	if (row >= 0 && row + 1 < (int)items.size()) {

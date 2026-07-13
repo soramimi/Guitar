@@ -176,7 +176,7 @@ int CommitLogTableModel::unfilteredIndex(int i) const
 	return (int)index_[i];
 }
 
-void CommitLogTableModel::setRecords(std::basic_string_view<CommitRecord const *> records)
+void CommitLogTableModel::setRecords(std::span<CommitRecord const *const> records)
 {
 	beginResetModel();
 	records_ = records;
@@ -419,7 +419,7 @@ void CommitLogTableWidget::adjustAppearance()
 	horizontalHeader()->setStretchLastSection(true);
 }
 
-void CommitLogTableWidget::setRecords(std::basic_string_view<CommitRecord const *> records)
+void CommitLogTableWidget::setRecords(std::span<CommitRecord const *const> records)
 {
 	model_->setRecords(records);
 
@@ -461,8 +461,7 @@ void CommitLogTableWidget::paintEvent(QPaintEvent *e)
 	pr.setRenderHint(QPainter::Antialiasing);
 	pr.setBrush(QBrush(QColor(255, 255, 255)));
 
-	// GitCommitItemList const &_list = mainwindow()->commitlog();
-	std::basic_string_view<GitCommitItem *> items = mainwindow()->commitlogItems();
+	std::span<GitCommitItem const *const> items = mainwindow()->commitlogItems();
 
 	int indent_span = 16;
 
@@ -501,7 +500,7 @@ void CommitLogTableWidget::paintEvent(QPaintEvent *e)
 			for (GitTreeLine const &line : item1->parent_lines) {
 				if (line.depth >= 0) {
 					QPainterPath *path = nullptr;
-					GitCommitItem const &item2 = *items.at(line.index);
+					GitCommitItem const &item2 = *items[line.index];
 					QRect rc2 = ItemRect(line.index);
 					if (row + 1 == line.index || line.depth == item1->marker_depth || line.depth == item2.marker_depth) {
 						QPointF pt2 = ItemPoint(line.depth, rc2);

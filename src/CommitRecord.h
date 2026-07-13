@@ -35,7 +35,7 @@ public:
 			records_ptrs_[i] = &records_[i];
 		}
 	}
-	std::basic_string_view<CommitRecord const *> records() const
+	std::span<CommitRecord const * const> records() const
 	{
 		return {records_ptrs_.data(), records_ptrs_.size()};
 	}

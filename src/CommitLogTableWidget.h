@@ -19,7 +19,7 @@ class CommitLogTableModel : public QAbstractItemModel {
 public:
 	static QString escapeTooltipText(QString tooltip);
 private:
-	std::basic_string_view<CommitRecord const *> records_;
+	std::span<CommitRecord const *const> records_;
 	std::vector<size_t> index_;
 	std::string filter_text_;
 	IncrementalSearchFilter incremental_search_filter_;
@@ -43,7 +43,7 @@ public:
 	int columnCount(const QModelIndex &parent) const;
 	QVariant headerData(int section, Qt::Orientation orientation, int role) const;
 	QVariant data(const QModelIndex &index, int role) const;
-	void setRecords(std::basic_string_view<const CommitRecord *> records);
+	void setRecords(std::span<CommitRecord const *const> records);
 	bool setFilter(const std::string &text);
 	bool isFiltered() const
 	{
@@ -67,7 +67,7 @@ private:
 public:
 	explicit CommitLogTableWidget(QWidget *parent = nullptr);
 	void setup(MainWindow *frame);
-	void setRecords(std::basic_string_view<const CommitRecord *> records);
+	void setRecords(std::span<CommitRecord const *const> records);
 protected:
 	void paintEvent(QPaintEvent *) override;
 	void resizeEvent(QResizeEvent *e) override;
