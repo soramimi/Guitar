@@ -27,6 +27,9 @@ template <typename T> static std::basic_string<T> joinpath(std::basic_string_vie
 	while (!right.empty() && (right.front() == '/' || right.front() == '\\')) {
 		right.remove_prefix(1);
 	}
+	if (left.empty()) {
+		return std::basic_string<T>(right);
+	}
 	std::basic_string<T> ret;
 	ret.reserve(left.size() + 1 + right.size());
 	ret.append(left.data(), left.size());
