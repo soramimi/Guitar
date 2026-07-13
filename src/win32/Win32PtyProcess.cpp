@@ -93,7 +93,7 @@ void Win32PtyProcess::run()
 	wchar_t const *program_p = nullptr;
 	if (1) {
 		// コマンドから実行ファイル名を抜き取る。実際に実行されるプログラムのパス。
-		program = QString::fromStdString(misc::getProgram(m->command)).toStdWString();
+		program = QString::fromStdString(std::string(misc::getProgram(m->command))).toStdWString();
 		if (!program.empty()) {
 			program_p = program.c_str();
 		}

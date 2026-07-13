@@ -1,8 +1,9 @@
-#include <common/misc.h>
-#include <common/joinpath.h>
+#include "Git.h"
 #include "q/FileInfo.h"
 #include "str.h"
-#include "Git.h"
+#include <common/joinpath.h>
+#include <common/misc.h>
+#include <string_view>
 #include <vector>
 
 #ifdef USE_QT
@@ -774,9 +775,9 @@ std::string misc::strip_vt(const std::string_view &s)
  * コマンドラインから実行ファイル名を抜き取る。
  * 例: "C:\Program Files\MyApp\app.exe" --option -> C:\Program Files\MyApp\app.exe
  */
-std::string misc::getProgram(std::string const &cmdline)
+std::string_view misc::getProgram(std::string_view cmdline)
 {
-	char const *begin = cmdline.c_str();
+	char const *begin = cmdline.data();
 	char const *end = begin + cmdline.size();
 	char const *ptr = begin;
 	bool quote = 0;
@@ -794,7 +795,7 @@ std::string misc::getProgram(std::string const &cmdline)
 			ptr++;
 		} else if (quote && c != 0) {
 			ptr++;
-		} else if (QChar(c).isSpace() || c == 0) {
+		} else if (isspace((unsigned char)c) || c == 0) {
 			break;
 		} else {
 			ptr++;
@@ -808,7 +809,7 @@ std::string misc::getProgram(std::string const &cmdline)
 			right--;
 		}
 	}
-	return std::string(left, right);
+	return std::string_view(left, right - left);
 }
 
 
