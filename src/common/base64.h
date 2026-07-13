@@ -4,14 +4,15 @@
 
 #include <vector>
 #include <string>
+#include <cstdint>
 
 class Base64 {
 private:
-	static unsigned char const PAD = '=';
+	static uint8_t const PAD = '=';
 
-	static unsigned char enc(int c)
+	static uint8_t enc(int c)
 	{
-		static const unsigned char table[] = {
+		static const uint8_t table[] = {
 			0x41, 0x42, 0x43, 0x44, 0x45, 0x46, 0x47, 0x48, 0x49, 0x4a, 0x4b, 0x4c, 0x4d, 0x4e, 0x4f, 0x50,
 			0x51, 0x52, 0x53, 0x54, 0x55, 0x56, 0x57, 0x58, 0x59, 0x5a, 0x61, 0x62, 0x63, 0x64, 0x65, 0x66,
 			0x67, 0x68, 0x69, 0x6a, 0x6b, 0x6c, 0x6d, 0x6e, 0x6f, 0x70, 0x71, 0x72, 0x73, 0x74, 0x75, 0x76,
@@ -20,9 +21,9 @@ private:
 		return table[c & 63];
 	}
 
-	static unsigned char dec(int c)
+	static uint8_t dec(int c)
 	{
-		static const unsigned char table[] = {
+		static const uint8_t table[] = {
 			0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
 			0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
 			0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x3e, 0xff, 0xff, 0xff, 0x3f,
@@ -35,7 +36,7 @@ private:
 		return table[c & 127];
 	}
 public:
-	static std::vector<char> encode(char const *src, size_t len)
+	static std::vector<char> encode(uint8_t const *src, size_t len)
 	{
 		if (!src || len == 0) return {};
 
@@ -45,14 +46,14 @@ public:
 		std::vector<char> ret;
 		ret.resize(dstlen);
 		
-		char *dst = ret.data();
+		uint8_t *dst = (uint8_t *)ret.data();
 		dstpos = 0;
 		for (srcpos = 0; srcpos < len; srcpos += 3) {
-			int v = (unsigned char)src[srcpos] << 16;
+			int v = src[srcpos] << 16;
 			if (srcpos + 1 < len) {
-				v |= (unsigned char)src[srcpos + 1] << 8;
+				v |= src[srcpos + 1] << 8;
 				if (srcpos + 2 < len) {
-					v |= (unsigned char)src[srcpos + 2];
+					v |= src[srcpos + 2];
 					dst[dstpos + 3] = enc(v);
 				} else {
 					dst[dstpos + 3] = PAD;
@@ -69,21 +70,21 @@ public:
 		return ret;
 	}
 
-	static std::vector<char> decode(char const *src, size_t len)
+	static std::vector<char> decode(uint8_t const *src, size_t len)
 	{
 		std::vector<char> ret;
 		ret.reserve(len * 3 / 4);
 		
-		unsigned char const *begin = (unsigned char const *)src;
-		unsigned char const *end = begin + len;
-		unsigned char const *ptr = begin;
+		uint8_t const *begin = (uint8_t const *)src;
+		uint8_t const *end = begin + len;
+		uint8_t const *ptr = begin;
 		int count = 0;
 		int bits = 0;
 		while (1) {
 			if (isspace(*ptr)) {
 				ptr++;
 			} else {
-				unsigned char c = 0xff;
+				uint8_t c = 0xff;
 				if (ptr < end && *ptr < 0x80) {
 					c = dec(*ptr);
 				}
@@ -127,22 +128,22 @@ public:
 
 static inline std::vector<char> base64_encode_v(std::vector<char> const &v)
 {
-	return Base64::encode(v.data(), v.size());
+	return Base64::encode((uint8_t const *)v.data(), v.size());
 }
 
 static inline std::vector<char> base64_decode_v(std::vector<char> const &v)
 {
-	return Base64::decode(v.data(), v.size());
+	return Base64::decode((uint8_t const *)v.data(), v.size());
 }
 
 static inline std::vector<char> base64_encode_v(std::string_view s)
 {
-	return Base64::encode(s.data(), s.size());
+	return Base64::encode((uint8_t const *)s.data(), s.size());
 }
 
 static inline std::vector<char> base64_decode_v(std::string_view s)
 {
-	return Base64::decode(s.data(), s.size());
+	return Base64::decode((uint8_t const *)s.data(), s.size());
 }
 
 static inline std::string base64_encode_s(std::string_view s)
