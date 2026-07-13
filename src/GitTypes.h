@@ -5,6 +5,7 @@
 #include <common/misc.h>
 #include <common/q/DateTime.h>
 #include <common/qmisc.h>
+#include <span>
 
 #define GIT_ID_LENGTH (40)
 
