@@ -68,7 +68,7 @@ void RepositoryPropertyDialog::getRemotes_()
 {
 	GitRunner g = git();
 	if (g.isValidWorkingCopy()) {
-		g.remote_v(&m->remotes);
+		m->remotes = g.remote_v();
 	}
 }
 

@@ -17,8 +17,8 @@ public:
 		char phase = 0;
 		uint64_t timestamp = 0;
 		int64_t duration = 0; // only for complete events
-		int32_t pid;
-		int32_t tid;
+		int32_t pid = 0;
+		int32_t tid = 0;
 		std::string args_comment;
 	};
 	enum Phase {

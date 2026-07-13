@@ -3007,8 +3007,7 @@ bool MainWindow::push()
 
 	QString url;
 	{
-		std::vector<GitRemote> remotes;
-		g.remote_v(&remotes);
+		std::vector<GitRemote> remotes = g.remote_v();
 		for (GitRemote const &r : remotes) {
 			if (!r.url_push.empty()) {
 				url = QString::fromStdString(r.url_push);
@@ -3627,7 +3626,7 @@ std::vector<GitSubmoduleItem> MainWindow::updateSubmodules(GitRunner g, GitHash 
 							}
 						} else if (list[k].type == GitTreeItem::Type::TREE) {
 							GitObject obj = objcache.catFile(g, GitHash(list[k].id));
-							parseGitTreeObject(obj.content, { }, &list);
+							list = parseGitTreeObject(obj.content, {});
 							break;
 						}
 					}
@@ -4925,8 +4924,8 @@ void MainWindow::on_treeWidget_repos_customContextMenuRequested(const QPoint &po
 		{
 			std::vector<QString> urls;
 			{
-				std::vector<GitRemote> remotes;
-				new_git_runner(repo->local_dir, { }).remote_v(&remotes);
+				auto git = new_git_runner(repo->local_dir, { });
+				std::vector<GitRemote> remotes = git.remote_v();
 				for (GitRemote const &r : remotes) {
 					urls.push_back(QString::fromStdString(r.url_fetch));
 					urls.push_back(QString::fromStdString(r.url_push));

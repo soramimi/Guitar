@@ -363,10 +363,9 @@ void FileDiffWidget::setDiffText(GitDiff const &diff, TextDiffData const &data)
 		Right,
 		Inline,
 	};
-	auto SetLineNumber = [&](TextDiffLineList const &lines, Pane pane, TextDiffLineList *out){
-		out->clear();
+	auto SetLineNumber = [&](TextDiffLineList const &lines, Pane pane){
+		TextDiffLineList ret;
 		int linenum = 1;
-
 		for (TextDiffLine const &line : lines) {
 			TextDiffLine item = line;
 
@@ -391,12 +390,13 @@ void FileDiffWidget::setDiffText(GitDiff const &diff, TextDiffData const &data)
 				break;
 			}
 
-			out->push_back(item);
+			ret.push_back(item);
 		}
+		return ret;
 	};
-	SetLineNumber(data.left_lines, Pane::Left, &m->diffdata.left_lines);
-	SetLineNumber(data.right_lines, Pane::Right, &m->diffdata.right_lines);
-	SetLineNumber(data.inline_lines, Pane::Inline, &m->diffdata.inline_lines);
+	m->diffdata.left_lines = SetLineNumber(data.left_lines, Pane::Left);
+	m->diffdata.right_lines = SetLineNumber(data.right_lines, Pane::Right);
+	m->diffdata.inline_lines = SetLineNumber(data.inline_lines, Pane::Inline);
 
 	ui->widget_diff_left->setText(&m->diffdata.left_lines, (QS)diff.blob.a_id_or_path, (QS)diff.path);
 	ui->widget_diff_right->setText(&m->diffdata.right_lines, (QS)diff.blob.b_id_or_path, (QS)diff.path);
@@ -412,8 +412,8 @@ bool FileDiffWidget::setSubmodule(GitDiff const &diff)
 	GitCommitItem const &submod_commit_a = diff.a_submodule.commit;
 	GitCommitItem const &submod_commit_b = diff.b_submodule.commit;
 	if (submod_a || submod_b) {
-		auto Text = [](GitSubmoduleItem const *submodule, GitCommitItem const *submodule_commit, TextDiffLineList *out){
-			*out = {};
+		auto Text = [](GitSubmoduleItem const *submodule, GitCommitItem const *submodule_commit){
+			TextDiffLineList ret;
 			if (submodule && *submodule) {
 				QString text;
 				text += "name: " + QString::fromStdString(submodule->name) + '\n';
@@ -426,13 +426,14 @@ bool FileDiffWidget::setSubmodule(GitDiff const &diff)
 				text += '\n';
 				text += (QS)submodule_commit->message;
 				for (QString const &line : misc::splitLines(text)) {
-					out->push_back(Document::Line::View(line.toStdString()));
+					ret.push_back(Document::Line::View(line.toStdString()));
 				}
 			}
+			return ret;
 		};
 		TextDiffData data;
-		if (submod_a) Text(&submod_a, &submod_commit_a, &data.left_lines);
-		if (submod_b) Text(&submod_b, &submod_commit_b, &data.right_lines);
+		if (submod_a) data.left_lines = Text(&submod_a, &submod_commit_a);
+		if (submod_b) data.right_lines = Text(&submod_b, &submod_commit_b);
 		setDiffText(diff, data);
 		return true;
 	}

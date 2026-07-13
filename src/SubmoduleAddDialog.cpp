@@ -116,7 +116,7 @@ void SubmoduleAddDialog::on_pushButton_open_existing_clicked()
 		GitRunner g = mainwindow()->new_git_runner(dir, {});
 		std::vector<GitRemote> vec;
 		if (g.isValidWorkingCopy()) {
-			g.remote_v(&vec);
+			vec = g.remote_v();
 		}
 		for (GitRemote const &r : vec) {
 			url = QString::fromStdString(r.url_fetch);

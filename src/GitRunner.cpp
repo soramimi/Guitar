@@ -233,9 +233,9 @@ bool GitRunner::push_tags(AbstractPtyProcess *pty)
 	return gitptr()->push_tags(pty);
 }
 
-void GitRunner::remote_v(std::vector<GitRemote> *out)
+std::vector<GitRemote> GitRunner::remote_v()
 {
-	gitptr()->remote_v(out);
+	return gitptr()->remote_v();
 }
 
 void GitRunner::createBranch(std::string const &name)

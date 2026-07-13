@@ -287,7 +287,7 @@ void WebClient::set_default_header(InetClient::Request const &url, InetClient::P
 	}
 	if (url.auth().type == InetClient::Authorization::Basic) {
 		std::string s = url.auth().uid + ':' + url.auth().pwd;
-		AddHeader("Authorization: Basic " + base64_encode(s));
+		AddHeader("Authorization: Basic " + base64_encode_s(s));
 	}
 	for (std::string const &h : url.headers()) {
 		AddHeader(h);

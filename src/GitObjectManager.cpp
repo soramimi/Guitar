@@ -91,8 +91,9 @@ void GitObjectManager::clearIndexes()
 	m->git_idx_list.clear();
 }
 
-void GitObjectManager::applyDelta(QByteArray const *base_obj, QByteArray const *delta_obj, QByteArray *out)
+QByteArray GitObjectManager::applyDelta(QByteArray const *base_obj, QByteArray const *delta_obj)
 {
+	QByteArray ret;
 	if (delta_obj->size() > 0) {
 		uint8_t const *begin = (uint8_t const *)delta_obj->data();
 		uint8_t const *end = begin + delta_obj->size();
@@ -131,14 +132,14 @@ void GitObjectManager::applyDelta(QByteArray const *base_obj, QByteArray const *
 
 				if (offset + length > (uint32_t)base_obj->size()) {
 					qDebug() << Q_FUNC_INFO << "base-file or delta-file is corrupted";
-					out->clear();
-					return;
+					ret.clear();
+					return {};
 				}
-				out->append(base_obj->data() + offset, length);
+				ret.append(base_obj->data() + offset, length);
 			} else if (op > 0) { // insert operation
 				int length = op & 0x7f;
 				if (ptr + length <= end) {
-					out->append((char const *)ptr, length);
+					ret.append((char const *)ptr, length);
 					ptr += length;
 				}
 			} else {
@@ -146,6 +147,7 @@ void GitObjectManager::applyDelta(QByteArray const *base_obj, QByteArray const *
 			}
 		}
 	}
+	return ret;
 }
 
 bool GitObjectManager::loadPackedObject(std::shared_ptr<GitPackIdxV2> const &idx, QIODevice *packfile, GitPackIdxItem const *item, GitPackObject *out)
@@ -167,8 +169,7 @@ bool GitObjectManager::loadPackedObject(std::shared_ptr<GitPackIdxV2> const &idx
 						qDebug() << "crc checksum incorrect";
 						return false;
 					}
-					QByteArray ba;
-					applyDelta(&source.content, &delta.content, &ba);
+					QByteArray ba = applyDelta(&source.content, &delta.content);
 					*out = GitPackObject();
 					out->type = source.type;
 					out->content = std::move(ba);
@@ -453,9 +454,9 @@ bool GitCommit::parseCommit(GitRunner g, GitObjectCache *objcache, GitHash const
 	return false;
 }
 
-void parseGitTreeObject(QByteArray const &ba, std::string const &path_prefix, GitTreeItemList *out)
+GitTreeItemList parseGitTreeObject(QByteArray const &ba, std::string const &path_prefix)
 {
-	*out = {};
+	GitTreeItemList ret;
 	std::string_view s{ba.data(), (size_t)ba.size()};
 	std::vector<std::string> lines = (misc::strlist)misc::splitLinesV(s);
 	for (std::string const &line : lines) {
@@ -479,11 +480,12 @@ void parseGitTreeObject(QByteArray const &ba, std::string const &path_prefix, Gi
 					data.type = GitTreeItem::COMMIT;
 				}
 				if (data.type != GitTreeItem::UNKNOWN) {
-					out->push_back(data);
+					ret.push_back(data);
 				}
 			}
 		}
 	}
+	return ret;
 }
 
 bool parseGitTreeObject(GitRunner g, GitObjectCache *objcache, const std::string &commit_id, const std::string &path_prefix, GitTreeItemList *out) // TODO: change commit_id as GitHash
@@ -492,7 +494,7 @@ bool parseGitTreeObject(GitRunner g, GitObjectCache *objcache, const std::string
 	if (!commit_id.empty()) {
 		GitObject obj = g.catFile(GitHash(commit_id));
 		if (!obj.content.isEmpty()) { // 内容を取得
-			parseGitTreeObject(obj.content, path_prefix, out);
+			*out = parseGitTreeObject(obj.content, path_prefix);
 			return true;
 		}
 	}

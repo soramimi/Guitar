@@ -14,7 +14,7 @@ private:
 	struct Private;
 	Private *m;
 
-	static void applyDelta(QByteArray const *base, QByteArray const *delta, QByteArray *out);
+	static QByteArray applyDelta(QByteArray const *base, QByteArray const *delta);
 	static bool loadPackedObject(std::shared_ptr<GitPackIdxV2> const &idx, QIODevice *packfile, GitPackIdxItem const *item, GitPackObject *out);
 	bool extractObjectFromPackFile(std::shared_ptr<GitPackIdxV2> const &idx, GitPackIdxItem const *item, GitPackObject *out);
 	bool extractObjectFromPackFile(GitRunner g, const GitHash &id, QByteArray *out, GitObject::Type *type, std::mutex *mutex);
@@ -91,8 +91,8 @@ using GitTreeItemList = QList<GitTreeItem>;
 
 class GitCommitTree {
 private:
-	GitObjectCache *objcache;
-	GitTreeItemList root_item_list;
+	GitObjectCache *object_cache_;
+	GitTreeItemList root_item_list_;
 
 	std::map<QString, GitTreeItem> blob_map;
 	std::map<QString, QString> tree_id_map;
@@ -109,11 +109,11 @@ public:
 
 	GitTreeItemList const *treelist() const
 	{
-		return &root_item_list;
+		return &root_item_list_;
 	}
 };
 
-void parseGitTreeObject(QByteArray const &ba, std::string const &path_prefix, GitTreeItemList *out);
+GitTreeItemList parseGitTreeObject(QByteArray const &ba, std::string const &path_prefix);
 bool parseGitTreeObject(GitRunner g, GitObjectCache *objcache, std::string const &commit_id, std::string const &path_prefix, GitTreeItemList *out);
 
 #endif // GITOBJECTMANAGER_H

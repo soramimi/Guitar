@@ -1452,9 +1452,9 @@ bool Git::rm_cached(std::string const &file)
 	return (bool)git(cmd);
 }
 
-void Git::remote_v(std::vector<GitRemote> *out)
+std::vector<GitRemote> Git::remote_v()
 {
-	out->clear();
+	std::vector<GitRemote> ret;
 	auto result = git("remote -v");
 	std::vector<std::string> lines = (misc::strlist)misc::splitLinesV(resultStdString(result));
 	for (std::string const &line : lines) {
@@ -1474,28 +1474,29 @@ void Git::remote_v(std::vector<GitRemote> *out)
 					r.url_push = url;
 				}
 			}
-			out->push_back(r);
+			ret.push_back(r);
 		}
 	}
-	std::sort(out->begin(), out->end(), [](GitRemote const &a, GitRemote const &b){
+	std::sort(ret.begin(), ret.end(), [](GitRemote const &a, GitRemote const &b){
 		return a.name < b.name;
 	});
-	size_t i = out->size();
+	size_t i = ret.size();
 	if (i > 1) {
 		i--;
 		while (i > 0) {
 			i--;
-			if ((*out)[i].name == (*out)[i + 1].name) {
-				if ((*out)[i].url_fetch.empty()) {
-					(*out)[i].url_fetch = (*out)[i + 1].url_fetch;
+			if ((ret)[i].name == (ret)[i + 1].name) {
+				if ((ret)[i].url_fetch.empty()) {
+					(ret)[i].url_fetch = (ret)[i + 1].url_fetch;
 				}
-				if ((*out)[i].url_push.empty()) {
-					(*out)[i].url_push = (*out)[i + 1].url_push;
+				if ((ret)[i].url_push.empty()) {
+					(ret)[i].url_push = (ret)[i + 1].url_push;
 				}
-				out->erase(out->begin() + i + 1);
+				ret.erase(ret.begin() + i + 1);
 			}
 		}
 	}
+	return ret;
 }
 
 void Git::setRemoteURL(GitRemote const &remote)

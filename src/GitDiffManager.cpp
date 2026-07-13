@@ -148,9 +148,9 @@ std::vector<GitDiff> GitDiffManager::diff(GitRunner g, GitHash const &id, const 
 	if (id.isValid()) {
 
 		{ // diff_raw
-			GitTreeItemList files;
 			GitCommit newer_commit;
 			GitCommit::parseCommit(g, objcache_, id, &newer_commit);
+			GitTreeItemList files;
 			parseGitTreeObject(g, objcache_, newer_commit.tree_id, {}, &files);
 
 			if (newer_commit.parents.empty()) { // 親がないなら最古のコミット
@@ -336,7 +336,7 @@ std::vector<GitDiff> GitDiffManager::diff_uncommited(GitRunner g, const std::vec
 // GitCommitTree
 
 GitCommitTree::GitCommitTree(GitObjectCache *objcache)
-	: objcache(objcache)
+	: object_cache_(objcache)
 {
 }
 
@@ -356,7 +356,7 @@ QString GitCommitTree::lookup_(GitRunner g, QString const &file, GitTreeItem *ou
 			}
 		}
 		GitTreeItemList list;
-		if (parseGitTreeObject(g, objcache, tree_id.toStdString(), {}, &list)) {
+		if (parseGitTreeObject(g, object_cache_, tree_id.toStdString(), {}, &list)) {
 			QString return_id;
 			for (GitTreeItem const &d : list) {
 				QString itemname = (QS)d.name;
@@ -377,7 +377,7 @@ QString GitCommitTree::lookup_(GitRunner g, QString const &file, GitTreeItem *ou
 		}
 	} else {
 		QString return_id;
-		for (GitTreeItem const &d : root_item_list) {
+		for (GitTreeItem const &d : root_item_list_) {
 			QString itemname = (QS)d.name;
 			if (itemname == file) {
 				return_id = (QS)d.id;
@@ -418,13 +418,13 @@ bool GitCommitTree::lookup(GitRunner g, QString const &file, GitTreeItem *out)
 
 void GitCommitTree::parseTree(GitRunner g, QString const &tree_id)
 {
-	parseGitTreeObject(g, objcache, (QS)tree_id, {}, &root_item_list);
+	parseGitTreeObject(g, object_cache_, (QS)tree_id, {}, &root_item_list_);
 }
 
 QString GitCommitTree::parseCommit(GitRunner g, GitHash const &commit_id)
 {
 	GitCommit commit;
-	GitCommit::parseCommit(g, objcache, commit_id, &commit);
+	GitCommit::parseCommit(g, object_cache_, commit_id, &commit);
 	parseTree(g, (QS)commit.tree_id);
 	return (QS)commit.tree_id;
 }

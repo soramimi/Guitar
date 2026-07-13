@@ -169,7 +169,7 @@ public:
 	bool commit_amend_m(const std::string &text, bool sign, AbstractPtyProcess *pty);
 	bool revert(const GitHash &id);
 	bool push_tags(AbstractPtyProcess *pty = nullptr);
-	void remote_v(std::vector<GitRemote> *out);
+	std::vector<GitRemote> remote_v();
 	void createBranch(const std::string &name);
 	void checkoutBranch(std::string const &name);
 	void mergeBranch(const std::string &name, GitMergeFastForward ff, bool squash);
