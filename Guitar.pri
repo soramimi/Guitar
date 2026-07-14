@@ -581,14 +581,11 @@ RESOURCES += \
 
 unix {
 	SOURCES += \
-	    $$SRC/process/ProcessPosix.cpp \
-		$$SRC/process/MyProcess2.cpp \
 		$$SRC/unix/UnixUtil.cpp \
 		$$SRC/unix/UnixProcess.cpp \
 		$$SRC/unix/UnixPtyProcess.cpp
 	HEADERS += \
 		$$SRC/common/wstring.h \
-		$$SRC/process/ProcessPosix.h \
 		$$SRC/unix/UnixUtil.h \
 		$$SRC/unix/UnixProcess.h \
 		$$SRC/unix/UnixPtyProcess.h
@@ -596,7 +593,6 @@ unix {
 
 win32 {
 	SOURCES += \
-		$$SRC/process/ProcessWin.cpp \
 		$$SRC/common/wstring.cpp \
 		$$SRC/win32/Win32Util.cpp \
 		$$SRC/win32/Win32Process.cpp \
@@ -605,7 +601,6 @@ win32 {
 		$$SRC/win32/thread.cpp
 
 	HEADERS += \
-		$$SRC/process/ProcessWin.h \
 		$$SRC/win32/Win32Util.h \
 		$$SRC/win32/Win32Process.h \
 		$$SRC/win32/Win32PtyProcess.h \

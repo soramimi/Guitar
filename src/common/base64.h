@@ -4,15 +4,16 @@
 
 #include <vector>
 #include <string>
-#include <cstdint>
+#include <cctype>
+#include <cstring>
 
 class Base64 {
 private:
-	static uint8_t const PAD = '=';
+	static unsigned char const PAD = '=';
 
-	static uint8_t enc(int c)
+	static unsigned char enc(int c)
 	{
-		static const uint8_t table[] = {
+		static const unsigned char table[] = {
 			0x41, 0x42, 0x43, 0x44, 0x45, 0x46, 0x47, 0x48, 0x49, 0x4a, 0x4b, 0x4c, 0x4d, 0x4e, 0x4f, 0x50,
 			0x51, 0x52, 0x53, 0x54, 0x55, 0x56, 0x57, 0x58, 0x59, 0x5a, 0x61, 0x62, 0x63, 0x64, 0x65, 0x66,
 			0x67, 0x68, 0x69, 0x6a, 0x6b, 0x6c, 0x6d, 0x6e, 0x6f, 0x70, 0x71, 0x72, 0x73, 0x74, 0x75, 0x76,
@@ -21,9 +22,9 @@ private:
 		return table[c & 63];
 	}
 
-	static uint8_t dec(int c)
+	static unsigned char dec(int c)
 	{
-		static const uint8_t table[] = {
+		static const unsigned char table[] = {
 			0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
 			0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
 			0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x3e, 0xff, 0xff, 0xff, 0x3f,
@@ -36,24 +37,23 @@ private:
 		return table[c & 127];
 	}
 public:
-	static std::vector<char> encode(uint8_t const *src, size_t len)
+	static void encode(char const *src, size_t length, std::vector<char> *out)
 	{
-		if (!src || len == 0) return {};
-
 		size_t srcpos, dstlen, dstpos;
-		dstlen = (len + 2) / 3 * 4;
-	
-		std::vector<char> ret;
-		ret.resize(dstlen);
-		
-		uint8_t *dst = (uint8_t *)ret.data();
+
+		dstlen = (length + 2) / 3 * 4;
+		out->resize(dstlen);
+		if (dstlen == 0) {
+			return;
+		}
+		char *dst = &out->at(0);
 		dstpos = 0;
-		for (srcpos = 0; srcpos < len; srcpos += 3) {
-			int v = src[srcpos] << 16;
-			if (srcpos + 1 < len) {
-				v |= src[srcpos + 1] << 8;
-				if (srcpos + 2 < len) {
-					v |= src[srcpos + 2];
+		for (srcpos = 0; srcpos < length; srcpos += 3) {
+			int v = (unsigned char)src[srcpos] << 16;
+			if (srcpos + 1 < length) {
+				v |= (unsigned char)src[srcpos + 1] << 8;
+				if (srcpos + 2 < length) {
+					v |= (unsigned char)src[srcpos + 2];
 					dst[dstpos + 3] = enc(v);
 				} else {
 					dst[dstpos + 3] = PAD;
@@ -67,95 +67,85 @@ public:
 			dst[dstpos] = enc(v >> 18);
 			dstpos += 4;
 		}
-		return ret;
 	}
 
-	static std::vector<char> decode(uint8_t const *src, size_t len)
+	static bool decode(char const *src, size_t length, std::vector<char> *out)
 	{
-		std::vector<char> ret;
-		ret.reserve(len * 3 / 4);
-		
-		uint8_t const *begin = (uint8_t const *)src;
-		uint8_t const *end = begin + len;
-		uint8_t const *ptr = begin;
-		int count = 0;
-		int bits = 0;
-		while (1) {
-			if (isspace(*ptr)) {
-				ptr++;
+		out->clear();
+		if (!src && length != 0) return false;
+
+		unsigned char quartet[4];
+		size_t count = 0;
+		bool finished = false;
+		for (size_t i = 0; i < length; ++i) {
+			unsigned char ch = (unsigned char)src[i];
+			if (std::isspace(ch)) continue;
+			if (finished) return false;
+			if (ch == PAD) {
+				quartet[count++] = 0x40;
 			} else {
-				uint8_t c = 0xff;
-				if (ptr < end && *ptr < 0x80) {
-					c = dec(*ptr);
-				}
-				if (c < 0x40) {
-					bits = (bits << 6) | c;
-					count++;
-				} else {
-					if (count < 4) {
-						bits <<= (4 - count) * 6;
-					}
-					c = 0xff;
-				}
-				if (count == 4 || c == 0xff) {
-					if (count >= 2) {
-						ret.push_back(bits >> 16);
-						if (count >= 3) {
-							ret.push_back(bits >> 8);
-							if (count == 4) {
-								ret.push_back(bits);
-							}
-						}
-					}
-					count = 0;
-					bits = 0;
-					if (c == 0xff) {
-						break;
-					}
-				}
-				ptr++;
+				if (ch >= 0x80) return false;
+				unsigned char value = dec(ch);
+				if (value >= 0x40) return false;
+				quartet[count++] = value;
 			}
+			if (count != 4) continue;
+
+			if (quartet[0] >= 0x40 || quartet[1] >= 0x40) return false;
+			if (quartet[2] == 0x40 && quartet[3] != 0x40) return false;
+			out->push_back(char((quartet[0] << 2) | (quartet[1] >> 4)));
+			if (quartet[2] != 0x40) {
+				out->push_back(char((quartet[1] << 4) | (quartet[2] >> 2)));
+				if (quartet[3] != 0x40) {
+					out->push_back(char((quartet[2] << 6) | quartet[3]));
+				}
+			}
+			finished = quartet[2] == 0x40 || quartet[3] == 0x40;
+			count = 0;
 		}
-		return ret;
+		if (count != 0) {
+			out->clear();
+			return false;
+		}
+		return true;
 	}
 
-	static std::string _to_s_(std::vector<char> const &vec)
+	static std::string _to_s_(std::vector<char> const *vec)
 	{
-		if (vec.empty()) return {};
-		return std::string(vec.data(), vec.size());
+		if (!vec || vec->empty()) return std::string();
+		return std::string((char const *)&(*vec)[0], vec->size());
 	}
 };
 
-static inline std::vector<char> base64_encode_v(std::vector<char> const &v)
+static inline void base64_encode(char const *src, size_t length, std::vector<char> *out)
 {
-	return Base64::encode((uint8_t const *)v.data(), v.size());
+	Base64::encode(src, length, out);
 }
 
-static inline std::vector<char> base64_decode_v(std::vector<char> const &v)
+static inline bool base64_decode(char const *src, size_t length, std::vector<char> *out)
 {
-	return Base64::decode((uint8_t const *)v.data(), v.size());
+	return Base64::decode(src, length, out);
 }
 
-static inline std::vector<char> base64_encode_v(std::string_view s)
+static inline std::string base64_encode(std::string_view const &src)
 {
-	return Base64::encode((uint8_t const *)s.data(), s.size());
+	std::vector<char> vec;
+	base64_encode((char const *)src.data(), src.size(), &vec);
+	return Base64::_to_s_(&vec);
 }
 
-static inline std::vector<char> base64_decode_v(std::string_view s)
+static inline std::string base64_decode(std::string_view const &src)
 {
-	return Base64::decode((uint8_t const *)s.data(), s.size());
+	std::vector<char> vec;
+	base64_decode((char const *)src.data(), src.size(), &vec);
+	return Base64::_to_s_(&vec);
 }
 
-static inline std::string base64_encode_s(std::string_view s)
+static inline std::string base64_encode_s(std::string_view src)
 {
-	std::vector<char> vec = base64_encode_v(s);
-	return Base64::_to_s_(vec);
-}
-
-static inline std::string base64_decode_s(std::string_view s)
-{
-	std::vector<char> vec = base64_decode_v(s);
-	return Base64::_to_s_(vec);
+	std::vector<char> vec;
+	base64_encode((char const *)src.data(), src.size(), &vec);
+	return Base64::_to_s_(&vec);
 }
 
 #endif
