@@ -643,8 +643,8 @@ signals:
 public:
 	explicit MainWindow(QWidget *parent = nullptr);
 	~MainWindow() override;
-
-	QColor color(unsigned int i);
+	
+	QColor color(int i);
 	bool isOnlineMode() const;
 	void updateCurrentFileList();
 	RepositoryTreeWidget::RepositoryListStyle repositoriesListStyle() const;

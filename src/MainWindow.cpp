@@ -1233,10 +1233,10 @@ QAction *MainWindow::addMenuActionProperty(QMenu *menu)
  *
  * 階層の深さに応じた色を返す
  */
-QColor MainWindow::color(unsigned int depth)
+QColor MainWindow::color(int depth)
 {
 	if (depth >= 0) {
-		unsigned int n = (unsigned int)m->graph_color.width();
+		int n = m->graph_color.width();
 		if (n > 0) {
 			n--;
 			if (depth > n) depth = n;
