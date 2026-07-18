@@ -1235,14 +1235,16 @@ QAction *MainWindow::addMenuActionProperty(QMenu *menu)
  */
 QColor MainWindow::color(unsigned int depth)
 {
-	unsigned int n = (unsigned int)m->graph_color.width();
-	if (n > 0) {
-		n--;
-		if (depth > n) depth = n;
-		QRgb const *p = reinterpret_cast<QRgb const *>(m->graph_color.scanLine(0));
-		return QColor(qRed(p[depth]), qGreen(p[depth]), qBlue(p[depth]));
+	if (depth >= 0) {
+		unsigned int n = (unsigned int)m->graph_color.width();
+		if (n > 0) {
+			n--;
+			if (depth > n) depth = n;
+			QRgb const *p = reinterpret_cast<QRgb const *>(m->graph_color.scanLine(0));
+			return QColor(qRed(p[depth]), qGreen(p[depth]), qBlue(p[depth]));
+		}
 	}
-	return Qt::black;
+	return qApp->style()->standardPalette().text().color();
 }
 
 /**

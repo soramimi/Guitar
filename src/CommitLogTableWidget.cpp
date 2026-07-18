@@ -462,7 +462,12 @@ void CommitLogTableWidget::paintEvent(QPaintEvent *e)
 	pr.setBrush(QBrush(QColor(255, 255, 255)));
 
 	std::span<GitCommitItem const *const> items = mainwindow()->commitlogItems();
-
+	if (items.empty()) return;
+	
+	auto IsUncommitted = [](GitCommitItem const *item){
+		return !item->commit_id.isValid();
+	};
+	
 	int indent_span = 16;
 
 	int line_width = 2;
@@ -484,8 +489,8 @@ void CommitLogTableWidget::paintEvent(QPaintEvent *e)
 		return QPointF(x, y);
 	};
 
-	auto SetPen = [&](QPainter *pr, int level, bool thick){
-		QColor c = mainwindow()->color(level + 1);
+	auto SetPen = [&](QPainter *pr, int level, bool uncommitted, bool thick){
+		QColor c = mainwindow()->color(uncommitted ? -1 : (level + 1));
 		Qt::PenStyle s = Qt::SolidLine;
 		pr->setPen(QPen(c, thick ? thick_line_width : line_width, s));
 	};
@@ -519,7 +524,7 @@ void CommitLogTableWidget::paintEvent(QPaintEvent *e)
 						}
 					}
 					if (path) {
-						SetPen(&pr, line.color_number, IsAncestor(*item1));
+						SetPen(&pr, line.color_number, IsUncommitted(item1), IsAncestor(*item1));
 						pr.drawPath(*path);
 						delete path;
 					}
@@ -541,11 +546,11 @@ void CommitLogTableWidget::paintEvent(QPaintEvent *e)
 			y = pt.y() - r;
 			if (item->resolved) {
 				// ◯
-				SetPen(&pr, item->marker_depth, IsAncestor(*item));
+				SetPen(&pr, item->marker_depth, IsUncommitted(item), IsAncestor(*item));
 				pr.drawEllipse((int)x, (int)y, int(r * 2), int(r * 2));
 			} else {
 				// ▽
-				SetPen(&pr, item->marker_depth, false);
+				SetPen(&pr, item->marker_depth, IsUncommitted(item), false);
 				QPainterPath path;
 				path.moveTo(pt.x(), pt.y() + r);
 				path.lineTo(pt.x() - r, pt.y() - r);
