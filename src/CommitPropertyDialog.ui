@@ -17,7 +17,7 @@
    <item>
     <widget class="QPlainTextEdit" name="plainTextEdit_message">
      <property name="focusPolicy">
-      <enum>Qt::FocusPolicy::NoFocus</enum>
+      <enum>Qt::FocusPolicy::TabFocus</enum>
      </property>
      <property name="readOnly">
       <bool>true</bool>
@@ -154,7 +154,7 @@
             </sizepolicy>
            </property>
            <property name="currentIndex">
-            <number>1</number>
+            <number>0</number>
            </property>
            <widget class="QWidget" name="page_pgp_show">
             <layout class="QVBoxLayout" name="verticalLayout_5">
@@ -447,13 +447,22 @@
   </customwidget>
  </customwidgets>
  <tabstops>
+  <tabstop>plainTextEdit_message</tabstop>
   <tabstop>lineEdit_date</tabstop>
   <tabstop>lineEdit_author</tabstop>
   <tabstop>lineEdit_mail</tabstop>
-  <tabstop>lineEdit_commit_id</tabstop>
+  <tabstop>lineEdit_sign_status_2</tabstop>
+  <tabstop>textEdit_sign_text</tabstop>
+  <tabstop>lineEdit_sign_status</tabstop>
+  <tabstop>lineEdit_sign_name</tabstop>
+  <tabstop>lineEdit_sign_mail</tabstop>
   <tabstop>plainTextEdit_parent_ids</tabstop>
+  <tabstop>pushButton_details</tabstop>
+  <tabstop>pushButton_explorer</tabstop>
   <tabstop>pushButton_checkout</tabstop>
+  <tabstop>pushButton_jump</tabstop>
   <tabstop>pushButton_close</tabstop>
+  <tabstop>lineEdit_commit_id</tabstop>
  </tabstops>
  <resources/>
  <connections>

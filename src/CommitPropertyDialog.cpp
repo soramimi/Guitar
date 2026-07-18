@@ -124,6 +124,8 @@ void CommitPropertyDialog::init()
 
 	global->avatar_loader.connectAvatarReady(this, &CommitPropertyDialog::avatarReady);
 	updateAvatar(true);
+
+	ui->plainTextEdit_message->setFocus();
 }
 
 void CommitPropertyDialog::updateAvatar(bool request)
