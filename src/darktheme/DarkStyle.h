@@ -7,17 +7,23 @@
 
 class QStyleOptionViewItem;
 
+class ButtonImages {
+public:
+	QImage im_normal;
+	QImage im_hover;
+};
+
 class DarkStyle : public MyCommonStyle<QCommonStyle> {
 	using Base = MyCommonStyle<QCommonStyle>;
 private:
 	struct Private;
 	Private *m;
 
-	class ButtonImages {
-	public:
-		QImage im_normal;
-		QImage im_hover;
+	enum class Theme {
+		Light,
+		Dark,
 	};
+	Theme theme() const;
 
 	struct ScrollBarTextures {
 		QImage page_bg;
@@ -33,7 +39,11 @@ private:
 	QPixmap pixmapFromImage(QImage const &image, QSize size) const;
 	void loadImages();
 
-	QColor selectionColor() const;
+	QColor selectionColor() const
+	{
+		return QColor(80, 160, 255);
+	}
+	std::pair<QColor, QColor> menuBorderColors(Theme theme) const;
 
 	void drawNinePatchImage(QPainter *p, QImage const &image, QRect const &r, int w, int h) const;
 	void drawGutter(QPainter *p, QRect const &r) const;
@@ -49,7 +59,7 @@ private:
 	qreal dpiScaled(qreal value, const QPaintDevice *device) const;
 	qreal dpiScaled(qreal value, const QStyleOption *option) const;
 public:
-	DarkStyle(const QColor &base_color = QColor());
+	DarkStyle(QColor base_color = QColor());
 	~DarkStyle() override;
 
 	bool isDpiScalingEnabled() const;

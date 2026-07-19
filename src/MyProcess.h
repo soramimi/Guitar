@@ -9,7 +9,8 @@
 #include <ProcessWinPty.h>
 #include <ProcessConPtyWithWorker.h>
 using Process = ProcessWin;
-using PtyProcess = ProcessWinPty;
+// using PtyProcess = ProcessWinPty;
+using PtyProcess = ProcessConPtyWithWorker;
 
 #else
 
