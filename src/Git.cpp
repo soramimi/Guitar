@@ -2,12 +2,13 @@
 #include "Git.h"
 #include "GitBasicSession.h"
 #include "Profile.h"
+#include <QString>
 #include <common/fmt.h>
 #include <common/joinpath.h>
+#include <common/npos.h>
 #include <common/q/helper.h>
 #include <common/str.h>
-#include <common/npos.h>
-#include <QString>
+#include <future>
 
 #ifdef _WIN32
 #include <QDir>
@@ -915,7 +916,12 @@ bool Git::clone(GitCloneData const &data, AbstractPtyProcess *pty)
 	};
 
 	if (pty) {
-		pty->setChangeDir(QString::fromStdString(data.basedir));
+#ifdef _WIN32
+		std::wstring dir = QString::fromStdString(data.basedir).toStdWString();
+#else
+		std::string dir = QString::fromStdString(data.basedir).toStdString();
+#endif
+		pty->set_change_dir(dir);
 		DoIt();
 	} else {
 		if (Dir::setCurrent((QS)data.basedir)) {

@@ -10,7 +10,7 @@
 QString getModuleFileName();
 QString getAppDataLocation();
 
-int winRunCommand(QString const &cmd, QByteArray *out);
+// int winRunCommand(QString const &cmd, QByteArray *out);
 void setEnvironmentVariable(QString const &name, QString const &value);
 
 QIcon winIconFromExtensionLarge(QString const &ext);

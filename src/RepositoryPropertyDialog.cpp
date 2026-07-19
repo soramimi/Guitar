@@ -100,7 +100,7 @@ void RepositoryPropertyDialog::updateRemotesTable()
 			auto flags = item->flags();
 			flags &= ~Qt::ItemIsEditable;
 			item->setFlags(flags);
-			ui->tableWidget->setItem(row, col, item);
+			ui->tableWidget->setItem((int)row, col, item);
 		};
 		SetItem(0, QString::fromStdString(r.name), false);
 		SetItem(1, QString::fromStdString(r.url()), true);

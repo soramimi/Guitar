@@ -4,7 +4,7 @@
 #include "ApplicationGlobal.h"
 #include "Git.h"
 #include "GitCommandRunner.h"
-#include "MyProcess.h"
+// #include "MyProcess.h"
 #include "RepositoryInfo.h"
 #include "RepositoryModel.h"
 #include "RepositoryTreeWidget.h"
@@ -12,6 +12,7 @@
 #include "TextEditorTheme.h"
 #include "UserEvent.h"
 #include <QMainWindow>
+#include <future>
 #include <memory>
 #include <span>
 
@@ -380,7 +381,7 @@ private:
 	PtyProcess const *getPtyProcess() const;
 	bool getPtyProcessOk() const;
 	bool isPtyProcessRunning() const;
-	void setCompletedHandler(std::function<void(bool, const QVariant &)> fn, const QVariant &userdata);
+	void setCompletedHandler(std::function<void (bool, std::shared_ptr<void>)> fn, std::shared_ptr<void> userdata);
 	void setPtyProcessOk(bool pty_process_ok);
 	
 	const std::vector<RepositoryInfo> &repositoryList() const;

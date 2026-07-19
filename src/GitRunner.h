@@ -4,6 +4,7 @@
 #include <memory>
 #include <optional>
 #include "GitTypes.h"
+#include "AbstractProcess.h"
 
 #define PATH_PREFIX "*"
 

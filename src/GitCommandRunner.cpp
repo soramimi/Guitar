@@ -3,7 +3,7 @@
 
 std::string GitCommandRunner::pty_message() const
 {
-	return d.pty->getMessage();
+	return d.pty->get_message();
 }
 
 void GitCommandRunner::operator ()(Git_clone const &item)

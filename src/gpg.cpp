@@ -1,15 +1,11 @@
 #include "gpg.h"
-
+#include "MyProcess.h"
+#include <QDebug>
 #include <QFileInfo>
-#include <QList>
-
+#include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
-#include <QJsonArray>
-#include <QDebug>
-
-#include "MyProcess.h"
-
+#include <QList>
 #include <common/misc.h>
 
 void gpg::parse(char const *begin, char const *end, QList<gpg::Data> *keys)

@@ -1,0 +1,13 @@
+*.d
+*.o
+myapp
+*.user
+_bin/
+build/
+.vs/
+.qmake.stash
+*.obj
+Makefile
+.qtcreator/
+debug/
+release/

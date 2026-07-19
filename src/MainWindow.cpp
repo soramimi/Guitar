@@ -516,7 +516,7 @@ void MainWindow::updatePtyPocessLog(bool processevents)
 {
 	while (1) {
 		char tmp[1024];
-		int len = getPtyProcess()->readOutputStreaming(tmp, sizeof(tmp));
+		int len = getPtyProcess()->read_output(tmp, sizeof(tmp));
 		if (len < 1) break;
 		emitWriteLog({ tmp, len }, LogChannel::PTY);
 		if (processevents) {
@@ -554,7 +554,7 @@ void MainWindow::onInterval10ms()
 	{
 		// PTYプロセスの監視
 
-		bool running = getPtyProcess()->isRunning();
+		bool running = getPtyProcess()->is_running();
 		if (ui->toolButton_stop_process->isEnabled() != running) {
 			ui->toolButton_stop_process->setEnabled(running); // ボタンの状態を設定
 			ui->action_stop_process->setEnabled(running);
@@ -2548,18 +2548,18 @@ void MainWindow::runPtyGit(QString const &progress_message, GitRunner g, GitComm
 	runner.d.elapsed.start();
 
 	runner.d.run = [this, var](GitCommandRunner &runner) {
-		setCompletedHandler([this](bool ok, QVariant const &d) {
-			GitCommandRunner const &req = d.value<GitCommandRunner>();
+		setCompletedHandler([this](bool ok, std::shared_ptr<void> d) {
+			GitCommandRunner const &req = std::static_pointer_cast<QVariant>(d)->value<GitCommandRunner>();
 			PtyProcessCompleted data;
 			data.process_name = req.d.process_name;
 			data.callback = req.callback;
 			data.status->ok = ok;
-			data.status->exit_code = req.pty()->getExitCode();
+			data.status->exit_code = req.pty()->get_exit_code();
 			data.status->log_message = req.pty_message();
 			data.userdata = req.d.userdata;
 			data.elapsed.start();
 			emit sigPtyProcessCompleted(true, data);
-		}, QVariant::fromValue(runner));
+		}, std::make_shared<QVariant>(QVariant::fromValue(runner)));
 		setPtyProcessOk(true);
 
 		std::visit(runner, var);
@@ -2575,7 +2575,7 @@ void MainWindow::runPtyGit(QString const &progress_message, GitRunner g, GitComm
 	runner.callback = callback;
 	runner.d.userdata = userdata;
 	runner.d.pty = getPtyProcess();
-	getPtyProcess()->clearMessage();
+	getPtyProcess()->clear_message();
 	m->git_process_thread.request(std::move(runner));
 }
 
@@ -2886,7 +2886,7 @@ void MainWindow::commit(bool amend)
 				opt.suppress_uncommit_changes = true;
 				reopenRepository(true, opt);
 			} else {
-				QString err = QString::fromStdString(pty->getMessage()).trimmed();
+				QString err = QString::fromStdString(pty->get_message()).trimmed();
 				err += "\n*** ";
 				err += tr("Failed to commit");
 				err += " ***\n";
@@ -3682,12 +3682,12 @@ bool MainWindow::getPtyProcessOk() const
 
 bool MainWindow::isPtyProcessRunning() const
 {
-	return getPtyProcess()->isRunning();
+	return getPtyProcess()->is_running();
 }
 
-void MainWindow::setCompletedHandler(std::function<void(bool, QVariant const &)> fn, QVariant const &userdata)
+void MainWindow::setCompletedHandler(std::function<void(bool, std::shared_ptr<void>)> fn, std::shared_ptr<void> userdata)
 {
-	m->pty_process.setCompletedHandler(fn, userdata);
+	m->pty_process.set_completion_callback(fn, userdata);
 }
 
 void MainWindow::setPtyProcessOk(bool pty_process_ok)
@@ -4534,7 +4534,7 @@ void MainWindow::updateStatusBarText()
 {
 	ASSERT_MAIN_THREAD();
 
-	bool running = getPtyProcess()->isRunning();
+	bool running = getPtyProcess()->is_running();
 	if (running) {
 		setProgress(-1);
 		return;
@@ -6267,8 +6267,8 @@ void MainWindow::keyPressEvent(QKeyEvent *event)
 	if (QApplication::focusWidget() == ui->widget_log) {
 
 		auto write_char = [&](char c) {
-			if (getPtyProcess()->isRunning()) {
-				getPtyProcess()->writeInput(&c, 1);
+			if (getPtyProcess()->is_running()) {
+				getPtyProcess()->write_input(&c, 1);
 			}
 		};
 
@@ -6567,7 +6567,7 @@ bool MainWindow::isValidRemoteURL(const QString &url, const QString &sshkey)
 		stopPtyProcess();
 	}
 	if (f) {
-		f = (getPtyProcess()->getExitCode() == 0);
+		f = (getPtyProcess()->get_exit_code() == 0);
 	}
 
 	QString line((misc::str)getPtyProcess()->stdout_bytes());
@@ -6814,10 +6814,10 @@ void MainWindow::execAreYouSureYouWantToContinueConnectingDialog(QString const &
 	if (dlg.exec() == QDialog::Accepted) {
 		TheDlg::Result r = dlg.result();
 		if (r == TheDlg::Result::Yes) {
-			getPtyProcess()->writeInput("yes\n", 4);
+			getPtyProcess()->write_input("yes\n", 4);
 		} else {
 			setPtyProcessOk(false); // abort
-			getPtyProcess()->writeInput("no\n", 3);
+			getPtyProcess()->write_input("no\n", 3);
 			QThread::msleep(300);
 			stopPtyProcess();
 		}
@@ -7072,7 +7072,7 @@ void MainWindow::onLogIdle()
 				if (dlg.exec() == QDialog::Accepted) {
 					std::string ret = dlg.text().toStdString();
 					std::string str = ret + '\n';
-					getPtyProcess()->writeInput(str.c_str(), (int)str.size());
+					getPtyProcess()->write_input(str.c_str(), (int)str.size());
 					return ret;
 				}
 				abortPtyProcess();
@@ -7111,7 +7111,7 @@ void MainWindow::onLogIdle()
 				if (!keyfile.empty()) {
 					if (keyfile == sshPassphraseUser() && !sshPassphrasePass().empty()) {
 						std::string text = sshPassphrasePass() + '\n';
-						getPtyProcess()->writeInput(text.c_str(), (int)text.size());
+						getPtyProcess()->write_input(text.c_str(), (int)text.size());
 					} else {
 						std::string secret = ExecLineEditDialog(this, "Passphrase for key", QString::fromStdString(line), QString(), true);
 						sshSetPassphrase(keyfile, secret);

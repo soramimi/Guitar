@@ -1,3 +1,4 @@
+
 #ifndef GITTYPES_H
 #define GITTYPES_H
 
@@ -5,6 +6,7 @@
 #include <common/misc.h>
 #include <common/q/DateTime.h>
 #include <common/qmisc.h>
+#include <map>
 #include <span>
 
 #define GIT_ID_LENGTH (40)

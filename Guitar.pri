@@ -16,7 +16,7 @@ unsafe {
 
 win32:INCLUDEPATH += C:/vcpkg/installed/x64-windows/include
 
-SRC = $$PWD/src
+SRC = $$PWD/src/
 
 TRANSLATIONS = $$SRC/resources/translations/Guitar_ja.ts
 TRANSLATIONS += $$SRC/resources/translations/Guitar_ru.ts
@@ -33,7 +33,7 @@ macx:DEFINES += HAVE_SYS_TIME_H
 macx:DEFINES += HAVE_UTMPX
 
 linux:QMAKE_RPATHDIR += $ORIGIN
-macx:QMAKE_RPATHDIR += @executable_path/../Frameworks
+macx:QMAKE_RPATHDIR += $$PROCESS_SRCexecutable_path/../Frameworks
 
 INCLUDEPATH += $$SRC
 INCLUDEPATH += $$SRC/common
@@ -120,12 +120,11 @@ macx {
 #
 
 SOURCES += \
-	$$PWD/src/CommitRecord.cpp \
-	$$PWD/src/IncrementalSearchHelper.cpp \
-	$$PWD/src/LoadPlugin.cpp \
+	$$SRC/CommitRecord.cpp \
+	$$SRC/IncrementalSearchHelper.cpp \
+	$$SRC/LoadPlugin.cpp \
 	$$SRC/AboutDialog.cpp \
 	$$SRC/AbstractGitSession.cpp \
-	$$SRC/AbstractProcess.cpp \
 	$$SRC/AbstractSettingForm.cpp \
 	$$SRC/AddRepositoriesCollectivelyDialog.cpp \
 	$$SRC/AddRepositoryDialog.cpp \
@@ -204,7 +203,6 @@ SOURCES += \
 	$$SRC/MergeDialog.cpp \
 	$$SRC/MyImageViewWidget.cpp \
 	$$SRC/MyObjectViewBase.cpp \
-	$$SRC/MyProcess.cpp \
 	$$SRC/MySettings.cpp \
 	$$SRC/MyTableWidgetDelegate.cpp \
 	$$SRC/MyTextEditorWidget.cpp \
@@ -305,12 +303,11 @@ SOURCES += \
 	$$SRC/zip/zipextract.cpp
 
 HEADERS += \
-	$$PWD/src/CommitRecord.h \
-	$$PWD/src/IncrementalSearchHelper.h \
-	$$PWD/src/LoadPlugin.h \
+	$$SRC/CommitRecord.h \
+	$$SRC/IncrementalSearchHelper.h \
+	$$SRC/LoadPlugin.h \
 	$$SRC/AboutDialog.h \
 	$$SRC/AbstractGitSession.h \
-	$$SRC/AbstractProcess.h \
 	$$SRC/AbstractSettingForm.h \
 	$$SRC/AddRepositoriesCollectivelyDialog.h \
 	$$SRC/AddRepositoryDialog.h \
@@ -495,7 +492,6 @@ HEADERS += \
 	$$SRC/inet/inetresolver.h \
 	$$SRC/inet/webclient.h \
 	$$SRC/platform.h \
-	$$SRC/process/MyProcess2.h \
 	$$SRC/texteditor/AbstractCharacterBasedApplication.h \
 	$$SRC/texteditor/InputMethodPopup.h \
 	$$SRC/texteditor/TextEditorTheme.h \
@@ -581,33 +577,14 @@ RESOURCES += \
 
 unix {
 	SOURCES += \
-		$$SRC/unix/UnixUtil.cpp \
-		$$SRC/unix/UnixProcess.cpp \
-		$$SRC/unix/UnixPtyProcess.cpp
+		$$SRC/unix/UnixUtil.cpp
 	HEADERS += \
-		$$SRC/common/wstring.h \
-		$$SRC/unix/UnixUtil.h \
-		$$SRC/unix/UnixProcess.h \
-		$$SRC/unix/UnixPtyProcess.h
+		$$SRC/unix/UnixUtil.h
 }
 
 win32 {
-	SOURCES += \
-		$$SRC/common/wstring.cpp \
-		$$SRC/win32/Win32Util.cpp \
-		$$SRC/win32/Win32Process.cpp \
-		$$SRC/win32/Win32PtyProcess.cpp \
-		$$SRC/win32/event.cpp \
-		$$SRC/win32/thread.cpp
-
-	HEADERS += \
-		$$SRC/win32/Win32Util.h \
-		$$SRC/win32/Win32Process.h \
-		$$SRC/win32/Win32PtyProcess.h \
-		$$SRC/win32/event.h \
-		$$SRC/win32/mutex.h \
-		$$SRC/win32/thread.h
-
+	SOURCES += $$SRC/win32/Win32Util.cpp $$SRC/common/wstring.cpp
+	HEADERS += $$SRC/win32/Win32Util.h $$SRC/common/wstring.h
 	LIBS += -lole32
 }
 
@@ -631,4 +608,10 @@ use_libcurl {
 	SOURCES += $$SRC/inet/curlclient.cpp
 	HEADERS += $$SRC/inet/curlclient.h
 }
+
+PROCESS_SRC += $$SRC/process/src
+PROCESS_PRI = $$PROCESS_SRC/../process.pri
+INCLUDEPATH += $$PROCESS_SRC
+DISTFILES += $$PROCESS_PRI
+include($$PROCESS_PRI)
 

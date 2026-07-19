@@ -2,7 +2,7 @@
 #define GITCOMMANDRUNNER_H
 
 #include "GitRunner.h"
-#include "MyProcess.h"
+// #include "MyProcess.h"
 
 #include <QElapsedTimer>
 

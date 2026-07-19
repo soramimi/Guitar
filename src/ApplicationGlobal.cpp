@@ -11,6 +11,7 @@
 #include <QDebug>
 #include <QApplication>
 #include <QListWidgetItem>
+#include <QThread>
 #include "Logger.h"
 #include "../subprojects/IncrementalSearchPlugin/src/MyMecab.h"
 

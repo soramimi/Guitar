@@ -67,8 +67,8 @@ QPixmap FileDiffSliderWidget::makeDiffPixmap(int width, int height, TextDiffLine
 						if (lines[j].type != type) break;
 						j++;
 					}
-					int y = i * pixmap.height() / lines.size();
-					int z = j * pixmap.height() / lines.size();
+					int y = i * pixmap.height() / (int)lines.size();
+					int z = j * pixmap.height() / (int)lines.size();
 					if (z == y) z = y + 1;
 					QColor color = getcolor(type);
 					if (color.isValid()) pr.fillRect(0, y, w, z - y, color);

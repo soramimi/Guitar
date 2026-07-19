@@ -1,7 +1,4 @@
 
-#ifndef _WIN32
-#error This header is only for Windows. If you want to use it on other platforms, please implement the conversion functions for that platform.
-#endif
 
 
 #ifndef WSTRING_H
@@ -11,8 +8,13 @@
 
 namespace misc {
 
-std::wstring convert_str_to_wstr(std::string const &str);
-std::string convert_wstr_to_str(std::wstring const &str);
+#ifdef _WIN32
+std::wstring convert_str_to_wstr(std::string_view const &str);
+std::string convert_wstr_to_str(std::wstring_view const &str);
+#else
+std::u16string convert_str_to_wstr(std::string_view const &str);
+std::string convert_wstr_to_str(std::u16string_view const &str);
+#endif
 
 }
 
