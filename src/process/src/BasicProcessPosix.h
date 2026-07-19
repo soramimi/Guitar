@@ -45,13 +45,12 @@ public:
 	void write_input(char const *ptr, int len) override;
 	void close_input();
 	void start(std::string const &cmd, std::string const &env, bool use_input) override;
-	int wait() override;
+	bool wait(int time = INT_MAX) override;
 	void stop() override;
 	int get_exit_code() const override;
+
 	int get_error_code() const;
 	std::string const &get_error_message() const;
-
-	bool wait(unsigned long time);
 };
 
 #endif // BASICPROCESSPOSIX_H

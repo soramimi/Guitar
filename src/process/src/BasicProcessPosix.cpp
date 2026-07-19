@@ -621,24 +621,16 @@ void ProcessPosixPty::start(std::string const &cmd, std::string const &env, bool
 	});
 }
 
-bool ProcessPosixPty::wait(unsigned long time)
+bool ProcessPosixPty::wait(int time)
 {
 	(void)time;
 	if (m->thread.joinable()) {
 		m->thread.join();
 		std::lock_guard<std::mutex> lock(mutex_);
 		stdout_bytes_ = output_vector_;
-		// stderr_bytes_ =
 		return true;
 	}
 	return false;
-}
-
-int ProcessPosixPty::wait()
-{
-	bool ok = wait(LONG_MAX);
-	(void)ok;
-	return m->exit_code;
 }
 
 int ProcessPosixPty::get_error_code() const
