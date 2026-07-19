@@ -177,7 +177,8 @@ struct MainWindow::Private {
 
 	std::map<QString, GitHubAPI::User> committer_map; // key is email
 
-	PtyProcess pty_process;
+	// PtyProcess pty_process;
+	std::shared_ptr<AbstractPtyProcess> pty_process;
 	bool pty_process_ok = false;
 
 	bool interaction_enabled = false;
@@ -356,6 +357,18 @@ MainWindow::MainWindow(QWidget *parent)
 			setWindowState(state);
 		}
 	}
+
+#ifdef Q_OS_WIN
+	if (0) {
+		m->pty_process = new_conpty_directly();
+	} else if (1) {
+		m->pty_process = new_conpty_with_worker_process();
+	} else {
+		m->pty_process = new_winpty();
+	}
+#else
+	m->pty_process = new_posix_pty();
+#endif
 
 	m->git_process_thread.start();
 
@@ -1787,7 +1800,7 @@ void MainWindow::openRepositoryMain(OpenRepositoryOption const &opt)
 	setCurrentGitRunner(g);
 	if (!isValidWorkingCopy(g)) return;
 
-	PtyProcess *pty = getPtyProcess();
+	AbstractPtyProcess *pty = getPtyProcess();
 	if (pty) {
 		if (!pty->wait(5000)) {
 			/*return;*/ //@ something wrong
@@ -2872,7 +2885,7 @@ void MainWindow::commit(bool amend)
 			bool sign = dlg.isSigningEnabled();
 			bool ok;
 
-			PtyProcess *pty = getPtyProcess();
+			AbstractPtyProcess *pty = getPtyProcess();
 			if (amend || dlg.isAmend()) {
 				ok = g.commit_amend_m(text, sign, pty);
 			} else {
@@ -3665,14 +3678,14 @@ void MainWindow::abortPtyProcess()
 	setInteractionEnabled(false);
 }
 
-PtyProcess *MainWindow::getPtyProcess()
+AbstractPtyProcess *MainWindow::getPtyProcess()
 {
-	return &m->pty_process;
+	return m->pty_process.get();
 }
 
-PtyProcess const *MainWindow::getPtyProcess() const
+AbstractPtyProcess const *MainWindow::getPtyProcess() const
 {
-	return &m->pty_process;
+	return m->pty_process.get();
 }
 
 bool MainWindow::getPtyProcessOk() const
@@ -3687,7 +3700,7 @@ bool MainWindow::isPtyProcessRunning() const
 
 void MainWindow::setCompletedHandler(std::function<void(bool, std::shared_ptr<void>)> fn, std::shared_ptr<void> userdata)
 {
-	m->pty_process.set_completion_callback(fn, userdata);
+	m->pty_process->set_completion_callback(fn, userdata);
 }
 
 void MainWindow::setPtyProcessOk(bool pty_process_ok)

@@ -62,8 +62,10 @@ void ProcessWinConPty::start(std::string const &command, std::string const &env,
 	m->exit_code = -1;
 }
 
-int ProcessWinConPty::wait()
+bool ProcessWinConPty::wait(int time)
 {
+	(void)time;
+
 	// conpty.wait() でブロックしている間は state_mutex を保持しない。
 	// これにより待機中も write_input/read_output/stop が機能する。
 	{

@@ -149,23 +149,18 @@ void ProcessConPtyWithWorker::start(std::string const &command, std::string cons
 	m->exit_code = -1;
 }
 
-bool ProcessConPtyWithWorker::wait(unsigned long time)
+bool ProcessConPtyWithWorker::wait(int time)
 {
 	std::unique_lock<std::mutex> lock(mutex_);
-	return m->cv.wait_for(lock, std::chrono::milliseconds(time), [this]() { return !m->running.load(); });
-}
-
-int ProcessConPtyWithWorker::wait()
-{
-	m->proc.wait();
-
-	std::lock_guard<std::mutex> lock(mutex_);
-	std::vector<char> const &out = m->proc.stdout_bytes();
-	stdout_bytes_ = out;
-	stderr_bytes_.clear();
-	m->exit_code = m->proc.get_exit_code();
-	m->running = false;
-	return m->exit_code;
+	if (m->cv.wait_for(lock, std::chrono::milliseconds(time), [this]() { return !m->running.load(); })) {
+		std::vector<char> const &out = m->proc.stdout_bytes();
+		stdout_bytes_ = out;
+		stderr_bytes_.clear();
+		m->exit_code = m->proc.get_exit_code();
+		m->running = false;
+		return true;
+	}
+	return false;
 }
 
 void ProcessConPtyWithWorker::stop()

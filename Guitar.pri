@@ -120,6 +120,8 @@ macx {
 #
 
 SOURCES += \
+	$$PWD/src/MyProcess.cpp \
+	$$PWD/src/SettingWindowsForm.cpp \
 	$$SRC/CommitRecord.cpp \
 	$$SRC/IncrementalSearchHelper.cpp \
 	$$SRC/LoadPlugin.cpp \
@@ -303,6 +305,7 @@ SOURCES += \
 	$$SRC/zip/zipextract.cpp
 
 HEADERS += \
+	$$PWD/src/SettingWindowsForm.h \
 	$$SRC/CommitRecord.h \
 	$$SRC/IncrementalSearchHelper.h \
 	$$SRC/LoadPlugin.h \
@@ -503,6 +506,7 @@ HEADERS += \
 	$$SRC/zip/zipinternal.h
 
 FORMS += \
+	$$PWD/src/SettingWindowsForm.ui \
 	$$SRC/AboutDialog.ui \
 	$$SRC/AddRepositoriesCollectivelyDialog.ui \
 	$$SRC/AddRepositoryDialog.ui \

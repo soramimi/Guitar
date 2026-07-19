@@ -277,8 +277,9 @@ void ProcessWinPty::start(std::string const &cmdline, std::string const &env, bo
 	});
 }
 
-int ProcessWinPty::wait()
+bool ProcessWinPty::wait(int time)
 {
+	(void)time;
 	if (m->thread.joinable()) {
 		m->thread.join();
 		{

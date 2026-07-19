@@ -12,11 +12,17 @@ using Process = ProcessWin;
 // using PtyProcess = ProcessWinPty;
 using PtyProcess = ProcessConPtyWithWorker;
 
+std::shared_ptr<AbstractPtyProcess> new_conpty_directly();
+std::shared_ptr<AbstractPtyProcess> new_conpty_with_worker_process();
+std::shared_ptr<AbstractPtyProcess> new_winpty();
+
 #else
 
 #include <BasicProcessPosix.h>
 using Process = ProcessPosix;
 using PtyProcess = ProcessPosixPty;
+
+std::shared_ptr<AbstractPtyProcess> new_posix_pty();
 
 #endif
 

@@ -12,6 +12,7 @@
 #include "SettingPrograms2Form.h"
 #include "SettingOptionsForm.h"
 #include "SettingAiForm.h"
+#include "SettingWindowsForm.h"
 
 #include <common/misc.h>
 #include <QFileDialog>
@@ -55,6 +56,10 @@ SettingsDialog::SettingsDialog(MainWindow *parent)
 	AddPage(new SettingAiForm(this));
 	AddPage(new SettingOptionsForm(this));
 	AddPage(new SettingLoggingForm(this));
+
+#ifdef Q_OS_WIN
+	AddPage(new SettingWindowsForm(this));
+#endif
 
 	loadSettings();
 

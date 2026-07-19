@@ -377,8 +377,8 @@ private:
 	QString getBookmarksFilePath() const;
 	void stopPtyProcess();
 	void abortPtyProcess();
-	PtyProcess *getPtyProcess();
-	PtyProcess const *getPtyProcess() const;
+        AbstractPtyProcess *getPtyProcess();
+        const AbstractPtyProcess *getPtyProcess() const;
 	bool getPtyProcessOk() const;
 	bool isPtyProcessRunning() const;
 	void setCompletedHandler(std::function<void (bool, std::shared_ptr<void>)> fn, std::shared_ptr<void> userdata);

@@ -27,15 +27,13 @@ public:
 	void set_options(BasicProcessWin::Options const &options);
 
 	void start(std::string const &command, std::string const &env, bool use_input) override;
-	int wait() override;
+	bool wait(int time = INT_MAX) override;
 	void stop() override;
 	bool is_running() const override;
 	int get_exit_code() const override;
 	void write_input(char const *ptr, int len) override;
 	int read_output(char *ptr, int len);
 	void close_input() override;
-
-	bool wait(unsigned long time);
 };
 
 #endif // PROCESSCONPTYWITHWORKER_H

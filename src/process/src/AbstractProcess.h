@@ -96,7 +96,7 @@ public:
 	}
 
 	virtual void start(std::string const &cmd, std::string const &env, bool use_input) = 0;
-	virtual int wait() = 0;
+	virtual bool wait(int time = INT_MAX) = 0;
 	virtual void stop() = 0;
 	virtual bool is_running() const = 0;
 	virtual int get_exit_code() const = 0;

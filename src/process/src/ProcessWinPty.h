@@ -20,17 +20,9 @@ public:
 	void close_input();
 	void start(std::string const &cmdline, std::string const &env, bool use_input) override;
 	void stop() override;
-	int wait();
+	bool wait(int time = INT_MAX);
 	int get_exit_code() const override;
 	std::string const &get_error_message() const;
-
-	// AbstractPtyProcess interface
-public:
-	bool wait(unsigned long time)
-	{
-		(void)time;
-		return wait() == 0;
-	}
 };
 
 #endif // PROCESSWINPTY_H

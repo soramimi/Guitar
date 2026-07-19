@@ -14,7 +14,7 @@ public:
 	ProcessWinConPty();
 	~ProcessWinConPty() override;
 	void start(std::string const &command, std::string const &env, bool use_input) override;
-	int wait() override;
+	bool wait(int time = INT_MAX) override;
 	void stop() override;
 	bool is_running() const override;
 	int get_exit_code() const override;

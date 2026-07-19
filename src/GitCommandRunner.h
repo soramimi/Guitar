@@ -136,7 +136,7 @@ public:
 
 	struct D {
 		GitRunner g;
-		PtyProcess *pty = nullptr;
+		AbstractPtyProcess *pty = nullptr;
 		request_id_t request_id = 0;
 		bool override_wait_cursor = true;
 		std::function<void (GitCommandRunner &req)> run;
@@ -151,12 +151,12 @@ public:
 	{
 		return d.g;
 	}
-	PtyProcess *pty()
+	AbstractPtyProcess *pty()
 	{
 		return d.pty;
 	}
 	std::string pty_message() const;
-	PtyProcess const *pty() const
+	AbstractPtyProcess const *pty() const
 	{
 		return d.pty;
 	}
