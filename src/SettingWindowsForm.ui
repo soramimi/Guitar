@@ -17,11 +17,11 @@
    <item>
     <widget class="QGroupBox" name="groupBox">
      <property name="title">
-      <string>Pseudo Terminal Packend</string>
+      <string>Console Backend</string>
      </property>
      <layout class="QVBoxLayout" name="verticalLayout">
       <item>
-       <widget class="QRadioButton" name="radioButton_conpty_directoly">
+       <widget class="QRadioButton" name="radioButton_conpty_directly">
         <property name="text">
          <string>ConPTY directly</string>
         </property>

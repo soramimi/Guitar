@@ -1,5 +1,5 @@
-#include "ProcessConPtyWithWorker.h"
-#include "BasicProcessWinConPTY.h"
+#include "ProcessWinConPtyWithWorker.h"
+#include "BasicProcessWinConPty.h"
 #include <algorithm>
 #include <atomic>
 #include <base64.h>
@@ -10,7 +10,7 @@
 #include <windows.h>
 #include "ProcessWinHelper.h" // This file must be included after <windows.h>
 
-struct ProcessConPtyWithWorker::Private {
+struct ProcessWinConPtyWithWorker::Private {
 	std::condition_variable cv;
 	BasicProcessWin proc;
 	bool started = false;
@@ -18,7 +18,7 @@ struct ProcessConPtyWithWorker::Private {
 	int exit_code = -1;
 };
 
-ProcessConPtyWithWorker::ProcessConPtyWithWorker()
+ProcessWinConPtyWithWorker::ProcessWinConPtyWithWorker()
 	: m(new Private)
 {
 	BasicProcessWin::Options opts;
@@ -26,22 +26,22 @@ ProcessConPtyWithWorker::ProcessConPtyWithWorker()
 	set_options(opts);
 }
 
-ProcessConPtyWithWorker::~ProcessConPtyWithWorker()
+ProcessWinConPtyWithWorker::~ProcessWinConPtyWithWorker()
 {
 	stop();
 	delete m;
 }
 
-void ProcessConPtyWithWorker::set_options(BasicProcessWin::Options const &options)
+void ProcessWinConPtyWithWorker::set_options(BasicProcessWin::Options const &options)
 {
 	m->proc.set_options(options);
 }
 
-int ProcessConPtyWithWorker::run_worker(int argc, char **argv)
+int ProcessWinConPtyWithWorker::run_worker(int argc, char **argv)
 {
 	bool as_worker = false;
 
-	BasicProcessWinConPTY::Options opts;
+	BasicProcessWinConPty::Options opts;
 	std::string_view encoded;
 
 	// ワーカー側のエラー (引数不正・デコード失敗・起動失敗) は 126 を返す。
@@ -75,7 +75,7 @@ int ProcessConPtyWithWorker::run_worker(int argc, char **argv)
 			return 126;
 		}
 		opts.output_stdout = true;
-		BasicProcessWinConPTY conpty(opts);
+		BasicProcessWinConPty conpty(opts);
 		conpty.start(cmd);
 		auto result = conpty.wait();
 		if (!result.started) {
@@ -87,7 +87,7 @@ int ProcessConPtyWithWorker::run_worker(int argc, char **argv)
 	return 126; // not worker mode
 }
 
-void ProcessConPtyWithWorker::start(std::string const &command, std::string const &env, bool /*use_input*/)
+void ProcessWinConPtyWithWorker::start(std::string const &command, std::string const &env, bool /*use_input*/)
 {
 	(void)env;
 	stop();
@@ -98,7 +98,7 @@ void ProcessConPtyWithWorker::start(std::string const &command, std::string cons
 	if (command.empty()) {
 		return;
 	}
-	if (!BasicProcessWinConPTY::is_conpty_available()) {
+	if (!BasicProcessWinConPty::is_conpty_available()) {
 		return;
 	}
 
@@ -149,7 +149,7 @@ void ProcessConPtyWithWorker::start(std::string const &command, std::string cons
 	m->exit_code = -1;
 }
 
-bool ProcessConPtyWithWorker::wait(int time)
+bool ProcessWinConPtyWithWorker::wait(int time)
 {
 	std::unique_lock<std::mutex> lock(mutex_);
 	if (m->cv.wait_for(lock, std::chrono::milliseconds(time), [this]() { return !m->running.load(); })) {
@@ -163,7 +163,7 @@ bool ProcessConPtyWithWorker::wait(int time)
 	return false;
 }
 
-void ProcessConPtyWithWorker::stop()
+void ProcessWinConPtyWithWorker::stop()
 {
 	std::lock_guard<std::mutex> lock(mutex_);
 	if (m->running) {
@@ -178,19 +178,19 @@ void ProcessConPtyWithWorker::stop()
 	}
 }
 
-bool ProcessConPtyWithWorker::is_running() const
+bool ProcessWinConPtyWithWorker::is_running() const
 {
 	std::lock_guard<std::mutex> lock(mutex_);
 	return m->running;
 }
 
-int ProcessConPtyWithWorker::get_exit_code() const
+int ProcessWinConPtyWithWorker::get_exit_code() const
 {
 	std::lock_guard<std::mutex> lock(mutex_);
 	return m->exit_code;
 }
 
-void ProcessConPtyWithWorker::write_input(char const *ptr, int len)
+void ProcessWinConPtyWithWorker::write_input(char const *ptr, int len)
 {
 	if (!ptr || len <= 0) {
 		return;
@@ -201,7 +201,7 @@ void ProcessConPtyWithWorker::write_input(char const *ptr, int len)
 	}
 }
 
-int ProcessConPtyWithWorker::read_output(char *ptr, int len)
+int ProcessWinConPtyWithWorker::read_output(char *ptr, int len)
 {
 	if (!ptr || len <= 0) {
 		return 0;
@@ -210,13 +210,13 @@ int ProcessConPtyWithWorker::read_output(char *ptr, int len)
 	return n;
 }
 
-void ProcessConPtyWithWorker::close_input()
+void ProcessWinConPtyWithWorker::close_input()
 {
 	std::lock_guard<std::mutex> lock(mutex_);
 	m->proc.close_input();
 }
 
-bool ProcessConPtyWithWorker::wait_for_output(std::string const &text)
+bool ProcessWinConPtyWithWorker::wait_for_output(std::string const &text)
 {
 	return m->proc.wait_for_output(text);
 }

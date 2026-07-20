@@ -1,8 +1,8 @@
-#include "BasicProcessWinConPTY.h"
+#include "BasicProcessWinConPty.h"
 #include <windows.h>
 #include "ProcessWinHelper.h" // This file must be included after <windows.h>
 
-struct BasicProcessWinConPTY::Private {
+struct BasicProcessWinConPty::Private {
 	struct D {
 		BOOL running = FALSE;
 		AutoProcessInformation pi;
@@ -17,7 +17,7 @@ struct BasicProcessWinConPTY::Private {
 		bool output_closed = false;
 	} d;
 	mutable std::mutex output_mutex;
-	BasicProcessWinConPTY::Options options;
+	BasicProcessWinConPty::Options options;
 	process::helper::dir_string_t change_dir;
 	std::vector<char> output_bytes;
 	std::atomic<bool> stop_input { false };
@@ -29,30 +29,30 @@ struct BasicProcessWinConPTY::Private {
 	DWORD last_exit_code = static_cast<DWORD>(-1);
 };
 
-BasicProcessWinConPTY::BasicProcessWinConPTY(Options const &options)
+BasicProcessWinConPty::BasicProcessWinConPty(Options const &options)
 	: m(new Private)
 {
 	set_options(options);
 }
 
-BasicProcessWinConPTY::~BasicProcessWinConPTY()
+BasicProcessWinConPty::~BasicProcessWinConPty()
 {
 	terminate();
 	wait();
 	delete m;
 }
 
-void BasicProcessWinConPTY::set_change_dir(process::helper::dir_string_t const &dir)
+void BasicProcessWinConPty::set_change_dir(process::helper::dir_string_t const &dir)
 {
 	m->change_dir = dir;
 }
 
-void BasicProcessWinConPTY::set_options(Options const &options)
+void BasicProcessWinConPty::set_options(Options const &options)
 {
 	m->options = options;
 }
 
-bool BasicProcessWinConPTY::start(std::string const &cmd)
+bool BasicProcessWinConPty::start(std::string const &cmd)
 {
 	wait();
 	if (cmd.empty()) return false;
@@ -258,7 +258,7 @@ bool BasicProcessWinConPTY::start(std::string const &cmd)
 	return true;
 }
 
-BasicProcessWinConPTY::ExecResult BasicProcessWinConPTY::wait()
+BasicProcessWinConPty::ExecResult BasicProcessWinConPty::wait()
 {
 	if (IS_VALID_HANDLE(m->d.pi->hProcess) || IS_VALID_HANDLE(m->d.pi->hThread)) {
 
@@ -297,7 +297,7 @@ BasicProcessWinConPTY::ExecResult BasicProcessWinConPTY::wait()
 	return ret;
 }
 
-void BasicProcessWinConPTY::terminate()
+void BasicProcessWinConPty::terminate()
 {
 	std::lock_guard<std::mutex> lock(m->snap_mutex);
 	if (IS_VALID_HANDLE(m->hProcess_snap)) {
@@ -305,7 +305,7 @@ void BasicProcessWinConPTY::terminate()
 	}
 }
 
-void BasicProcessWinConPTY::close_input()
+void BasicProcessWinConPty::close_input()
 {
 	std::lock_guard<std::mutex> lock(m->input_mutex);
 	if (IS_VALID_HANDLE(m->d.hPipeInWrite)) {
@@ -313,7 +313,7 @@ void BasicProcessWinConPTY::close_input()
 	}
 }
 
-int BasicProcessWinConPTY::write_input(char const *ptr, int n)
+int BasicProcessWinConPty::write_input(char const *ptr, int n)
 {
 	if (!ptr || n <= 0) {
 		return 0;
@@ -328,7 +328,7 @@ int BasicProcessWinConPTY::write_input(char const *ptr, int n)
 	return -1;
 }
 
-int BasicProcessWinConPTY::read_output(char *ptr, int len)
+int BasicProcessWinConPty::read_output(char *ptr, int len)
 {
 	if (!ptr || len <= 0) {
 		return 0;
@@ -344,27 +344,27 @@ int BasicProcessWinConPTY::read_output(char *ptr, int len)
 	return n;
 }
 
-bool BasicProcessWinConPTY::is_running() const
+bool BasicProcessWinConPty::is_running() const
 {
 	return IS_VALID_HANDLE(m->d.pi->hProcess) || IS_VALID_HANDLE(m->d.pi->hThread);
 }
 
-std::vector<char> const &BasicProcessWinConPTY::stdout_bytes() const
+std::vector<char> const &BasicProcessWinConPty::stdout_bytes() const
 {
 	return m->output_bytes;
 }
 
-void BasicProcessWinConPTY::set_no_window(bool no_window)
+void BasicProcessWinConPty::set_no_window(bool no_window)
 {
 	m->options.no_window = no_window;
 }
 
-int BasicProcessWinConPTY::get_exit_code() const
+int BasicProcessWinConPty::get_exit_code() const
 {
 	return static_cast<int>(m->last_exit_code);
 }
 
-bool BasicProcessWinConPTY::is_conpty_available()
+bool BasicProcessWinConPty::is_conpty_available()
 {
 	HMODULE hKernel32 = GetModuleHandleW(L"kernel32.dll");
 	if (!hKernel32) return false;

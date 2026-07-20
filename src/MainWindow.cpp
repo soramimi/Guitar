@@ -358,17 +358,7 @@ MainWindow::MainWindow(QWidget *parent)
 		}
 	}
 
-#ifdef Q_OS_WIN
-	if (0) {
-		m->pty_process = new_conpty_directly();
-	} else if (1) {
-		m->pty_process = new_conpty_with_worker_process();
-	} else {
-		m->pty_process = new_winpty();
-	}
-#else
-	m->pty_process = new_posix_pty();
-#endif
+	setupConsoleBackend(appsettings());
 
 	m->git_process_thread.start();
 
@@ -3665,6 +3655,29 @@ QString MainWindow::getBookmarksFilePath() const
 	return global->app_config_dir / "bookmarks.xml";
 }
 
+void MainWindow::setupConsoleBackend(ApplicationSettings const *as)
+{
+#ifdef Q_OS_WIN
+	ApplicationSettings::ConsoleBackend be = ApplicationSettings::ConsoleBackend::ConPtyDirectly;
+	if (as) {
+		be = as->console_backend;
+	}
+	switch (be) {
+	case ApplicationSettings::ConsoleBackend::ConPtyWithWorkerProcess:
+		m->pty_process = new_conpty_with_worker_process();
+		break;
+	case ApplicationSettings::ConsoleBackend::WinPty:
+		m->pty_process = new_winpty();
+		break;
+	default:
+		m->pty_process = new_conpty_directly();
+		break;
+	}
+#else
+	m->pty_process = new_posix_pty();
+#endif
+}
+
 void MainWindow::stopPtyProcess()
 {
 	getPtyProcess()->stop();
@@ -4074,6 +4087,10 @@ bool MainWindow::editFile(const QString &path, const QString &title)
 
 void MainWindow::setAppSettings(const ApplicationSettings &appsettings)
 {
+	if (appsettings.console_backend != global->appsettings.console_backend) {
+		setupConsoleBackend(&appsettings);
+	}
+
 	global->appsettings = appsettings;
 }
 

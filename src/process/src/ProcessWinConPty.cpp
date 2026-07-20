@@ -7,7 +7,7 @@ struct ProcessWinConPty::Private {
 	//   ロック順序は常に op_mutex -> state_mutex (state_mutex は常に葉)。
 	mutable std::mutex state_mutex;
 	std::mutex op_mutex;
-	BasicProcessWinConPTY conpty;
+	BasicProcessWinConPty conpty;
 	bool started = false;
 	bool running = false;
 	int exit_code = -1;
@@ -16,7 +16,7 @@ struct ProcessWinConPty::Private {
 ProcessWinConPty::ProcessWinConPty()
 	: m(new Private())
 {
-	BasicProcessWinConPTY::Options opts;
+	BasicProcessWinConPty::Options opts;
 	opts.output_vector = true;
 	set_options(opts);
 }
@@ -27,7 +27,7 @@ ProcessWinConPty::~ProcessWinConPty()
 	delete m;
 }
 
-void ProcessWinConPty::set_options(BasicProcessWinConPTY::Options const &options)
+void ProcessWinConPty::set_options(BasicProcessWinConPty::Options const &options)
 {
 	m->conpty.set_options(options);
 }
@@ -47,7 +47,7 @@ void ProcessWinConPty::start(std::string const &command, std::string const &env,
 		m->started = false;
 		return;
 	}
-	if (!BasicProcessWinConPTY::is_conpty_available()) {
+	if (!BasicProcessWinConPty::is_conpty_available()) {
 		m->started = false;
 		m->running = false;
 		return;

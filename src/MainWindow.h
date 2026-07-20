@@ -756,6 +756,7 @@ public:
 	
 private:
 	const GitCommitItemList &commitlog() const;
+	void setupConsoleBackend(const ApplicationSettings *as);
 public:
 	std::span<GitCommitItem const *const> commitlogItems() const;
 	

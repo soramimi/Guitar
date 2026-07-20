@@ -10,7 +10,7 @@ std::shared_ptr<AbstractPtyProcess> new_conpty_directly()
 
 std::shared_ptr<AbstractPtyProcess> new_conpty_with_worker_process()
 {
-	return std::make_shared<ProcessConPtyWithWorker>();
+	return std::make_shared<ProcessWinConPtyWithWorker>();
 }
 
 std::shared_ptr<AbstractPtyProcess> new_winpty()

@@ -91,6 +91,16 @@ public:
 		QColor highlight_bg;
 	} incremental_search_color;
 
+#ifdef Q_OS_WIN
+	enum class ConsoleBackend {
+		Undefined,
+		ConPtyDirectly,
+		ConPtyWithWorkerProcess,
+		WinPty,
+	};
+	ConsoleBackend console_backend = ConsoleBackend::Undefined;
+#endif
+
 	static ApplicationSettings loadSettings();
 	void saveSettings() const;
 

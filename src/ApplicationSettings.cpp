@@ -151,6 +151,20 @@ ApplicationSettings ApplicationSettings::loadSettings()
 	GetValue<std::string>(s, "ModelURI")                     >> ai_model_uri;
 	s.endGroup();
 
+#ifdef Q_OS_WIN
+	QString console_backend;
+	s.beginGroup("Windows");
+	GetValue<QString>(s, "ConsoleBackend")               >> console_backend;
+	s.endGroup();
+	if (console_backend == "WinPty") {
+		as.console_backend = ConsoleBackend::WinPty;
+	} else if (console_backend == "ConPtyWithWorkerProcess") {
+		as.console_backend = ConsoleBackend::ConPtyWithWorkerProcess;
+	} else {
+		as.console_backend = ConsoleBackend::ConPtyDirectly;
+	}
+#endif
+
 	// 選択されたモデルを取得
 
 	auto Info = [&](std::string const &name)-> GenerativeAI::ProviderInfo const * {
@@ -225,6 +239,20 @@ void ApplicationSettings::saveSettings() const
 	SetValue<std::string>(s, "Provider")                     << this->ai_model.provider_info_->tag;
 	SetValue<std::string>(s, "ModelURI")                     << this->ai_model.model_uri().string;
 	s.endGroup();
+
+#ifdef Q_OS_WIN
+	QString cb;
+	if (this->console_backend == ConsoleBackend::WinPty) {
+		cb = "WinPty";
+	} else if (this->console_backend == ConsoleBackend::ConPtyWithWorkerProcess) {
+		cb = "ConPtyWithWorkerProcess";
+	} else {
+		cb = "ConPtyDirectly";
+	}
+	s.beginGroup("Windows");
+	SetValue<QString>(s, "ConsoleBackend")               << cb;
+	s.endGroup();
+#endif
 }
 
 QString AiApiKeys::symbolKeyFrom(KeyFrom keyfrom)

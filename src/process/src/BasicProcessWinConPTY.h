@@ -1,9 +1,9 @@
-#ifndef BASICPROCESSWINCONPTY_H
-#define BASICPROCESSWINCONPTY_H
+#ifndef BasicProcessWinConPty_H
+#define BasicProcessWinConPty_H
 
 #include "BasicProcessWin.h"
 
-class BasicProcessWinConPTY : public _AbstractBasicProcess {
+class BasicProcessWinConPty : public _AbstractBasicProcess {
 private:
 	struct Private;
 	Private *m;
@@ -17,8 +17,8 @@ public:
 		bool vt_stripped = true;
 	};
 
-	BasicProcessWinConPTY(Options const &options = Options());
-	~BasicProcessWinConPTY();
+	BasicProcessWinConPty(Options const &options = Options());
+	~BasicProcessWinConPty();
 	void set_change_dir(process::helper::dir_string_t const &dir);
 	void set_options(Options const &options);
 
@@ -37,4 +37,4 @@ public:
 	static bool is_conpty_available();
 };
 
-#endif // BASICPROCESSWINCONPTY_H
+#endif // BasicProcessWinConPty_H

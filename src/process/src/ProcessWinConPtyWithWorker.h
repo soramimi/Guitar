@@ -1,5 +1,5 @@
-#ifndef PROCESSCONPTYWITHWORKER_H
-#define PROCESSCONPTYWITHWORKER_H
+#ifndef PROCESSWINCONPTYWITHWORKER_H
+#define PROCESSWINCONPTYWITHWORKER_H
 
 #include "AbstractProcess.h"
 #include "BasicProcessWin.h"
@@ -9,7 +9,7 @@
 #include <string>
 #include <vector>
 
-class ProcessConPtyWithWorker : public AbstractPtyProcess {
+class ProcessWinConPtyWithWorker : public AbstractPtyProcess {
 public:
 	static int run_worker(int argc, char **argv);
 	bool wait_for_output(std::string const &text);
@@ -21,8 +21,8 @@ private:
 	Private *m;
 
 public:
-	ProcessConPtyWithWorker();
-	~ProcessConPtyWithWorker() override;
+	ProcessWinConPtyWithWorker();
+	~ProcessWinConPtyWithWorker() override;
 
 	void set_options(BasicProcessWin::Options const &options);
 
@@ -36,4 +36,4 @@ public:
 	void close_input() override;
 };
 
-#endif // PROCESSCONPTYWITHWORKER_H
+#endif // PROCESSWINCONPTYWITHWORKER_H

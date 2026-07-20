@@ -83,7 +83,6 @@ struct ProcessWinPty::Private {
 	std::string command;
 	std::string env;
 	std::string error_message;
-	OutputReaderThread2 th_output_reader;
 	AutoHandle hProcess;
 	AutoHandle hOutput;
 	AutoHandle hInput;
@@ -150,7 +149,8 @@ void ProcessWinPty::run()
 		notify_completed();
 		return;
 	}
-	m->th_output_reader.start(m->hOutput, [this](char const *buf, size_t len) {
+	OutputReaderThread2 th_output_reader;
+	th_output_reader.start(m->hOutput, [this](char const *buf, size_t len) {
 		write_output(buf, len);
 	});
 
@@ -171,10 +171,11 @@ void ProcessWinPty::run()
 		change_dir_.empty() ? nullptr : change_dir_.c_str(),
 		envbuf.empty() ? nullptr : envbuf.data(),
 		nullptr);
+
 	if (!spawn_cfg) {
 		m->exit_code = 127;
 		m->error_message = "winpty_spawn_config_new failed";
-		m->th_output_reader.interrupt();
+		th_output_reader.interrupt();
 		close_input();
 		winpty_free(pty);
 		notify_completed();
@@ -185,7 +186,7 @@ void ProcessWinPty::run()
 	if (!spawnSuccess) {
 		m->exit_code = 127;
 		m->error_message = "winpty_spawn failed";
-		m->th_output_reader.interrupt();
+		th_output_reader.interrupt();
 		m->hOutput.close();
 	}
 
@@ -207,7 +208,7 @@ void ProcessWinPty::run()
 	}
 
 	// プロセスの出力を確実に取得するため、ここで output reader スレッドの終了を待つ
-	m->th_output_reader.wait();
+	th_output_reader.wait();
 
 	winpty_free(pty);
 
@@ -289,15 +290,11 @@ bool ProcessWinPty::wait(int time)
 		stderr_bytes_ = { };
 		return static_cast<int>(m->exit_code);
 	}
-	return 127;
+	return false;
 }
 
 void ProcessWinPty::stop()
 {
-	// プロセススレッドに中断を通知してから、出力読み出しスレッドを止める
-	// (ReadFile でブロックしていると winpty プロセスが終了してくれない)
-	m->interrupted = true;
-	m->th_output_reader.terminate();
 	wait();
 }
 

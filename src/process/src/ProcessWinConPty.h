@@ -3,7 +3,7 @@
 #define PROCESSWINCONPTY_H
 
 #include "AbstractProcess.h"
-#include "BasicProcessWinConPTY.h"
+#include "BasicProcessWinConPty.h"
 
 class ProcessWinConPty : public AbstractPtyProcess {
 private:
@@ -22,7 +22,7 @@ public:
 	void write_input(char const *ptr, int len) override;
 	int read_output(char *ptr, int len);
 	void set_no_window(bool no_window);
-	void set_options(BasicProcessWinConPTY::Options const &options);
+	void set_options(BasicProcessWinConPty::Options const &options);
 };
 
 #endif // PROCESSWINCONPTY_H
