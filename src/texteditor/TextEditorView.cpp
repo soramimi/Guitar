@@ -797,182 +797,181 @@ void TextEditorView::paintEvent(QPaintEvent *)
 			int line_row = scrollTopRow(); // 行インデックス（view_row位置に描画すべき論理行インデックス）
 			for (int i = 0; i < (int)editor_cx->viewport_height && line_row < (int)doc.lines.size(); i++) {
 				auto it = map.find(line_row);
-				if (it == map.end()) continue;
-				
-				const QRect rect_line(vsplit_x, view_y_from_row(line_row), text_area_w, lineHeight()); // 行全体の矩形
-				const QRect rect_text(0, view_y_from_row(line_row), width(), lineHeight()); // テキスト領域矩形
-				
-				const bool iscurrentline = has_focus && line_row == editor_cx->current_row; // 現在の行？
-				const int text_origin_y = view_row * line_height; // テキスト原点座標Y（ピクセル単位）
-				
-				
-				TextEditorView::FormattedLine const &line = it->second;
-				std::vector<Char> const &chars = *line.chars;
-				// std::vector<CharAttr> const &atts2 = *line.atts2;
-				
-				// 背景の描画
-				auto DrawBackground = [&](){
+				if (it != map.end()) {
+					const QRect rect_line(vsplit_x, view_y_from_row(line_row), text_area_w, lineHeight()); // 行全体の矩形
+					const QRect rect_text(0, view_y_from_row(line_row), width(), lineHeight()); // テキスト領域矩形
 					
-					{ // diff差分背景
-						Document::LineType type = doc.lines[line_row].type;
-						auto FillBG = [&](QColor color){
-							pr.fillRect(rect_text, color);
-						};
-						switch (type) {
-						case Document::LineType::Add:     FillBG(theme()->bg_diff_line_add); break; // 追加された行の背景
-						case Document::LineType::Del:     FillBG(theme()->bg_diff_line_del); break; // 削除された行の背景
-						case Document::LineType::Unknown: FillBG(theme()->bg_diff_unknown);  break;
-						}
-					}
-					if (0) {
-						if (line_row >= 0 && line_row < (int)doc.lines.size()) {
-							int x0 = 0;
-							for (auto const &chr : chars) {
-								int x1 = chr.right_x;
-								int x = text_origin_x + x0;
-								int w = text_origin_x + x1 - x;
-								(void)x;
-								(void)w;
-								x0 = x1;
+					const bool iscurrentline = has_focus && line_row == editor_cx->current_row; // 現在の行？
+					const int text_origin_y = view_row * line_height; // テキスト原点座標Y（ピクセル単位）
+					
+					
+					TextEditorView::FormattedLine const &line = it->second;
+					std::vector<Char> const &chars = *line.chars;
+					// std::vector<CharAttr> const &atts2 = *line.atts2;
+					
+					// 背景の描画
+					auto DrawBackground = [&](){
+						
+						{ // diff差分背景
+							Document::LineType type = doc.lines[line_row].type;
+							auto FillBG = [&](QColor color){
+								pr.fillRect(rect_text, color);
+							};
+							switch (type) {
+							case Document::LineType::Add:     FillBG(theme()->bg_diff_line_add); break; // 追加された行の背景
+							case Document::LineType::Del:     FillBG(theme()->bg_diff_line_del); break; // 削除された行の背景
+							case Document::LineType::Unknown: FillBG(theme()->bg_diff_unknown);  break;
 							}
 						}
-					}
-				};
-
-				// 現在行の背景
-				auto DrawCurrentLineBackground = [&](){
-					pr.fillRect(rect_line, QColor(0, 0, 0, 32)); // 薄い黒
-				};
-
-				// 現在行の前景
-				auto DrawCurrentLineForeground = [&](){
-					int N = 1;
-					int x = rect_line.x();
-					int y = rect_line.y() + rect_line.height() - N;
-					int w = rect_line.width();
-					int h = N;
-					pr.fillRect(x, y, w, h, theme()->fg_cursor); // アンダーライン
-				};
-
-				// 選択領域の網掛け描画
-				auto DrawSelectionArea = [&](){
-					int left_x = 0;
-					int right_x = 0;
-					if (!chars.empty()) {
-						right_x = chars.back().right_x;
-					}
-					if (selmin.row > line_row) {
-						right_x = 0;
-					} else if (selmax.row < line_row) {
-						right_x = 0;
-					} else {
-						if (selmin.row == line_row) {
-							left_x = (selmin.col > 0 && selmin.col - 1 < (int)chars.size()) ? chars[selmin.col - 1].right_x : 0;
-						}
-						if (selmax.row == line_row) {
-							right_x = (selmax.col > 0 && selmax.col - 1 < (int)chars.size()) ? chars[selmax.col - 1].right_x : 0;
-						}
-					}
-					if (left_x < right_x) {
-						int x = text_origin_x + left_x;
-						int y = text_origin_y;
-						int w = right_x - left_x;
-						int h = line_height;
-						pr.fillRect(x, y, w, h, QBrush(QColor(64, 192, 192), Qt::Dense5Pattern));
-					}
-				};
-
-				// テキスト描画
-				auto DrawText = [&](){
-					int left_x = 0;
-					int right_x = 0;
-					std::size_t j = 0;
-					pr.save();
-					pr.setClipRect(linenum_width, 0, width() - linenum_width, height());
-					while (j < chars.size()) {
-						int n = 0;
-						QString text;
-						while (j + n < chars.size()) {
-							if (n == 0) {
-								left_x = chars[j].left_x;
-								right_x = chars[j].right_x;
-							} else { // 2文字目以降
-								if (right_x != chars[j + n].left_x) { // x座標がつながっていないなら抜ける
-									break;
-								}
-								if (chars[j].attr.flags != chars[j + n].attr.flags) { // 属性が異なっていたら抜ける
-									break;
+						if (0) {
+							if (line_row >= 0 && line_row < (int)doc.lines.size()) {
+								int x0 = 0;
+								for (auto const &chr : chars) {
+									int x1 = chr.right_x;
+									int x = text_origin_x + x0;
+									int w = text_origin_x + x1 - x;
+									(void)x;
+									(void)w;
+									x0 = x1;
 								}
 							}
-							auto u = chars[j + n].unicode;
-							if (u == '\t') {
-								CharAttr const &attr = chars[j].attr;
-								if ((attr.flags & CharAttr::Underline1) || (attr.flags & CharAttr::Underline2)) {
-									// 文字差分フラグがあるとき背景を描く
-									int x = text_origin_x + left_x;
-									int w = right_x - left_x;
-									int h = line_height;
-									auto DrawDiffMarker = [&](QColor const &color){
-										const int N = 6;
-										pr.fillRect(x, text_origin_y + h - N, w, N, color);
-									};
-									if (attr.flags & CharAttr::Underline1) {
-										DrawDiffMarker(theme()->bg_diff_char_del);
-									}
-									if (attr.flags & CharAttr::Underline2) {
-										DrawDiffMarker(theme()->bg_diff_char_add);
-									}
-								}
-								break; // タブなら抜ける
-							}
-							text = appendUnicode(text, u); // 文字を追加
-							right_x = chars[j + n].right_x;
-							n++;
 						}
-						if (!text.isEmpty() && left_x < right_x) {
-							CharAttr const &attr = chars[j].attr;
-							pr.setPen(defaultForegroundColor()); // 文字色
+					};
+	
+					// 現在行の背景
+					auto DrawCurrentLineBackground = [&](){
+						pr.fillRect(rect_line, QColor(0, 0, 0, 32)); // 薄い黒
+					};
+	
+					// 現在行の前景
+					auto DrawCurrentLineForeground = [&](){
+						int N = 1;
+						int x = rect_line.x();
+						int y = rect_line.y() + rect_line.height() - N;
+						int w = rect_line.width();
+						int h = N;
+						pr.fillRect(x, y, w, h, theme()->fg_cursor); // アンダーライン
+					};
+	
+					// 選択領域の網掛け描画
+					auto DrawSelectionArea = [&](){
+						int left_x = 0;
+						int right_x = 0;
+						if (!chars.empty()) {
+							right_x = chars.back().right_x;
+						}
+						if (selmin.row > line_row) {
+							right_x = 0;
+						} else if (selmax.row < line_row) {
+							right_x = 0;
+						} else {
+							if (selmin.row == line_row) {
+								left_x = (selmin.col > 0 && selmin.col - 1 < (int)chars.size()) ? chars[selmin.col - 1].right_x : 0;
+							}
+							if (selmax.row == line_row) {
+								right_x = (selmax.col > 0 && selmax.col - 1 < (int)chars.size()) ? chars[selmax.col - 1].right_x : 0;
+							}
+						}
+						if (left_x < right_x) {
 							int x = text_origin_x + left_x;
+							int y = text_origin_y;
 							int w = right_x - left_x;
 							int h = line_height;
-							auto DrawDiffMarker = [&](QColor const &color){
-								const int N = 6;
-								pr.fillRect(x, text_origin_y + h - N, w, N, color);
-							};
-							if (attr.flags & CharAttr::Underline1) {
-								DrawDiffMarker(theme()->bg_diff_char_del); // 削除された文字の下線
-							}
-							if (attr.flags & CharAttr::Underline2) {
-								DrawDiffMarker(theme()->bg_diff_char_add); // 追加された文字の下線
-							}
-							pr.drawText(QRect(x, text_origin_y, w, h), text, opt); // テキスト描画
+							pr.fillRect(x, y, w, h, QBrush(QColor(64, 192, 192), Qt::Dense5Pattern));
 						}
-						if (n == 0) {
-							n = 1;
+					};
+	
+					// テキスト描画
+					auto DrawText = [&](){
+						int left_x = 0;
+						int right_x = 0;
+						std::size_t j = 0;
+						pr.save();
+						pr.setClipRect(linenum_width, 0, width() - linenum_width, height());
+						while (j < chars.size()) {
+							int n = 0;
+							QString text;
+							while (j + n < chars.size()) {
+								if (n == 0) {
+									left_x = chars[j].left_x;
+									right_x = chars[j].right_x;
+								} else { // 2文字目以降
+									if (right_x != chars[j + n].left_x) { // x座標がつながっていないなら抜ける
+										break;
+									}
+									if (chars[j].attr.flags != chars[j + n].attr.flags) { // 属性が異なっていたら抜ける
+										break;
+									}
+								}
+								auto u = chars[j + n].unicode;
+								if (u == '\t') {
+									CharAttr const &attr = chars[j].attr;
+									if ((attr.flags & CharAttr::Underline1) || (attr.flags & CharAttr::Underline2)) {
+										// 文字差分フラグがあるとき背景を描く
+										int x = text_origin_x + left_x;
+										int w = right_x - left_x;
+										int h = line_height;
+										auto DrawDiffMarker = [&](QColor const &color){
+											const int N = 6;
+											pr.fillRect(x, text_origin_y + h - N, w, N, color);
+										};
+										if (attr.flags & CharAttr::Underline1) {
+											DrawDiffMarker(theme()->bg_diff_char_del);
+										}
+										if (attr.flags & CharAttr::Underline2) {
+											DrawDiffMarker(theme()->bg_diff_char_add);
+										}
+									}
+									break; // タブなら抜ける
+								}
+								text = appendUnicode(text, u); // 文字を追加
+								right_x = chars[j + n].right_x;
+								n++;
+							}
+							if (!text.isEmpty() && left_x < right_x) {
+								CharAttr const &attr = chars[j].attr;
+								pr.setPen(defaultForegroundColor()); // 文字色
+								int x = text_origin_x + left_x;
+								int w = right_x - left_x;
+								int h = line_height;
+								auto DrawDiffMarker = [&](QColor const &color){
+									const int N = 6;
+									pr.fillRect(x, text_origin_y + h - N, w, N, color);
+								};
+								if (attr.flags & CharAttr::Underline1) {
+									DrawDiffMarker(theme()->bg_diff_char_del); // 削除された文字の下線
+								}
+								if (attr.flags & CharAttr::Underline2) {
+									DrawDiffMarker(theme()->bg_diff_char_add); // 追加された文字の下線
+								}
+								pr.drawText(QRect(x, text_origin_y, w, h), text, opt); // テキスト描画
+							}
+							if (n == 0) {
+								n = 1;
+							}
+							j += n;
 						}
-						j += n;
+						pr.restore();
+					};
+	
+					switch (pass) {
+					case 0:
+						DrawBackground();
+						if (iscurrentline) {
+							DrawCurrentLineBackground();
+						}
+						break;
+					case 1:
+						DrawSelectionArea();
+						break;
+					case 2:
+						DrawText();
+						if (iscurrentline) {
+							DrawCurrentLineForeground();
+						}
+						break;
 					}
-					pr.restore();
-				};
-
-				switch (pass) {
-				case 0:
-					DrawBackground();
-					if (iscurrentline) {
-						DrawCurrentLineBackground();
-					}
-					break;
-				case 1:
-					DrawSelectionArea();
-					break;
-				case 2:
-					DrawText();
-					if (iscurrentline) {
-						DrawCurrentLineForeground();
-					}
-					break;
 				}
-
 				view_row++;
 				line_row++;
 			}
