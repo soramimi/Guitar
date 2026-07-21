@@ -2,6 +2,11 @@
 
 require 'fileutils'
 
+$script_dir = __dir__
+$project_dir = File.realpath("#{$script_dir}/..")
+
+Dir.chdir($script_dir)
+
 $project_root = '../..'
 
 load "#{$project_root}/version.rb"
@@ -19,14 +24,15 @@ $dstdir = $workdir + "/#{$package}"
 
 $arch = `#{$project_root}/packaging/deb/arch.rb`.strip
 
+FileUtils.rm_rf($workdir)
 FileUtils.mkpath($dstdir + "/DEBIAN")
 FileUtils.mkpath($dstdir + "/usr/bin")
-FileUtils.mkpath($dstdir + "/usr/lib")
+FileUtils.mkpath($dstdir + "/usr/lib/soramimi.jp")
 FileUtils.mkpath($dstdir + "/usr/share/applications")
 FileUtils.mkpath($dstdir + "/usr/share/icons/guitar")
 FileUtils.cp("#{$project_root}/_bin/Guitar", $dstdir + "/usr/bin/")
-FileUtils.cp("#{$project_root}/lib/libfiletypeplugin.so", $dstdir + "/usr/lib/")
-FileUtils.cp("#{$project_root}/lib/libincrementalsearchplugin.so", $dstdir + "/usr/lib/")
+FileUtils.cp("#{$project_root}/lib/soramimi.jp/libfiletypeplugin.so", $dstdir + "/usr/lib/soramimi.jp/")
+FileUtils.cp("#{$project_root}/lib/soramimi.jp/libincrementalsearchplugin.so", $dstdir + "/usr/lib/soramimi.jp/")
 system "strip #{$dstdir}/usr/bin/Guitar"
 FileUtils.cp("#{$project_root}/LinuxDesktop/Guitar.svg", $dstdir + "/usr/share/icons/guitar/")
 File.open($dstdir + "/usr/share/applications/Guitar.desktop", "w") {|f|

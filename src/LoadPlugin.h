@@ -19,7 +19,7 @@ template <typename ImplType, typename Interface> std::shared_ptr<ImplType> loadP
 #ifdef Q_OS_WIN
 	QString path = QString::fromStdString(name);
 #else
-	QString path = QCoreApplication::applicationDirPath() / QString::fromStdString("../lib/lib" + name + ".so");
+	QString path = QCoreApplication::applicationDirPath() / QString::fromStdString("../lib/soramimi.jp/lib" + name + ".so");
 #endif
 	
 	char const *const c_name = name.c_str();
