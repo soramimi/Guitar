@@ -2,7 +2,6 @@
 #define FILEHISTORYWINDOW_H
 
 #include <QDialog>
-#include "Git.h"
 #include "FileDiffWidget.h"
 
 namespace Ui {

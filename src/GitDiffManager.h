@@ -1,7 +1,11 @@
+
 #ifndef GITDIFFMANAGER_H
 #define GITDIFFMANAGER_H
 
-#include "GitObjectManager.h"
+#include "GitRunner.h"
+#include <list>
+
+class GitObjectCache;
 
 class GitDiffManager {
 	friend class CommitListThread;

@@ -2,8 +2,10 @@
 #include <common/fmt.h>
 #include <common/joinpath.h>
 #include <common/jstream.h>
+#include <common/misc.h>
 #include <common/str.h>
 #include <ai/CommitMessageGenerator.h>
+#include "MyProcess.h"
 
 #ifdef APP_GUITAR
 #include "Profile.h"

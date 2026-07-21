@@ -1,4 +1,6 @@
+
 #include "GitCommandRunner.h"
+#include <AbstractProcess.h>
 #include <string>
 
 std::string GitCommandRunner::pty_message() const
@@ -63,4 +65,6 @@ void GitCommandRunner::operator ()(Git_submodule_add const &item)
 {
 	d.result = git().submodule_add(item.data_, item.force_, pty());
 }
+
+
 

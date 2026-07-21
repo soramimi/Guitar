@@ -1,13 +1,9 @@
 #include "CreateRepositoryDialog.h"
-#include "MainWindow.h"
-#include <common/misc.h>
 #include "ui_CreateRepositoryDialog.h"
-
+#include "MainWindow.h"
 #include <QFileDialog>
 #include <QMessageBox>
-#include "Git.h"
-
-
+#include <common/misc.h>
 
 CreateRepositoryDialog::CreateRepositoryDialog(MainWindow *parent, QString const &dir) :
 	QDialog(parent),

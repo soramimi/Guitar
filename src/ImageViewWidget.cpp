@@ -1,14 +1,10 @@
 
 #include "ImageViewWidget.h"
-#include "ApplicationGlobal.h"
 #include "FileDiffSliderWidget.h"
 #include "FileDiffWidget.h"
 #include "MainWindow.h"
 #include "MemoryReader.h"
 #include "Photoshop.h"
-#include <common/charvec.h>
-#include <common/joinpath.h>
-#include <common/misc.h>
 #include <QApplication>
 #include <QBuffer>
 #include <QDebug>
@@ -18,6 +14,10 @@
 #include <QSvgRenderer>
 #include <QWheelEvent>
 #include <cmath>
+#include <common/charvec.h>
+#include <common/joinpath.h>
+#include <common/misc.h>
+#include <common/qmisc.h>
 #include <functional>
 #include <memory>
 

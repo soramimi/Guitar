@@ -1,9 +1,8 @@
 #include "MyImageViewWidget.h"
-
-#include <QMenu>
 #include <QFileDialog>
+#include <QMenu>
 #include <common/joinpath.h>
-#include <common/misc.h>
+#include <common/qmisc.h>
 
 MyImageViewWidget::MyImageViewWidget(QWidget *parent)
 	: ImageViewWidget(parent)

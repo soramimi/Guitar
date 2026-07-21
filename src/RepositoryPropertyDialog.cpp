@@ -1,13 +1,13 @@
 #include "RepositoryPropertyDialog.h"
 #include "ui_RepositoryPropertyDialog.h"
-#include "ApplicationGlobal.h"
 #include "MainWindow.h"
-#include <common/misc.h>
 #include <QClipboard>
+#include <QDebug>
 #include <QItemDelegate>
 #include <QMenu>
 #include <QMessageBox>
-#include <QDebug>
+#include <common/qmisc.h>
+#include <common/misc.h>
 
 struct RepositoryPropertyDialog::Private {
 	GitRunner git;

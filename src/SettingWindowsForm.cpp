@@ -1,7 +1,7 @@
 #include "SettingWindowsForm.h"
 #include "ui_SettingWindowsForm.h"
 #include "MySettings.h"
-#include "ApplicationGlobal.h"
+// #include "ApplicationGlobal.h"
 
 SettingWindowsForm::SettingWindowsForm(QWidget *parent)
 	: AbstractSettingForm(parent)

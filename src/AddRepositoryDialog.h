@@ -1,7 +1,8 @@
+
 #ifndef ADDREPOSITORYDIALOG_H
 #define ADDREPOSITORYDIALOG_H
 
-#include "Git.h"
+#include "GitCloneData.h"
 #include "RepositoryInfo.h"
 #include <QDialog>
 

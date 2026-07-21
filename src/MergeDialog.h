@@ -1,8 +1,8 @@
 #ifndef MERGEDIALOG_H
 #define MERGEDIALOG_H
 
-#include "Git.h"
 #include <QDialog>
+#include "Git.h"
 
 class QListWidgetItem;
 

@@ -2,9 +2,8 @@
 #include "ui_SettingGeneralForm.h"
 #include "MySettings.h"
 #include "SelectItemDialog.h"
-#include "ApplicationGlobal.h"
+// #include "ApplicationGlobal.h"
 #include "Languages.h"
-#include <common/misc.h>
 
 #include <QFileDialog>
 

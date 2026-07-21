@@ -1,11 +1,10 @@
 #include "GenerateCommitMessageThread.h"
-#include "ApplicationGlobal.h"
 #include "MainWindow.h"
 #include "GeneratedCommitMessage.h"
 
 GenerateCommitMessageThread::GenerateCommitMessageThread()
 {
-	ai_model_ = global->appsettings.ai_model;
+	ai_model_ = *global->appsettings.ai_model;
 }
 
 GenerateCommitMessageThread::~GenerateCommitMessageThread()

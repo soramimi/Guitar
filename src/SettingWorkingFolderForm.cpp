@@ -1,6 +1,6 @@
 #include "SettingWorkingFolderForm.h"
 #include "ui_SettingWorkingFolderForm.h"
-#include "ApplicationGlobal.h"
+// #include "ApplicationGlobal.h"
 #include <QFileDialog>
 #include <QTextStream>
 #include <common/joinpath.h>

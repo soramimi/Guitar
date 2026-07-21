@@ -1,9 +1,8 @@
 #ifndef COMMITMESSAGEGENERATOR_H
 #define COMMITMESSAGEGENERATOR_H
 
+#include "GitRunner.h"
 #include <ai/AiApiBridge.h>
-#include <ai/GenerativeAI.h>
-#include "Git.h"
 #include <string>
 
 class CommitMessageGenerator {

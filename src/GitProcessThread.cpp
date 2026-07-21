@@ -1,6 +1,8 @@
 #include "GitProcessThread.h"
 #include <QApplication>
 #include <QEventLoop>
+#include <mutex>
+#include <condition_variable>
 
 struct GitProcessThread::Private {
 	std::mutex mutex_;

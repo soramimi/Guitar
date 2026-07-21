@@ -1,6 +1,6 @@
 #ifdef UNSAFE_ENABLED
 #include "GitRemoteSshSession.h"
-#include "ApplicationGlobal.h"
+// #include "ApplicationGlobal.h"
 
 GitRemoteSshSession::GitRemoteSshSession()
 {

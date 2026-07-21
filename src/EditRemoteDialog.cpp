@@ -3,7 +3,6 @@
 #include "MainWindow.h"
 #include <QFileDialog>
 #include <QStandardPaths>
-#include "ApplicationGlobal.h"
 
 EditRemoteDialog::EditRemoteDialog(MainWindow *parent, Operation op)
 	: QDialog(parent)

@@ -1,7 +1,7 @@
-#include "ClearButton.h"
-#include "ApplicationGlobal.h"
-#include "Theme.h"
 
+#include "ApplicationGlobal.h"
+#include "ClearButton.h"
+#include "Theme.h"
 #include <QPainter>
 
 ClearButton::ClearButton(QWidget *parent)

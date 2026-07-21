@@ -1,12 +1,17 @@
 
 #include "Git.h"
 #include "GitBasicSession.h"
+#include "GitCommitItem.h"
+#include "GitDiff.h"
 #include "Profile.h"
+#include <AbstractProcess.h>
 #include <QString>
 #include <common/fmt.h>
 #include <common/joinpath.h>
+#include <common/misc.h>
 #include <common/npos.h>
 #include <common/q/helper.h>
+#include <common/qmisc.h>
 #include <common/str.h>
 #include <future>
 
@@ -1255,6 +1260,11 @@ bool Git::fetch(AbstractPtyProcess *pty, bool prune)
 	return (bool)exec_git(cmd, opt);
 }
 
+bool Git::isUncommitted(const GitCommitItem &item)
+{
+	return !item.commit_id.isValid();
+}
+
 std::vector<std::string> Git::make_branch_list_(std::optional<GitResult> const &result)
 {
 	std::vector<std::string> list;
@@ -1770,19 +1780,6 @@ bool Git::configGpgProgram(std::string const &path, bool global)
 		cmd += quoted_text(path);
 	}
 	return (bool)git_nochdir(cmd, nullptr);
-}
-
-// GitDiff
-
-void GitDiff::makeForSingleFile(GitDiff *diff, std::string const &id_a, std::string const &id_b, std::string const &path, std::string const &mode)
-{
-	diff->diff = fmt("diff --git a/%s b/%s").arg(path)(path);
-	diff->index = fmt("index %s..%s %d")(id_a)(id_b)(0);
-	diff->blob.a_id_or_path = id_a;
-	diff->blob.b_id_or_path = id_b;
-	diff->path = path;
-	diff->mode = mode;
-	diff->type = GitDiff::Type::Create;
 }
 
 //

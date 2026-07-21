@@ -1,9 +1,9 @@
+
 #ifndef EDITPROFILESDIALOG_H
 #define EDITPROFILESDIALOG_H
 
+#include "GitUser.h"
 #include <QDialog>
-#include <common/misc.h>
-#include "Git.h"
 
 class QTableWidgetItem;
 
@@ -19,14 +19,8 @@ public:
 		QString email;
 		Item() = default;
 		Item(GitUser const &user);
-		explicit operator bool () const
-		{
-			return misc::isValidMailAddress(email);
-		}
-		bool operator == (Item const &other) const
-		{
-			return name == other.name && email == other.email;
-		}
+		explicit operator bool () const;
+		bool operator == (Item const &other) const;
 	};
 private:
 	Ui::EditProfilesDialog *ui;

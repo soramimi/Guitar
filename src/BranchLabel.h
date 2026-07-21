@@ -2,8 +2,6 @@
 #define BRANCHLABEL_H
 
 #include <QColor>
-// #include "ApplicationGlobal.h"
-
 
 /**
  * @brief ログテーブルウィジェットのブランチ名ラベル

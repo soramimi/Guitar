@@ -3,6 +3,7 @@
 
 #include "BranchLabel.h"
 #include "GitRunner.h"
+#include <QMetaType>
 
 typedef std::vector<GitTag> TagList;
 typedef QList<GitBranch> BranchList;

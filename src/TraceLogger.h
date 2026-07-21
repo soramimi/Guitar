@@ -1,12 +1,14 @@
+
 #ifndef TRACELOGGER_H
 #define TRACELOGGER_H
 
+#include "TraceEventItem.h"
 #include "TraceEventWriter.h"
 #include <QString>
 
 class TraceLogger {
 private:
-	TraceEventWriter::Event event_;
+	TraceEventItem event_;
 public:
 	TraceLogger() = default;
 	TraceLogger(QString const &name, QString const &cmd)

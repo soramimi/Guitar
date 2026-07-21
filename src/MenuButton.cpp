@@ -1,7 +1,7 @@
 #include "MenuButton.h"
-#include <QPainter>
-#include "Theme.h"
 #include "ApplicationGlobal.h"
+#include "Theme.h"
+#include <QPainter>
 
 MenuButton::MenuButton(QWidget *parent)
 	: QToolButton(parent)

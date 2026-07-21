@@ -1,6 +1,6 @@
 #include "RepositoryInfoFrame.h"
 #include <QPainter>
-#include "ApplicationGlobal.h"
+// #include "ApplicationGlobal.h"
 
 RepositoryInfoFrame::RepositoryInfoFrame(QWidget *parent)
 	: QFrame(parent)

@@ -1,15 +1,17 @@
 #include "GitBasicSession.h"
 #include "TraceEventWriter.h"
 #include <common/fmt.h>
-#include <common/str.h>
-#include <common/npos.h>
 #include <common/joinpath.h>
+#include <common/misc.h>
+#include <common/npos.h>
 #include <common/q/FileInfo.h>
+#include <common/str.h>
 #include <QDebug>
 #include <QDir>
 #include <QDirIterator>
 #include <QElapsedTimer>
 #include <QFileInfo>
+#include "MyProcess.h"
 
 #ifdef APP_GUITAR
 #include "ApplicationGlobal.h"

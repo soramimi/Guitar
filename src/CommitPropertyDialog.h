@@ -1,9 +1,9 @@
+
 #ifndef COMMITPROPERTYDIALOG_H
 #define COMMITPROPERTYDIALOG_H
 
+#include "GitCommitItem.h"
 #include <QDialog>
-
-#include "Git.h"
 
 class MainWindow;
 class QLabel;

@@ -1,19 +1,16 @@
 
 #include "GitHubAPI.h"
-#include "ApplicationGlobal.h"
 #include "MainWindow.h"
 #include "MemoryReader.h"
 #include "OverrideWaitCursor.h"
+#include "main.h"
 #include <QApplication>
 #include <QDebug>
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <common/charvec.h>
-#include <common/misc.h>
 #include <common/urlencode.h>
-#include <inet/curlclient.h>
-#include <inet/webclient.h>
 #include <memory>
 
 struct GitHubRequestThread::Private {

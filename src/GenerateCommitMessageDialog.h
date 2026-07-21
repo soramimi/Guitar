@@ -4,7 +4,6 @@
 #include <QDialog>
 #include <QObject>
 #include <ai/CommitMessageGenerator.h>
-#include <ai/GenerativeAI.h>
 
 namespace Ui {
 class GenerateCommitMessageDialog;
@@ -20,10 +19,10 @@ private:
 	struct Private;
 	Private *m;
 	const GenerativeAI::Model &ai_model() const;
-	void init_ai_models(const std::vector<GenerativeAI::Model> &models, int default_index);
+	void init_ai_models(std::vector<GenerativeAI::Model const *> const &models, int default_index);
 	void _generate(const std::string &diff, const std::string &status_s);
 public:
-	explicit GenerateCommitMessageDialog(QWidget *parent, std::vector<GenerativeAI::Model> const &models, int default_index);
+	explicit GenerateCommitMessageDialog(QWidget *parent, std::vector<GenerativeAI::Model const *> const &models, int default_index);
 	~GenerateCommitMessageDialog();
 	void generate(std::string const &id_a, std::string const &id_b);
 	void generate();

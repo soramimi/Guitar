@@ -1,8 +1,8 @@
+
 #ifndef REFLOGWINDOW_H
 #define REFLOGWINDOW_H
 
 #include "Git.h"
-
 #include <QDialog>
 
 namespace Ui {

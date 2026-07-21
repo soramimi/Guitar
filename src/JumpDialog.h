@@ -1,8 +1,9 @@
+
 #ifndef JUMPDIALOG_H
 #define JUMPDIALOG_H
 
-#include "CommitLogTableWidget.h"
 #include "Git.h"
+#include "CommitLogTableWidget.h"
 #include <QDialog>
 
 namespace Ui {

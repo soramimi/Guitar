@@ -1,9 +1,11 @@
+
 #ifndef GITCOMMANDRUNNER_H
 #define GITCOMMANDRUNNER_H
 
+#include "GitCloneData.h"
 #include "GitRunner.h"
-
 #include <QElapsedTimer>
+#include <QVariant>
 
 class Git_clone {
 public:
@@ -98,7 +100,7 @@ class Git_submodule_add {
 public:
 	GitCloneData data_;
 	bool force_ = false;
-	Git_submodule_add(GitCloneData data, bool force)
+	Git_submodule_add(GitCloneData const &data, bool force)
 		: data_(data)
 		, force_(force)
 	{

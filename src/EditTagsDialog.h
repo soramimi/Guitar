@@ -2,7 +2,6 @@
 #define EDITTAGSDIALOG_H
 
 #include "RepositoryModel.h"
-#include "Git.h"
 
 #include <QDialog>
 

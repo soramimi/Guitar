@@ -1,10 +1,10 @@
 #include "FileViewWidget.h"
-#include <common/misc.h>
 #include <QApplication>
 #include <QMenu>
 #include <QPainter>
 #include <QStackedWidget>
 #include <QVBoxLayout>
+#include <common/misc.h>
 
 FileViewWidget::FileViewWidget(QWidget *parent)
 	: QWidget(parent)

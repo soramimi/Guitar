@@ -1,9 +1,9 @@
 #include "CherryPickDialog.h"
 #include "ui_CherryPickDialog.h"
-#include <common/misc.h>
+#include "GitCommitItem.h"
 #include <common/q/helper.h>
 
-CherryPickDialog::CherryPickDialog(QWidget *parent, GitCommitItem const &head, GitCommitItem const &pick, QList<GitCommitItem> parents)
+CherryPickDialog::CherryPickDialog(QWidget *parent, GitCommitItem const &head, GitCommitItem const &pick, const QList<GitCommitItem> &parents)
 	: QDialog(parent)
 	, ui(new Ui::CherryPickDialog)
 {

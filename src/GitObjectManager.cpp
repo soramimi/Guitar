@@ -5,9 +5,9 @@
 #include "MemoryReader.h"
 #include <common/joinpath.h>
 #include <common/misc.h>
-#include <common/str.h>
 #include <common/npos.h>
 #include <common/q/helper.h>
+#include <common/str.h>
 #include "Profile.h"
 #include <QBuffer>
 #include <QDebug>

@@ -3,7 +3,6 @@
 
 #include <QDialog>
 #include <QThread>
-#include "Git.h"
 
 namespace Ui {
 class SubmoduleAddDialog;

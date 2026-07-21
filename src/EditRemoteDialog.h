@@ -2,7 +2,6 @@
 #define EDITREMOTEDIALOG_H
 
 #include <QDialog>
-#include "Git.h"
 
 class MainWindow;
 

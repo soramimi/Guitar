@@ -1,6 +1,5 @@
 #include "GenerateCommitMessageDialog.h"
 #include "ui_GenerateCommitMessageDialog.h"
-#include "ApplicationGlobal.h"
 #include "GenerateCommitMessageThread.h"
 #include "MainWindow.h"
 #include <common/q/helper.h>
@@ -8,7 +7,7 @@
 #include <ai/CommitMessageGenerator.h>
 
 struct GenerateCommitMessageDialog::Private {
-	std::vector<GenerativeAI::Model> ai_models;
+	std::vector<GenerativeAI::Model const *> ai_models;
 	CommitMessageGenerator::CommitPair commits;
 	GenerateCommitMessageThread generator;
 	QStringList checked_items;
@@ -16,7 +15,7 @@ struct GenerateCommitMessageDialog::Private {
 	std::string status_s_u;
 };
 
-GenerateCommitMessageDialog::GenerateCommitMessageDialog(QWidget *parent, std::vector<GenerativeAI::Model> const &models, int default_index)
+GenerateCommitMessageDialog::GenerateCommitMessageDialog(QWidget *parent, const std::vector<GenerativeAI::Model const *> &models, int default_index)
 	: QDialog(parent)
 	, ui(new Ui::GenerateCommitMessageDialog)
 	, m(new Private)
@@ -48,13 +47,13 @@ void GenerateCommitMessageDialog::setCommitIDs(CommitMessageGenerator::CommitPai
 	m->commits = commits;
 }
 
-void GenerateCommitMessageDialog::init_ai_models(std::vector<GenerativeAI::Model> const &models, int default_index)
+void GenerateCommitMessageDialog::init_ai_models(std::vector<GenerativeAI::Model const *> const &models, int default_index)
 {
 	m->ai_models = models;
 	ui->comboBox_ai_models->clear();
 	for (size_t i = 0; i < m->ai_models.size(); i++) {
-		GenerativeAI::Model const &model = m->ai_models[i];
-		ui->comboBox_ai_models->addItem((QS)model.model_uri().string);
+		GenerativeAI::Model const *model = m->ai_models[i];
+		ui->comboBox_ai_models->addItem((QS)model->model_uri().string);
 	}
 	ui->comboBox_ai_models->setCurrentIndex(default_index);
 }
@@ -63,9 +62,9 @@ GenerativeAI::Model const &GenerateCommitMessageDialog::ai_model() const
 {
 	int index = ui->comboBox_ai_models->currentIndex();
 	if (index >= 0 && (size_t)index < m->ai_models.size()) {
-		return m->ai_models[index];
+		return *m->ai_models[index];
 	}
-	return global->appsettings.ai_model;
+	return *global->appsettings.ai_model;
 }
 
 void GenerateCommitMessageDialog::_generate(std::string const &diff, std::string const &status_s_u)

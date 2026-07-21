@@ -1,0 +1,944 @@
+{
+  "header_impact": [
+    {
+      "header": "src/GitHash.h",
+      "cpps": 97
+    },
+    {
+      "header": "src/common/q/DateTime.h",
+      "cpps": 94
+    },
+    {
+      "header": "src/GitTypes.h",
+      "cpps": 92
+    },
+    {
+      "header": "src/ProcessStatus.h",
+      "cpps": 92
+    },
+    {
+      "header": "src/GitUser.h",
+      "cpps": 92
+    },
+    {
+      "header": "src/GitSubmodule.h",
+      "cpps": 91
+    },
+    {
+      "header": "src/GitResult.h",
+      "cpps": 90
+    },
+    {
+      "header": "src/GitRemote.h",
+      "cpps": 90
+    },
+    {
+      "header": "src/AbstractGitSession.h",
+      "cpps": 85
+    },
+    {
+      "header": "src/GitCloneData.h",
+      "cpps": 85
+    },
+    {
+      "header": "src/inet/inetclient.h",
+      "cpps": 84
+    },
+    {
+      "header": "src/Git.h",
+      "cpps": 83
+    },
+    {
+      "header": "src/Theme.h",
+      "cpps": 83
+    },
+    {
+      "header": "src/inet/webclient.h",
+      "cpps": 82
+    },
+    {
+      "header": "src/ApplicationSettings.h",
+      "cpps": 81
+    },
+    {
+      "header": "src/AvatarLoader.h",
+      "cpps": 80
+    },
+    {
+      "header": "src/ApplicationGlobal.h",
+      "cpps": 80
+    },
+    {
+      "header": "src/GitCommitItem.h",
+      "cpps": 70
+    },
+    {
+      "header": "src/GitObject.h",
+      "cpps": 68
+    },
+    {
+      "header": "src/GitDiff.h",
+      "cpps": 68
+    },
+    {
+      "header": "src/GitRunner.h",
+      "cpps": 66
+    },
+    {
+      "header": "src/BranchLabel.h",
+      "cpps": 57
+    },
+    {
+      "header": "src/GitCommandRunner.h",
+      "cpps": 56
+    },
+    {
+      "header": "src/UserEvent.h",
+      "cpps": 56
+    },
+    {
+      "header": "src/RepositoryModel.h",
+      "cpps": 56
+    },
+    {
+      "header": "src/StatusInfo.h",
+      "cpps": 55
+    },
+    {
+      "header": "src/RepositoryInfo.h",
+      "cpps": 55
+    },
+    {
+      "header": "src/IncrementalSearchHelper.h",
+      "cpps": 55
+    },
+    {
+      "header": "src/RepositoryTreeWidget.h",
+      "cpps": 54
+    },
+    {
+      "header": "src/MainWindow.h",
+      "cpps": 54
+    },
+    {
+      "header": "src/MainWindowTypes.h",
+      "cpps": 54
+    },
+    {
+      "header": "src/common/misc.h",
+      "cpps": 39
+    },
+    {
+      "header": "src/common/joinpath.h",
+      "cpps": 33
+    },
+    {
+      "header": "src/common/q/helper.h",
+      "cpps": 28
+    },
+    {
+      "header": "src/common/qmisc.h",
+      "cpps": 19
+    },
+    {
+      "header": "src/SettingsDialog.h",
+      "cpps": 16
+    },
+    {
+      "header": "src/AbstractSettingForm.h",
+      "cpps": 15
+    },
+    {
+      "header": "src/ai/GenerativeAI.h",
+      "cpps": 13
+    },
+    {
+      "header": "src/texteditor/TextEditorTheme.h",
+      "cpps": 13
+    },
+    {
+      "header": "src/texteditor/AbstractCharacterBasedApplication.h",
+      "cpps": 13
+    },
+    {
+      "header": "src/TraceEventWriter.h",
+      "cpps": 12
+    },
+    {
+      "header": "src/texteditor/TextEditorView.h",
+      "cpps": 12
+    },
+    {
+      "header": "src/TraceEventItem.h",
+      "cpps": 11
+    },
+    {
+      "header": "src/MyObjectViewBase.h",
+      "cpps": 11
+    },
+    {
+      "header": "src/texteditor/TextEditorWidget.h",
+      "cpps": 10
+    },
+    {
+      "header": "src/Logger.h",
+      "cpps": 9
+    },
+    {
+      "header": "src/common/fmt.h",
+      "cpps": 9
+    },
+    {
+      "header": "src/common/strformat.h",
+      "cpps": 9
+    },
+    {
+      "header": "src/MyTextEditorWidget.h",
+      "cpps": 9
+    },
+    {
+      "header": "src/MyImageViewWidget.h",
+      "cpps": 9
+    },
+    {
+      "header": "src/ImageViewWidget.h",
+      "cpps": 9
+    },
+    {
+      "header": "src/TraceLogger.h",
+      "cpps": 9
+    },
+    {
+      "header": "src/process/src/ProcessHelper.h",
+      "cpps": 9
+    },
+    {
+      "header": "src/MyTableWidgetDelegate.h",
+      "cpps": 8
+    },
+    {
+      "header": "src/MySettings.h",
+      "cpps": 8
+    },
+    {
+      "header": "src/FileDiffSliderWidget.h",
+      "cpps": 8
+    },
+    {
+      "header": "src/FileViewWidget.h",
+      "cpps": 8
+    },
+    {
+      "header": "src/common/str.h",
+      "cpps": 8
+    },
+    {
+      "header": "src/ai/AiApiBridge.h",
+      "cpps": 8
+    },
+    {
+      "header": "src/ai/CommitMessageGenerator.h",
+      "cpps": 8
+    },
+    {
+      "header": "src/gpg.h",
+      "cpps": 8
+    },
+    {
+      "header": "src/process/src/AbstractProcess.h",
+      "cpps": 8
+    },
+    {
+      "header": "src/MemoryReader.h",
+      "cpps": 7
+    },
+    {
+      "header": "src/FileDiffWidget.h",
+      "cpps": 7
+    },
+    {
+      "header": "src/common/npos.h",
+      "cpps": 7
+    },
+    {
+      "header": "src/Profile.h",
+      "cpps": 7
+    },
+    {
+      "header": "src/GitObjectManager.h",
+      "cpps": 6
+    },
+    {
+      "header": "src/GitHubAPI.h",
+      "cpps": 6
+    },
+    {
+      "header": "src/RepositorySearchResultItem.h",
+      "cpps": 6
+    },
+    {
+      "header": "src/GeneratedCommitMessage.h",
+      "cpps": 6
+    },
+    {
+      "header": "src/common/q/Dir.h",
+      "cpps": 6
+    },
+    {
+      "header": "src/common/AbstractSimpleIO.h",
+      "cpps": 5
+    },
+    {
+      "header": "src/CommitRecord.h",
+      "cpps": 5
+    },
+    {
+      "header": "src/common/q/FileInfo.h",
+      "cpps": 5
+    },
+    {
+      "header": "src/MyProcess.h",
+      "cpps": 5
+    },
+    {
+      "header": "src/Languages.h",
+      "cpps": 5
+    },
+    {
+      "header": "src/darktheme/TraditionalWindowsStyleTreeControl.h",
+      "cpps": 5
+    },
+    {
+      "header": "src/darktheme/MyCommonStyle.h",
+      "cpps": 5
+    },
+    {
+      "header": "src/process/src/ProcessWinHelper.h",
+      "cpps": 5
+    },
+    {
+      "header": "src/process/src/BasicProcessWin.h",
+      "cpps": 5
+    },
+    {
+      "header": "src/main.h",
+      "cpps": 4
+    },
+    {
+      "header": "src/GenerateCommitMessageThread.h",
+      "cpps": 4
+    },
+    {
+      "header": "src/ConfigSigningDialog.h",
+      "cpps": 4
+    },
+    {
+      "header": "src/win32/Win32Util.h",
+      "cpps": 4
+    },
+    {
+      "header": "src/unix/UnixUtil.h",
+      "cpps": 4
+    },
+    {
+      "header": "src/OverrideWaitCursor.h",
+      "cpps": 4
+    },
+    {
+      "header": "src/common/urlencode.h",
+      "cpps": 4
+    },
+    {
+      "header": "src/SelectItemDialog.h",
+      "cpps": 4
+    },
+    {
+      "header": "src/common/unicode_conversion.h",
+      "cpps": 4
+    },
+    {
+      "header": "src/SearchFromGitHubDialog.h",
+      "cpps": 3
+    },
+    {
+      "header": "src/gzip.h",
+      "cpps": 3
+    },
+    {
+      "header": "src/CommitPropertyDialog.h",
+      "cpps": 3
+    },
+    {
+      "header": "src/platform.h",
+      "cpps": 3
+    },
+    {
+      "header": "src/CommitExploreWindow.h",
+      "cpps": 3
+    },
+    {
+      "header": "src/CommitLogTableWidget.h",
+      "cpps": 3
+    },
+    {
+      "header": "src/EditProfilesDialog.h",
+      "cpps": 3
+    },
+    {
+      "header": "src/TextEditDialog.h",
+      "cpps": 3
+    },
+    {
+      "header": "src/EditRemoteDialog.h",
+      "cpps": 3
+    },
+    {
+      "header": "src/GitDiffManager.h",
+      "cpps": 3
+    },
+    {
+      "header": "src/common/charvec.h",
+      "cpps": 3
+    },
+    {
+      "header": "src/GitPackIdxV2.h",
+      "cpps": 3
+    },
+    {
+      "header": "src/GitPack.h",
+      "cpps": 3
+    },
+    {
+      "header": "src/SettingGeneralForm.h",
+      "cpps": 3
+    },
+    {
+      "header": "src/sshsupport/SshDialog.h",
+      "cpps": 3
+    },
+    {
+      "header": "src/darktheme/DarkStyle.h",
+      "cpps": 3
+    },
+    {
+      "header": "src/darktheme/LightStyle.h",
+      "cpps": 3
+    },
+    {
+      "header": "src/common/jstream.h",
+      "cpps": 3
+    },
+    {
+      "header": "src/process/src/BasicProcessWinConPty.h",
+      "cpps": 3
+    },
+    {
+      "header": "src/texteditor/unicode.h",
+      "cpps": 3
+    },
+    {
+      "header": "src/zip/zipinternal.h",
+      "cpps": 3
+    },
+    {
+      "header": "src/AboutDialog.h",
+      "cpps": 2
+    },
+    {
+      "header": "src/GitCommandCache.h",
+      "cpps": 2
+    },
+    {
+      "header": "src/AddRepositoriesCollectivelyDialog.h",
+      "cpps": 2
+    },
+    {
+      "header": "src/AddRepositoryDialog.h",
+      "cpps": 2
+    },
+    {
+      "header": "src/ManageWorkingFolderDialog.h",
+      "cpps": 2
+    },
+    {
+      "header": "src/SimpleQtIO.h",
+      "cpps": 2
+    },
+    {
+      "header": "src/AreYouSureYouWantToContinueConnectingDialog.h",
+      "cpps": 2
+    },
+    {
+      "header": "src/BigDiffWindow.h",
+      "cpps": 2
+    },
+    {
+      "header": "src/BlameWindow.h",
+      "cpps": 2
+    },
+    {
+      "header": "src/BlockSignals.h",
+      "cpps": 2
+    },
+    {
+      "header": "src/CheckoutDialog.h",
+      "cpps": 2
+    },
+    {
+      "header": "src/CherryPickDialog.h",
+      "cpps": 2
+    },
+    {
+      "header": "src/CleanSubModuleDialog.h",
+      "cpps": 2
+    },
+    {
+      "header": "src/coloredit/ColorDialog.h",
+      "cpps": 2
+    },
+    {
+      "header": "src/CommitDetailGetter.h",
+      "cpps": 2
+    },
+    {
+      "header": "src/CommitDialog.h",
+      "cpps": 2
+    },
+    {
+      "header": "src/GenerateCommitMessageDialog.h",
+      "cpps": 2
+    },
+    {
+      "header": "src/CommitViewWindow.h",
+      "cpps": 2
+    },
+    {
+      "header": "src/ConfigUserDialog.h",
+      "cpps": 2
+    },
+    {
+      "header": "src/CreateRepositoryDialog.h",
+      "cpps": 2
+    },
+    {
+      "header": "src/DeleteBranchDialog.h",
+      "cpps": 2
+    },
+    {
+      "header": "src/DoYouWantToInitDialog.h",
+      "cpps": 2
+    },
+    {
+      "header": "src/DropDownListFrame.h",
+      "cpps": 2
+    },
+    {
+      "header": "src/EditGitIgnoreDialog.h",
+      "cpps": 2
+    },
+    {
+      "header": "src/EditTagsDialog.h",
+      "cpps": 2
+    },
+    {
+      "header": "src/InputNewTagDialog.h",
+      "cpps": 2
+    },
+    {
+      "header": "src/FileHistoryWindow.h",
+      "cpps": 2
+    },
+    {
+      "header": "src/FilePropertyDialog.h",
+      "cpps": 2
+    },
+    {
+      "header": "src/FileUtil.h",
+      "cpps": 2
+    },
+    {
+      "header": "src/FindCommitDialog.h",
+      "cpps": 2
+    },
+    {
+      "header": "src/GitBasicSession.h",
+      "cpps": 2
+    },
+    {
+      "header": "src/GitConfigGlobalAddSafeDirectoryDialog.h",
+      "cpps": 2
+    },
+    {
+      "header": "src/GitProcessThread.h",
+      "cpps": 2
+    },
+    {
+      "header": "src/Photoshop.h",
+      "cpps": 2
+    },
+    {
+      "header": "src/JumpDialog.h",
+      "cpps": 2
+    },
+    {
+      "header": "src/LineEditDialog.h",
+      "cpps": 2
+    },
+    {
+      "header": "src/LoadPlugin.h",
+      "cpps": 2
+    },
+    {
+      "header": "src/GitObjectData.h",
+      "cpps": 2
+    },
+    {
+      "header": "src/sshsupport/ConfirmRemoteSessionDialog.h",
+      "cpps": 2
+    },
+    {
+      "header": "src/SelectCommandDialog.h",
+      "cpps": 2
+    },
+    {
+      "header": "src/SetGlobalUserDialog.h",
+      "cpps": 2
+    },
+    {
+      "header": "src/Util.h",
+      "cpps": 2
+    },
+    {
+      "header": "src/SubmodulesDialog.h",
+      "cpps": 2
+    },
+    {
+      "header": "src/StatusLabel.h",
+      "cpps": 2
+    },
+    {
+      "header": "src/SetGpgSigningDialog.h",
+      "cpps": 2
+    },
+    {
+      "header": "src/Terminal.h",
+      "cpps": 2
+    },
+    {
+      "header": "src/PushDialog.h",
+      "cpps": 2
+    },
+    {
+      "header": "src/sshsupport/GitRemoteSshSession.h",
+      "cpps": 2
+    },
+    {
+      "header": "src/SubmoduleUpdateDialog.h",
+      "cpps": 2
+    },
+    {
+      "header": "src/MergeDialog.h",
+      "cpps": 2
+    },
+    {
+      "header": "src/SubmoduleAddDialog.h",
+      "cpps": 2
+    },
+    {
+      "header": "src/RepositoryPropertyDialog.h",
+      "cpps": 2
+    },
+    {
+      "header": "src/ReflogWindow.h",
+      "cpps": 2
+    },
+    {
+      "header": "src/WelcomeWizardDialog.h",
+      "cpps": 2
+    },
+    {
+      "header": "src/XmlTagState.h",
+      "cpps": 2
+    },
+    {
+      "header": "src/SelectGpgKeyDialog.h",
+      "cpps": 2
+    },
+    {
+      "header": "src/SettingAiForm.h",
+      "cpps": 2
+    },
+    {
+      "header": "src/SettingBehaviorForm.h",
+      "cpps": 2
+    },
+    {
+      "header": "src/SettingLoggingForm.h",
+      "cpps": 2
+    },
+    {
+      "header": "src/SettingNetworkForm.h",
+      "cpps": 2
+    },
+    {
+      "header": "src/SettingOptionsForm.h",
+      "cpps": 2
+    },
+    {
+      "header": "src/SettingPrograms2Form.h",
+      "cpps": 2
+    },
+    {
+      "header": "src/SettingProgramsForm.h",
+      "cpps": 2
+    },
+    {
+      "header": "src/SettingWorkingFolderForm.h",
+      "cpps": 2
+    },
+    {
+      "header": "src/SettingWindowsForm.h",
+      "cpps": 2
+    },
+    {
+      "header": "src/SettingVisualForm.h",
+      "cpps": 2
+    },
+    {
+      "header": "src/coloredit/ColorSquareWidget.h",
+      "cpps": 2
+    },
+    {
+      "header": "src/coloredit/RingSlider.h",
+      "cpps": 2
+    },
+    {
+      "header": "src/common/wstring.h",
+      "cpps": 2
+    },
+    {
+      "header": "src/darktheme/NinePatch.h",
+      "cpps": 2
+    },
+    {
+      "header": "src/inet/inetresolver.h",
+      "cpps": 2
+    },
+    {
+      "header": "src/common/base64.h",
+      "cpps": 2
+    },
+    {
+      "header": "src/process/sampleapp/misc.h",
+      "cpps": 2
+    },
+    {
+      "header": "src/process/sampleapp/unicode_conversion.h",
+      "cpps": 2
+    },
+    {
+      "header": "src/sshsupport/Quissh.h",
+      "cpps": 2
+    },
+    {
+      "header": "src/texteditor/UnicodeWidth.h",
+      "cpps": 2
+    },
+    {
+      "header": "src/texteditor/InputMethodPopup.h",
+      "cpps": 2
+    },
+    {
+      "header": "src/ClearButton.h",
+      "cpps": 1
+    },
+    {
+      "header": "src/CloneFromGitHubDialog.h",
+      "cpps": 1
+    },
+    {
+      "header": "src/ColorButton.h",
+      "cpps": 1
+    },
+    {
+      "header": "src/ConfigCredentialHelperDialog.h",
+      "cpps": 1
+    },
+    {
+      "header": "src/DeleteTagsDialog.h",
+      "cpps": 1
+    },
+    {
+      "header": "src/DialogHeaderFrame.h",
+      "cpps": 1
+    },
+    {
+      "header": "src/RepositoryInfo.cpp",
+      "cpps": 1
+    },
+    {
+      "header": "src/ExperimentDialog.h",
+      "cpps": 1
+    },
+    {
+      "header": "src/dtl/Lcs.hpp",
+      "cpps": 1
+    },
+    {
+      "header": "src/dtl/dtl.hpp",
+      "cpps": 1
+    },
+    {
+      "header": "src/dtl/Diff3.hpp",
+      "cpps": 1
+    },
+    {
+      "header": "src/dtl/Ses.hpp",
+      "cpps": 1
+    },
+    {
+      "header": "src/dtl/functors.hpp",
+      "cpps": 1
+    },
+    {
+      "header": "src/dtl/variables.hpp",
+      "cpps": 1
+    },
+    {
+      "header": "src/dtl/Sequence.hpp",
+      "cpps": 1
+    },
+    {
+      "header": "src/dtl/Diff.hpp",
+      "cpps": 1
+    },
+    {
+      "header": "src/FileListWidget.h",
+      "cpps": 1
+    },
+    {
+      "header": "src/FileTypeDetector.h",
+      "cpps": 1
+    },
+    {
+      "header": "src/common/crc32.h",
+      "cpps": 1
+    },
+    {
+      "header": "src/HyperLinkLabel.h",
+      "cpps": 1
+    },
+    {
+      "header": "src/LocalSocketReader.h",
+      "cpps": 1
+    },
+    {
+      "header": "src/MaximizeButton.h",
+      "cpps": 1
+    },
+    {
+      "header": "src/MenuButton.h",
+      "cpps": 1
+    },
+    {
+      "header": "src/MyToolButton.h",
+      "cpps": 1
+    },
+    {
+      "header": "src/ProgressTextLabel.h",
+      "cpps": 1
+    },
+    {
+      "header": "src/ProgressWidget.h",
+      "cpps": 1
+    },
+    {
+      "header": "src/ReadOnlyLineEdit.h",
+      "cpps": 1
+    },
+    {
+      "header": "src/ReadOnlyPlainTextEdit.h",
+      "cpps": 1
+    },
+    {
+      "header": "src/RemoteAdvancedOptionWidget.h",
+      "cpps": 1
+    },
+    {
+      "header": "src/RemoteRepositoriesTableWidget.h",
+      "cpps": 1
+    },
+    {
+      "header": "src/RepositoryInfoFrame.h",
+      "cpps": 1
+    },
+    {
+      "header": "src/RepositoryUrlLineEdit.h",
+      "cpps": 1
+    },
+    {
+      "header": "src/SettingExampleForm.h",
+      "cpps": 1
+    },
+    {
+      "header": "src/SimpleImageWidget.h",
+      "cpps": 1
+    },
+    {
+      "header": "src/WorkingDirLineEdit.h",
+      "cpps": 1
+    },
+    {
+      "header": "src/coloredit/ColorEditWidget.h",
+      "cpps": 1
+    },
+    {
+      "header": "src/coloredit/ColorPreviewWidget.h",
+      "cpps": 1
+    },
+    {
+      "header": "src/coloredit/ColorSlider.h",
+      "cpps": 1
+    },
+    {
+      "header": "src/common/realpath.h",
+      "cpps": 1
+    },
+    {
+      "header": "src/common/q/DirIterator.h",
+      "cpps": 1
+    },
+    {
+      "header": "src/darktheme/DarkStylePlugin.h",
+      "cpps": 1
+    },
+    {
+      "header": "src/inet/curlclient.h",
+      "cpps": 1
+    },
+    {
+      "header": "src/process/src/BasicProcessPosix.h",
+      "cpps": 1
+    },
+    {
+      "header": "src/process/src/ProcessWin.h",
+      "cpps": 1
+    },
+    {
+      "header": "src/process/src/ProcessWinConPty.h",
+      "cpps": 1
+    },
+    {
+      "header": "src/process/src/ProcessWinConPtyWithWorker.h",
+      "cpps": 1
+    },
+    {
+      "header": "src/process/src/ProcessWinPty.h",
+      "cpps": 1
+    },
+    {
+      "header": "src/zip/zip.h",
+      "cpps": 1
+    }
+  ]
+}

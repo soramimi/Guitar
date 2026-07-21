@@ -1,9 +1,9 @@
 #include "SettingAiForm.h"
 #include "ui_SettingAiForm.h"
-#include <ai/GenerativeAI.h>
 #include "Logger.h"
-#include <common/q/helper.h>
 #include <QMessageBox>
+#include <ai/GenerativeAI.h>
+#include <common/q/helper.h>
 
 using ApiKeyFrom = AiApiKeys::KeyFrom;
 
@@ -266,11 +266,11 @@ void SettingAiForm::exchange(bool save)
 			*conf_item = form_item;
 		}
 
-		s->ai_model = GenerativeAI::Model(m->current_provider_id(), uri.string);
+		*s->ai_model = GenerativeAI::Model(m->current_provider_id(), uri.string);
 	} else { // 設定ファイル -> UI
 		ui->groupBox_generate_commit_message_by_ai->setChecked(s->generate_commit_message_with_ai);
 
-		GenerativeAI::Model const &model = s->ai_model;
+		GenerativeAI::Model const &model = *s->ai_model;
 
 		configureModel(model);
 

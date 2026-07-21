@@ -1,6 +1,5 @@
 #include "DialogHeaderFrame.h"
 #include "ApplicationGlobal.h"
-
 #include <QPainter>
 
 DialogHeaderFrame::DialogHeaderFrame(QWidget *parent)

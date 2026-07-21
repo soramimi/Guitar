@@ -1,13 +1,14 @@
 #include "JumpDialog.h"
 #include "ui_JumpDialog.h"
+// #include "ApplicationGlobal.h"
 #include "MyTableWidgetDelegate.h"
-#include "ApplicationGlobal.h"
-#include <common/joinpath.h>
-#include <common/misc.h>
 #include <MainWindow.h>
 #include <QClipboard>
 #include <QKeyEvent>
 #include <QPainter>
+#include <common/joinpath.h>
+#include <common/misc.h>
+#include <common/qmisc.h>
 #include <optional>
 
 namespace {

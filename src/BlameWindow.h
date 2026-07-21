@@ -1,8 +1,8 @@
+
 #ifndef BLAMEWINDOW_H
 #define BLAMEWINDOW_H
 
-#include "Git.h"
-
+#include "GitHash.h"
 #include <QDateTime>
 #include <QDialog>
 

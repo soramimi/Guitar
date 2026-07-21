@@ -77,3 +77,5 @@ subprojects/IncrementalSearchPlugin/mecab/mecab/src/mecab-dict-index
 subprojects/IncrementalSearchPlugin/mecab/mecab/src/mecab-system-eval
 subprojects/IncrementalSearchPlugin/mecab/mecab/src/mecab-test-gen
 docker/home/run.sh
+.kilo/
+debug/

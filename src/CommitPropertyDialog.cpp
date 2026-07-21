@@ -1,11 +1,10 @@
 #include "CommitPropertyDialog.h"
 #include "ui_CommitPropertyDialog.h"
-#include "ApplicationGlobal.h"
 #include "AvatarLoader.h"
 #include "MainWindow.h"
+#include "gpg.h"
 #include <common/misc.h>
 #include <common/q/helper.h>
-#include "gpg.h"
 
 struct CommitPropertyDialog::Private {
 	GitCommitItem commit;

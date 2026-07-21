@@ -1,9 +1,9 @@
 #include "TraceEventWriter.h"
-#include "ApplicationGlobal.h"
-#include <common/joinpath.h>
-#include <common/jstream.h>
+#include "TraceEventItem.h"
 #include <QDebug>
 #include <QFileInfo>
+#include <common/joinpath.h>
+#include <common/jstream.h>
 #include <thread>
 
 std::vector<std::thread::id> thread_ids;
@@ -33,7 +33,7 @@ std::string TraceEventWriter::escape(const std::string &s)
 	return std::string(v.begin(), v.end());
 }
 
-void TraceEventWriter::write(const Event &item, bool comma)
+void TraceEventWriter::write(const TraceEventItem &item, bool comma)
 {
 	if (!file_.isOpen()) return;
 
@@ -97,7 +97,7 @@ void TraceEventWriter::open(QString const &dir)
 
 	thread_ = std::thread([this](){
 		while (1) {
-			std::shared_ptr<Event> e;
+			std::shared_ptr<TraceEventItem> e;
 			{
 				std::unique_lock lock(mutex_);
 				cv_.wait(lock, [&](){ return interrupted_ || !queue_.empty(); });
@@ -114,7 +114,7 @@ void TraceEventWriter::open(QString const &dir)
 		}
 	});
 
-	Event event;
+	TraceEventItem event;
 	event.name = "Application";
 	event.phase = PHASE_BEGIN;
 
@@ -134,7 +134,7 @@ void TraceEventWriter::close()
 	interrupted_ = false;
 
 	if (file_.isOpen()) {
-		Event event;
+		TraceEventItem event;
 		event.name = "Application";
 		event.category = "";
 		event.phase = PHASE_END;
@@ -152,9 +152,9 @@ void TraceEventWriter::close()
 	}
 }
 
-void TraceEventWriter::put(Event event)
+void TraceEventWriter::put(TraceEventItem const &event)
 {
-	std::shared_ptr<Event> event_ptr = std::make_shared<Event>(std::move(event));
+	std::shared_ptr<TraceEventItem> event_ptr = std::make_shared<TraceEventItem>(event);
 	{
 		std::lock_guard lock(mutex_);
 		event_ptr->timestamp = ts();

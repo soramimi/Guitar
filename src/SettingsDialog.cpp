@@ -14,7 +14,6 @@
 #include "SettingAiForm.h"
 #include "SettingWindowsForm.h"
 
-#include <common/misc.h>
 #include <QFileDialog>
 
 static int page_number = 0;

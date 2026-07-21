@@ -1,15 +1,17 @@
+
 #ifndef ABSTRACTGITSESSION_H
 #define ABSTRACTGITSESSION_H
 
-#include <vector>
+#include "GitTypes.h"
 #include <memory>
 #include <optional>
-// #include <QString>
-#include "GitObjectManager.h"
-#include "GitTypes.h"
+#include <string>
+#include <vector>
 
+class GitResult;
 class GitCommandCache;
 class AbstractPtyProcess;
+class GitObjectCache;
 
 class AbstractGitSession {
 	friend class GitRunner;

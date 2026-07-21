@@ -1,9 +1,17 @@
+
 #ifndef GIT_H
 #define GIT_H
 
+#include "GitSubmodule.h"
 #include "AbstractGitSession.h"
-#include "GitTypes.h"
-#include <zlib.h>
+#include "GitCloneData.h"
+#include "GitRemote.h"
+#include "GitResult.h"
+#include "GitUser.h"
+#include <optional>
+#include <q/DateTime.h>
+
+struct GitDiffOption;
 
 class GitContext {
 public:
@@ -40,10 +48,7 @@ public:
 		return GitSignatureGrade::Unknown;
 	}
 
-	static bool isUncommitted(GitCommitItem const &item)
-	{
-		return !item.commit_id.isValid();
-	}
+	static bool isUncommitted(GitCommitItem const &item);
 
 private:
 	std::vector<std::string> make_branch_list_(const std::optional<GitResult> &result);

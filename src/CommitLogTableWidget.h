@@ -1,17 +1,16 @@
 #ifndef COMMITLOGTABLEWIDGET_H
 #define COMMITLOGTABLEWIDGET_H
 
+#include "../subprojects/IncrementalSearchPlugin/src/IncrementalSearchPlugin.h"
 #include "CommitRecord.h"
-#include "Git.h"
 #include "IncrementalSearchHelper.h"
 #include "RepositoryTreeWidget.h"
-#include "../subprojects/IncrementalSearchPlugin/src/IncrementalSearchPlugin.h"
 #include <QTableWidget>
 #include <memory>
 
+struct GitCommitItem;
 class MainWindow;
 class CommitLogTableWidget;
-
 
 class CommitLogTableModel : public QAbstractItemModel {
 	friend class CommitLogTableWidgetDelegate;

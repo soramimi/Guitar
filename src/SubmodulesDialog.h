@@ -1,8 +1,10 @@
+
 #ifndef SUBMODULESDIALOG_H
 #define SUBMODULESDIALOG_H
 
+#include "GitCommitItem.h"
+#include "GitSubmodule.h"
 #include <QDialog>
-#include "Git.h"
 #include <vector>
 
 namespace Ui {

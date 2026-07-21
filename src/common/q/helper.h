@@ -2,9 +2,9 @@
 #define QHELPER_H
 
 #include <QString>
+#include <QStringList>
 #include <string_view>
 #include <vector>
-
 
 class QS : public QString {
 public:

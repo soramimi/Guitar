@@ -1,4 +1,3 @@
-#include "Git.h"
 #include "q/FileInfo.h"
 #include "str.h"
 #include <common/joinpath.h>

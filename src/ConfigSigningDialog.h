@@ -1,9 +1,8 @@
 #ifndef CONFIGSIGNINGDIALOG_H
 #define CONFIGSIGNINGDIALOG_H
 
-#include "Git.h"
 #include "gpg.h"
-
+#include "Git.h"
 #include <QDialog>
 
 class MainWindow;

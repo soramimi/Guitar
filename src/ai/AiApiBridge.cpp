@@ -1,8 +1,15 @@
+
 #include <ai/AiApiBridge.h>
-#include "Logger.h"
 #include <ai/CommitMessageGenerator.h>
+#include "Logger.h"
 #include <common/jstream.h>
+#include <common/misc.h>
 #include <inet/inetclient.h>
+#include <subprojects/FileTypePlugin/src/FileTypeInterface.h>
+#include <subprojects/IncrementalSearchPlugin/src/IncrementalSearch.h>
+#include <subprojects/IncrementalSearchPlugin/src/IncrementalSearchInterface.h>
+#include <subprojects/OnePasswordPlugin/src/OnePassword.h>
+#include <subprojects/OnePasswordPlugin/src/OnePasswordInterface.h>
 
 #ifdef APP_GUITAR
 #include <QMessageBox>
@@ -33,7 +40,7 @@ std::shared_ptr<AbstractInetClient> global_inet_client()
 AiApiBridge::AiApiBridge()
 	: m(new Private)
 {
-	set_ai_model(global->appsettings.ai_model);
+	set_ai_model(*global->appsettings.ai_model);
 }
 #else
 GenerativeAI::Model global_appsettings_ai_model();

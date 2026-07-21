@@ -1,26 +1,19 @@
+
 #ifndef TRACEEVENTWRITER_H
 #define TRACEEVENTWRITER_H
 
-#include <chrono>
 #include <QFile>
-#include <mutex>
-#include <thread>
+#include <chrono>
 #include <condition_variable>
 #include <deque>
 #include <memory>
+#include <mutex>
+#include <thread>
+
+struct TraceEventItem;
 
 class TraceEventWriter {
 public:
-	struct Event {
-		std::string name;
-		std::string category;
-		char phase = 0;
-		uint64_t timestamp = 0;
-		int64_t duration = 0; // only for complete events
-		int32_t pid = 0;
-		int32_t tid = 0;
-		std::string args_comment;
-	};
 	enum Phase {
 		PHASE_BEGIN = 'B',
 		PHASE_END = 'E',
@@ -32,18 +25,18 @@ private:
 	std::thread thread_;
 	std::condition_variable cv_;
 	bool interrupted_ = false;
-	std::deque<std::shared_ptr<Event>> queue_;
+	std::deque<std::shared_ptr<TraceEventItem>> queue_;
 	QFile file_;
 	std::chrono::steady_clock::time_point start_time_;
 	uint64_t ts();
 	std::string escape(std::string const &s);
-	void write(Event const &item, bool comma);
+	void write(TraceEventItem const &item, bool comma);
 public:
 	TraceEventWriter();
 	~TraceEventWriter();
 	void open(const QString &dir);
 	void close();
-	void put(Event event);
+	void put(const TraceEventItem &event);
 };
 
 #endif // TRACEEVENTWRITER_H

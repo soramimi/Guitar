@@ -1,14 +1,14 @@
 #include "BlameWindow.h"
 #include "ui_BlameWindow.h"
-#include "ApplicationGlobal.h"
 #include "CommitPropertyDialog.h"
 #include "Git.h"
 #include "MainWindow.h"
-#include <common/misc.h>
-#include <common/str.h>
-#include <common/q/helper.h>
 #include <QMenu>
 #include <QToolTip>
+#include <common/misc.h>
+#include <common/q/helper.h>
+#include <common/qmisc.h>
+#include <common/str.h>
 
 enum {
 	CommidIdRole = Qt::UserRole,

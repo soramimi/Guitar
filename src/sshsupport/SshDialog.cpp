@@ -7,7 +7,7 @@
 #include <QDebug>
 #include <QKeyEvent>
 #include <QDir>
-#include "ApplicationGlobal.h"
+// #include "ApplicationGlobal.h"
 
 static inline int x_stricmp(char const *s1, char const *s2)
 {

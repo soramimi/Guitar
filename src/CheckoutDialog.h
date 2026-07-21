@@ -2,7 +2,6 @@
 #define CHECKOUTDIALOG_H
 
 #include <QDialog>
-#include "Git.h"
 
 namespace Ui {
 class CheckoutDialog;

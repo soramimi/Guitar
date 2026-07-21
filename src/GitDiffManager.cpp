@@ -1,12 +1,13 @@
 
 #include "GitDiffManager.h"
-#include "ApplicationGlobal.h"
+#include "GitObjectManager.h"
 #include "MainWindow.h"
-#include <common/fmt.h>
-#include <common/joinpath.h>
-#include <common/q/helper.h>
 #include <QDebug>
 #include <QThread>
+#include <common/fmt.h>
+#include <common/joinpath.h>
+#include <common/misc.h>
+#include <common/q/helper.h>
 
 // PathToIdMap
 

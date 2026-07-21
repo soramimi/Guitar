@@ -1,10 +1,11 @@
+
 #ifndef REPOSITORYPROPERTYDIALOG_H
 #define REPOSITORYPROPERTYDIALOG_H
 
+#include "GitRunner.h"
 #include "RepositoryInfo.h"
 #include "EditRemoteDialog.h"
 #include <QDialog>
-#include "Git.h"
 
 class MainWindow;
 class QTableWidget;

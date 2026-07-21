@@ -1,5 +1,6 @@
-#include "GitRunner.h"
 #include "Git.h"
+#include "GitObjectManager.h"
+#include "GitRunner.h"
 #include "TraceLogger.h"
 #include <common/q/helper.h>
 

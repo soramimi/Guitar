@@ -1,6 +1,6 @@
+
 #include "ReadOnlyLineEdit.h"
 #include "ApplicationGlobal.h"
-
 #include <QPainter>
 
 ReadOnlyLineEdit::ReadOnlyLineEdit(QWidget *parent)

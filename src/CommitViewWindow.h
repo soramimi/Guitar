@@ -1,11 +1,11 @@
+
 #ifndef COMMITVIEWWINDOW_H
 #define COMMITVIEWWINDOW_H
-
-#include "Git.h"
 
 #include <QDialog>
 
 class MainWindow;
+struct GitCommitItem;
 
 namespace Ui {
 class CommitViewWindow;

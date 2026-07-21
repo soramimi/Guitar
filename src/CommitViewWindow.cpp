@@ -1,13 +1,12 @@
 #include "CommitViewWindow.h"
 #include "ui_CommitViewWindow.h"
-#include "ApplicationGlobal.h"
-#include <common/q/helper.h>
-#include <QMenu>
+#include "GitCommitItem.h"
 #include "MainWindow.h"
+#include <QMenu>
+#include <common/q/helper.h>
 
 struct CommitViewWindow::Private {
 	GitCommitItem const *commit = nullptr;
-	// std::vector<GitDiff> diff_list.list_;
 	MainWindow::DiffResult diff_list;
 };
 

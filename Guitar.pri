@@ -117,6 +117,7 @@ macx {
 #
 
 SOURCES += \
+	$$PWD/src/GitDiff.cpp \
 	$$PWD/src/MyProcess.cpp \
 	$$SRC/CommitRecord.cpp \
 	$$SRC/IncrementalSearchHelper.cpp \
@@ -301,6 +302,20 @@ SOURCES += \
 	$$SRC/zip/zipextract.cpp
 
 HEADERS += \
+	$$PWD/src/GitCloneData.h \
+	$$PWD/src/GitCommitItem.h \
+	$$PWD/src/GitDiff.h \
+	$$PWD/src/GitHash.h \
+	$$PWD/src/GitObject.h \
+	$$PWD/src/GitObjectData.h \
+	$$PWD/src/GitRemote.h \
+	$$PWD/src/GitResult.h \
+	$$PWD/src/GitSubmodule.h \
+	$$PWD/src/GitUser.h \
+	$$PWD/src/MainWindowTypes.h \
+	$$PWD/src/ProcessStatus.h \
+	$$PWD/src/TraceEventItem.h \
+	$$PWD/src/main.h \
 	$$SRC/CommitRecord.h \
 	$$SRC/IncrementalSearchHelper.h \
 	$$SRC/LoadPlugin.h \

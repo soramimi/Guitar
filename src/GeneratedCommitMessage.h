@@ -1,6 +1,7 @@
 #ifndef GENERATEDCOMMITMESSAGE_H
 #define GENERATEDCOMMITMESSAGE_H
 
+#include <QMetaType>
 #include <QString>
 #include <ai/CommitMessageGenerator.h>
 

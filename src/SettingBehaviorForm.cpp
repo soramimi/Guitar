@@ -1,7 +1,6 @@
 #include "ConfigSigningDialog.h"
 #include "SettingBehaviorForm.h"
 #include "ui_SettingBehaviorForm.h"
-#include <common/misc.h>
 #include <QFileDialog>
 
 SettingBehaviorForm::SettingBehaviorForm(QWidget *parent) :

@@ -1,22 +1,25 @@
-#include "ApplicationGlobal.h"
 #include "IncrementalSearchHelper.h"
+#include "Logger.h"
 #include "MainWindow.h"
 #include "MemoryReader.h"
 #include "SimpleQtIO.h"
 #include "TraceEventWriter.h"
+#include "ai/GenerativeAI.h"
 #include "gzip.h"
-#include <QBuffer>
-#include <QFileIconProvider>
-#include <memory>
-#include <QDebug>
+#include "main.h"
 #include <QApplication>
+#include <QBuffer>
+#include <QDebug>
+#include <QFileIconProvider>
 #include <QListWidgetItem>
 #include <QThread>
-#include "Logger.h"
-#include "../subprojects/IncrementalSearchPlugin/src/MyMecab.h"
+#include <common/misc.h>
+#include <memory>
 
 namespace ver {
 #include "../version.c"
+
+#include "TraceEventItem.h"
 }
 
 struct ApplicationGlobal::Private {
@@ -73,7 +76,7 @@ void ApplicationGlobal::restart_trace_logger()
 	open_trace_logger();
 }
 
-void ApplicationGlobal::put_trace_event(TraceEventWriter::Event const &event)
+void ApplicationGlobal::put_trace_event(TraceEventItem const &event)
 {
 	m->trace_event_logger.put(event);
 }
@@ -271,3 +274,13 @@ std::string ApplicationGlobal::mimetype_by_file(const std::string &path)
 	return mimetype_by_file(path.c_str());
 }
 
+
+QString AccountProfile::text() const
+{
+	return QString("%1 <%2>").arg(name).arg(email);
+}
+
+AccountProfile::operator bool() const
+{
+	return misc::isValidMailAddress(email.toStdString());
+}

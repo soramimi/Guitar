@@ -1,9 +1,27 @@
 #include "CommitDetailGetter.h"
 #include "ApplicationGlobal.h"
+#include "GitRunner.h"
+
+struct CommitDetailGetter::Private {
+	std::mutex mutex;
+	std::condition_variable condition;
+	std::vector<std::thread> threads;
+	bool interrupted = false;
+	GitRunner git;
+	std::vector<CommitDetailGetter::Request> requests;
+	std::map<GitHash, CommitDetailGetter::Data> cache;
+};
+
+
+CommitDetailGetter::CommitDetailGetter()
+	: m(new Private)
+{
+}
 
 CommitDetailGetter::~CommitDetailGetter()
 {
 	stop();
+	delete m;
 }
 
 /**
@@ -12,26 +30,26 @@ CommitDetailGetter::~CommitDetailGetter()
  *
  * コミットの詳細情報を取得するためのスレッドを開始する
  */
-void CommitDetailGetter::start(GitRunner git)
+void CommitDetailGetter::start(const GitRunner &git)
 {
 	stop();
-	interrupted_ = false;
+	m->interrupted = false;
 	
-	git_ = git;
+	m->git = git;
 	
-	threads_.clear();
-	threads_.resize(num_threads);
-	for (size_t i = 0; i < threads_.size(); i++) {
-		threads_[i] = std::thread([this](){
+	m->threads.clear();
+	m->threads.resize(num_threads);
+	for (size_t i = 0; i < m->threads.size(); i++) {
+		m->threads[i] = std::thread([this](){
 			while (1) {
 				Request item;
 				{
-					std::unique_lock lock(mutex_);
-					if (interrupted_) return;
+					std::unique_lock lock(m->mutex);
+					if (m->interrupted) return;
 
 					auto NextQuery = [&](){
-						for (size_t i = requests_.size(); i > 0; i--) {
-							Request *r = &requests_[i - 1];
+						for (size_t i = m->requests.size(); i > 0; i--) {
+							Request *r = &m->requests[i - 1];
 							if (!r->done && !r->busy) {
 								r->busy = true;
 								item = *r;
@@ -42,13 +60,13 @@ void CommitDetailGetter::start(GitRunner git)
 
 					NextQuery();
 					if (!item.id) {
-						condition_.wait(lock);
-						if (interrupted_) return;
+						m->condition.wait(lock);
+						if (m->interrupted) return;
 						NextQuery();
 					}
 				}
 				if (item.id) {
-					auto c = git_.log_signature(item.id);
+					auto c = m->git.log_signature(item.id);
 					if (c) {
 						GitCommitItem const &commit = *c;
 						item.data.sign_verify = commit.sign.verify;
@@ -57,13 +75,13 @@ void CommitDetailGetter::start(GitRunner git)
 					item.busy = false;
 					bool em = false;
 					{
-						std::lock_guard lock(mutex_);
-						if (interrupted_) return;
-						for (size_t i = 0; i < requests_.size(); i++) {
-							if (item.id == requests_[i].id) {
-								requests_.erase(requests_.begin() + i);
-								requests_.push_back(item);
-								cache_[item.id] = item.data;
+						std::lock_guard lock(m->mutex);
+						if (m->interrupted) return;
+						for (size_t i = 0; i < m->requests.size(); i++) {
+							if (item.id == m->requests[i].id) {
+								m->requests.erase(m->requests.begin() + i);
+								m->requests.push_back(item);
+								m->cache[item.id] = item.data;
 								em = true;
 								break;
 							}
@@ -86,18 +104,18 @@ void CommitDetailGetter::start(GitRunner git)
 void CommitDetailGetter::stop()
 {
 	{
-		std::lock_guard lock(mutex_);
-		interrupted_ = true;
-		condition_.notify_all();
-		requests_.clear();
-		cache_.clear();
+		std::lock_guard lock(m->mutex);
+		m->interrupted = true;
+		m->condition.notify_all();
+		m->requests.clear();
+		m->cache.clear();
 	}
-	for (size_t i = 0; i < threads_.size(); i++) {
-		if (threads_[i].joinable()) {
-			threads_[i].join();
+	for (size_t i = 0; i < m->threads.size(); i++) {
+		if (m->threads[i].joinable()) {
+			m->threads[i].join();
 		}
 	}
-	threads_.clear();
+	m->threads.clear();
 }
 
 /**
@@ -113,24 +131,24 @@ void CommitDetailGetter::stop()
 CommitDetailGetter::Data CommitDetailGetter::_query(GitHash const &id, bool request_if_not_found, bool lock)
 {
 	if (lock) {
-		std::lock_guard l(mutex_);
-		if (interrupted_) return {};
+		std::lock_guard l(m->mutex);
+		if (m->interrupted) return {};
 		return _query(id, request_if_not_found, false);
 	}
 	if (id) {
-		auto it = cache_.find(id);
-		if (it != cache_.end()) {
+		auto it = m->cache.find(id);
+		if (it != m->cache.end()) {
 			return it->second;
 		}
 
 		if (request_if_not_found) {
-			for (size_t i = 0; i < requests_.size(); i++) {
-				auto item = requests_[i];
+			for (size_t i = 0; i < m->requests.size(); i++) {
+				auto item = m->requests[i];
 				if (item.id == id) {
-					requests_.erase(requests_.begin() + i);
-					requests_.push_back(item);
+					m->requests.erase(m->requests.begin() + i);
+					m->requests.push_back(item);
 					if (item.done) {
-						cache_[item.id] = item.data;
+						m->cache[item.id] = item.data;
 						return item.data;
 					}
 					return {};
@@ -139,25 +157,25 @@ CommitDetailGetter::Data CommitDetailGetter::_query(GitHash const &id, bool requ
 
 			Request item;
 			item.id = id;
-			requests_.push_back(item);
+			m->requests.push_back(item);
 
 			const size_t MAX = std::min(1000, global->appsettings.maximum_number_of_commit_item_acquisitions);
 
-			size_t n = requests_.size();
+			size_t n = m->requests.size();
 			if (n > MAX) {
 				n -= MAX;
 
 				for (size_t i = 0; i < n; i++) {
-					auto it = cache_.find(requests_[i].id);
-					if (it != cache_.end()) {
-						cache_.erase(it);
+					auto it = m->cache.find(m->requests[i].id);
+					if (it != m->cache.end()) {
+						m->cache.erase(it);
 					}
 				}
 
-				requests_.erase(requests_.begin(), requests_.begin() + n);
+				m->requests.erase(m->requests.begin(), m->requests.begin() + n);
 			}
 
-			condition_.notify_all();
+			m->condition.notify_all();
 		}
 	}
 	return {};

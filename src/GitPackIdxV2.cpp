@@ -1,8 +1,8 @@
+#include "GitHash.h"
 #include "GitPackIdxV2.h"
 #include <QCryptographicHash>
 #include <QDebug>
 #include <QFile>
-
 
 std::string GitPackIdxItem::string(const GitPackIdxItem &item)
 {

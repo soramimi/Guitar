@@ -1,6 +1,5 @@
 #include "AddRepositoryDialog.h"
 #include "ui_AddRepositoryDialog.h"
-#include "ApplicationGlobal.h"
 #include "Git.h"
 #include "MainWindow.h"
 #include "ManageWorkingFolderDialog.h"

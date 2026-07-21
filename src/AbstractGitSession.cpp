@@ -1,6 +1,8 @@
 #include "AbstractGitSession.h"
 #include "GitCommandCache.h"
+#include "GitObjectManager.h"
 #include <common/joinpath.h>
+#include <mutex>
 
 struct AbstractGitSession::GitCache {
 	std::mutex mutex;

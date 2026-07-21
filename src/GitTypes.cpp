@@ -1,6 +1,12 @@
+
 #include "GitTypes.h"
+#include "GitCommitItem.h"
+#include "GitHash.h"
+#include "GitUser.h"
 #include <common/crc32.h>
+#include <common/misc.h>
 #include <common/q/helper.h>
+#include <deque>
 #include <set>
 
 class Latin1View {
@@ -25,6 +31,14 @@ public:
 	}
 };
 
+// GitUser
+
+GitUser::operator bool() const
+{
+	return misc::isValidMailAddress(email);
+}
+
+// GitHash
 
 GitHash::GitHash()
 {
@@ -178,50 +192,81 @@ std::string gitTrimPath(std::string const &s)
 	return {left, size_t(right - left)};
 }
 
-//
-
-GitDiff::GitDiff(std::string const &id, std::string const &path, std::string const &mode)
-{
-	makeForSingleFile(this, std::string(GIT_ID_LENGTH, '0'), id, path, mode);
-}
-
-bool GitDiff::isSubmodule() const
-{
-	return mode == "160000";
-}
-
 // GitCommitItemList
+
+struct GitCommitItemList::Private {
+	struct D {
+		std::vector<GitCommitItem> list;
+		mutable std::vector<GitCommitItem *> ptrs;
+		std::map<GitHash, size_t> map;
+	} d;
+};
+
+GitCommitItemList::~GitCommitItemList()
+{
+	delete m;
+}
+
+GitCommitItemList::GitCommitItemList()
+	: m(new Private)
+{
+}
+
+GitCommitItemList::GitCommitItemList(const GitCommitItemList &r)
+	: m(new Private)
+{
+	assign(r);
+}
+
+GitCommitItemList::GitCommitItemList(GitCommitItemList &&r)
+	: m(new Private)
+{
+	m->d = std::move(r.m->d);
+}
+
+GitCommitItemList::GitCommitItemList(std::vector<GitCommitItem> &&list)
+	: m(new Private)
+{
+	setList(std::move(list));
+}
 
 void GitCommitItemList::_update_ptrs()
 {
-	if (d.ptrs.empty()) {
-		const size_t N = d.list.size();
-		d.ptrs.resize(N);
+	if (m->d.ptrs.empty()) {
+		const size_t N = m->d.list.size();
+		m->d.ptrs.resize(N);
 		for (size_t i = 0; i < N; i++) {
-			d.ptrs[i] = &d.list[i];
+			m->d.ptrs[i] = &m->d.list[i];
 		}
 	}
 }
 
+void GitCommitItemList::assign(const GitCommitItemList &r)
+{
+	m->d.list = r.m->d.list;
+	m->d.ptrs.clear();
+	m->d.map = r.m->d.map;
+}
+
 void GitCommitItemList::setList(std::vector<GitCommitItem> &&list)
 {
-	d.list = std::move(list);
-	d.ptrs.clear();
+	m->d.list = std::move(list);
+	m->d.ptrs.clear();
 }
 
 size_t GitCommitItemList::size() const
 {
-	return d.list.size();
+	return m->d.list.size();
 }
 
 GitCommitItem &GitCommitItemList::_at(size_t i)
 {
-	return d.list.at(i);
+	return m->d.list.at(i);
 }
 
 const GitCommitItem &GitCommitItemList::at(size_t i) const
 {
-	return d.list.at(i);
+	return m->d.list.at(i);
 }
 
 const GitCommitItem &GitCommitItemList::operator [](size_t i) const
@@ -231,18 +276,18 @@ const GitCommitItem &GitCommitItemList::operator [](size_t i) const
 
 bool GitCommitItemList::empty() const
 {
-	return d.list.empty();
+	return m->d.list.empty();
 }
 
 void GitCommitItemList::push_front(const GitCommitItem &item)
 {
-	d.list.insert(d.list.begin(), item);
-	d.ptrs.clear();
+	m->d.list.insert(m->d.list.begin(), item);
+	m->d.ptrs.clear();
 }
 
 std::string GitCommitItemList::previousMessage() const
 {
-	for (GitCommitItem const &item : d.list) {
+	for (GitCommitItem const &item : m->d.list) {
 		if (item.commit_id.isValid()) {
 			return item.message;
 		}
@@ -252,17 +297,17 @@ std::string GitCommitItemList::previousMessage() const
 
 void GitCommitItemList::updateIndex()
 {
-	d.map.clear();
-	for (size_t i = 0; i < d.list.size(); i++) {
-		d.map[d.list[i].commit_id] = i;
+	m->d.map.clear();
+	for (size_t i = 0; i < m->d.list.size(); i++) {
+		m->d.map[m->d.list[i].commit_id] = i;
 	}
 }
 
 int GitCommitItemList::find_index(const GitHash &id) const
 {
 	if (id.isValid()) {
-		auto it = d.map.find(id);
-		if (it != d.map.end()) {
+		auto it = m->d.map.find(id);
+		if (it != m->d.map.end()) {
 			return (int)it->second;
 		}
 	}
@@ -273,7 +318,7 @@ int GitCommitItemList::find_index(const GitHash &id) const
 // {
 // 	// int index = find_index(id);
 // 	// if (index >= 0) {
-// 	// 	return &d.list[index];
+// 	// 	return &m->d.list[index];
 // 	// }
 // 	return nullptr;
 // }
@@ -282,16 +327,28 @@ const GitCommitItem *GitCommitItemList::find(const GitHash &id) const
 {
 	int index = find_index(id);
 	if (index >= 0) {
-		return &d.list[index];
+		return &m->d.list[index];
 	}
 	return nullptr;
+}
+
+std::span<const GitCommitItem *const> GitCommitItemList::items() const
+{
+	const_cast<GitCommitItemList *>(this)->_update_ptrs();
+	return std::span<GitCommitItem const *const>(m->d.ptrs.data(), m->d.ptrs.size());
+}
+
+std::span<const GitCommitItem *const> GitCommitItemList::c_items() const
+{
+	const_cast<GitCommitItemList *>(this)->_update_ptrs();
+	return std::span<GitCommitItem const *const>(m->d.ptrs.data(), m->d.ptrs.size());
 }
 
 void GitCommitItemList::fixCommitLogOrder()
 {
 	std::vector<GitCommitItem> list1;
 	
-	std::swap(list1, d.list);
+	std::swap(list1, m->d.list);
 
 	const size_t count = list1.size();
 
@@ -368,7 +425,7 @@ void GitCommitItemList::updateCommitGraph()
 			UNKNOWN = 0,
 			KNOWN = 1,
 		};
-		for (GitCommitItem &item : this->d.list) {
+		for (GitCommitItem &item : this->m->d.list) {
 			item.marker_depth = UNKNOWN;
 		}
 		// コミットハッシュを検索して、親コミットのインデックスを求める
@@ -451,7 +508,7 @@ void GitCommitItemList::updateCommitGraph()
 			}
 		}
 		// 線情報をクリア
-		for (GitCommitItem &item : this->d.list) {
+		for (GitCommitItem &item : this->m->d.list) {
 			item.marker_depth = -1;
 			item.parent_lines.clear();
 		}
@@ -598,3 +655,4 @@ DONE:;
 		}
 	}
 }
+

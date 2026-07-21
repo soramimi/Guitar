@@ -1,7 +1,6 @@
 #include "SetGlobalUserDialog.h"
 #include "ui_SetGlobalUserDialog.h"
-
-#include <common/misc.h>
+#include <common/qmisc.h>
 
 SetGlobalUserDialog::SetGlobalUserDialog(QWidget *parent) :
 	QDialog(parent),

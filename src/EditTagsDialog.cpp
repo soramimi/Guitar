@@ -1,6 +1,5 @@
 #include "EditTagsDialog.h"
 #include "ui_EditTagsDialog.h"
-#include "ApplicationGlobal.h"
 #include "InputNewTagDialog.h"
 #include "MainWindow.h"
 #include <common/q/helper.h>

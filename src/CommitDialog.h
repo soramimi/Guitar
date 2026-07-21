@@ -2,7 +2,6 @@
 #define COMMITDIALOG_H
 
 #include "GenerateCommitMessageThread.h"
-#include "Git.h"
 #include "gpg.h"
 
 #include <QDialog>

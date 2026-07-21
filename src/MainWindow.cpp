@@ -1,8 +1,8 @@
 #include "MainWindow.h"
+#include "ui_MainWindow.h"
 #include "AboutDialog.h"
 #include "AddRepositoriesCollectivelyDialog.h"
 #include "AddRepositoryDialog.h"
-#include "ApplicationGlobal.h"
 #include "AreYouSureYouWantToContinueConnectingDialog.h"
 #include "BlameWindow.h"
 #include "CheckoutDialog.h"
@@ -26,17 +26,17 @@
 #include "GitConfigGlobalAddSafeDirectoryDialog.h"
 #include "GitDiffManager.h"
 #include "GitHubAPI.h"
+#include "GitObjectManager.h"
 #include "GitProcessThread.h"
 #include "JumpDialog.h"
 #include "LineEditDialog.h"
 #include "MergeDialog.h"
+#include "MyProcess.h"
 #include "MySettings.h"
 #include "OverrideWaitCursor.h"
 #include "Profile.h"
-#include "ProgressWidget.h"
 #include "PushDialog.h"
 #include "ReflogWindow.h"
-#include "RepositoryModel.h"
 #include "RepositoryPropertyDialog.h"
 #include "SelectCommandDialog.h"
 #include "SetGlobalUserDialog.h"
@@ -48,19 +48,20 @@
 #include "SubmodulesDialog.h"
 #include "Terminal.h"
 #include "TextEditDialog.h"
-#include "UserEvent.h"
+#include "TraceLogger.h"
 #include "Util.h"
 #include "WelcomeWizardDialog.h"
+#include "common/misc.h"
+#include "common/qmisc.h"
+#include "GitObjectData.h"
+#include "gpg.h"
+#include "main.h"
 #include "platform.h"
-#include "ui_MainWindow.h"
-#include <QBuffer>
+#include <AbstractProcess.h>
 #include <QClipboard>
-#include <QDebug>
 #include <QDesktopServices>
 #include <QDir>
 #include <QDirIterator>
-#include <QElapsedTimer>
-#include <QFile>
 #include <QFileDialog>
 #include <QFontDatabase>
 #include <QMessageBox>
@@ -70,18 +71,14 @@
 #include <QShortcut>
 #include <QStandardPaths>
 #include <QTimer>
-#include <ai/AiApiBridge.h>
-#include <cctype>
+#include <ai/CommitMessageGenerator.h>
 #include <common/fmt.h>
 #include <common/joinpath.h>
-#include <common/jstream.h>
-#include <common/misc.h>
 #include <common/npos.h>
 #include <common/q/helper.h>
 #include <common/str.h>
-#include <fcntl.h>
-#include <sys/stat.h>
-#include <variant>
+#include <map>
+#include <subprojects/OnePasswordPlugin/src/OnePassword.h>
 
 #ifdef UNSAFE_ENABLED
 #include "sshsupport/ConfirmRemoteSessionDialog.h"
@@ -364,7 +361,7 @@ MainWindow::MainWindow(QWidget *parent)
 
 	ui->action_sidebar->setChecked(true);
 
-	showFileList(FileListType::MessagePanel);
+	showFileList(MainWindowFileListType::MessagePanel);
 
 	ui->action_restart_trace_logger->setVisible(global->appsettings.enable_trace_log);
 
@@ -1026,7 +1023,7 @@ void MainWindow::onShowStatusInfo(StatusInfo const &info)
 			progress_widget()->setText(info.message_->text);
 		}
 		progress_widget()->setProgress(*info.progress_);
-		internalShowPanel(FileListType::MessagePanel);
+		internalShowPanel(MainWindowFileListType::MessagePanel);
 	} else {
 		m->background_process_work_in_progress = false;
 		progress_widget()->clear();
@@ -3791,7 +3788,7 @@ bool MainWindow::isRepositoryOpened() const
  * @param data
  * @return
  */
-QListWidgetItem *MainWindow::newListWidgetFileItem(MainWindow::ObjectData const &data)
+QListWidgetItem *MainWindow::newListWidgetFileItem(const GitObjectData &data)
 {
 	const bool issubmodule { data.submod }; // サブモジュール
 
@@ -3826,7 +3823,7 @@ QListWidgetItem *MainWindow::newListWidgetFileItem(MainWindow::ObjectData const 
  * @param diff_list
  * @param fn_add_item
  */
-void MainWindow::addDiffItems(std::span<GitDiff const *> diff_list, const std::function<void(ObjectData const &data)> &fn_add_item)
+void MainWindow::addDiffItems(std::span<GitDiff const *> diff_list, const std::function<void (const GitObjectData &)> &fn_add_item)
 {
 	for (size_t idiff = 0; idiff < diff_list.size(); idiff++) {
 		GitDiff const *diff = diff_list[idiff];
@@ -3856,7 +3853,7 @@ void MainWindow::addDiffItems(std::span<GitDiff const *> diff_list, const std::f
 			break;
 		}
 
-		ObjectData data;
+		GitObjectData data;
 		data.id = diff->blob.b_id_or_path;
 		data.path = diff->path;
 		data.submod = diff->b_submodule.item;
@@ -4225,22 +4222,22 @@ void MainWindow::setupAddFileObjectData()
 	connect(this, &MainWindow::signalAddFileObjectData, this, &MainWindow::onAddFileObjectData);
 }
 
-void MainWindow::internalShowPanel(FileListType file_list_type)
+void MainWindow::internalShowPanel(MainWindowFileListType file_list_type)
 {
 	switch (file_list_type) {
-	case FileListType::MessagePanel:
+	case MainWindowFileListType::MessagePanel:
 		ui->stackedWidget_filelist->setCurrentWidget(ui->page_message_panel);
 		break;
-	case FileListType::SingleList:
+	case MainWindowFileListType::SingleList:
 		ui->stackedWidget_filelist->setCurrentWidget(ui->page_files); // 1列表示
 		break;
-	case FileListType::SideBySide:
+	case MainWindowFileListType::SideBySide:
 		ui->stackedWidget_filelist->setCurrentWidget(ui->page_uncommited); // 2列表示
 		break;
 	}
 }
 
-void MainWindow::showFileList(FileListType files_list_type)
+void MainWindow::showFileList(MainWindowFileListType files_list_type)
 {
 	emit sigShowFileList(files_list_type);
 }
@@ -4249,9 +4246,9 @@ void MainWindow::onAddFileObjectData(MainWindowExchangeData const &data)
 {
 	clearFileList();
 
-	std::vector<MainWindow::ObjectData> objects = data.object_data;
-	std::sort(objects.begin(), objects.end(), [](ObjectData const &a, ObjectData const &b) {
-		auto Compare = [](ObjectData const &a, ObjectData const &b){
+	std::vector<GitObjectData> objects = data.object_data;
+	std::sort(objects.begin(), objects.end(), [](GitObjectData const &a, GitObjectData const &b) {
+		auto Compare = [](GitObjectData const &a, GitObjectData const &b){
 			if (!a.isUntracked() && b.isUntracked()) return -1;
 			if (a.isUntracked() && !b.isUntracked()) return 1;
 			return misc::stricmp(a.path, b.path);
@@ -4259,14 +4256,14 @@ void MainWindow::onAddFileObjectData(MainWindowExchangeData const &data)
 		return Compare(a, b) < 0;
 	});
 
-	for (ObjectData const &obj : objects) {
+	for (GitObjectData const &obj : objects) {
 		QListWidgetItem *item = newListWidgetFileItem(obj);
 		showFileList(data.files_list_type);
 		switch (data.files_list_type) {
-		case FileListType::SingleList:
+		case MainWindowFileListType::SingleList:
 			ui->listWidget_files->addItem(item);
 			break;
-		case FileListType::SideBySide:
+		case MainWindowFileListType::SideBySide:
 			if (obj.staged) {
 				ui->listWidget_staged->addItem(item);
 			} else {
@@ -4314,27 +4311,27 @@ void MainWindow::updateFileList(GitHash const &id)
 		return updateSubmodules(g, id); // TODO: slow
 	});
 
-	FileListType file_list_type;
+	MainWindowFileListType file_list_type;
 	if (m->background_process_work_in_progress) {
-		file_list_type = FileListType::MessagePanel;
+		file_list_type = MainWindowFileListType::MessagePanel;
 	} else {
-		file_list_type = FileListType::SingleList;
+		file_list_type = MainWindowFileListType::SingleList;
 		if (!id) {
 			updateUncommittedChanges(g);
 			if (isThereUncommittedChanges()) {
-				file_list_type = FileListType::SideBySide;
+				file_list_type = MainWindowFileListType::SideBySide;
 			}
 		}
 	}
 
 	{
 		MainWindowExchangeData xdata;
-		xdata.files_list_type = FileListType::SingleList;
+		xdata.files_list_type = MainWindowFileListType::SingleList;
 
 		if (id) {
 			// nop
 		} else if (isThereUncommittedChanges()) {
-			xdata.files_list_type = FileListType::SideBySide;
+			xdata.files_list_type = MainWindowFileListType::SideBySide;
 		}
 
 		auto diffs = makeDiffs(g, id, std::move(async_modules));
@@ -4349,7 +4346,7 @@ void MainWindow::updateFileList(GitHash const &id)
 
 		if (id) {
 
-			auto AddItem = [&](ObjectData const &obj) {
+			auto AddItem = [&](GitObjectData const &obj) {
 				xdata.object_data.push_back(obj);
 			};
 			addDiffItems(diffResult(), AddItem);
@@ -4370,7 +4367,7 @@ void MainWindow::updateFileList(GitHash const &id)
 			std::atomic_size_t index { 0 };
 			std::vector<std::thread> threads(8);
 			const size_t ncount = m->uncommitted_changes_file_list.size();
-			std::vector<ObjectData> object_data(ncount);
+			std::vector<GitObjectData> object_data(ncount);
 			for (size_t j = 0; j < threads.size(); j++) {
 				threads[j] = std::thread([&](GitRunner g) {
 					while (1) {
@@ -4406,7 +4403,7 @@ void MainWindow::updateFileList(GitHash const &id)
 							// } else {
 							// 	header = global->prefix_empty;
 							}
-							ObjectData obj;
+							GitObjectData obj;
 							obj.path = (misc::str)path;
 							obj.header = (misc::str)header;
 							obj.idiff = idiff;
@@ -4484,7 +4481,7 @@ MainWindow::DiffResult MainWindow::makeDiffList(GitHash const &id, QListWidget *
 	if (GitRunner g = git(); isValidWorkingCopy(g)) {
 		listwidget->clear();
 
-		auto AddItem = [&](ObjectData const &data) {
+		auto AddItem = [&](GitObjectData const &data) {
 			QListWidgetItem *item = newListWidgetFileItem(data);
 			listwidget->addItem(item);
 		};

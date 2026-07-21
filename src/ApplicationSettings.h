@@ -1,7 +1,6 @@
 #ifndef APPLICATIONSETTINGS_H
 #define APPLICATIONSETTINGS_H
 
-#include <ai/GenerativeAI.h>
 #include <QColor>
 #include <QString>
 #include <map>
@@ -10,6 +9,13 @@
 #define APPLICATION_NAME "Guitar"
 
 class MySettings;
+
+namespace GenerativeAI {
+enum class ProviderID;
+struct Model;
+struct Credential;
+class ModelURI;
+}
 
 class ApplicationBasicData {
 public:
@@ -61,8 +67,8 @@ public:
 
 	bool generate_commit_message_with_ai = false;
 	AiApiKeys ai_api_keys;
-	GenerativeAI::Model ai_model;
-	std::tuple<std::vector<GenerativeAI::Model>, int> ai_models() const;
+	std::shared_ptr<GenerativeAI::Model> ai_model;
+	std::tuple<std::vector<GenerativeAI::Model const *>, int> ai_models() const;
 
 	bool get_avatar_icon_from_network_enabled = true;
 	struct {
@@ -100,6 +106,8 @@ public:
 	};
 	ConsoleBackend console_backend = ConsoleBackend::Undefined;
 #endif
+
+	ApplicationSettings();
 
 	static ApplicationSettings loadSettings();
 	void saveSettings() const;

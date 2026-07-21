@@ -1,13 +1,11 @@
 #include "AvatarLoader.h"
-#include "ApplicationGlobal.h"
 #include "MainWindow.h"
 #include "MemoryReader.h"
 #include <QApplication>
 #include <QCryptographicHash>
 #include <QDebug>
+#include <common/misc.h>
 #include <condition_variable>
-#include <inet/curlclient.h>
-#include <inet/webclient.h>
 #include <mutex>
 #include <optional>
 #include <thread>

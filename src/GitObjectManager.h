@@ -4,6 +4,10 @@
 #include "GitRunner.h"
 #include <QIODevice>
 
+namespace std {
+class mutex;
+}
+
 class GitPackIdxV2;
 struct GitPackIdxItem;
 struct GitPackObject;
@@ -55,7 +59,7 @@ public:
 		, object_manager_(mutex)
 	{}
 	void clear();
-        GitHash rev_parse(GitRunner g, const std::string &name);
+	GitHash rev_parse(GitRunner g, const std::string &name);
 	GitObject catFile(GitRunner g, const GitHash &id);
 
 	GitHash const &item_id(int i) const

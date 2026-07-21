@@ -1,6 +1,7 @@
 #ifndef GITPACKIDXV2_H
 #define GITPACKIDXV2_H
 
+#include "GitHash.h"
 #include "GitPack.h"
 #include <QIODevice>
 #include <cstdint>

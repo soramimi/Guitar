@@ -1,15 +1,22 @@
+
 #ifndef GITRUNNER_H
 #define GITRUNNER_H
 
+#include "GitDiff.h"
+#include "GitHash.h"
+#include "GitObject.h"
+#include "GitRemote.h"
+#include "GitResult.h"
+#include "GitTypes.h"
+#include "GitUser.h"
 #include <memory>
 #include <optional>
-#include "GitTypes.h"
-#include "AbstractProcess.h"
+#include <q/DateTime.h>
 
-#define PATH_PREFIX "*"
-
+class AbstractPtyProcess;
 class Git;
 class GitObjectCache;
+struct GitCloneData;
 
 class GitRunner {
 private:
@@ -82,7 +89,7 @@ public:
 	bool commit_amend_m(const std::string &text, bool sign, AbstractPtyProcess *pty);
 	bool revert(const GitHash &id);
 	bool push_tags(AbstractPtyProcess *pty = nullptr);
-        std::vector<GitRemote> remote_v();
+	std::vector<GitRemote> remote_v();
 	void createBranch(const std::string &name);
 	void checkoutBranch(const std::string &name);
 	void mergeBranch(const std::string &name, GitMergeFastForward ff, bool squash);

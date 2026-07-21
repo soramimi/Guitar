@@ -1,6 +1,6 @@
 #include "SettingOptionsForm.h"
 #include "ui_SettingOptionsForm.h"
-#include "ApplicationGlobal.h"
+// #include "ApplicationGlobal.h"
 #include "EditProfilesDialog.h"
 #include <ai/GenerativeAI.h>
 #include "IncrementalSearchHelper.h"

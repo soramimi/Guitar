@@ -1,6 +1,5 @@
 #include "FilePropertyDialog.h"
 #include "ui_FilePropertyDialog.h"
-#include "ApplicationGlobal.h"
 #include "MainWindow.h"
 #include <QMessageBox>
 #include <common/q/helper.h>

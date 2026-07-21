@@ -1,12 +1,12 @@
 #include "ConfigUserDialog.h"
 #include "ui_ConfigUserDialog.h"
-#include "ApplicationGlobal.h"
 #include "AvatarLoader.h"
 #include "EditProfilesDialog.h"
 #include "MainWindow.h"
 #include "UserEvent.h"
 #include <common/misc.h>
 #include <common/q/helper.h>
+#include <common/qmisc.h>
 
 struct ConfigUserDialog::Private  {
 	GitUser global_user;

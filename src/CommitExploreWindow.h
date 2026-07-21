@@ -1,8 +1,8 @@
 #ifndef COMMITEXPLOREWINDOW_H
 #define COMMITEXPLOREWINDOW_H
 
-#include <QDialog>
 #include "FileDiffWidget.h"
+#include <QDialog>
 
 namespace Ui {
 class CommitExploreWindow;

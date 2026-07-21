@@ -2,91 +2,49 @@
 #define MAINWINDOW_H
 
 #include "ApplicationGlobal.h"
-#include "Git.h"
 #include "GitCommandRunner.h"
-#include "MyProcess.h"
+#include "MainWindowTypes.h"
 #include "RepositoryInfo.h"
 #include "RepositoryModel.h"
 #include "RepositoryTreeWidget.h"
 #include "StatusInfo.h"
 #include "TextEditorTheme.h"
 #include "UserEvent.h"
+#include <QElapsedTimer>
 #include <QMainWindow>
 #include <future>
 #include <memory>
 #include <span>
 
+class AbstractGitCommand;
 class AddRepositoryDialog;
 class ApplicationSettings;
 class BranchLabel;
-struct RepositoryInfo;
 class GitObjectCache;
+class MainWindowExchangeData;
+class ProgressWidget;
+class PtyProcessCompleted;
 class QListWidget;
 class QListWidgetItem;
 class QTableWidgetItem;
 class QTreeWidgetItem;
+struct CloneParams;
 struct CommitLogExchangeData;
-class ProgressWidget;
+struct GitCloneData;
+struct GitObjectData;
+struct LogData;
+struct OpenRepositoryOption;
+struct RepositoryInfo;
 
 namespace Ui {
 class MainWindow;
 }
 
-struct CloneParams {
-	GitCloneData clonedata;
-	RepositoryInfo repodata;
-};
-Q_DECLARE_METATYPE(CloneParams)
 
 enum class LogChannel {
 	Default,
 	PTY,
 };
-
-struct LogData {
-	QByteArray data;
-	LogData() = default;
-	LogData(QByteArray const &ba)
-		: data(ba)
-	{
-	}
-	LogData(QString const &s)
-		: data(s.toUtf8())
-	{
-	}
-	LogData(char const *p, int n)
-		: data(p, n)
-	{
-	}
-	LogData(std::string_view const &s)
-		: data(s.data(), s.size())
-	{
-	}
-};
-Q_DECLARE_METATYPE(LogData)
-
-struct GitHubRepositoryInfo {
-	QString owner_account_name;
-	QString repository_name;
-};
-
-class AbstractGitCommand;
-
-class MainWindowExchangeData;
-
-class PtyProcessCompleted {
-public:
-	std::function<void(ProcessStatus *, QVariant const &)> callback;
-	std::shared_ptr<ProcessStatus> status;
-	QVariant userdata;
-	QString process_name;
-	QElapsedTimer elapsed;
-	PtyProcessCompleted()
-		: status(std::make_shared<ProcessStatus>())
-	{
-	}
-};
-Q_DECLARE_METATYPE(PtyProcessCompleted)
 
 class MainWindow : public QMainWindow {
 	Q_OBJECT
@@ -123,28 +81,6 @@ public:
 		Branches = 0x0001,
 		Tags = 0x0002,
 		Remotes = 0x0100,
-	};
-
-	enum class FileListType {
-		MessagePanel,
-		SingleList,
-		SideBySide,
-	};
-
-private:
-	struct ObjectData {
-		std::string id;
-		std::string path;
-		GitSubmoduleItem submod;
-		GitCommitItem submod_commit;
-		QString header;
-		size_t idiff;
-		bool staged = false;
-		
-		bool isUntracked() const
-		{
-			return header.isEmpty();
-		}
 	};
 
 private:
@@ -186,18 +122,6 @@ private:
 	void cancelUpdateFileList();
 	void initUpdateFileListTimer();
 
-	struct OpenRepositoryOption {
-		bool new_session = true;
-
-		bool validate = false;
-		bool wait_cursor = true;
-		bool keep_selection = false;
-
-		bool clear_log = true;
-		bool do_fetch = true;
-
-		bool suppress_uncommit_changes = false;
-	};
 	void openRepositoryMain(OpenRepositoryOption const &opt);
 	void openRepository(OpenRepositoryOption const &opt);
 	void reopenRepository(bool validate, OpenRepositoryOption opt);
@@ -480,9 +404,9 @@ private:
 
 	GitCommitItemList log_all2(GitRunner g, const GitHash &id, int maxcount) const;
 	ProgressWidget *progress_widget() const;
-	void internalShowPanel(FileListType file_list_type);
+	void internalShowPanel(MainWindowFileListType file_list_type);
 
-	void showFileList(FileListType files_list_type);
+	void showFileList(MainWindowFileListType files_list_type);
 	void connectShowFileListHandler();
 	void setupAddFileObjectData();
 	void addFileObjectData(const MainWindowExchangeData &data);
@@ -607,7 +531,7 @@ private slots:
 	void onRemoteInfoChanged();
 	void onShowStatusInfo(StatusInfo const &info);
 
-	void onShowFileList(MainWindow::FileListType panel_type)
+	void onShowFileList(MainWindowFileListType panel_type)
 	{
 		ASSERT_MAIN_THREAD();
 
@@ -633,7 +557,7 @@ signals:
 	void signalShowStatusInfo(StatusInfo const &info);
 	void signalHideProgress();
 	void sigWriteLog(LogData const &logdata, LogChannel channel);
-	void sigShowFileList(MainWindow::FileListType files_list_type);
+	void sigShowFileList(MainWindowFileListType files_list_type);
 	void signalAddFileObjectData(const MainWindowExchangeData &data);
 	void remoteInfoChanged();
 	void sigPtyCloneCompleted(bool ok, QVariant const &userdata);
@@ -659,13 +583,13 @@ public:
 	static void updateCommitGraph(GitCommitItemList *logs);
 	static TagList findTag(std::map<GitHash, TagList> const &tagmap, GitHash const &id);
 	static QString makeRepositoryName(QString const &loc);
-	static void addDiffItems(std::span<const GitDiff *> diff_list, const std::function<void(const ObjectData &)> &add_item);
+	static void addDiffItems(std::span<const GitDiff *> diff_list, const std::function<void(const GitObjectData &)> &add_item);
 	static GitHash getObjectID(const QListWidgetItem *item);
 	static QString getFilePath(const QListWidgetItem *item);
 	static QString getSubmodulePath(const QListWidgetItem *item);
 	static QString getSubmoduleCommitId(const QListWidgetItem *item);
-	static std::pair<QString, QString> makeFileItemText(const ObjectData &data);
-	static QListWidgetItem *newListWidgetFileItem(const MainWindow::ObjectData &data);
+	static std::pair<QString, QString> makeFileItemText(const GitObjectData &data);
+	static QListWidgetItem *newListWidgetFileItem(const GitObjectData &data);
 	static std::string parseDetectedDubiousOwnershipInRepositoryAt(const std::vector<std::string> &lines);
 	static QString abbrevCommitID(const GitCommitItem &commit);
 	static bool isValidWorkingCopy(GitRunner g);
@@ -781,12 +705,5 @@ public:
 public slots:
 	void internalWriteLog(const LogData &logdata, LogChannel channel);
 };
-
-class MainWindowExchangeData {
-public:
-	MainWindow::FileListType files_list_type;
-	std::vector<MainWindow::ObjectData> object_data;
-};
-Q_DECLARE_METATYPE(MainWindowExchangeData)
 
 #endif // MAINWINDOW_H

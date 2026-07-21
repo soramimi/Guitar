@@ -1,8 +1,10 @@
+
+#include "GitUser.h"
+
 #ifndef SETGLOBALUSERDIALOG_H
 #define SETGLOBALUSERDIALOG_H
 
 #include <QDialog>
-#include "Git.h"
 
 namespace Ui {
 class SetGlobalUserDialog;

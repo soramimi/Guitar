@@ -1,7 +1,6 @@
 #ifndef GITPROCESSTHREAD_H
 #define GITPROCESSTHREAD_H
 
-#include "ApplicationGlobal.h"
 #include "GitCommandRunner.h"
 
 class GitProcessThread : public QObject {

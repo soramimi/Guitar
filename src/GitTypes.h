@@ -1,79 +1,16 @@
-
-#include "MyProcess.h"
-
 #ifndef GITTYPES_H
 #define GITTYPES_H
 
-#include <common/misc.h>
-#include <common/q/DateTime.h>
-#include <common/qmisc.h>
+#include "GitHash.h"
+#include "ProcessStatus.h"
+#include <QByteArray>
+#include <QList>
 #include <map>
 #include <span>
 
-#define GIT_ID_LENGTH (40)
+#define PATH_PREFIX "*"
 
-struct GitRemote {
-	std::string name;
-	std::string url_fetch;
-	std::string url_push;
-	std::string ssh_key;
-	bool operator < (GitRemote const &r) const
-	{
-		return name < r.name;
-	}
-	std::string const &url() const
-	{
-		return url_fetch;
-	}
-	void set_url(std::string const &url)
-	{
-		url_fetch = url;
-		url_push = url;
-	}
-};
-
-class GitHash {
-private:
-	bool valid_ = false;
-	uint8_t id_[GIT_ID_LENGTH / 2];
-	template <typename VIEW> void _assign(VIEW const &id);
-public:
-	GitHash();
-	explicit GitHash(std::string_view const &id);
-	explicit GitHash(char const *id);
-	void assign(std::string_view const &id);
-	std::string toString(int maxlen = -1) const;
-	bool isValid() const;
-	int compare(GitHash const &other) const;
-	explicit operator bool () const;
-	operator std::string() const
-	{
-		return toString();
-	}
-	size_t _std_hash() const;
-
-	static bool isValidID(std::string const &id);
-
-	static bool isValidID(GitHash const &id)
-	{
-		return id.isValid();
-	}
-};
-
-static inline bool operator == (GitHash const &l, GitHash const &r)
-{
-	return l.compare(r) == 0;
-}
-
-static inline bool operator != (GitHash const &l, GitHash const &r)
-{
-	return l.compare(r) != 0;
-}
-
-static inline bool operator < (GitHash const &l, GitHash const &r)
-{
-	return l.compare(r) < 0;
-}
+struct GitCommitItem;
 
 namespace std {
 template <> class hash<GitHash> {
@@ -85,111 +22,27 @@ public:
 };
 }
 
-struct GitObject {
-	enum class Type { // 値は固定。packフォーマットで決まってる
-		NONE = -1,
-		UNKNOWN = 0,
-		COMMIT = 1,
-		TREE = 2,
-		BLOB = 3,
-		TAG = 4,
-		UNDEFINED = 5,
-		OFS_DELTA = 6,
-		REF_DELTA = 7,
-	};
-	Type type = Type::NONE;
-	QByteArray content;
-	explicit operator bool () const
-	{
-		return type != Type::NONE;
-	}
-};
-
 struct GitFileItem {
 	std::string name;
 	bool isdir = false;
 };
 
-struct GitTreeLine {
-	int index;
-	int depth;
-	int color_number = 0;
-	bool bend_early = false;
-	GitTreeLine(int index = -1, int depth = -1)
-		: index(index)
-		, depth(depth)
-	{
-	}
-};
-
-struct GitCommitItem {
-	GitHash commit_id;
-	GitHash tree;
-	std::vector<GitHash> parent_ids;
-	std::string author;
-	std::string email;
-	std::string message;
-	DateTime commit_date;
-	std::vector<GitTreeLine> parent_lines;
-	bool has_gpgsig = false;
-	std::string gpgsig;
-	struct {
-		std::string text;
-		char verify = 0; // git log format:%G?
-		std::vector<uint8_t> key_fingerprint;
-		std::string trust;
-	} sign;
-	bool has_child = false;
-	int marker_depth = -1;
-	bool resolved =  false;
-	// bool order_fixed = false; // 時差や時計の誤差などの影響により、並び順の調整が行われたとき
-	void setParents(const std::vector<std::string> &list);
-	explicit operator bool () const
-	{
-		return (bool)commit_id;
-	}
-	bool operator == (GitCommitItem const &other) const
-	{
-		return commit_id == other.commit_id;
-	}
-	bool operator != (GitCommitItem const &other) const
-	{
-		return commit_id != other.commit_id;
-	}
-};
-
 class GitCommitItemList {
-private:public:
-	struct D {
-		std::vector<GitCommitItem> list;
-		mutable std::vector<GitCommitItem *> ptrs;
-		std::map<GitHash, size_t> map;
-	} d;
+private:
+	struct Private;
+	Private *m;
 	GitCommitItem &_at(size_t i);
 	void _update_ptrs();
-	void assign(GitCommitItemList const &r)
-	{
-		d.list = r.d.list;
-		d.ptrs.clear();
-		d.map = r.d.map;
-	}
+	void assign(GitCommitItemList const &r);
 public:
-	GitCommitItemList() = default;
-	GitCommitItemList(GitCommitItemList const &r)
-	{
-		assign(r);
-	}
+	GitCommitItemList();
+	~GitCommitItemList();
+	GitCommitItemList(GitCommitItemList const &r);
+	GitCommitItemList(GitCommitItemList &&r);
+	GitCommitItemList(std::vector<GitCommitItem> &&list);
 	void operator = (GitCommitItemList const &r)
 	{
 		assign(r);
-	}
-	GitCommitItemList(GitCommitItemList &&r)
-	{
-		d = std::move(r.d);
-	}
-	GitCommitItemList(std::vector<GitCommitItem> &&list)
-	{
-		setList(std::move(list));
 	}
 	void setList(std::vector<GitCommitItem> &&list);
 	
@@ -204,77 +57,17 @@ public:
 	int find_index(GitHash const &id) const;
 	GitCommitItem const *find(GitHash const &id) const;
 	
-	std::span<GitCommitItem const *const> items() const
-	{
-		const_cast<GitCommitItemList *>(this)->_update_ptrs();
-		return std::span<GitCommitItem const *const>(d.ptrs.data(), d.ptrs.size());
-	}
+	std::span<GitCommitItem const *const> items() const;
 
-	std::span<GitCommitItem const *const> c_items() const
-	{
-		const_cast<GitCommitItemList *>(this)->_update_ptrs();
-		return std::span<GitCommitItem const *const>(d.ptrs.data(), d.ptrs.size());
-	}
+	std::span<GitCommitItem const *const> c_items() const;
 	
 	void fixCommitLogOrder();
 	void updateCommitGraph();
 };
 
-class GitResult {
-private:
-	ProcessStatus status_;
-public:
-	void set_exit_code(int code)
-	{
-		status_.exit_code = code;
-	}
-	void set_output(std::vector<char> const &out)
-	{
-		status_.output = out;
-	}
-	void set_error_message(std::string const &msg)
-	{
-		status_.error_message = msg;
-	}
-
-	bool ok() const
-	{
-		return status_.ok;
-	}
-	int exit_code()
-	{
-		return status_.exit_code;
-	}
-	std::vector<char> const &output() const
-	{
-		return status_.output;
-	}
-	std::string output_string() const
-	{
-		return std::string(status_.output.data(), status_.output.size());
-	}
-	std::string error_message() const
-	{
-		return status_.error_message;
-	}
-	std::string log_message() const
-	{
-		return status_.log_message;
-	}
-};
-
 struct GitTag {
 	std::string name;
 	GitHash id;
-};
-
-struct GitUser {
-	std::string name;
-	std::string email;
-	explicit operator bool () const
-	{
-		return misc::isValidMailAddress(email);
-	}
 };
 
 struct GitBranch {
@@ -302,12 +95,6 @@ struct GitBranch {
 	{
 		return flags & HeadDetachedAt;
 	}
-};
-
-struct GitCloneData {
-	std::string url;
-	std::string basedir;
-	std::string subdir;
 };
 
 enum class GitSource {
@@ -423,23 +210,6 @@ enum class GitMergeFastForward {
 	Only,
 };
 
-struct GitSubmoduleItem {
-	std::string name;
-	GitHash id;
-	std::string path;
-	std::string refs;
-	std::string url;
-	explicit operator bool () const
-	{
-		return id.isValid() && !path.empty();
-	}
-};
-
-struct GitSubmoduleUpdateData {
-	bool init = true;
-	bool recursive = true;
-};
-
 struct GitDiffRaw {
 	struct AB {
 		std::string id;
@@ -478,49 +248,6 @@ enum class GitSignatureGrade {
 	Dubious,
 	Missing,
 	Bad,
-};
-
-class GitHunk {
-public:
-	std::string at;
-	std::vector<std::string> lines;
-};
-
-class GitDiff {
-public:
-	enum class Type {
-		Unknown,
-		Modify,
-		Copy,
-		Rename,
-		Create,
-		Delete,
-		ChType,
-		Unmerged,
-	};
-	Type type = Type::Unknown;
-	std::string diff;
-	std::string index;
-	std::string path;
-	std::string mode;
-	struct BLOB_AB_ {
-		std::string a_id_or_path; // コミットIDまたはファイルパス。パスのときは PATH_PREFIX（'*'）で始まる
-		std::string b_id_or_path;
-	} blob;
-	QList<GitHunk> hunks;
-	struct SubmoduleDetail {
-		GitSubmoduleItem item;
-		GitCommitItem commit;
-	} a_submodule, b_submodule;
-	GitDiff() = default;
-	GitDiff(std::string const &id, std::string const &path, std::string const &mode);
-	bool isSubmodule() const;
-private:
-	void makeForSingleFile(GitDiff *diff, const std::string &id_a, const std::string &id_b, const std::string &path, const std::string &mode);
-};
-
-struct GitDiffOption {
-	bool ignore_space_change = false;
 };
 
 std::string gitTrimPath(std::string const &s);

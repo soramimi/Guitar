@@ -1,13 +1,16 @@
 
-#include "ApplicationGlobal.h"
+#include "main.h"
+#include "../subprojects/FileTypePlugin/src/FileTypeInterface.h"
+#include "../subprojects/IncrementalSearchPlugin/src/IncrementalSearchInterface.h"
+#include "../subprojects/OnePasswordPlugin/src/OnePasswordInterface.h"
 #include "CommitRecord.h"
 #include "GeneratedCommitMessage.h"
+#include "GitObjectData.h"
 #include "LoadPlugin.h"
 #include "Logger.h"
 #include "MainWindow.h"
 #include "MySettings.h"
 #include "SettingGeneralForm.h"
-#include "../subprojects/FileTypePlugin/src/FileTypeInterface.h"
 #include <QApplication>
 #include <QDir>
 #include <QMessageBox>

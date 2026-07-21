@@ -1,7 +1,7 @@
 #include "MaximizeButton.h"
-#include <QPainter>
-#include "Theme.h"
 #include "ApplicationGlobal.h"
+#include "Theme.h"
+#include <QPainter>
 
 MaximizeButton::MaximizeButton(QWidget *parent)
 	: QToolButton(parent)

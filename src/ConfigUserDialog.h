@@ -1,8 +1,8 @@
+
 #ifndef CONFIGUSERDIALOG_H
 #define CONFIGUSERDIALOG_H
 
-#include "Git.h"
-
+#include "GitUser.h"
 #include <QDialog>
 
 class MainWindow;

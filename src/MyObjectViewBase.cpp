@@ -1,11 +1,11 @@
-#include "ApplicationGlobal.h"
 #include "GitRunner.h"
 #include "MainWindow.h"
 #include "MyObjectViewBase.h"
-#include <common/joinpath.h>
-#include <common/q/helper.h>
 #include <QApplication>
 #include <QFileDialog>
+#include <common/joinpath.h>
+#include <common/misc.h>
+#include <common/q/helper.h>
 
 bool MyObjectViewBase::isValidObject() const
 {

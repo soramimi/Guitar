@@ -1,6 +1,5 @@
 #include "CommitDialog.h"
 #include "ui_CommitDialog.h"
-#include "ApplicationGlobal.h"
 #include "ConfigSigningDialog.h"
 #include "MainWindow.h"
 #include "GenerateCommitMessageDialog.h"

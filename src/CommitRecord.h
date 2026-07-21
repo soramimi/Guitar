@@ -1,7 +1,12 @@
+
 #ifndef COMMITRECORD_H
 #define COMMITRECORD_H
 
-#include "GitTypes.h"
+#include "GitHash.h"
+#include <QMetaType>
+#include <QString>
+#include <span>
+#include <vector>
 
 struct CommitRecord {
 	bool bold = false;

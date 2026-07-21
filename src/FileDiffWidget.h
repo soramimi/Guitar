@@ -1,9 +1,10 @@
+
 #ifndef FILEDIFFWIDGET_H
 #define FILEDIFFWIDGET_H
 
-#include "FileDiffSliderWidget.h"
 #include "FileViewWidget.h"
-#include "Git.h"
+#include "FileDiffSliderWidget.h"
+#include "GitRunner.h"
 #include "texteditor/AbstractCharacterBasedApplication.h"
 #include <QDialog>
 #include <memory>

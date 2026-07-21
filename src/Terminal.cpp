@@ -1,8 +1,7 @@
-#include "Terminal.h"
-#include "ApplicationGlobal.h"
-#include <QFileInfo>
 
 #include "ApplicationGlobal.h"
+#include "Terminal.h"
+#include <QFileInfo>
 
 #ifdef Q_OS_WIN
 

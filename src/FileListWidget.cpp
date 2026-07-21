@@ -5,7 +5,6 @@
 #include <QPainter>
 #include <QStyledItemDelegate>
 #include <map>
-#include "ApplicationGlobal.h"
 #include <common/str.h>
 
 namespace {

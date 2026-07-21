@@ -1,4 +1,4 @@
-#include "ApplicationGlobal.h"
+// #include "ApplicationGlobal.h"
 #include "SettingLoggingForm.h"
 #include "ui_SettingLoggingForm.h"
 

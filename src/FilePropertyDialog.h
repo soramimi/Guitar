@@ -1,8 +1,8 @@
+
 #ifndef FILEPROPERTYDIALOG_H
 #define FILEPROPERTYDIALOG_H
 
-#include "Git.h"
-
+#include "GitHash.h"
 #include <QDialog>
 
 namespace Ui {

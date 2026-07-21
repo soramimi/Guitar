@@ -1,11 +1,11 @@
+
 #ifndef CHERRYPICKDIALOG_H
 #define CHERRYPICKDIALOG_H
-
-#include "Git.h"
 
 #include <QDialog>
 
 class QTableWidgetItem;
+struct GitCommitItem;
 
 namespace Ui {
 class CherryPickDialog;
@@ -16,7 +16,7 @@ class CherryPickDialog : public QDialog {
 private:
 	Ui::CherryPickDialog *ui;
 public:
-	explicit CherryPickDialog(QWidget *parent, const GitCommitItem &head, const GitCommitItem &pick, QList<GitCommitItem> parents);
+	explicit CherryPickDialog(QWidget *parent, const GitCommitItem &head, const GitCommitItem &pick, QList<GitCommitItem> const &parents);
 	~CherryPickDialog();
 	int number() const;
 	bool allowEmpty() const;

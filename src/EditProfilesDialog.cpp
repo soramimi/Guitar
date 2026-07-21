@@ -6,6 +6,7 @@
 #include "UserEvent.h"
 #include <QFile>
 #include <QXmlStreamWriter>
+#include <common/misc.h>
 #include <common/q/helper.h>
 
 EditProfilesDialog::Item::Item(const GitUser &user)
@@ -14,6 +15,15 @@ EditProfilesDialog::Item::Item(const GitUser &user)
 {
 }
 
+EditProfilesDialog::Item::operator bool() const
+{
+	return misc::isValidMailAddress(email);
+}
+
+bool EditProfilesDialog::Item::operator ==(const Item &other) const
+{
+	return name == other.name && email == other.email;
+}
 
 EditProfilesDialog::EditProfilesDialog(QWidget *parent)
 	: QDialog(parent)

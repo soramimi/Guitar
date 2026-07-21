@@ -1,7 +1,8 @@
+
 #ifndef GITPACK_H
 #define GITPACK_H
 
-#include "GitTypes.h"
+#include "GitObject.h"
 #include <QIODevice>
 #include <cstdint>
 

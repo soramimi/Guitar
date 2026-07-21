@@ -1,10 +1,9 @@
 #ifndef IMAGEVIEWWIDGET_H
 #define IMAGEVIEWWIDGET_H
 
+#include <QMainWindow>
 #include <QScrollBar>
 #include <QWidget>
-#include "Git.h"
-#include "MainWindow.h"
 #include "AbstractCharacterBasedApplication.h"
 
 class FileDiffWidget;

@@ -1,8 +1,6 @@
 #include "RepositoryTreeWidget.h"
-#include "ApplicationGlobal.h"
 #include "IncrementalSearchHelper.h"
 #include "MainWindow.h"
-#include <common/joinpath.h>
 #include <QApplication>
 #include <QDateTime>
 #include <QDebug>
@@ -11,6 +9,8 @@
 #include <QMimeData>
 #include <QPainter>
 #include <QStyledItemDelegate>
+#include <common/joinpath.h>
+#include <common/qmisc.h>
 
 class RepositoryTreeWidgetItemDelegate : public QStyledItemDelegate {
 private:

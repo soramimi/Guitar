@@ -1,5 +1,6 @@
 #include "platform.h"
 #include "ApplicationGlobal.h"
+#include <common/misc.h>
 
 #ifndef Q_OS_WIN
 extern char** environ;

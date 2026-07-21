@@ -1,25 +1,20 @@
+
 #ifndef APPLICATIONGLOBAL_H
 #define APPLICATIONGLOBAL_H
 
+#include "AbstractGitSession.h"
 #include "ApplicationSettings.h"
 #include "AvatarLoader.h"
-#include "FileTypeDetector.h"
 #include "Git.h"
-#include "IncrementalSearchHelper.h"
-#include "TraceEventWriter.h"
 #include <QColor>
 #include <QString>
-#include <ai/GenerativeAI.h>
-#include <common/misc.h>
-#include <inet/curlclient.h>
 #include <inet/webclient.h>
+#include <memory>
 #include <subprojects/FileTypePlugin/src/FileType.h>
-#include <subprojects/FileTypePlugin/src/FileTypeInterface.h>
 #include <subprojects/IncrementalSearchPlugin/src/IncrementalSearch.h>
-#include <subprojects/IncrementalSearchPlugin/src/IncrementalSearchInterface.h>
-#include <subprojects/OnePasswordPlugin/src/OnePassword.h>
-#include <subprojects/OnePasswordPlugin/src/OnePasswordInterface.h>
-// #include <MyJagger.h>
+
+class IncrementalSearch;
+class OnePassword;
 
 #ifdef APP_GUITAR
 #include "Theme.h"
@@ -27,6 +22,7 @@
 
 class MainWindow;
 class QListWidgetItem;
+struct TraceEventItem;
 
 struct AccountProfile {
 	QString email;
@@ -37,14 +33,8 @@ struct AccountProfile {
 		, name(name)
 	{
 	}
-	QString text() const
-	{
-		return QString("%1 <%2>").arg(name).arg(email);
-	}
-	explicit operator bool () const
-	{
-		return misc::isValidMailAddress(email.toStdString());
-	}
+	QString text() const;
+	explicit operator bool () const;
 };
 
 class ApplicationGlobal : public ApplicationBasicData {
@@ -105,7 +95,7 @@ public:
 	void open_trace_logger();
 	void close_trace_logger();
 	void restart_trace_logger();
-	void put_trace_event(const TraceEventWriter::Event &event);
+	void put_trace_event(TraceEventItem const &event);
 
 	void writeLog(const std::string_view &str);
 	void writeLog(const QString &str);

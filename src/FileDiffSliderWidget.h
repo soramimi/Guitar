@@ -2,7 +2,6 @@
 #define FILEDIFFSLIDERWIDGET_H
 
 #include "AbstractCharacterBasedApplication.h"
-#include "MainWindow.h"
 #include "Theme.h"
 #include <QPixmap>
 #include <QWidget>

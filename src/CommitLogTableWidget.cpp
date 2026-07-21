@@ -1,15 +1,15 @@
 #include "CommitLogTableWidget.h"
-#include "ApplicationGlobal.h"
 #include "BranchLabel.h"
 #include "MainWindow.h"
 #include "MyTableWidgetDelegate.h"
+#include <IncrementalSearchHelper.h>
 #include <QApplication>
 #include <QHeaderView>
 #include <QPainter>
 #include <QPainterPath>
 #include <cmath>
 #include <common/q/helper.h>
-#include <IncrementalSearchHelper.h>
+#include <common/qmisc.h>
 
 QString CommitLogTableModel::escapeTooltipText(QString tooltip)
 {

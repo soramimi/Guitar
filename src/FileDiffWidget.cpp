@@ -1,15 +1,12 @@
 
 #include "FileDiffWidget.h"
-#include "ApplicationGlobal.h"
 #include "BigDiffWindow.h"
 #include "GitDiffManager.h"
 #include "MainWindow.h"
 #include "Theme.h"
-#include <common/joinpath.h>
-#include <common/misc.h>
-#include <common/q/helper.h>
 #include "dtl/dtl.hpp"
 #include "ui_FileDiffWidget.h"
+#include <Profile.h>
 #include <QBuffer>
 #include <QDebug>
 #include <QFile>
@@ -17,8 +14,10 @@
 #include <QMenu>
 #include <QPainter>
 #include <QStyle>
+#include <common/joinpath.h>
+#include <common/misc.h>
+#include <common/q/helper.h>
 #include <memory>
-#include <Profile.h>
 
 enum {
 	DiffIndexRole = Qt::UserRole,

@@ -1,11 +1,10 @@
 #include "SubmodulesDialog.h"
 #include "ui_SubmodulesDialog.h"
+#include "GitSubmodule.h"
 #include "MainWindow.h"
-#include <common/joinpath.h>
-#include <common/misc.h>
-#include <common/q/helper.h>
-
 #include <QDir>
+#include <common/joinpath.h>
+#include <common/q/helper.h>
 
 SubmodulesDialog::SubmodulesDialog(QWidget *parent, QString workingdir, std::vector<Submodule> const &mods)
 	: QDialog(parent)

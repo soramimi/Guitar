@@ -6,6 +6,7 @@
 #include <QDir>
 #include <QFileInfo>
 #include <QStandardPaths>
+#include <ai/GenerativeAI.h>
 #include <common/fmt.h>
 #include <common/joinpath.h>
 #include <common/misc.h>
@@ -76,17 +77,26 @@ template <> void operator << (SetValue<std::string> &&l, std::string const &r)
 
 } // namespace
 
-std::tuple<std::vector<GenerativeAI::Model>, int> ApplicationSettings::ai_models() const
+std::tuple<std::vector<GenerativeAI::Model const *>, int> ApplicationSettings::ai_models() const
 {
-	std::vector<GenerativeAI::Model> list = GenerativeAI::ai_model_presets();
+	std::vector<GenerativeAI::Model> const &list = GenerativeAI::ai_model_presets();
+	std::vector<GenerativeAI::Model const *> newlist;
+	for (GenerativeAI::Model const &item : list) {
+		newlist.push_back(&item);
+	}
 	int index;
 	for (index = 0; index < (int)list.size(); index++) {
-		if (list[index].model_uri() == ai_model.model_uri()) {
-			return {list, index};
+		if (list[index].model_uri() == ai_model->model_uri()) {
+			return {newlist, index};
 		}
 	}
-	list.push_back(ai_model);
-	return {list, index};
+	newlist.push_back(ai_model.get());
+	return {newlist, index};
+}
+
+ApplicationSettings::ApplicationSettings()
+{
+	ai_model = std::make_shared<GenerativeAI::Model>();
 }
 
 #if 0
@@ -179,12 +189,12 @@ ApplicationSettings ApplicationSettings::loadSettings()
 	GenerativeAI::ProviderInfo const *info = Info(ai_provider_name);
 
 	if (info) {
-		as.ai_model = GenerativeAI::Model(info->id, ai_model_uri);
+		*as.ai_model = GenerativeAI::Model(info->id, ai_model_uri);
 	} else {
 		if (ai_provider_name.empty() && ai_model_uri.empty()) {
 			ai_model_uri = GenerativeAI::Model::default_model();
 		}
-		as.ai_model = GenerativeAI::Model::from_name(ai_model_uri);
+		*as.ai_model = GenerativeAI::Model::from_name(ai_model_uri);
 	}
 
 	return as;
@@ -236,8 +246,8 @@ void ApplicationSettings::saveSettings() const
 
 	s.beginGroup("AI");
 	SetValue<bool>(s, "GenerateCommitMessageWithAI")         << this->generate_commit_message_with_ai;
-	SetValue<std::string>(s, "Provider")                     << this->ai_model.provider_info_->tag;
-	SetValue<std::string>(s, "ModelURI")                     << this->ai_model.model_uri().string;
+	SetValue<std::string>(s, "Provider")                     << this->ai_model->provider_info_->tag;
+	SetValue<std::string>(s, "ModelURI")                     << this->ai_model->model_uri().string;
 	s.endGroup();
 
 #ifdef Q_OS_WIN

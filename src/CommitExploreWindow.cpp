@@ -1,16 +1,15 @@
 
 #include "CommitExploreWindow.h"
 #include "ui_CommitExploreWindow.h"
-#include "ApplicationGlobal.h"
 #include "GitObjectManager.h"
 #include "ImageViewWidget.h"
 #include "MainWindow.h"
-#include <common/misc.h>
-#include <common/joinpath.h>
-#include <common/q/helper.h>
 #include "platform.h"
 #include <QFileIconProvider>
 #include <QMenu>
+#include <common/joinpath.h>
+#include <common/misc.h>
+#include <common/q/helper.h>
 #include <memory>
 
 static QTreeWidgetItem *newQTreeWidgetItem()
