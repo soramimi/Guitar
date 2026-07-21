@@ -383,10 +383,13 @@ void ProcessWin::start(std::string const &command, bool use_input)
 	m->th.start();
 }
 
-bool ProcessWin::wait(int time)
+ProcessResult ProcessWin::wait(int time)
 {
+	ProcessResult result;
+	result.started_ = m->th.thread_.joinable();
+	result.running_ = result.started_;
 	if (!m->th.waitFor(time)) {
-		return false;
+		return result;
 	}
 	m->th.wait();
 
@@ -397,8 +400,12 @@ bool ProcessWin::wait(int time)
 	m->exit_code = m->th.exit_code_;
 	m->error_code = static_cast<int>(m->th.error_code_);
 	m->error_message = std::move(m->th.error_message_);
+	result.running_ = false;
+	result.exit_code_ = static_cast<std::uint32_t>(m->exit_code);
+	result.error_code_ = static_cast<std::uint32_t>(m->error_code);
+	result.error_message_ = m->error_message;
 	m->th.reset();
-	return true;
+	return result;
 }
 
 bool ProcessWin::is_running() const

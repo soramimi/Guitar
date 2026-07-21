@@ -287,8 +287,11 @@ void ProcessWinPty::start(std::string const &cmdline, std::string const &env, bo
 	});
 }
 
-bool ProcessWinPty::wait(int time)
+ProcessResult ProcessWinPty::wait(int time)
 {
+	ProcessResult result;
+	result.started_ = m->thread.joinable();
+	result.running_ = result.started_;
 	if (m->thread.joinable()) {
 		std::unique_lock<std::mutex> lock(m->mutex);
 		bool done;
@@ -301,13 +304,16 @@ bool ProcessWinPty::wait(int time)
 			});
 		}
 		if (!done) {
-			return false;
+				return result;
 		}
 		lock.unlock();
 		m->thread.join();
 		stderr_bytes_ = { };
 	}
-	return true;
+	result.running_ = false;
+	result.exit_code_ = static_cast<std::uint32_t>(m->exit_code);
+	result.error_message_ = m->error_message;
+	return result;
 }
 
 void ProcessWinPty::stop()

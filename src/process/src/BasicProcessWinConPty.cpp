@@ -11,7 +11,8 @@ struct BasicProcessWinConPty::Private {
 		AutoHandle hPipeInWrite;
 		AutoHandle hPipeOutRead;
 		AutoHandle hPipeOutWrite;
-		_AbstractBasicProcess::ExecResult result;
+		// _AbstractBasicProcess::ExecResult result;
+		ProcessResult result;
 		std::deque<char> output_queue;
 		std::vector<char> output_vector;
 		bool output_closed = false;
@@ -61,15 +62,15 @@ bool BasicProcessWinConPty::start(std::string const &cmd)
 	// ConPTYから見た入力用と出力用の2本の匿名パイプを用意する。
 	if (!CreatePipe(&m->d.hPipeInRead, &m->d.hPipeInWrite, nullptr, 0)) {
 		DWORD error_code = GetLastError();
-		m->d.result.error_code = error_code;
-		m->d.result.error_message = misc::get_error_message(error_code);
+		m->d.result.error_code_ = error_code;
+		m->d.result.error_message_ = misc::get_error_message(error_code);
 		return false;
 	}
 	if (!CreatePipe(&m->d.hPipeOutRead, &m->d.hPipeOutWrite, nullptr, 0)) {
 		DWORD error_code = GetLastError();
 		m->d = { };
-		m->d.result.error_code = error_code;
-		m->d.result.error_message = misc::get_error_message(error_code);
+		m->d.result.error_code_ = error_code;
+		m->d.result.error_message_ = misc::get_error_message(error_code);
 		return false;
 	}
 
@@ -79,8 +80,8 @@ bool BasicProcessWinConPty::start(std::string const &cmd)
 	if (FAILED(hr)) {
 		DWORD error_code = static_cast<DWORD>(hr);
 		m->d = { };
-		m->d.result.error_code = error_code;
-		m->d.result.error_message = misc::get_error_message(error_code);
+		m->d.result.error_code_ = error_code;
+		m->d.result.error_message_ = misc::get_error_message(error_code);
 		return false;
 	}
 
@@ -89,8 +90,8 @@ bool BasicProcessWinConPty::start(std::string const &cmd)
 	if (attrSize == 0) {
 		DWORD error_code = GetLastError();
 		m->d = { };
-		m->d.result.error_code = error_code;
-		m->d.result.error_message = misc::get_error_message(error_code);
+		m->d.result.error_code_ = error_code;
+		m->d.result.error_message_ = misc::get_error_message(error_code);
 		return false;
 	}
 
@@ -104,8 +105,8 @@ bool BasicProcessWinConPty::start(std::string const &cmd)
 		DWORD error_code = siEx.lpAttributeList ? GetLastError() : ERROR_NOT_ENOUGH_MEMORY;
 		if (siEx.lpAttributeList) HeapFree(GetProcessHeap(), 0, siEx.lpAttributeList);
 		m->d = { };
-		m->d.result.error_code = error_code;
-		m->d.result.error_message = misc::get_error_message(error_code);
+		m->d.result.error_code_ = error_code;
+		m->d.result.error_message_ = misc::get_error_message(error_code);
 		return false;
 	}
 
@@ -116,7 +117,7 @@ bool BasicProcessWinConPty::start(std::string const &cmd)
 		creation_flags |= CREATE_NO_WINDOW;
 	}
 
-	m->d.running = CreateProcessW(nullptr,
+	bool ok = CreateProcessW(nullptr,
 		wcmd.data(),
 		nullptr,
 		nullptr,
@@ -126,10 +127,11 @@ bool BasicProcessWinConPty::start(std::string const &cmd)
 		m->change_dir.empty() ? nullptr : m->change_dir.c_str(),
 		&siEx.StartupInfo,
 		&m->d.pi);
-	if (!m->d.running) {
+
+	if (!ok) {
 		DWORD error_code = GetLastError();
-		m->d.result.error_code = error_code;
-		m->d.result.error_message = misc::get_error_message(error_code);
+		m->d.result.error_code_ = error_code;
+		m->d.result.error_message_ = misc::get_error_message(error_code);
 	}
 
 	DeleteProcThreadAttributeList(siEx.lpAttributeList);
@@ -140,15 +142,17 @@ bool BasicProcessWinConPty::start(std::string const &cmd)
 	m->d.hPipeInRead.close();
 	m->d.hPipeOutWrite.close();
 
-	if (!m->d.running) {
-		DWORD error_code = m->d.result.error_code;
-		std::string error_message = std::move(m->d.result.error_message);
+	if (!ok) {
+		DWORD error_code = m->d.result.error_code_;
+		std::string error_message = std::move(m->d.result.error_message_);
 		m->d = { };
-		m->d.result.error_code = error_code;
-		m->d.result.error_message = std::move(error_message);
+		m->d.result.error_code_ = error_code;
+		m->d.result.error_message_ = std::move(error_message);
 		return false;
 	}
-	m->d.result.started = true;
+
+	m->d.result.started_ = true;
+	m->d.result.running_ = true; // 起動した＆実行中
 
 	// terminate() が wait() と競合しても安全なように、プロセスハンドルを
 	// スナップショットとして保持する (wait() がハンドルを閉じる直前にクリアする)。
@@ -226,8 +230,8 @@ bool BasicProcessWinConPty::start(std::string const &cmd)
 
 	if (ResumeThread(m->d.pi->hThread) == static_cast<DWORD>(-1)) {
 		DWORD error_code = GetLastError();
-		m->d.result.error_code = error_code;
-		m->d.result.error_message = misc::get_error_message(error_code);
+		m->d.result.error_code_ = error_code;
+		m->d.result.error_message_ = misc::get_error_message(error_code);
 		TerminateProcess(m->d.pi->hProcess, 128);
 		{
 			std::lock_guard<std::mutex> lock(m->snap_mutex);
@@ -243,24 +247,27 @@ bool BasicProcessWinConPty::start(std::string const &cmd)
 		if (m->output_reader.joinable()) {
 			m->output_reader.join();
 		}
-		DWORD ec = m->d.result.error_code;
-		std::string msg = std::move(m->d.result.error_message);
+		DWORD ec = m->d.result.error_code_;
+		std::string msg = std::move(m->d.result.error_message_);
 		m->d = { };
-		m->d.result.error_code = ec;
-		m->d.result.error_message = std::move(msg);
+		m->d.result.error_code_ = ec;
+		m->d.result.error_message_ = std::move(msg);
 		return false;
 	}
 
 	return true;
 }
 
-BasicProcessWinConPty::ExecResult BasicProcessWinConPty::wait()
+ProcessResult BasicProcessWinConPty::wait()
 {
 	if (IS_VALID_HANDLE(m->d.pi->hProcess) || IS_VALID_HANDLE(m->d.pi->hThread)) {
 
 		// Git終了後にClosePseudoConsoleすることでhPipeOutReadがEOFになる。
 		WaitForSingleObject(m->d.pi->hProcess, INFINITE);
-		GetExitCodeProcess(m->d.pi->hProcess, &m->d.result.exit_code);
+		DWORD exit_code = static_cast<DWORD>(-1);
+		if (GetExitCodeProcess(m->d.pi->hProcess, &exit_code)) {
+			m->d.result.exit_code_ = exit_code;
+		}
 		{
 			std::lock_guard<std::mutex> lock(m->snap_mutex);
 			m->hProcess_snap = nullptr;
@@ -286,10 +293,11 @@ BasicProcessWinConPty::ExecResult BasicProcessWinConPty::wait()
 
 	m->output_bytes = std::move(m->d.output_vector);
 
-	auto ret = std::move(m->d.result);
-	m->last_exit_code = ret.exit_code;
+	ProcessResult ret = std::move(m->d.result);
+	m->last_exit_code = ret.exit_code_;
 	m->d = { };
 
+	ret.running_ = false;
 	return ret;
 }
 

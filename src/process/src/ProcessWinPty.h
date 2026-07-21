@@ -18,7 +18,7 @@ public:
 	void close_input();
 	void start(std::string const &cmdline, std::string const &env, bool use_input) override;
 	void stop() override;
-	bool wait(int time = INT_MAX) override;
+	ProcessResult wait(int time = INT_MAX) override;
 	int get_exit_code() const override;
 	std::string const &get_error_message() const;
 };

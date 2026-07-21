@@ -15,7 +15,7 @@ public:
 	ProcessPosix();
 	~ProcessPosix();
 	void start(std::string const &command, bool use_input);
-	bool wait(int time = INT_MAX);
+	ProcessResult wait(int time = INT_MAX);
 	void stop();
 	bool is_running() const;
 	void write_input(char const *ptr, int len);
@@ -45,7 +45,7 @@ public:
 	void write_input(char const *ptr, int len) override;
 	void close_input();
 	void start(std::string const &cmd, std::string const &env, bool use_input) override;
-	bool wait(int time = INT_MAX);
+	ProcessResult wait(int time = INT_MAX) override;
 	void stop() override;
 	int get_exit_code() const override;
 	int get_error_code() const;

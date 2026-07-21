@@ -73,7 +73,7 @@ void ProcessWinConPty::start(std::string const &command, std::string const &env,
 		{
 			std::lock_guard<std::mutex> lock(m->state_mutex);
 			m->running = false;
-			m->exit_code = result.exit_code;
+			m->exit_code = result.exit_code_;
 		}
 		{
 			std::lock_guard<std::mutex> output_lock(mutex_);
@@ -86,8 +86,17 @@ void ProcessWinConPty::start(std::string const &command, std::string const &env,
 	}, command);
 }
 
-bool ProcessWinConPty::wait(int time)
+ProcessResult ProcessWinConPty::wait(int time)
 {
+	ProcessResult result;
+	{
+		std::lock_guard<std::mutex> lock(m->state_mutex);
+		result.started_ = m->thread.joinable() || m->running || m->exit_code != -1;
+		result.running_ = m->running;
+		if (m->exit_code != -1) {
+			result.exit_code_ = static_cast<std::uint32_t>(m->exit_code);
+		}
+	}
 	{
 		std::unique_lock<std::mutex> op(m->op_mutex);
 		if (m->thread.joinable()) {
@@ -104,13 +113,19 @@ bool ProcessWinConPty::wait(int time)
 					return !m->running;
 				});
 			}
-			if (!b) return false;
+			if (!b) return result;
 		}
 	}
 	if (m->thread.joinable()) {
 		m->thread.join();
 	}
-	return true;
+	std::lock_guard<std::mutex> lock(m->state_mutex);
+	result.running_ = false;
+	result.started_ = result.started_ || m->exit_code != -1;
+	if (m->exit_code != -1) {
+		result.exit_code_ = static_cast<std::uint32_t>(m->exit_code);
+	}
+	return result;
 }
 
 void ProcessWinConPty::stop()

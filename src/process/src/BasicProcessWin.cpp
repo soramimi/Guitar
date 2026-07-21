@@ -88,7 +88,7 @@ struct BasicProcessWin::Private {
 		// std::string output_bytes;
 		bool output_closed = false;
 		DWORD exit_code = static_cast<DWORD>(-1);
-		_AbstractBasicProcess::ExecResult result;
+		ProcessResult result;
 	} d;
 	std::vector<char> output_vector;
 	std::thread output_reader;
@@ -166,23 +166,23 @@ bool BasicProcessWin::start(std::string const &cmd)
 	if (!CreatePipe(&hInputRead, &m->d.hInputWrite, &sa, 0)) {
 		DWORD error_code = GetLastError();
 		m->d = { };
-		m->d.result.error_code = error_code;
-		m->d.result.error_message = misc::get_error_message(error_code);
+		m->d.result.error_code_ = error_code;
+		m->d.result.error_message_ = misc::get_error_message(error_code);
 		return false;
 	}
 	if (!CreatePipe(&m->d.hOutputRead, &hOutputWrite, &sa, 0)) {
 		DWORD error_code = GetLastError();
 		m->d = { };
-		m->d.result.error_code = error_code;
-		m->d.result.error_message = misc::get_error_message(error_code);
+		m->d.result.error_code_ = error_code;
+		m->d.result.error_message_ = misc::get_error_message(error_code);
 		return false;
 	}
 	if (!SetHandleInformation(m->d.hInputWrite, HANDLE_FLAG_INHERIT, 0)
 		|| !SetHandleInformation(m->d.hOutputRead, HANDLE_FLAG_INHERIT, 0)) {
 		DWORD error_code = GetLastError();
 		m->d = { };
-		m->d.result.error_code = error_code;
-		m->d.result.error_message = misc::get_error_message(error_code);
+		m->d.result.error_code_ = error_code;
+		m->d.result.error_message_ = misc::get_error_message(error_code);
 		return false;
 	}
 
@@ -208,10 +208,13 @@ bool BasicProcessWin::start(std::string const &cmd)
 	if (!ok) {
 		DWORD error_code = GetLastError();
 		m->d = { };
-		m->d.result.error_code = error_code;
-		m->d.result.error_message = misc::get_error_message(error_code);
+		m->d.result.error_code_ = error_code;
+		m->d.result.error_message_ = misc::get_error_message(error_code);
 		return false;
 	}
+
+	m->d.result.started_ = true;
+	m->d.result.running_ = true; // 起動した＆実行中
 
 	// terminate() が wait() と競合しても安全なように、プロセスハンドルを
 	// スナップショットとして保持する (wait() がハンドルを閉じる直前にクリアする)。
@@ -259,16 +262,16 @@ void BasicProcessWin::sync_output()
 	m->output_vector = m->d.output_vector;
 }
 
-_AbstractBasicProcess::ExecResult BasicProcessWin::wait()
+ProcessResult BasicProcessWin::wait()
 {
 	close_input();
 
-	m->d.result.started = IS_VALID_HANDLE(m->pi().hProcess);
-	if (m->d.result.started) {
+	m->d.result.started_ = IS_VALID_HANDLE(m->pi().hProcess);
+	if (m->d.result.started_) {
 		WaitForSingleObject(m->pi().hProcess, INFINITE);
 		DWORD ec = static_cast<DWORD>(-1);
 		if (GetExitCodeProcess(m->pi().hProcess, &ec)) {
-			m->d.result.exit_code = ec;
+			m->d.result.exit_code_ = ec;
 		}
 	}
 	{
@@ -288,9 +291,10 @@ _AbstractBasicProcess::ExecResult BasicProcessWin::wait()
 	sync_output();
 
 	auto ret = std::move(m->d.result);
-	m->last_exit_code = ret.exit_code;
+	m->last_exit_code = static_cast<DWORD>(ret.exit_code_);
 	m->d = { };
 
+	ret.running_ = false;
 	return ret;
 }
 

@@ -23,7 +23,7 @@ public:
 	void set_options(Options const &options);
 
 	bool start(std::string const &cmd);
-	ExecResult wait();
+	ProcessResult wait();
 	void terminate();
 	void close_input();
 	int write_input(char const *ptr, int n);

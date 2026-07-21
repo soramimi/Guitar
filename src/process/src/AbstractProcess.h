@@ -2,6 +2,7 @@
 #define ABSTRACTPROCESS_H
 
 #include "ProcessHelper.h"
+#include <cstdint>
 #include <condition_variable>
 #include <deque>
 #include <functional>
@@ -17,12 +18,45 @@
 
 class QString;
 
+struct ProcessResult {
+	bool started_ = false;
+	bool running_ = false;
+	std::uint32_t exit_code_ = static_cast<std::uint32_t>(-1);
+	std::uint32_t error_code_ = 0;
+	std::string error_message_;
+
+	bool started() const
+	{
+		return started_;
+	}
+
+	bool running() const
+	{
+		return running_;
+	}
+
+	std::uint32_t exit_code() const
+	{
+		return exit_code_;
+	}
+
+	std::uint32_t error_code() const
+	{
+		return error_code_;
+	}
+
+	std::string const &error_message() const
+	{
+		return error_message_;
+	}
+};
+
 class AbstractProcess {
 public:
 	virtual ~AbstractProcess() { }
 
 	virtual void start(std::string const &command, bool use_input) = 0;
-	virtual bool wait(int time = INT_MAX) = 0;
+	virtual ProcessResult wait(int time = INT_MAX) = 0;
 	virtual void stop() = 0;
 	virtual bool is_running() const = 0;
 	virtual int get_exit_code() const = 0;
@@ -97,7 +131,7 @@ public:
 	}
 
 	virtual void start(std::string const &cmd, std::string const &env, bool use_input) = 0;
-	virtual bool wait(int time = INT_MAX) = 0;
+	virtual ProcessResult wait(int time = INT_MAX) = 0;
 	virtual void stop() = 0;
 	virtual bool is_running() const = 0;
 	virtual int get_exit_code() const = 0;

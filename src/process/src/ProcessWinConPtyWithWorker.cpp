@@ -78,10 +78,10 @@ int ProcessWinConPtyWithWorker::run_worker(int argc, char **argv)
 		BasicProcessWinConPty conpty(opts);
 		conpty.start(cmd);
 		auto result = conpty.wait();
-		if (!result.started) {
+		if (!result.started_) {
 			return 126;
 		}
-		return static_cast<int>(result.exit_code);
+		return static_cast<int>(result.exit_code_);
 	}
 
 	return 126; // not worker mode
@@ -166,18 +166,24 @@ int ProcessWinConPtyWithWorker::_wait()
 		output_vector_ = out;
 	}
 	stderr_bytes_.clear();
-	if (result.started) {
-		m->exit_code = result.exit_code;
+	if (result.started_) {
+		m->exit_code = result.exit_code_;
 	}
 	m->running = false;
 	m->waited = true;
 	return m->exit_code;
 }
 
-bool ProcessWinConPtyWithWorker::wait(int time)
+ProcessResult ProcessWinConPtyWithWorker::wait(int time)
 {
+	ProcessResult result;
 	{
 		std::unique_lock<std::mutex> lock(mutex_);
+		result.started_ = m->started;
+		result.running_ = m->running;
+		if (m->exit_code != -1) {
+			result.exit_code_ = static_cast<std::uint32_t>(m->exit_code);
+		}
 		if (m->running) {
 			bool b;
 			if (time == INT_MAX) {
@@ -188,14 +194,24 @@ bool ProcessWinConPtyWithWorker::wait(int time)
 					return !m->running;
 				});
 			}
-			if (!b) return false;
+			if (!b) return result;
 		}
 		if (m->waited || !m->started) {
-			return true;
+			result.running_ = false;
+			if (m->exit_code != -1) {
+				result.exit_code_ = static_cast<std::uint32_t>(m->exit_code);
+			}
+			return result;
 		}
 	}
 	_wait();
-	return true;
+	std::lock_guard<std::mutex> lock(mutex_);
+	result.started_ = m->started;
+	result.running_ = false;
+	if (m->exit_code != -1) {
+		result.exit_code_ = static_cast<std::uint32_t>(m->exit_code);
+	}
+	return result;
 }
 
 void ProcessWinConPtyWithWorker::stop()

@@ -22,20 +22,9 @@ std::string build_command_line(std::vector<std::string> const &args);
 
 class _AbstractBasicProcess {
 public:
-	struct ExecResult {
-		bool started = false;
-#ifdef _WIN32
-		DWORD exit_code = static_cast<DWORD>(-1);
-		DWORD error_code = ERROR_SUCCESS;
-#else
-		uint32_t exit_code = static_cast<uint32_t>(-1);
-		uint32_t error_code = 0; // ERROR_SUCCESS;
-#endif
-		std::string error_message;
-	};
 	virtual ~_AbstractBasicProcess() { }
 	virtual bool start(std::string const &cmd) = 0;
-	virtual ExecResult wait() = 0;
+	virtual ProcessResult wait() = 0;
 	virtual void terminate() = 0;
 	virtual void close_input() = 0;
 	virtual int write_input(char const *ptr, int n) = 0;
@@ -65,7 +54,7 @@ public:
 	void set_options(Options const &options);
 	bool is_running() const;
 	bool start(std::string const &cmd);
-	ExecResult wait();
+	ProcessResult wait();
 	void terminate();
 	void close_input();
 	int write_input(char const *ptr, int n);

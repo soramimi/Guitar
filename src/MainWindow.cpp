@@ -1792,7 +1792,7 @@ void MainWindow::openRepositoryMain(OpenRepositoryOption const &opt)
 
 	AbstractPtyProcess *pty = getPtyProcess();
 	if (pty) {
-		if (!pty->wait(5000)) {
+		if (pty->wait(5000).running()) {
 			/*return;*/ //@ something wrong
 		}
 	}
@@ -2881,7 +2881,7 @@ void MainWindow::commit(bool amend)
 			} else {
 				ok = g.commit(text, sign, pty);
 			}
-			while (!pty->wait(1)); // wait for the process to finish
+			while (pty->wait(1).running()); // wait for the process to finish
 
 			if (ok) {
 				updateStatusBarText();
@@ -6589,7 +6589,7 @@ bool MainWindow::isValidRemoteURL(const QString &url, const QString &sshkey)
 	{
 		QElapsedTimer time;
 		time.start();
-		while (!getPtyProcess()->wait(10)) {
+		while (getPtyProcess()->wait(10).running()) {
 			if (time.elapsed() > 10000) {
 				f = false;
 				break;

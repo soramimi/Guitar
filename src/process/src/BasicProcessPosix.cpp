@@ -462,10 +462,13 @@ void ProcessPosix::start(std::string const &command, bool use_input)
 	m->thread.start();
 }
 
-bool ProcessPosix::wait(int time)
+ProcessResult ProcessPosix::wait(int time)
 {
+	ProcessResult result;
+	result.started_ = m->thread.thread.joinable();
+	result.running_ = result.started_;
 	if (!m->thread.waitFor(time)) {
-		return false;
+		return result;
 	}
 	m->thread.wait();
 
@@ -476,8 +479,12 @@ bool ProcessPosix::wait(int time)
 	m->exit_code = m->thread.exit_code;
 	m->error_code = m->thread.error_code;
 	m->error_message = std::move(m->thread.error_message);
+	result.running_ = false;
+	result.exit_code_ = static_cast<std::uint32_t>(m->exit_code);
+	result.error_code_ = static_cast<std::uint32_t>(m->error_code);
+	result.error_message_ = m->error_message;
 	m->thread.reset();
-	return true;
+	return result;
 }
 
 int ProcessPosix::get_error_code() const
@@ -662,8 +669,11 @@ void ProcessPosixPty::start(std::string const &cmd, std::string const &env, bool
 	});
 }
 
-bool ProcessPosixPty::wait(int time)
+ProcessResult ProcessPosixPty::wait(int time)
 {
+	ProcessResult result;
+	result.started_ = m->thread.joinable();
+	result.running_ = result.started_;
 	if (m->thread.joinable()) {
 		std::unique_lock<std::mutex> lock(m->mutex);
 		bool done;
@@ -676,12 +686,16 @@ bool ProcessPosixPty::wait(int time)
 			});
 		}
 		if (!done) {
-			return false;
+				return result;
 		}
 		lock.unlock();
 		m->thread.join();
 	}
-	return true;
+	result.running_ = false;
+	result.exit_code_ = static_cast<std::uint32_t>(m->exit_code);
+	result.error_code_ = static_cast<std::uint32_t>(m->error_code);
+	result.error_message_ = m->error_message;
+	return result;
 }
 
 int ProcessPosixPty::get_error_code() const

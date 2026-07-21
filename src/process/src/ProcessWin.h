@@ -18,7 +18,7 @@ public:
 	void close_input();
 	void start(std::string const &command, bool use_input);
 	void stop();
-	bool wait(int time = INT_MAX);
+	ProcessResult wait(int time = INT_MAX);
 	int get_exit_code() const;
 	int get_error_code() const;
 	std::string const &get_error_message() const;
