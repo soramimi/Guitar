@@ -159,9 +159,9 @@ ApplicationSettings ApplicationSettings::loadSettings()
 	if (console_backend == "WinPty") {
 		as.console_backend = ConsoleBackend::WinPty;
 	} else if (console_backend == "ConPtyWithWorkerProcess") {
-		as.console_backend = ConsoleBackend::ConPtyWithWorkerProcess;
+		as.console_backend = ConsoleBackend::ConPtyWithWorker;
 	} else {
-		as.console_backend = ConsoleBackend::ConPtyDirectly;
+		as.console_backend = ConsoleBackend::ConPty;
 	}
 #endif
 
@@ -244,10 +244,10 @@ void ApplicationSettings::saveSettings() const
 	QString cb;
 	if (this->console_backend == ConsoleBackend::WinPty) {
 		cb = "WinPty";
-	} else if (this->console_backend == ConsoleBackend::ConPtyWithWorkerProcess) {
+	} else if (this->console_backend == ConsoleBackend::ConPtyWithWorker) {
 		cb = "ConPtyWithWorkerProcess";
 	} else {
-		cb = "ConPtyDirectly";
+		cb = "ConPty";
 	}
 	s.beginGroup("Windows");
 	SetValue<QString>(s, "ConsoleBackend")               << cb;

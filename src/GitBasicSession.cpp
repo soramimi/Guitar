@@ -102,7 +102,8 @@ std::optional<GitResult> GitBasicSession::exec_git(std::string const &arg, const
 
 			Process proc;
 			proc.start(cmd, false);
-			exit_code = proc.wait();
+			proc.wait();
+			exit_code = proc.get_exit_code();
 
 			if (opt.errout) {
 				result.set_output(proc.stderr_bytes());

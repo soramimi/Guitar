@@ -20,6 +20,7 @@ private:
 	struct Private;
 	Private *m;
 
+	int _wait();
 public:
 	ProcessWinConPtyWithWorker();
 	~ProcessWinConPtyWithWorker() override;
@@ -34,6 +35,7 @@ public:
 	void write_input(char const *ptr, int len) override;
 	int read_output(char *ptr, int len);
 	void close_input() override;
+
 };
 
 #endif // PROCESSWINCONPTYWITHWORKER_H

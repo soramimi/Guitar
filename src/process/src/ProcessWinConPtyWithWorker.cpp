@@ -1,7 +1,6 @@
 #include "ProcessWinConPtyWithWorker.h"
 #include "BasicProcessWinConPty.h"
 #include <algorithm>
-#include <atomic>
 #include <base64.h>
 #include <misc.h>
 
@@ -14,7 +13,8 @@ struct ProcessWinConPtyWithWorker::Private {
 	std::condition_variable cv;
 	BasicProcessWin proc;
 	bool started = false;
-	std::atomic<bool> running { false }; // 完了コールバックがワーカー側スレッドから更新するため atomic
+	bool running = false;
+	bool waited = false;
 	int exit_code = -1;
 };
 
@@ -94,6 +94,7 @@ void ProcessWinConPtyWithWorker::start(std::string const &command, std::string c
 	std::lock_guard<std::mutex> lock(mutex_);
 	m->started = false;
 	m->running = false;
+	m->waited = false;
 	m->exit_code = -1;
 	if (command.empty()) {
 		return;
@@ -126,55 +127,90 @@ void ProcessWinConPtyWithWorker::start(std::string const &command, std::string c
 		return;
 	}
 
-	std::string cmd = misc::build_command_line({ executable,
-		std::string(subprocess_tag),
-		base64_encode(command) });
+	std::string cmd = misc::build_command_line({ executable, std::string(subprocess_tag), base64_encode(command) });
 
 	m->proc.set_completion_callback([this](bool started, std::shared_ptr<void> user_data) {
 		(void)started;
 		(void)user_data;
-		m->running = false;
+		{
+			std::lock_guard<std::mutex> lock(mutex_);
+			m->proc.sync_output();
+			this->output_vector_ = m->proc.stdout_bytes();
+			this->stderr_bytes_.clear();
+			m->running = false;
+		}
 		m->cv.notify_all();
 		this->notify_completed();
-	},
-		this->user_data_);
+	}, this->user_data_);
 
 	m->proc.set_change_dir(change_dir_);
 	m->started = m->proc.start(cmd);
 	m->running = m->started;
 	if (m->started) {
-		stdout_bytes_.clear();
+		output_vector_.clear();
 		stderr_bytes_.clear();
 	}
 	m->exit_code = -1;
 }
 
+
+
+int ProcessWinConPtyWithWorker::_wait()
+{
+	auto result = m->proc.wait();
+
+	std::lock_guard<std::mutex> lock(mutex_);
+	m->proc.sync_output();
+	std::vector<char> const &out = m->proc.stdout_bytes();
+	if (!out.empty() || output_vector_.empty()) {
+		output_vector_ = out;
+	}
+	stderr_bytes_.clear();
+	if (result.started) {
+		m->exit_code = result.exit_code;
+	}
+	m->running = false;
+	m->waited = true;
+	return m->exit_code;
+}
+
 bool ProcessWinConPtyWithWorker::wait(int time)
 {
-	std::unique_lock<std::mutex> lock(mutex_);
-	if (m->cv.wait_for(lock, std::chrono::milliseconds(time), [this]() { return !m->running.load(); })) {
-		std::vector<char> const &out = m->proc.stdout_bytes();
-		stdout_bytes_ = out;
-		stderr_bytes_.clear();
-		m->exit_code = m->proc.get_exit_code();
-		m->running = false;
-		return true;
+	{
+		std::unique_lock<std::mutex> lock(mutex_);
+		if (m->running) {
+			bool b;
+			if (time == INT_MAX) {
+				m->cv.wait(lock, [this]() { return !m->running; });
+				b = true;
+			} else {
+				b = m->cv.wait_for(lock, std::chrono::milliseconds(time), [this]() {
+					return !m->running;
+				});
+			}
+			if (!b) return false;
+		}
+		if (m->waited || !m->started) {
+			return true;
+		}
 	}
-	return false;
+	_wait();
+	return true;
 }
 
 void ProcessWinConPtyWithWorker::stop()
 {
-	std::lock_guard<std::mutex> lock(mutex_);
-	if (m->running) {
+	bool running = false;
+	{
+		std::lock_guard<std::mutex> lock(mutex_);
+		running = m->running;
+	}
+	if (running) {
 		m->proc.close_input();
 		m->proc.terminate();
-		m->proc.wait();
-		m->running = false;
-		std::vector<char> const &out = m->proc.stdout_bytes();
-		stdout_bytes_.assign(out.begin(), out.end());
-		stderr_bytes_.clear();
-		m->exit_code = m->proc.get_exit_code();
+	}
+	if (running || m->started) {
+		wait();
 	}
 }
 

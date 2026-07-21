@@ -80,9 +80,11 @@ struct ProcessWinPty::Private {
 	std::thread thread;
 	std::mutex mutex;
 	std::condition_variable cv;
+	bool completed = true;
 	std::string command;
 	std::string env;
 	std::string error_message;
+	OutputReaderThread2 th_output_reader;
 	AutoHandle hProcess;
 	AutoHandle hOutput;
 	AutoHandle hInput;
@@ -149,8 +151,7 @@ void ProcessWinPty::run()
 		notify_completed();
 		return;
 	}
-	OutputReaderThread2 th_output_reader;
-	th_output_reader.start(m->hOutput, [this](char const *buf, size_t len) {
+	m->th_output_reader.start(m->hOutput, [this](char const *buf, size_t len) {
 		write_output(buf, len);
 	});
 
@@ -171,11 +172,10 @@ void ProcessWinPty::run()
 		change_dir_.empty() ? nullptr : change_dir_.c_str(),
 		envbuf.empty() ? nullptr : envbuf.data(),
 		nullptr);
-
 	if (!spawn_cfg) {
 		m->exit_code = 127;
 		m->error_message = "winpty_spawn_config_new failed";
-		th_output_reader.interrupt();
+		m->th_output_reader.interrupt();
 		close_input();
 		winpty_free(pty);
 		notify_completed();
@@ -186,7 +186,7 @@ void ProcessWinPty::run()
 	if (!spawnSuccess) {
 		m->exit_code = 127;
 		m->error_message = "winpty_spawn failed";
-		th_output_reader.interrupt();
+		m->th_output_reader.interrupt();
 		m->hOutput.close();
 	}
 
@@ -208,7 +208,7 @@ void ProcessWinPty::run()
 	}
 
 	// プロセスの出力を確実に取得するため、ここで output reader スレッドの終了を待つ
-	th_output_reader.wait();
+	m->th_output_reader.wait();
 
 	winpty_free(pty);
 
@@ -273,28 +273,49 @@ void ProcessWinPty::start(std::string const &cmdline, std::string const &env, bo
 	m->env = env;
 	m->error_message.clear();
 	m->interrupted = false;
+	{
+		std::lock_guard<std::mutex> lock(m->mutex);
+		m->completed = false;
+	}
 	m->thread = std::thread([&]() {
 		run();
+		{
+			std::lock_guard<std::mutex> lock(m->mutex);
+			m->completed = true;
+		}
+		m->cv.notify_all();
 	});
 }
 
 bool ProcessWinPty::wait(int time)
 {
-	(void)time;
 	if (m->thread.joinable()) {
-		m->thread.join();
-		{
-			std::lock_guard<std::mutex> lock(mutex_);
-			stdout_bytes_ = output_vector_;
+		std::unique_lock<std::mutex> lock(m->mutex);
+		bool done;
+		if (time == INT_MAX) {
+			m->cv.wait(lock, [this]() { return m->completed; });
+			done = true;
+		} else {
+			done = m->cv.wait_for(lock, std::chrono::milliseconds(time), [this]() {
+				return m->completed;
+			});
 		}
+		if (!done) {
+			return false;
+		}
+		lock.unlock();
+		m->thread.join();
 		stderr_bytes_ = { };
-		return static_cast<int>(m->exit_code);
 	}
-	return false;
+	return true;
 }
 
 void ProcessWinPty::stop()
 {
+	// プロセススレッドに中断を通知してから、出力読み出しスレッドを止める
+	// (ReadFile でブロックしていると winpty プロセスが終了してくれない)
+	m->interrupted = true;
+	m->th_output_reader.terminate();
 	wait();
 }
 

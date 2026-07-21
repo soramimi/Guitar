@@ -8,7 +8,8 @@ struct ProcessWinConPty::Private {
 	mutable std::mutex state_mutex;
 	std::mutex op_mutex;
 	BasicProcessWinConPty conpty;
-	bool started = false;
+	std::thread thread;
+	std::condition_variable cv;
 	bool running = false;
 	int exit_code = -1;
 };
@@ -24,6 +25,9 @@ ProcessWinConPty::ProcessWinConPty()
 ProcessWinConPty::~ProcessWinConPty()
 {
 	stop();
+	if (m->thread.joinable()) {
+		m->thread.join();
+	}
 	delete m;
 }
 
@@ -37,87 +41,113 @@ void ProcessWinConPty::start(std::string const &command, std::string const &env,
 	(void)env;
 	(void)use_input;
 	std::unique_lock<std::mutex> op(m->op_mutex);
-	std::lock_guard<std::mutex> lock(m->state_mutex);
-	if (m->running) {
-		m->conpty.wait();
-		m->running = false;
+	{
+		std::lock_guard<std::mutex> lock(m->state_mutex);
+		if (m->running) {
+			return;
+		}
 	}
-	m->exit_code = -1;
+	if (m->thread.joinable()) {
+		m->thread.join();
+	}
 	if (command.empty()) {
-		m->started = false;
 		return;
 	}
 	if (!BasicProcessWinConPty::is_conpty_available()) {
-		m->started = false;
-		m->running = false;
 		return;
 	}
-	m->conpty.set_change_dir(change_dir_);
-	m->started = m->conpty.start(command);
-	m->running = m->started;
-	if (m->started) {
-		stdout_bytes_.clear();
+	{
+		std::lock_guard<std::mutex> state_lock(m->state_mutex);
+		m->exit_code = -1;
+		m->running = true;
+	}
+	{
+		std::lock_guard<std::mutex> output_lock(mutex_);
+		output_vector_.clear();
 		stderr_bytes_.clear();
 	}
-	m->exit_code = -1;
+	m->conpty.set_change_dir(change_dir_);
+	m->thread = std::thread([this](std::string const &command){
+		m->conpty.start(command);
+		auto result = m->conpty.wait();
+		{
+			std::lock_guard<std::mutex> lock(m->state_mutex);
+			m->running = false;
+			m->exit_code = result.exit_code;
+		}
+		{
+			std::lock_guard<std::mutex> output_lock(mutex_);
+			std::vector<char> const &out = m->conpty.stdout_bytes();
+			output_vector_.assign(out.begin(), out.end());
+			stderr_bytes_.clear();
+		}
+		notify_completed();
+		m->cv.notify_all();
+	}, command);
 }
 
 bool ProcessWinConPty::wait(int time)
 {
-	(void)time;
-
-	// conpty.wait() でブロックしている間は state_mutex を保持しない。
-	// これにより待機中も write_input/read_output/stop が機能する。
 	{
-		std::lock_guard<std::mutex> lock(m->state_mutex);
-		if (!m->running) {
-			return m->exit_code;
+		std::unique_lock<std::mutex> op(m->op_mutex);
+		if (m->thread.joinable()) {
+			bool b;
+			if (time == INT_MAX) {
+				m->cv.wait(op, [this]() {
+					std::lock_guard<std::mutex> lock(m->state_mutex);
+					return !m->running;
+				});
+				b = true;
+			} else {
+				b = m->cv.wait_for(op, std::chrono::milliseconds(time), [this]() {
+					std::lock_guard<std::mutex> lock(m->state_mutex);
+					return !m->running;
+				});
+			}
+			if (!b) return false;
 		}
 	}
-	std::unique_lock<std::mutex> op(m->op_mutex);
-	{
-		// op_mutex 取得までの間に stop() が完了している可能性があるため再確認する
-		std::lock_guard<std::mutex> lock(m->state_mutex);
-		if (!m->running) {
-			return m->exit_code;
-		}
+	if (m->thread.joinable()) {
+		m->thread.join();
 	}
-	auto result = m->conpty.wait();
-	std::lock_guard<std::mutex> lock(m->state_mutex);
-	m->running = false;
-	std::vector<char> const &out = m->conpty.stdout_bytes();
-	stdout_bytes_.assign(out.begin(), out.end());
-	stderr_bytes_.clear();
-	m->exit_code = result.exit_code;
-	return m->exit_code;
+	return true;
 }
 
 void ProcessWinConPty::stop()
 {
+	bool running = false;
 	{
 		std::lock_guard<std::mutex> lock(m->state_mutex);
-		if (!m->running) {
-			return;
+		running = m->running;
+	}
+	if (running) {
+		// 先に子プロセスを終了させる。別スレッドが wait() でブロックしていても、
+		// これによりその待機が解除される (terminate() は内部で競合対策済み)。
+		m->conpty.terminate();
+		std::unique_lock<std::mutex> op(m->op_mutex);
+		{
+			std::lock_guard<std::mutex> lock(m->state_mutex);
+			running = m->running;
+		}
+		if (running) {
+			m->conpty.close_input();
+			m->conpty.wait();
+			{
+				std::lock_guard<std::mutex> lock(m->state_mutex);
+				m->running = false;
+				m->exit_code = m->conpty.get_exit_code();
+			}
+			{
+				std::lock_guard<std::mutex> output_lock(mutex_);
+				std::vector<char> const &out = m->conpty.stdout_bytes();
+				output_vector_.assign(out.begin(), out.end());
+				stderr_bytes_.clear();
+			}
 		}
 	}
-	// 先に子プロセスを終了させる。別スレッドが wait() でブロックしていても、
-	// これによりその待機が解除される (terminate() は内部で競合対策済み)。
-	m->conpty.terminate();
-	std::unique_lock<std::mutex> op(m->op_mutex);
-	{
-		std::lock_guard<std::mutex> lock(m->state_mutex);
-		if (!m->running) {
-			return;
-		}
+	if (m->thread.joinable()) {
+		m->thread.join();
 	}
-	m->conpty.close_input();
-	m->conpty.wait();
-	std::lock_guard<std::mutex> lock(m->state_mutex);
-	m->running = false;
-	std::vector<char> const &out = m->conpty.stdout_bytes();
-	stdout_bytes_.assign(out.begin(), out.end());
-	stderr_bytes_.clear();
-	m->exit_code = m->conpty.get_exit_code();
 }
 
 bool ProcessWinConPty::is_running() const

@@ -21,9 +21,9 @@
      </property>
      <layout class="QVBoxLayout" name="verticalLayout">
       <item>
-       <widget class="QRadioButton" name="radioButton_conpty_directly">
+       <widget class="QRadioButton" name="radioButton_conpty">
         <property name="text">
-         <string>ConPTY directly</string>
+         <string>ConPTY</string>
         </property>
         <property name="checked">
          <bool>true</bool>
@@ -31,9 +31,9 @@
        </widget>
       </item>
       <item>
-       <widget class="QRadioButton" name="radioButton_conpty_with_worker_process">
+       <widget class="QRadioButton" name="radioButton_conpty_with_worker">
         <property name="text">
-         <string>ConPTY with worker process</string>
+         <string>ConPTY with worker</string>
         </property>
        </widget>
       </item>

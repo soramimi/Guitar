@@ -3658,19 +3658,19 @@ QString MainWindow::getBookmarksFilePath() const
 void MainWindow::setupConsoleBackend(ApplicationSettings const *as)
 {
 #ifdef Q_OS_WIN
-	ApplicationSettings::ConsoleBackend be = ApplicationSettings::ConsoleBackend::ConPtyDirectly;
+	ApplicationSettings::ConsoleBackend be = ApplicationSettings::ConsoleBackend::ConPty;
 	if (as) {
 		be = as->console_backend;
 	}
 	switch (be) {
-	case ApplicationSettings::ConsoleBackend::ConPtyWithWorkerProcess:
+	case ApplicationSettings::ConsoleBackend::ConPtyWithWorker:
 		m->pty_process = new_conpty_with_worker_process();
 		break;
 	case ApplicationSettings::ConsoleBackend::WinPty:
 		m->pty_process = new_winpty();
 		break;
 	default:
-		m->pty_process = new_conpty_directly();
+		m->pty_process = new_conpty();
 		break;
 	}
 #else
@@ -4087,9 +4087,11 @@ bool MainWindow::editFile(const QString &path, const QString &title)
 
 void MainWindow::setAppSettings(const ApplicationSettings &appsettings)
 {
+#ifdef Q_OS_WIN
 	if (appsettings.console_backend != global->appsettings.console_backend) {
 		setupConsoleBackend(&appsettings);
 	}
+#endif
 
 	global->appsettings = appsettings;
 }

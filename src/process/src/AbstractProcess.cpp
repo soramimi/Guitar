@@ -31,13 +31,13 @@ int AbstractPtyProcess::pop_output(char *ptr, int len)
 std::string AbstractPtyProcess::get_message() const // deprecated
 {
 	std::lock_guard<std::mutex> lock(mutex_);
-	if (stdout_bytes_.empty()) return { };
-	return std::string(&stdout_bytes_[0], stdout_bytes_.size());
+	if (output_vector_.empty()) return { };
+	return std::string(&output_vector_[0], output_vector_.size());
 }
 
 void AbstractPtyProcess::clear_message()
 {
 	std::lock_guard<std::mutex> lock(mutex_);
 	output_vector_.clear();
-	stdout_bytes_.clear();
+	output_vector_.clear();
 }

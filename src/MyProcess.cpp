@@ -3,9 +3,9 @@
 
 #ifdef _WIN32
 
-std::shared_ptr<AbstractPtyProcess> new_conpty_directly()
+std::shared_ptr<AbstractPtyProcess> new_conpty()
 {
-	return std::make_shared<ProcessWinPty>();
+	return std::make_shared<ProcessWinConPty>();
 }
 
 std::shared_ptr<AbstractPtyProcess> new_conpty_with_worker_process()

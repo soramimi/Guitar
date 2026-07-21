@@ -90,7 +90,7 @@ struct BasicProcessWin::Private {
 		DWORD exit_code = static_cast<DWORD>(-1);
 		_AbstractBasicProcess::ExecResult result;
 	} d;
-	std::vector<char> output_bytes;
+	std::vector<char> output_vector;
 	std::thread output_reader;
 	std::mutex output_mutex;
 	std::condition_variable output_changed;
@@ -254,6 +254,11 @@ bool BasicProcessWin::start(std::string const &cmd)
 	return true;
 }
 
+void BasicProcessWin::sync_output()
+{
+	m->output_vector = m->d.output_vector;
+}
+
 _AbstractBasicProcess::ExecResult BasicProcessWin::wait()
 {
 	close_input();
@@ -279,7 +284,8 @@ _AbstractBasicProcess::ExecResult BasicProcessWin::wait()
 		m->d.hOutputRead.close();
 	}
 
-	m->output_bytes = std::move(m->d.output_vector);
+	m->output_vector = m->d.output_vector;
+	sync_output();
 
 	auto ret = std::move(m->d.result);
 	m->last_exit_code = ret.exit_code;
@@ -369,7 +375,7 @@ bool BasicProcessWin::is_running() const
 
 std::vector<char> const &BasicProcessWin::stdout_bytes() const
 {
-	return m->output_bytes;
+	return m->output_vector;
 }
 
 int BasicProcessWin::get_exit_code() const

@@ -81,6 +81,9 @@ public:
 class ProcessPosixThread {
 public:
 	std::thread thread;
+	std::mutex finished_mutex;
+	std::condition_variable finished_cv;
+	bool finished = true;
 	std::mutex *mutex = nullptr;
 	std::vector<std::string> argvec;
 	std::vector<char *> args;
@@ -116,6 +119,7 @@ public:
 		term_deadline_ms = 0;
 		exit_code = -1;
 		close_input_later = false;
+		finished = true;
 	}
 
 protected:
@@ -298,7 +302,7 @@ protected:
 		fd_in_read = -1;
 		pid = 0;
 		exit_code = -1;
-		fprintf(stderr, "%s\n", error_message.c_str());
+		// fprintf(stderr, "%s\n", error_message.c_str());
 	}
 
 public:
@@ -325,9 +329,30 @@ public:
 	void start()
 	{
 		stop();
+		{
+			std::lock_guard<std::mutex> lock(finished_mutex);
+			finished = false;
+		}
 		thread = std::thread([this]() {
 			run();
+			{
+				std::lock_guard<std::mutex> lock(finished_mutex);
+				finished = true;
+			}
+			finished_cv.notify_all();
 		});
+	}
+	bool waitFor(int time)
+	{
+		if (!thread.joinable()) {
+			return true;
+		}
+		std::unique_lock<std::mutex> lock(finished_mutex);
+		if (time == INT_MAX) {
+			finished_cv.wait(lock, [this]() { return finished; });
+			return true;
+		}
+		return finished_cv.wait_for(lock, std::chrono::milliseconds(time), [this]() { return finished; });
 	}
 	void terminate()
 	{
@@ -437,8 +462,11 @@ void ProcessPosix::start(std::string const &command, bool use_input)
 	m->thread.start();
 }
 
-int ProcessPosix::wait()
+bool ProcessPosix::wait(int time)
 {
+	if (!m->thread.waitFor(time)) {
+		return false;
+	}
 	m->thread.wait();
 
 	m->stdout_bytes.clear();
@@ -449,7 +477,7 @@ int ProcessPosix::wait()
 	m->error_code = m->thread.error_code;
 	m->error_message = std::move(m->thread.error_message);
 	m->thread.reset();
-	return m->exit_code;
+	return true;
 }
 
 int ProcessPosix::get_error_code() const
@@ -554,7 +582,9 @@ struct ProcessPosixPty::Private {
 	process::helper::PushDir pushd;
 	std::atomic<bool> interrupted { false };
 	std::mutex mutex;
+	std::condition_variable cv;
 	std::thread thread;
+	bool completed = true;
 	std::string command;
 	std::string env;
 	int pty_master = -1;
@@ -610,27 +640,48 @@ void ProcessPosixPty::start(std::string const &cmd, std::string const &env, bool
 	m->exit_code = -1;
 	m->error_code = 0;
 	m->error_message.clear();
+	{
+		std::lock_guard<std::mutex> lock(m->mutex);
+		m->completed = false;
+	}
 	if (cmd.empty()) {
 		m->error_code = EINVAL;
 		m->error_message = "empty command";
+		std::lock_guard<std::mutex> lock(m->mutex);
+		m->completed = true;
 		return;
 	}
 	// QThread::start();
 	m->thread = std::thread([this]() {
 		run();
+		{
+			std::lock_guard<std::mutex> lock(m->mutex);
+			m->completed = true;
+		}
+		m->cv.notify_all();
 	});
 }
 
 bool ProcessPosixPty::wait(int time)
 {
-	(void)time;
 	if (m->thread.joinable()) {
+		std::unique_lock<std::mutex> lock(m->mutex);
+		bool done;
+		if (time == INT_MAX) {
+			m->cv.wait(lock, [this]() { return m->completed; });
+			done = true;
+		} else {
+			done = m->cv.wait_for(lock, std::chrono::milliseconds(time), [this]() {
+				return m->completed;
+			});
+		}
+		if (!done) {
+			return false;
+		}
+		lock.unlock();
 		m->thread.join();
-		std::lock_guard<std::mutex> lock(mutex_);
-		stdout_bytes_ = output_vector_;
-		return true;
 	}
-	return false;
+	return true;
 }
 
 int ProcessPosixPty::get_error_code() const
@@ -677,7 +728,7 @@ void ProcessPosixPty::run()
 		// ここでforkに進むと、壊れたfdを子プロセスに渡してしまい原因不明な不具合になる。
 		m->error_code = errno;
 		m->error_message = "failed: posix_openpt/grantpt/unlockpt";
-		fprintf(stderr, "%s\n", m->error_message.c_str());
+		// fprintf(stderr, "%s\n", m->error_message.c_str());
 		if (m->pty_master >= 0) {
 			close(m->pty_master);
 			m->pty_master = -1;
@@ -691,7 +742,7 @@ void ProcessPosixPty::run()
 	if (pid < 0) {
 		m->error_code = errno;
 		m->error_message = "failed: fork";
-		fprintf(stderr, "%s\n", m->error_message.c_str());
+		// fprintf(stderr, "%s\n", m->error_message.c_str());
 		close(m->pty_master);
 		m->pty_master = -1;
 		m->exit_code = -1;

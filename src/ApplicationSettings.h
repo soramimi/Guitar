@@ -94,8 +94,8 @@ public:
 #ifdef Q_OS_WIN
 	enum class ConsoleBackend {
 		Undefined,
-		ConPtyDirectly,
-		ConPtyWithWorkerProcess,
+		ConPty,
+		ConPtyWithWorker,
 		WinPty,
 	};
 	ConsoleBackend console_backend = ConsoleBackend::Undefined;

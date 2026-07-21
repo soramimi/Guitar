@@ -46,10 +46,12 @@ public:
 };
 
 class BasicProcessWin : public _AbstractBasicProcess {
+	friend class ProcessWinConPtyWithWorker;
 private:
 	struct Private;
 	Private *m;
 
+	void sync_output();
 public:
 	struct Options {
 		bool no_window = true;

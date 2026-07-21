@@ -4,7 +4,7 @@
 #include "ApplicationGlobal.h"
 #include "Git.h"
 #include "GitCommandRunner.h"
-// #include "MyProcess.h"
+#include "MyProcess.h"
 #include "RepositoryInfo.h"
 #include "RepositoryModel.h"
 #include "RepositoryTreeWidget.h"

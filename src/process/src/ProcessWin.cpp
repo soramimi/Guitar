@@ -54,6 +54,9 @@ public:
 class ProcessWinThread {
 public:
 	std::thread thread_;
+	std::mutex finished_mutex_;
+	std::condition_variable finished_cv_;
+	bool finished_ = true;
 	std::mutex *mutex_ = nullptr;
 	std::string command_;
 	DWORD exit_code_ = -1;
@@ -85,6 +88,7 @@ public:
 		use_input_ = false;
 		hInputWrite_.close();
 		close_input_later_ = false;
+		finished_ = true;
 	}
 
 public:
@@ -125,7 +129,12 @@ public:
 	}
 	void start()
 	{
+		{
+			std::lock_guard<std::mutex> lock(finished_mutex_);
+			finished_ = false;
+		}
 		thread_ = std::thread([this]() {
+			auto run_impl = [this]() {
 			hInputWrite_.close();
 			error_code_ = ERROR_SUCCESS;
 			error_message_.clear();
@@ -292,7 +301,26 @@ public:
 				}
 				pi.close();
 			}
+			};
+			run_impl();
+			{
+				std::lock_guard<std::mutex> lock(finished_mutex_);
+				finished_ = true;
+			}
+			finished_cv_.notify_all();
 		});
+	}
+	bool waitFor(int time)
+	{
+		if (!thread_.joinable()) {
+			return true;
+		}
+		std::unique_lock<std::mutex> lock(finished_mutex_);
+		if (time == INT_MAX) {
+			finished_cv_.wait(lock, [this]() { return finished_; });
+			return true;
+		}
+		return finished_cv_.wait_for(lock, std::chrono::milliseconds(time), [this]() { return finished_; });
 	}
 	void stop()
 	{
@@ -355,8 +383,11 @@ void ProcessWin::start(std::string const &command, bool use_input)
 	m->th.start();
 }
 
-int ProcessWin::wait()
+bool ProcessWin::wait(int time)
 {
+	if (!m->th.waitFor(time)) {
+		return false;
+	}
 	m->th.wait();
 
 	m->stdout_bytes.clear();
@@ -367,7 +398,7 @@ int ProcessWin::wait()
 	m->error_code = static_cast<int>(m->th.error_code_);
 	m->error_message = std::move(m->th.error_message_);
 	m->th.reset();
-	return m->exit_code;
+	return true;
 }
 
 bool ProcessWin::is_running() const

@@ -7,14 +7,14 @@
 
 #include <ProcessWin.h>
 #include <ProcessWinPty.h>
+#include <ProcessWinConPty.h>
 #include <ProcessWinConPtyWithWorker.h>
 using Process = ProcessWin;
-// using PtyProcess = ProcessWinPty;
-using PtyProcess = ProcessWinConPtyWithWorker;
+// using PtyProcess = ProcessWinConPtyWithWorker;
 
-std::shared_ptr<AbstractPtyProcess> new_conpty_directly();
-std::shared_ptr<AbstractPtyProcess> new_conpty_with_worker_process();
 std::shared_ptr<AbstractPtyProcess> new_winpty();
+std::shared_ptr<AbstractPtyProcess> new_conpty();
+std::shared_ptr<AbstractPtyProcess> new_conpty_with_worker_process();
 
 #else
 

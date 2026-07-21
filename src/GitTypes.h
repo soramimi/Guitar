@@ -1,8 +1,9 @@
 
+#include "MyProcess.h"
+
 #ifndef GITTYPES_H
 #define GITTYPES_H
 
-#include "MyProcess.h"
 #include <common/misc.h>
 #include <common/q/DateTime.h>
 #include <common/qmisc.h>

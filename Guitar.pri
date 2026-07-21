@@ -121,7 +121,6 @@ macx {
 
 SOURCES += \
 	$$PWD/src/MyProcess.cpp \
-	$$PWD/src/SettingWindowsForm.cpp \
 	$$SRC/CommitRecord.cpp \
 	$$SRC/IncrementalSearchHelper.cpp \
 	$$SRC/LoadPlugin.cpp \
@@ -305,7 +304,6 @@ SOURCES += \
 	$$SRC/zip/zipextract.cpp
 
 HEADERS += \
-	$$PWD/src/SettingWindowsForm.h \
 	$$SRC/CommitRecord.h \
 	$$SRC/IncrementalSearchHelper.h \
 	$$SRC/LoadPlugin.h \
@@ -506,7 +504,6 @@ HEADERS += \
 	$$SRC/zip/zipinternal.h
 
 FORMS += \
-	$$PWD/src/SettingWindowsForm.ui \
 	$$SRC/AboutDialog.ui \
 	$$SRC/AddRepositoriesCollectivelyDialog.ui \
 	$$SRC/AddRepositoryDialog.ui \
@@ -587,6 +584,9 @@ unix {
 }
 
 win32 {
+	SOURCES += $$PWD/src/SettingWindowsForm.cpp
+	HEADERS += $$PWD/src/SettingWindowsForm.h
+	FORMS += $$PWD/src/SettingWindowsForm.ui
 	SOURCES += $$SRC/win32/Win32Util.cpp $$SRC/common/wstring.cpp
 	HEADERS += $$SRC/win32/Win32Util.h $$SRC/common/wstring.h
 	LIBS += -lole32
