@@ -2,7 +2,7 @@ QMAKE_PROJECT_DEPTH = 0
 
 CPP_STD = c++20
 CONFIG += $$CPP_STD
-gcc:QMAKE_CXXFLAGS += -Wall -Wextra
+gcc:QMAKE_CXXFLAGS += -std=$$CPP_STD -Wall -Wextra
 
 HEADERS += $$PWD/pragma.h
 gcc:QMAKE_CXXFLAGS += -include $$PWD/pragma.h

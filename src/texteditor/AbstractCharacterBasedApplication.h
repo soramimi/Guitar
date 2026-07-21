@@ -1,15 +1,16 @@
 #ifndef ABSTRACTCHARACTERBASEDAPPLICATION_H
 #define ABSTRACTCHARACTERBASEDAPPLICATION_H
 
+#include <QByteArray>
+#include <QColor>
+#include <QKeyEvent>
 #include <QRect>
 #include <QString>
-#include <QByteArray>
-#include <memory>
-#include <vector>
 #include <functional>
-#include <QKeyEvent>
-#include <QColor>
+#include <memory>
+#include <optional>
 #include <variant>
+#include <vector>
 
 // class MyTextCodec {
 // private:

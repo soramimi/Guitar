@@ -21,7 +21,7 @@
 #endif
 
 extern "C" {
-#include "../../filetype/file/src/file.h"
+#include "../file/src/file.h"
 }
 
 namespace {
