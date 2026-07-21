@@ -1,9 +1,9 @@
 
-// commes: Commit Message
+// coms: Commit Message
 //
 // experimental code for generating commit messages using AI
 
-#include "CommitMessageGenerator.h"
+#include "ai/CommitMessageGenerator.h"
 #include "../common/ConfigParser.h"
 #include "../common/selectitem.h"
 #include "FileTypeDetector.h"
@@ -11,7 +11,7 @@
 #include "common/joinpath.h"
 #include "common/q/FileInfo.h"
 #include "common/str.h"
-#include "curlclient.h"
+#include "inet/curlclient.h"
 #include <string_view>
 
 #ifdef _WIN32
@@ -21,7 +21,7 @@
 #include "common/wstring.h"
 #include "process/ProcessWin.h"
 #else
-#include "process/ProcessPosix.h"
+#include "BasicProcessPosix.h"
 #endif
 
 namespace misc {
@@ -116,7 +116,6 @@ static std::string quoted_text(std::string const &str)
 
 GitReturn git(std::string const &cmd)
 {
-	GitReturn ret;
 #if _WIN32
 	ProcessWin proc;
 #else
@@ -127,7 +126,9 @@ GitReturn git(std::string const &cmd)
 		cd = opt.dir.c_str();
 	}
 	proc.start(fmt("%s -C %s %s")(quoted_text(opt.git_command))(quoted_text(cd))(cmd), false);
-	ret.exit_code = proc.wait();
+	proc.wait();
+	GitReturn ret;
+	ret.exit_code = proc.get_exit_code();
 	ret.out_text = (misc::str)proc.stdout_bytes();
 	return ret;
 }
@@ -223,7 +224,7 @@ std::vector<std::string> request(Option const &opt)
 {
 	std::string diff = CommitMessageGenerator::make_diff(opt.git_command, opt.dir, {});
 
-	CommitMessageGenerator::Request request(diff, {});
+	CommitMessageGenerator::Request request(diff, {}, {});
 
 	CommitMessageGenerator gen(ai_model, request);
 	CommitMessageGenerator::CommitMessageGenerator::Result msg;
@@ -235,7 +236,7 @@ std::vector<std::string> request(Option const &opt)
 		msg.error = true;
 		msg.error_message = fmt("diff is too large (%d bytes)")(request.diff.size());
 	} else {
-		auto r = gen.query();
+		auto r = gen.request();
 		msg = CommitMessageGenerator::parse_response(ai_model, r);
 	}
 	if (msg.error) {
@@ -381,7 +382,7 @@ int main(int argc, char **argv)
 	}
 
 	std::string organization_name = "soramimi.jp";
-	std::string application_name = "commes";
+	std::string application_name = "coms";
 	std::string this_executive_program = FileInfo(argv[0]).absoluteFilePath();
 	std::string generic_config_dir = writable_generic_config_location();
 	std::string app_config_dir = generic_config_dir / organization_name / application_name;

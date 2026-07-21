@@ -5,7 +5,7 @@
 
 #include "../common/ConfigParser.h"
 #include "../common/selectitem.h"
-#include "AiApiBridge.h"
+#include "ai/AiApiBridge.h"
 #include "FileTypeDetector.h"
 #include "common/fmt.h"
 #include "common/joinpath.h"
@@ -20,7 +20,7 @@
 #include <string>
 #include <windows.h>
 #else
-#include "process/ProcessPosix.h"
+#include <BasicProcessPosix.h>
 #endif
 
 namespace misc {

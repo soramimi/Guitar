@@ -57,11 +57,23 @@ public:
 	}
 };
 
+#ifdef APP_GUITAR
+
+#else
+
+FileType file_type_detector;
+
+#endif
+
 } // namespace
 
 FileTypeDetector::Result FileTypeDetector::detect(const char *data, int64_t size) const
 {
+#ifdef APP_GUITAR
 	return global->file_type_detector->detect(data, size);
+#else
+	return file_type_detector.detect(data, size);
+#endif
 }
 
 std::string FileTypeDetector::mimetype_by_data(const char *data, int64_t size) const

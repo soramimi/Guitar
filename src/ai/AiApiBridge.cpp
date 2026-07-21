@@ -1,11 +1,11 @@
 #include <ai/AiApiBridge.h>
 #include "Logger.h"
-#include <QMessageBox>
 #include <ai/CommitMessageGenerator.h>
 #include <common/jstream.h>
 #include <inet/inetclient.h>
 
 #ifdef APP_GUITAR
+#include <QMessageBox>
 #include "ApplicationGlobal.h"
 #endif
 
@@ -789,6 +789,7 @@ AiResult AiApiBridge::request(GenerativeAI::EndPoint::Type eptype, std::string c
 			// APIキーなどの認証情報を取得してリクエストヘッダーを組み立てる
 			GenerativeAI::Credential cred = global_get_ai_credential(model());
 			
+#ifdef APP_GUITAR
 			{ // experimental: 1Password support
 				if (misc::starts_with(cred.api_key, "op://")) {
 					bool ok = false;
@@ -820,6 +821,7 @@ AiResult AiApiBridge::request(GenerativeAI::EndPoint::Type eptype, std::string c
 					}
 				}
 			}
+#endif
 			
 			GenerativeAI::Request ai_req = GenerativeAI::make_request(model().provider_id(), model(), cred);
 			

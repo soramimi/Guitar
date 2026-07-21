@@ -6,7 +6,6 @@
 #include "FileTypeDetector.h"
 #include "Git.h"
 #include "IncrementalSearchHelper.h"
-#include "Theme.h"
 #include "TraceEventWriter.h"
 #include <QColor>
 #include <QString>
@@ -21,6 +20,10 @@
 #include <subprojects/OnePasswordPlugin/src/OnePassword.h>
 #include <subprojects/OnePasswordPlugin/src/OnePasswordInterface.h>
 // #include <MyJagger.h>
+
+#ifdef APP_GUITAR
+#include "Theme.h"
+#endif
 
 class MainWindow;
 class QListWidgetItem;
@@ -40,7 +43,7 @@ struct AccountProfile {
 	}
 	explicit operator bool () const
 	{
-		return misc::isValidMailAddress(email);
+		return misc::isValidMailAddress(email.toStdString());
 	}
 };
 
@@ -65,7 +68,9 @@ public:
 	QString theme_id;
 	QString profiles_xml_path;
 	QColor panel_bg_color;
+#ifdef APP_GUITAR
 	ThemePtr theme;
+#endif
 
 #ifdef UNSAFE_ENABLED
 	bool unsafe_enabled = false;

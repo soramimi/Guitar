@@ -121,6 +121,7 @@ macx {
 
 SOURCES += \
 	$$PWD/src/MyProcess.cpp \
+	$$PWD/subprojects/FileTypePlugin/src/FileTypeWrapper.cpp \
 	$$SRC/CommitRecord.cpp \
 	$$SRC/IncrementalSearchHelper.cpp \
 	$$SRC/LoadPlugin.cpp \
@@ -304,6 +305,7 @@ SOURCES += \
 	$$SRC/zip/zipextract.cpp
 
 HEADERS += \
+	$$PWD/subprojects/FileTypePlugin/src/FileTypeWrapper.h \
 	$$SRC/CommitRecord.h \
 	$$SRC/IncrementalSearchHelper.h \
 	$$SRC/LoadPlugin.h \
