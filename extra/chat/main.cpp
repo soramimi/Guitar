@@ -15,7 +15,7 @@
 
 #ifdef _WIN32
 #include "common/wstring.h"
-#include "process/ProcessWin.h"
+#include <ProcessWin.h>
 #include <shlobj.h>
 #include <string>
 #include <windows.h>
@@ -164,6 +164,37 @@ static std::string default_git_command_path()
 	return "/usr/bin/git";
 #endif
 }
+
+#ifdef _WIN32
+bool getline(char **line, size_t *len, FILE *stream)
+{
+	if (!line || !len || !stream) {
+		return false;
+	}
+	std::string str;
+	int c;
+	while ((c = fgetc(stream)) != EOF) {
+		str += (char)c;
+		if (c == '\n') {
+			break;
+		}
+	}
+	if (str.empty() && c == EOF) {
+		return false;
+	}
+	size_t new_len = str.size() + 1;
+	if (*line == nullptr || *len < new_len) {
+		char *new_line = (char *)realloc(*line, new_len);
+		if (!new_line) {
+			return false;
+		}
+		*line = new_line;
+		*len = new_len;
+	}
+	memcpy(*line, str.c_str(), new_len);
+	return true;
+}
+#endif
 
 int main2(int argc, char **argv)
 {

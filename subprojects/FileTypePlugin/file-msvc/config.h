@@ -5,7 +5,6 @@
 #include <locale.h>
 typedef _locale_t locale_t;
 
-typedef signed __int64 ssize_t;
 typedef unsigned int mode_t;
 #include "unistd.h"
 

@@ -5,31 +5,35 @@ QT += core
 
 gcc:QMAKE_CXXFLAGS += -std=c++17 -Wall -Wextra -Werror=return-type -Werror=trigraphs -Wno-switch -Wno-reorder -Wno-unused-parameter -Wno-unused-parameter
 
+!win32:DEFINES += HAVE_STRCASESTR
+win32:QMAKE_CXXFLAGS += /FI $$PWD/../../subprojects/FileTypePlugin/file-msvc/unistd.h
+
 INCLUDEPATH += $$PWD/../../
 INCLUDEPATH += $$PWD/../../src
 INCLUDEPATH += $$PWD/../../src/common
 INCLUDEPATH += $$PWD/../../src/process/src
 INCLUDEPATH += $$PWD/../../subprojects/FileTypePlugin
+win32:INCLUDEPATH += $$PWD/../../subprojects/FileTypePlugin/file-msvc
 
 DEFINES += NO_LOGGER
 DEFINES += NO_TRACELOG
+DEFINES += NOMINMAX
 
-msvc:INCLUDEPATH += C:/vcpkg/installed/x64-windows/include
-msvc:LIBS += -LC:/vcpkg/installed/x64-windows/lib
-!msvc:DEFINES += HAVE_STRCASESTR
+win32:INCLUDEPATH += C:/vcpkg/installed/x64-windows/include
+win32:LIBS += -LC:/vcpkg/installed/x64-windows/lib
 
-# msvc:LIBS += -lws2_32
+# win32:LIBS += -lws2_32
 
-msvc {
-    LIBS += -lzlib -lzstd -lole32 -lshell32
+win32 {
+    LIBS += -lzlib -lzstd -lole32 -lshell32 -lws2_32
 }
 
-!msvc {
+!win32 {
     LIBS += -lz -lzstd
 }
 
-!msvc:LIBS += -lcurl
-msvc:LIBS += -llibcurl
+!win32:LIBS += -lcurl
+win32:LIBS += -llibcurl
 
 FILETYPEPLUGIN = $$PWD/../../subprojects/FileTypePlugin
 
@@ -83,7 +87,6 @@ HEADERS +=  \
     ../../src/inet/inetresolver.h \
     ../../src/process/src/AbstractProcess.h \
     ../../src/process/src/BasicProcessPosix.h \
-    ../../src/process/src/BasicProcessWin.h \
     ../../src/process/src/ProcessHelper.h \
     ../../subprojects/FileTypePlugin/src/FileType.h \
     ../../subprojects/FileTypePlugin/src/FileTypeWrapper.h \
@@ -95,17 +98,19 @@ HEADERS +=  \
     ../common/selectitem.h \
     main.h
 
-msvc {
+win32 {
 SOURCES += \
+../../src/process/src/ProcessWin.cpp \
 ../../src/process/src/BasicProcessWin.cpp \
-../../src/common/wstring.cpp \
-	../../src/process/ProcessWin.cpp
+../../src/common/wstring.cpp
 HEADERS +=  \
+../../src/process/src/BasicProcessWin.h \
+../../src/process/src/ProcessWin.h \
 ../../src/common/wstring.h
 
 }
 
-!msvc {
+!win32 {
 SOURCES += \
 ../../src/process/src/BasicProcessPosix.cpp
 }

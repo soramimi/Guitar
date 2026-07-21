@@ -19,7 +19,7 @@
 #include <shlobj.h>
 #include <string>
 #include "common/wstring.h"
-#include "process/ProcessWin.h"
+#include "BasicProcessWin.h"
 #else
 #include "BasicProcessPosix.h"
 #endif
