@@ -39,9 +39,6 @@ INCLUDEPATH += $$SRC
 INCLUDEPATH += $$SRC/common
 INCLUDEPATH += $$SRC/coloredit
 INCLUDEPATH += $$SRC/texteditor
-# INCLUDEPATH += $$PWD/subprojects/FileTypePlugin/src
-# INCLUDEPATH += $$PWD/subprojects/IncrementalSearchPlugin/src
-# INCLUDEPATH += $$PWD/subprojects/OnePasswordPlugin/src
 
 win32:INCLUDEPATH += $$PWD/misc/winpty/include
 win32:LIBS += $$PWD/misc/winpty/x64/lib/winpty.lib -lshlwapi
@@ -121,7 +118,6 @@ macx {
 
 SOURCES += \
 	$$PWD/src/MyProcess.cpp \
-	$$PWD/subprojects/FileTypePlugin/src/FileTypeWrapper.cpp \
 	$$SRC/CommitRecord.cpp \
 	$$SRC/IncrementalSearchHelper.cpp \
 	$$SRC/LoadPlugin.cpp \
@@ -305,7 +301,6 @@ SOURCES += \
 	$$SRC/zip/zipextract.cpp
 
 HEADERS += \
-	$$PWD/subprojects/FileTypePlugin/src/FileTypeWrapper.h \
 	$$SRC/CommitRecord.h \
 	$$SRC/IncrementalSearchHelper.h \
 	$$SRC/LoadPlugin.h \
