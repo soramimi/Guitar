@@ -1588,10 +1588,7 @@ struct Array {
 		assert(i < a.size());
 		return std::get<T>(a[i]);
 	}
-	void push_back(Variant const &v)
-	{
-		a.push_back(v);
-	}
+	void push_back(Variant const &v);
 	Array &operator += (Variant const &v)
 	{
 		push_back(v);
@@ -1607,6 +1604,10 @@ struct KeyValue {
 	{
 	}
 };
+inline void Array::push_back(const Variant &v)
+{
+	a.push_back(v);
+}
 struct VariantRef {
 	Variant *var;
 	VariantRef(Variant &v)

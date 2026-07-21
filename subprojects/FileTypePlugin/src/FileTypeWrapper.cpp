@@ -1,5 +1,5 @@
 #include "FileTypeWrapper.h"
-// #include "lib/magic.h"
+#include "lib/magic.h"
 #include <algorithm>
 #include <cstring>
 #include <fcntl.h>
@@ -30,7 +30,7 @@ namespace {
 
 #define FILE_SEPARATOR "\n- "
 
-static void trim_separator(magic_t ms)
+static void trim_separator(magic_set *ms)
 {
 	size_t l;
 
@@ -46,7 +46,7 @@ static void trim_separator(magic_t ms)
 }
 
 
-static int checkdone(magic_t ms, int *rv)
+static int checkdone(magic_set *ms, int *rv)
 {
 	if ((ms->flags & MAGIC_CONTINUE) == 0) return 1;
 
@@ -57,7 +57,7 @@ static int checkdone(magic_t ms, int *rv)
 	return 0;
 }
 
-int _file_buffer(magic_t ms, int fd, struct stat *st, const char *inname __attribute__ ((__unused__)), const void *buf, size_t nb)
+int _file_buffer(magic_set *ms, int fd, struct stat *st, const char *inname __attribute__ ((__unused__)), const void *buf, size_t nb)
 {
 	int m = 0, rv = 0, looks_text = 0;
 	const char *code = NULL;
@@ -247,7 +247,7 @@ done_encoding:
 	return m;
 }
 
-const char *_fd_or_buf(magic_t ms, int fd, unsigned char *buf, ssize_t nbytes, struct stat *st, bool pad_slop)
+const char *_fd_or_buf(magic_set *ms, int fd, unsigned char *buf, ssize_t nbytes, struct stat *st, bool pad_slop)
 {
 	file_reset(ms, 0);
 
@@ -370,7 +370,7 @@ bool FileTypeWrapper::open()
 void FileTypeWrapper::close()
 {
 	if (magic_set_) {
-		magic_close((magic_t)magic_set_);
+		magic_close((magic_set *)magic_set_);
 		magic_set_ = nullptr;
 	}
 }
@@ -398,7 +398,7 @@ FileTypeWrapper::Result FileTypeWrapper::detect(int fd) const
 			lseek(fd, 0, SEEK_SET);
 			{
 				std::lock_guard<std::mutex> lock(mutex_);
-				char const *p = _fd_or_buf((magic_t )magic_set_, fd, buf.data(), nbytes, &st, false);
+				char const *p = _fd_or_buf((magic_set *)magic_set_, fd, buf.data(), nbytes, &st, false);
 				if (p) {
 					mime = p;
 				}
@@ -454,7 +454,7 @@ FileTypeWrapper::Result FileTypeWrapper::detect(const char *data, size_t size, i
 	st.st_mode = st_mode;
 	{
 		std::lock_guard<std::mutex> lock(mutex_);
-		char const *p = _fd_or_buf((magic_t )magic_set_, -1, (unsigned char *)data, size, &st, false);
+		char const *p = _fd_or_buf((magic_set *)magic_set_, -1, (unsigned char *)data, size, &st, false);
 		return p ? parse_mime(p) : Result();
 	}
 }

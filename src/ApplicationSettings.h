@@ -4,6 +4,7 @@
 #include <QColor>
 #include <QString>
 #include <map>
+#include <memory>
 
 #define ORGANIZATION_NAME "soramimi.jp"
 #define APPLICATION_NAME "Guitar"

@@ -2,6 +2,7 @@
 #include "NinePatch.h"
 #include "TraditionalWindowsStyleTreeControl.h"
 #include <QApplication>
+#include <QBitmap>
 #include <QComboBox>
 #include <QDialogButtonBox>
 #include <QDockWidget>
@@ -12,6 +13,7 @@
 #include <QProgressBar>
 #include <QSvgRenderer>
 #include <QTableWidget>
+
 #include "darkstylehelper.i"
 
 #define THEME Theme::Dark
@@ -341,7 +343,7 @@ public:
 
 ButtonImages DarkStyle::generateButtonImages(QString const &path)
 {
-	QImage source = loadImage(path).convertedTo(QImage::Format_ARGB32);
+	QImage source = loadImage(path).convertToFormat(QImage::Format_ARGB32);
 	ButtonImages buttons;
 	int w = source.width();
 	int h = source.height();
@@ -1445,6 +1447,13 @@ void DarkStyle::drawPrimitive(PrimitiveElement element, const QStyleOption *opti
 					int x = rect.x();
 					int y = rect.y();
 					int extent = rect.height() - 2;
+					QRect r(x + 1, y + 1, extent, extent);
+#if (QT_VERSION < QT_VERSION_CHECK(6, 0, 0))
+					QImage img = render_msdf_image(m->check_msdf, QSize(extent * 4, extent * 4)); // 4倍の解像度でレンダリングして縮小する
+					img = img.scaled(extent, extent);
+					img.invertPixels();
+					QRegion region(QBitmap::fromImage(img));					
+#else
 					QPixmap pm;
 					{
 						QString key = pixmapkey("checkbox", "checked", QSize(extent, extent), baseColor());
@@ -1456,8 +1465,8 @@ void DarkStyle::drawPrimitive(PrimitiveElement element, const QStyleOption *opti
 							QPixmapCache::insert(key, pm);
 						}
 					}
-					QRect r(x + 1, y + 1, extent, extent);
 					QRegion region(QBitmap::fromPixmap(pm));
+#endif
 					painter->setClipRegion(region.translated(r.topLeft()));
 					painter->fillRect(r, color);
 				} else if (element == PE_IndicatorRadioButton) {

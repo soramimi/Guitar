@@ -1298,7 +1298,7 @@ void AbstractCharacterBasedApplication::closeDialog(bool result)
 		QString line;
 		if (!dialog_cx->engine->document.lines.empty()) {
 			Document::Line const &l = dialog_cx->engine->document.lines.front();
-			line = QString::fromUtf8(l.text());
+			line = QString::fromUtf8(l.text().data(), (int)l.text().size());
 		}
 		setDialogMode(false);
 		if (m->dialog_handler) {
