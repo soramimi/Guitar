@@ -66,5 +66,9 @@
         <file>translations/Guitar_ta.qm</file>
         <file>translations/Guitar_zh-CN.qm</file>
         <file>translations/Guitar_zh-TW.qm</file>
+        <file>themes/checkbox_checked.svg</file>
+        <file>themes/checkbox_unchecked.svg</file>
+        <file>themes/radiobutton_checked.svg</file>
+        <file>themes/radiobutton_unchecked.svg</file>
     </qresource>
 </RCC>

@@ -10,6 +10,7 @@
 #include <QPainterPath>
 #include <QPalette>
 #include <QProgressBar>
+#include <QSvgRenderer>
 #include <QTableWidget>
 #include "darkstylehelper.i"
 
@@ -199,6 +200,10 @@ struct DarkStyle::Private {
 
 	ScrollBarTextures hsb;
 	ScrollBarTextures vsb;
+	std::shared_ptr<QSvgRenderer> checkbox_checked_svg;
+	std::shared_ptr<QSvgRenderer> checkbox_unchecked_svg;
+	std::shared_ptr<QSvgRenderer> radiobutton_checked_svg;
+	std::shared_ptr<QSvgRenderer> radiobutton_unchecked_svg;
 
 	int scroll_bar_extent = -1;
 
@@ -525,6 +530,15 @@ void DarkStyle::loadImages()
 	}
 
 	m->check_msdf = loadImage(QLatin1String(":/themes/check.msdf.png"));
+
+	m->checkbox_checked_svg = std::make_shared<QSvgRenderer>(QLatin1String(":/themes/checkbox_checked.svg"));
+	m->checkbox_unchecked_svg = std::make_shared<QSvgRenderer>(QLatin1String(":/themes/checkbox_unchecked.svg"));
+	m->radiobutton_checked_svg = std::make_shared<QSvgRenderer>(QLatin1String(":/themes/radiobutton_checked.svg"));
+	m->radiobutton_unchecked_svg = std::make_shared<QSvgRenderer>(QLatin1String(":/themes/radiobutton_unchecked.svg"));
+	if (!m->checkbox_checked_svg->isValid()) m->checkbox_checked_svg.reset();
+	if (!m->checkbox_unchecked_svg->isValid()) m->checkbox_unchecked_svg.reset();
+	if (!m->radiobutton_checked_svg->isValid()) m->radiobutton_checked_svg.reset();
+	if (!m->radiobutton_unchecked_svg->isValid()) m->radiobutton_unchecked_svg.reset();
 
 	m->images_loaded = true;
 }
@@ -1410,50 +1424,67 @@ void DarkStyle::drawPrimitive(PrimitiveElement element, const QStyleOption *opti
 #endif
 	auto DrawCheckBox = [this](QPainter *painter, PrimitiveElement element, QStyleOption const *option){
 		QRect rect = option->rect;
-		// draw the checkbox/radiobutton frame
-		if (element == PE_IndicatorCheckBox) {
-			drawCheckBoxFrame(painter, rect, option->palette, QStyle::State_Sunken);
-		} else {
-			drawRadioButtonFrame(painter, rect, option->palette, QStyle::State_Sunken);
-		}
-		// draw the checkmark or radio button dot if the checkbox/radiobutton is checked
-		if (option->state & (State_Sunken | State_On)) {
-			painter->save();
-			QColor color;
-			if (theme() == Theme::Dark) {
-				color = QColor(255, 255, 255);
-			} else {
-				color = QColor(0, 0, 0);
-			}
+		if (0) {
+			// draw the checkbox/radiobutton frame
 			if (element == PE_IndicatorCheckBox) {
 				drawCheckBoxFrame(painter, rect, option->palette, QStyle::State_Sunken);
-				int x = rect.x();
-				int y = rect.y();
-				int extent = rect.height() - 2;
-				QPixmap pm;
-				{
-					QString key = pixmapkey("checkbox", "checked", QSize(extent, extent), baseColor());
-					if (!QPixmapCache::find(key, &pm)) {
-						QImage img = render_msdf_image(m->check_msdf, QSize(extent * 4, extent * 4)); // 4倍の解像度でレンダリングして縮小する
-						img = img.scaled(extent, extent);
-						img.invertPixels();
-						pm = QPixmap::fromImage(img);
-						QPixmapCache::insert(key, pm);
-					}
-				}
-				QRect r(x + 1, y + 1, extent, extent);
-				QRegion region(QBitmap::fromPixmap(pm));
-				painter->setClipRegion(region.translated(r.topLeft()));
-				painter->fillRect(r, color);
-			} else if (element == PE_IndicatorRadioButton) {
-				const int N = 3;
-				rect.adjust(N, N, -N, -N);
-				painter->setRenderHint(QPainter::Antialiasing);
-				painter->setPen(Qt::NoPen);
-				painter->setBrush(color);
-				painter->drawEllipse(rect);
+			} else {
+				drawRadioButtonFrame(painter, rect, option->palette, QStyle::State_Sunken);
 			}
-			painter->restore();
+			// draw the checkmark or radio button dot if the checkbox/radiobutton is checked
+			if (option->state & (State_Sunken | State_On)) {
+				painter->save();
+				QColor color;
+				if (theme() == Theme::Dark) {
+					color = QColor(255, 255, 255);
+				} else {
+					color = QColor(0, 0, 0);
+				}
+				if (element == PE_IndicatorCheckBox) {
+					drawCheckBoxFrame(painter, rect, option->palette, QStyle::State_Sunken);
+					int x = rect.x();
+					int y = rect.y();
+					int extent = rect.height() - 2;
+					QPixmap pm;
+					{
+						QString key = pixmapkey("checkbox", "checked", QSize(extent, extent), baseColor());
+						if (!QPixmapCache::find(key, &pm)) {
+							QImage img = render_msdf_image(m->check_msdf, QSize(extent * 4, extent * 4)); // 4倍の解像度でレンダリングして縮小する
+							img = img.scaled(extent, extent);
+							img.invertPixels();
+							pm = QPixmap::fromImage(img);
+							QPixmapCache::insert(key, pm);
+						}
+					}
+					QRect r(x + 1, y + 1, extent, extent);
+					QRegion region(QBitmap::fromPixmap(pm));
+					painter->setClipRegion(region.translated(r.topLeft()));
+					painter->fillRect(r, color);
+				} else if (element == PE_IndicatorRadioButton) {
+					const int N = 3;
+					rect.adjust(N, N, -N, -N);
+					painter->setRenderHint(QPainter::Antialiasing);
+					painter->setPen(Qt::NoPen);
+					painter->setBrush(color);
+					painter->drawEllipse(rect);
+				}
+				painter->restore();
+			}
+		} else {
+			bool checked = option->state & (State_Sunken | State_On);
+			if (element == PE_IndicatorCheckBox) {
+				if (checked) {
+					if (m->checkbox_checked_svg) m->checkbox_checked_svg->render(painter, rect);
+				} else {
+					if (m->checkbox_unchecked_svg) m->checkbox_unchecked_svg->render(painter, rect);
+				}
+			} else if (element == PE_IndicatorRadioButton) {
+				if (checked) {
+					if (m->radiobutton_checked_svg) m->radiobutton_checked_svg->render(painter, rect);
+				} else {
+					if (m->radiobutton_unchecked_svg) m->radiobutton_unchecked_svg->render(painter, rect);
+				}
+			}
 		}
 	};
 	if (element == PE_IndicatorCheckBox || element == PE_IndicatorRadioButton) {
