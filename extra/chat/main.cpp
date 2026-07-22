@@ -21,6 +21,10 @@
 #include <windows.h>
 #else
 #include <BasicProcessPosix.h>
+#include <fcntl.h>
+#include <unistd.h>
+#include <sys/stat.h>
+#define O_BINARY 0
 #endif
 
 namespace misc {
@@ -149,7 +153,7 @@ std::string request(Option const &opt)
 	gen.set_ai_model(ai_model);
 	AiResult msg = gen.request(opt.prompt);
 	if (!msg) {
-		fprintf(stderr, "Error generating commit message: %s - %s\n", msg.error_status().c_str(), msg.error_message().c_str());
+		fprintf(stderr, "Error generating message: %s - %s\n", msg.error_status().c_str(), msg.error_message().c_str());
 		return { };
 	}
 
@@ -199,14 +203,21 @@ bool getline(char **line, size_t *len, FILE *stream)
 int main2(int argc, char **argv)
 {
 	bool f_stdin = false;
+	std::string_view f_file;
 
 	int argi = 1;
 	while (argi < argc) {
 		if (*argv[argi] == '-') {
-			std::string_view arg(argv[argi]);
-			if (arg == "--stdin") {
+			std::string_view arg(argv[argi++]);
+			if (arg == "-f") {
+				if (argi < argc) {
+					f_file = argv[argi++];
+				} else {
+					fprintf(stderr, "Option -f requires an argument\n");
+					return 1;
+				}
+			} else if (arg == "--stdin") {
 				f_stdin = true;
-				argi++;
 			} else {
 				fprintf(stderr, "Unknown option: %s\n", argv[argi]);
 				return 1;
@@ -219,8 +230,20 @@ int main2(int argc, char **argv)
 			argi++;
 		}
 	}
-
-	if (opt.prompt.empty()) {
+	
+	if (!f_file.empty()) {
+		int fd = open(std::string(f_file).c_str(), O_RDONLY | O_BINARY);
+		if (fd != -1) {
+			struct stat st;
+			if (fstat(fd, &st) == 0) {
+				std::string content(st.st_size, '\0');
+				if (read(fd, content.data(), st.st_size) == st.st_size) {
+					opt.prompt += content;
+				}
+			}
+			close(fd);			
+		}
+	} else if (opt.prompt.empty()) {
 		if (f_stdin) {
 			while (1) {
 				char *line = nullptr;

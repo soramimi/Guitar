@@ -329,6 +329,9 @@ struct AiChatResponseParser : public GenerativeAI::AbstractVisitor<AiResult> {
 			} else if (reader.match("{error{status")) {
 				ret.d.error_status = reader.string();
 				ret.d.completed = false;
+			} else if (reader.match("{promptFeedback{blockReason")) {
+				ret.d.error_message = reader.string();
+				ret.d.completed = false;
 			}
 		}
 		return ret;

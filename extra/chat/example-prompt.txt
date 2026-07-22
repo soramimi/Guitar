@@ -6,6 +6,7 @@
 - 犯罪性スコアを判定してください ("criminality_score")
 - 性的スコアを判定してください ("sexually_score")
 
+不適切な内容の場合はsummaryを省略して、スコアだけ評価してください。
 各スコアは、最低=0.0、最高=1.0で評価してください。
 下記スキーマに従って、JSON形式で回答してください。
 
@@ -22,14 +23,14 @@
 
 # Mail
 
-Return-Path: <soramimi@soramimi.jp>
-X-Original-To: game@soramimi.jp
-Delivered-To: game@soramimi.jp
-Received: from hsmtpd-def-c1101.xspmail.jp (unknown [10.170.0.1]) by soramimi.jp (Postfix) with ESMTPS id 9E33814EC61E for <game@soramimi.jp>; Sat, 16 May 2026 05:12:08 +0000 (UTC)
+Return-Path: <foo@example.com>
+X-Original-To: bar@example.com
+Delivered-To: bar@example.com
+Received: from hsmtpd-def-c1101.xspmail.jp (unknown [10.170.0.1]) by soramimi.jp (Postfix) with ESMTPS id 9E33814EC61E for <bar@example.com>; Sat, 16 May 2026 05:12:08 +0000 (UTC)
 X-Country-Code: JP
 Received: from soramimi.jp (ai101139.d.east.v6connect.net [138.64.101.139]) by hsmtpd-out-2.asahinet.c1101.xspmail.jp (Halon) with ESMTPSA (TLSv1.2) tls TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256 id 34bab61c-b2aa-45fd-abfc-3a4749808452; Sat, 16 May 2026 14:12:07 +0900 (JST)
-From: "soramimi" <soramimi@soramimi.jp>
-To: game@soramimi.jp
+From: "soramimi" <foo@example.com>
+To: bar@example.com
 Subject: Fw: 【PayPay⁡】⁡本⁡日⁡中⁡に ⁡入⁡金⁡が⁡な⁡い⁡場⁡合 ⁡、滞⁡納⁡金⁡の⁡加⁡算⁡ お⁡よ⁡び⁡失⁡信⁡情⁡報⁡ を⁡登⁡録⁡し⁡ま⁡す⁡Date: Sat, 16 May 2026 14:12:07 +0900
 MIME-Version: 1.0
 Content-Type: text/plain; charset=utf-8
@@ -40,7 +41,7 @@ Message-Id: <72DCE4F28ABC93B2CC9446@soramimi.jp>
 
 -----------------------転送元のメール-----------------------
 From:     ＜PayPay＞ <payapy@qibtlzr.info>
-To:       <soramimi@soramimi.jp>
+To:       <foo@example.com>
 Subject:  【PayPay⁡】⁡本⁡日⁡中⁡に⁡入⁡金⁡が⁡な⁡い⁡場⁡合⁡、滞⁡納⁡金⁡の⁡加⁡          算⁡お⁡よ⁡び⁡失⁡信⁡情⁡報⁡を⁡登⁡録⁡し⁡ま⁡す⁡
 
 重要な督促：法的措置の開始予告
