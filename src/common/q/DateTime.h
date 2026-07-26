@@ -91,7 +91,7 @@ public:
 	std::string toString() const;
 
 	static DateTime parseDateTime(char const *s);
-	static DateTime fromSecsSinceEpoch(uint64_t t);
+	static DateTime fromSecsSinceEpoch(uint64_t t, bool localtime = true);
 };
 
 #endif // DATETIME_H

@@ -55,14 +55,22 @@ DateTime DateTime::parseDateTime(const char *s)
 	return {};
 }
 
-DateTime DateTime::fromSecsSinceEpoch(uint64_t t)
+DateTime DateTime::fromSecsSinceEpoch(uint64_t t, bool localtime)
 {
 	struct tm tm;
+	if (localtime) {
+#ifdef _WIN32
+		_localtime64_s(&tm, (time_t *)&t);
+#else
+		localtime_r((time_t *)&t, &tm);
+#endif
+	} else {
 #ifdef _WIN32
 	_gmtime64_s(&tm, (time_t *)&t);
 #else
 	gmtime_r((time_t *)&t, &tm);
 #endif
+	}
 	Date date(tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday);
 	Time time(tm.tm_hour, tm.tm_min, tm.tm_sec);
 	return DateTime(date, time);
