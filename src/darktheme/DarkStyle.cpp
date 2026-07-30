@@ -2,7 +2,6 @@
 #include "NinePatch.h"
 #include "TraditionalWindowsStyleTreeControl.h"
 #include <QApplication>
-#include <QBitmap>
 #include <QComboBox>
 #include <QDialogButtonBox>
 #include <QDockWidget>
@@ -13,7 +12,6 @@
 #include <QProgressBar>
 #include <QSvgRenderer>
 #include <QTableWidget>
-
 #include "darkstylehelper.i"
 
 #define THEME Theme::Dark
@@ -227,7 +225,7 @@ struct DarkStyle::Private {
 DarkStyle::DarkStyle(QColor base_color)
 	: m(new Private)
 {
-	if (theme() == Theme::Light) {
+	if (theme() == Theme::Light || theme() == Theme::Gray) {
 		base_color = QColor(QRgb(0xffffff));
 	}
 	setBaseColor(base_color);
@@ -343,7 +341,7 @@ public:
 
 ButtonImages DarkStyle::generateButtonImages(QString const &path)
 {
-	QImage source = loadImage(path).convertToFormat(QImage::Format_ARGB32);
+	QImage source = loadImage(path).convertedTo(QImage::Format_ARGB32);
 	ButtonImages buttons;
 	int w = source.width();
 	int h = source.height();
@@ -356,7 +354,7 @@ ButtonImages DarkStyle::generateButtonImages(QString const &path)
 		}
 		Lighten lighten;
 		buttons.im_normal = source;
-		buttons.im_hover = source;
+		buttons.im_pressed = source;
 		w -= 4;
 		h -= 4;
 		for (int y = 0; y < h; y++) {
@@ -364,7 +362,7 @@ ButtonImages DarkStyle::generateButtonImages(QString const &path)
 			QRgb *src2 = reinterpret_cast<QRgb *>(source.scanLine(y + 2));
 			QRgb *src3 = reinterpret_cast<QRgb *>(source.scanLine(y + 3));
 			QRgb *dst0 = reinterpret_cast<QRgb *>(buttons.im_normal.scanLine(y + 2)) + 2;
-			QRgb *dst1 = reinterpret_cast<QRgb *>(buttons.im_hover.scanLine(y + 2)) + 2;
+			QRgb *dst1 = reinterpret_cast<QRgb *>(buttons.im_pressed.scanLine(y + 2)) + 2;
 			for (int x = 0; x < w; x++) {
 				int v = (int)qAlpha(src3[x + 3]) - (int)qAlpha(src1[x + 1]);
 				v = (v + 256) / 2;
@@ -375,9 +373,9 @@ ButtonImages DarkStyle::generateButtonImages(QString const &path)
 			}
 		}
 		buttons.im_normal.setText("name", source.text("name"));
-		buttons.im_hover.setText("name", source.text("name"));
+		buttons.im_pressed.setText("name", source.text("name"));
 		buttons.im_normal.setText("role", "normal");
-		buttons.im_hover.setText("role", "hover");
+		buttons.im_pressed.setText("role", "hover");
 	}
 	return buttons;
 }
@@ -467,7 +465,7 @@ static void correctImage(QImage *image, bool ninepatch, int bias, int lower, int
 static void correctImage(ButtonImages *images, bool ninepatch, int bias, int lower, int upper, float gamma = 1.0f)
 {
 	correctImage(&images->im_normal, ninepatch, bias, lower, upper, gamma);
-	correctImage(&images->im_hover, ninepatch, bias, lower, upper, gamma);
+	correctImage(&images->im_pressed, ninepatch, bias, lower, upper, gamma);
 }
 
 void DarkStyle::loadImages()
@@ -486,17 +484,17 @@ void DarkStyle::loadImages()
 		m->hsb.add_line         = generateButtonImages(QLatin1String(":/darktheme/hsb/hsb_add_line.png"));
 		m->hsb.page_bg          = loadColorizedImage(QLatin1String(":/darktheme/hsb/hsb_page_bg.png"));
 		m->hsb.slider.im_normal = loadColorizedImage(QLatin1String(":/darktheme/hsb/hsb_slider.png"));
-		m->hsb.slider.im_hover  = generateHoverImage(m->hsb.slider.im_normal);
+		m->hsb.slider.im_pressed  = generateHoverImage(m->hsb.slider.im_normal);
 
 		m->vsb.sub_line         = generateButtonImages(QLatin1String(":/darktheme/vsb/vsb_sub_line.png"));
 		m->vsb.add_line         = generateButtonImages(QLatin1String(":/darktheme/vsb/vsb_add_line.png"));
 		m->vsb.page_bg          = loadColorizedImage(QLatin1String(":/darktheme/vsb/vsb_page_bg.png"));
 		m->vsb.slider.im_normal = loadColorizedImage(QLatin1String(":/darktheme/vsb/vsb_slider.png"));
-		m->vsb.slider.im_hover  = generateHoverImage(m->vsb.slider.im_normal);
+		m->vsb.slider.im_pressed  = generateHoverImage(m->vsb.slider.im_normal);
 
 		m->progress_horz = loadImage(QLatin1String(":/darktheme/progress/horz.png"));
 		m->progress_vert = loadImage(QLatin1String(":/darktheme/progress/vert.png"));
-	} else if (theme() == Theme::Light) {
+	} else if (theme() == Theme::Light || theme() == Theme::Gray) {
 		m->button_normal        = loadColorizedImage(QLatin1String(":/themes/light/button/button_normal.png"), QLatin1String("normal"));
 		m->button_press         = loadColorizedImage(QLatin1String(":/themes/light/button/button_press.png"), QLatin1String("press"));
 
@@ -504,31 +502,44 @@ void DarkStyle::loadImages()
 		m->hsb.add_line         = generateButtonImages(QLatin1String(":/themes/light/sb/hsb_add_line.png"));
 		m->hsb.page_bg          = loadColorizedImage(QLatin1String(":/themes/light/sb/hsb_page_bg.png"));
 		m->hsb.slider.im_normal = loadColorizedImage(QLatin1String(":/themes/light/sb/hsb_slider.png"));
-		m->hsb.slider.im_hover  = generateHoverImage(m->hsb.slider.im_normal);
+		m->hsb.slider.im_pressed  = generateHoverImage(m->hsb.slider.im_normal);
 
 		m->vsb.sub_line         = generateButtonImages(QLatin1String(":/themes/light/sb/vsb_sub_line.png"));
 		m->vsb.add_line         = generateButtonImages(QLatin1String(":/themes/light/sb/vsb_add_line.png"));
 		m->vsb.page_bg          = loadColorizedImage(QLatin1String(":/themes/light/sb/vsb_page_bg.png"));
 		m->vsb.slider.im_normal = loadColorizedImage(QLatin1String(":/themes/light/sb/vsb_slider.png"));
-		m->vsb.slider.im_hover  = generateHoverImage(m->vsb.slider.im_normal);
+		m->vsb.slider.im_pressed  = generateHoverImage(m->vsb.slider.im_normal);
 
 		m->progress_horz = loadImage(QLatin1String(":/themes/light/progress/horz.png"));
 		m->progress_vert = loadImage(QLatin1String(":/themes/light/progress/vert.png"));
 
 		m->progress_vert = loadImage(QLatin1String(":/themes/light/progress/vert.png"));
 
+		if (theme() == Theme::Gray) {
+			correctImage(&m->hsb.sub_line         , true, 0, 0, 160);
+			correctImage(&m->hsb.add_line         , true, 0, 0, 160);
+			correctImage(&m->hsb.page_bg          , true, 0, 0, 160, 0.5f);
+			correctImage(&m->hsb.slider.im_normal , true, 0, 0, 160);
+			correctImage(&m->hsb.slider.im_pressed  , true, 0, 0, 224);
 
-		correctImage(&m->hsb.sub_line         , true, 0, 0, 160);
-		correctImage(&m->hsb.add_line         , true, 0, 0, 160);
-		correctImage(&m->hsb.page_bg          , true, 0, 0, 160, 0.5f);
-		correctImage(&m->hsb.slider.im_normal , true, 0, 0, 160);
-		correctImage(&m->hsb.slider.im_hover  , true, 0, 0, 224);
+			correctImage(&m->vsb.sub_line         , true, 0, 0, 160);
+			correctImage(&m->vsb.add_line         , true, 0, 0, 160);
+			correctImage(&m->vsb.page_bg          , true, 0, 0, 160, 0.5f);
+			correctImage(&m->vsb.slider.im_normal , true, 0, 0, 160);
+			correctImage(&m->vsb.slider.im_pressed  , true, 0, 0, 224);
+		} else if (theme() == Theme::Light) {
+			correctImage(&m->hsb.sub_line         , true, 0, 0, 128);
+			correctImage(&m->hsb.add_line         , true, 0, 0, 128);
+			correctImage(&m->hsb.page_bg          , true, 0, 0, 128, 0.25f);
+			correctImage(&m->hsb.slider.im_normal , true, 0, 0, 128);
+			correctImage(&m->hsb.slider.im_pressed  , true, 0, 0, 170);
 
-		correctImage(&m->vsb.sub_line         , true, 0, 0, 160);
-		correctImage(&m->vsb.add_line         , true, 0, 0, 160);
-		correctImage(&m->vsb.page_bg          , true, 0, 0, 160, 0.5f);
-		correctImage(&m->vsb.slider.im_normal , true, 0, 0, 160);
-		correctImage(&m->vsb.slider.im_hover  , true, 0, 0, 224);
+			correctImage(&m->vsb.sub_line         , true, 0, 0, 128);
+			correctImage(&m->vsb.add_line         , true, 0, 0, 128);
+			correctImage(&m->vsb.page_bg          , true, 0, 0, 128, 0.25f);
+			correctImage(&m->vsb.slider.im_normal , true, 0, 0, 128);
+			correctImage(&m->vsb.slider.im_pressed  , true, 0, 0, 170);
+		}
 	}
 
 	m->check_msdf = loadImage(QLatin1String(":/themes/check.msdf.png"));
@@ -576,8 +587,10 @@ std::pair<QColor, QColor> DarkStyle::menuBorderColors(Theme theme) const
 {
 	if (theme == DarkStyle::Theme::Dark) {
 		return {color(128), color(32)};
-	} else if (theme == DarkStyle::Theme::Light) {
+	} else if (theme == DarkStyle::Theme::Gray) {
 		return {color(255), color(160)};
+	} else if (theme == DarkStyle::Theme::Light) {
+		return {color(255), color(192)};
 	}
 	return {};
 }
@@ -733,13 +746,21 @@ void DarkStyle::drawButton(QPainter *p, const QStyleOption *option, bool mac_mar
 				color0.setAlpha(0);
 				color1.setAlpha(128);
 			}
-		} else if (theme() == Theme::Light) {
+		} else if (theme() == Theme::Gray) {
 			if (pressed) {
 				color0.setAlpha(16);
 				color1.setAlpha(96);
 			} else {
 				color0.setAlpha(0);
 				color1.setAlpha(64);
+			}
+		} else if (theme() == Theme::Light) {
+			if (pressed) {
+				color0.setAlpha(16);
+				color1.setAlpha(64);
+			} else {
+				color0.setAlpha(0);
+				color1.setAlpha(32);
 			}
 		}
 #endif
@@ -792,7 +813,7 @@ void DarkStyle::drawToolButton(QPainter *p, const QStyleOption *option) const
 			color0 = color(80);
 			color1 = color(48);
 		}
-	} else if (theme() == Theme::Light) {
+	} else if (theme() == Theme::Gray) {
 		if (pressed) {
 			color0 = color(224);
 			color1 = color(128);
@@ -802,6 +823,17 @@ void DarkStyle::drawToolButton(QPainter *p, const QStyleOption *option) const
 		} else {
 			color0 = color(240);
 			color1 = color(160);
+		}
+	} else if (theme() == Theme::Light) {
+		if (pressed) {
+			color0 = color(240);
+			color1 = color(180);
+		} else if (hover) {
+			color0 = color(255);
+			color1 = color(214);
+		} else {
+			color0 = color(250);
+			color1 = color(192);
 		}
 	}
 
@@ -851,11 +883,16 @@ void DarkStyle::polish(QPalette &palette)
 #ifndef Q_OS_WIN
 		palette.setColor(QPalette::ToolTipText, Qt::black); // ツールチップの文字色
 #endif
-	} else if (theme() == Theme::Light) {
+	} else if (theme() == Theme::Gray) {
 		palette = QPalette(color(192));
 		palette.setColor(QPalette::Disabled, QPalette::Text, color(96));
 		palette.setColor(QPalette::Normal, QPalette::Highlight, selectionColor().lighter(125));
 		palette.setColor(QPalette::Disabled, QPalette::ButtonText, color(128));
+	} else if (theme() == Theme::Light) {
+		palette = QPalette(color(240));
+		palette.setColor(QPalette::Disabled, QPalette::Text, color(64));
+		palette.setColor(QPalette::Normal, QPalette::Highlight, selectionColor().lighter(192));
+		palette.setColor(QPalette::Disabled, QPalette::ButtonText, color(160));
 	}
 	m->palette = palette;
 }
@@ -1299,7 +1336,7 @@ void DarkStyle::drawPrimitive(PrimitiveElement element, const QStyleOption *opti
 			drawFrame(painter, r, color(128), color(64));
 			r = r.adjusted(1, 1, -1, -1);
 			painter->fillRect(r, color(80));
-		} else if (theme() == Theme::Light) {
+		} else if (theme() == Theme::Gray) {
 			QRect r = option->rect;
 			painter->fillRect(r, Qt::red);
 			drawFrame(painter, r, color(240), color(10));
@@ -1307,6 +1344,14 @@ void DarkStyle::drawPrimitive(PrimitiveElement element, const QStyleOption *opti
 			drawFrame(painter, r, color(255), color(160));
 			r = r.adjusted(1, 1, -1, -1);
 			painter->fillRect(r, color(224));
+		} else if (theme() == Theme::Light) {
+			QRect r = option->rect;
+			painter->fillRect(r, Qt::red);
+			drawFrame(painter, r, color(250), color(10));
+			r = r.adjusted(1, 1, -1, -1);
+			drawFrame(painter, r, color(255), color(192));
+			r = r.adjusted(1, 1, -1, -1);
+			painter->fillRect(r, color(250));
 		}
 		return;
 	}
@@ -1447,13 +1492,6 @@ void DarkStyle::drawPrimitive(PrimitiveElement element, const QStyleOption *opti
 					int x = rect.x();
 					int y = rect.y();
 					int extent = rect.height() - 2;
-					QRect r(x + 1, y + 1, extent, extent);
-#if (QT_VERSION < QT_VERSION_CHECK(6, 0, 0))
-					QImage img = render_msdf_image(m->check_msdf, QSize(extent * 4, extent * 4)); // 4倍の解像度でレンダリングして縮小する
-					img = img.scaled(extent, extent);
-					img.invertPixels();
-					QRegion region(QBitmap::fromImage(img));					
-#else
 					QPixmap pm;
 					{
 						QString key = pixmapkey("checkbox", "checked", QSize(extent, extent), baseColor());
@@ -1465,8 +1503,8 @@ void DarkStyle::drawPrimitive(PrimitiveElement element, const QStyleOption *opti
 							QPixmapCache::insert(key, pm);
 						}
 					}
+					QRect r(x + 1, y + 1, extent, extent);
 					QRegion region(QBitmap::fromPixmap(pm));
-#endif
 					painter->setClipRegion(region.translated(r.topLeft()));
 					painter->fillRect(r, color);
 				} else if (element == PE_IndicatorRadioButton) {
@@ -2632,7 +2670,7 @@ void DarkStyle::drawComplexControl(ComplexControl cc, const QStyleOptionComplex 
 				pm = pixmapFromImage(ims.im_normal, r.size());
 				p->drawPixmap(r.topLeft(), pm);
 			} else {
-				pm = pixmapFromImage(ims.im_hover, r.size());
+				pm = pixmapFromImage(ims.im_pressed, r.size());
 				p->drawPixmap(r.topLeft(), pm);
 			}
 		};
@@ -2652,7 +2690,7 @@ void DarkStyle::drawComplexControl(ComplexControl cc, const QStyleOptionComplex 
 			if (!(option->activeSubControls & SC_ScrollBarSlider)) {
 				DrawNinePatchImage2(tx->slider.im_normal, r);
 			} else {
-				DrawNinePatchImage2(tx->slider.im_hover, r);
+				DrawNinePatchImage2(tx->slider.im_pressed, r);
 			}
 		}
 
@@ -2765,8 +2803,11 @@ void DarkStyle::drawComplexControl(ComplexControl cc, const QStyleOptionComplex 
 					if (theme() == Theme::Dark) {
 						gradient.setColorAt(0, color(32));
 						gradient.setColorAt(1, color(128));
-					} else if (theme() == Theme::Light) {
+					} else if (theme() == Theme::Gray) {
 						gradient.setColorAt(0, color(80));
+						gradient.setColorAt(1, color(255));
+					} else if (theme() == Theme::Light) {
+						gradient.setColorAt(0, color(120));
 						gradient.setColorAt(1, color(255));
 					}
 					groovePainter.setBrush(gradient);
@@ -2849,9 +2890,12 @@ void DarkStyle::drawComplexControl(ComplexControl cc, const QStyleOptionComplex 
 					if (theme() == Theme::Dark) {
 						gradient.setColorAt(0, color(192));
 						gradient.setColorAt(1, QColor(0, 0, 0));
-					} else if (theme() == Theme::Light) {
+					} else if (theme() == Theme::Gray) {
 						gradient.setColorAt(0, color(255));
 						gradient.setColorAt(1, QColor(80, 80, 80));
+					} else if (theme() == Theme::Light) {
+						gradient.setColorAt(0, color(255));
+						gradient.setColorAt(1, QColor(144, 144, 144));
 					}
 					handlePainter.save();
 					handlePainter.setClipPath(path);
@@ -2860,7 +2904,7 @@ void DarkStyle::drawComplexControl(ComplexControl cc, const QStyleOptionComplex 
 					QColor highlight_color;
 					if (theme() == Theme::Dark) {
 						highlight_color = correctBrightness(color(160).rgb(), 192, 255);
-					} else if (theme() == Theme::Light) {
+					} else if (theme() == Theme::Gray || theme() == Theme::Light) {
 						highlight_color = correctBrightness(color(255).rgb(), 255, 255);
 					}
 

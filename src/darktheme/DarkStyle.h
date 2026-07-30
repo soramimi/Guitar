@@ -10,7 +10,7 @@ class QStyleOptionViewItem;
 class ButtonImages {
 public:
 	QImage im_normal;
-	QImage im_hover;
+	QImage im_pressed;
 };
 
 class DarkStyle : public MyCommonStyle<QCommonStyle> {
@@ -21,6 +21,7 @@ private:
 
 	enum class Theme {
 		Light,
+		Gray,
 		Dark,
 	};
 	Theme theme() const;
