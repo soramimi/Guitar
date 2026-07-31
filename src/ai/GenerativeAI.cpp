@@ -64,14 +64,9 @@ ProviderID api_compatibility(ProviderID pid)
 std::vector<Model> const &ai_model_presets()
 {
 	static const std::vector<Model> preset_models = {
-		{ProviderID::OpenAI_responses, "gpt-5.5"},
-		{ProviderID::OpenAI_responses, "gpt-5.4-mini"},
-		{ProviderID::OpenAI_responses, "gpt-5.4-nano"},
-		{ProviderID::OpenAI_responses, "gpt-5.3-codex"},
-		{ProviderID::Anthropic,        "claude-opus-4-7"},
-		{ProviderID::Anthropic,        "claude-sonnet-4-6"},
-		{ProviderID::Anthropic,        "claude-haiku-4-5"},
-		{ProviderID::Google,           "gemini-3.1-flash-lite"},
+		{ProviderID::OpenAI_responses, "gpt-5.6-luna"},
+		{ProviderID::Anthropic,        "claude-sonnet-5"},
+		{ProviderID::Google,           "gemini-3.6-flash"},
 		{ProviderID::XAI,              "grok-latest"},
 		{ProviderID::PFN,              "plamo-3.0-prime"},
 		{ProviderID::Moonshot,         "kimi-k2.7-code"},
