@@ -26,7 +26,7 @@ bool InetResolver::resolve(const char *name, Type type, Addr *out)
 		struct addrinfo *res = nullptr;
 		int err = getaddrinfo(name, NULL, &hints, &res);
 		if (err != 0) {
-			fprintf(stderr, "error %d\n", err);
+			// fprintf(stderr, "error %d\n", err);
 			return false;
 		}
 		for (struct addrinfo *p = res; p; p = p->ai_next) {
@@ -46,7 +46,7 @@ bool InetResolver::resolve(const char *name, Type type, Addr *out)
 		struct addrinfo *res = nullptr;
 		int err = getaddrinfo(name, NULL, &hints, &res);
 		if (err != 0) {
-			fprintf(stderr, "error %d\n", err);
+			// fprintf(stderr, "error %d\n", err);
 			return false;
 		}
 		for (struct addrinfo *p = res; p; p = p->ai_next) {

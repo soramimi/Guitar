@@ -9,17 +9,32 @@
 class InetClient {
 public:
 	class Error {
+	public:
+		enum Code {
+			Unknown,
+			Network,
+			SSL,
+			HTTP,
+			Protocol,
+			Security,
+		};
 	private:
 		std::string msg_;
+		Code code_ = Unknown;
 	public:
 		Error() = default;
-		Error(std::string const &message)
+		Error(std::string const &message, Code code = Unknown)
 			: msg_(message)
+			, code_(code)
 		{
 		}
 		std::string what() const
 		{
 			return msg_;
+		}
+		Code code() const
+		{
+			return code_;
 		}
 	};
 	class URL {
@@ -94,6 +109,9 @@ public:
 		}
 		void add_header(std::string const &s)
 		{
+			if (s.find('\r') != std::string::npos || s.find('\n') != std::string::npos) {
+				throw Error("Invalid header: contains newline characters", Error::Security);
+			}
 			headers_.push_back(s);
 		}
 	};

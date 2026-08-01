@@ -3,6 +3,7 @@
 #include <inet/webclient.h>
 #include <algorithm>
 #include <condition_variable>
+#include <cstdlib>
 #include <cstring>
 #include <limits>
 #include <mutex>
@@ -64,6 +65,11 @@ constexpr size_t MAX_CHUNK_HEADER_VALUE = 10 * 1024 * 1024; // 10 MB
 constexpr size_t MAX_CHUNK_TOTAL_SIZE   = 100 * 1024 * 1024; // 100 MB
 constexpr size_t MAX_CHUNK_LINE_LENGTH  = 4096;
 
+bool header_contains_newline(std::string const &s)
+{
+	return s.find('\r') != std::string::npos || s.find('\n') != std::string::npos;
+}
+
 void vappend(std::vector<char> *vec, char const *begin, char const *end)
 {
 	vec->insert(vec->end(), begin, end);
@@ -115,6 +121,7 @@ struct WebContext::Private {
 	WebProxy http_proxy;
 	WebProxy https_proxy;
 	bool broken_pipe = false;
+	bool strict_certificate_verification = false; // 既存動作との互換性のためデフォルト無効
 };
 
 struct WebClient::Private {
@@ -386,8 +393,7 @@ static void send_(socket_t s, char const *ptr, int len)
 		int n = std::min(len, 4096);
 		n = send(s, ptr, n, 0);
 		if (n < 1) {
-			auto e = WSAGetLastError();
-			throw InetClient::Error("send request failed.");
+			throw InetClient::Error("send request failed.", InetClient::Error::Network);
 		}
 		ptr += n;
 		len -= n;
@@ -1002,9 +1008,10 @@ bool WebClient::https_getpost(InetClient::Request const &request_req, InetClient
 			long verify_result = SSL_get_verify_result(ssl);
 			if (verify_result != X509_V_OK) {
 				std::string err = X509_verify_cert_error_string(verify_result);
-				// In a real security-sensitive app, we would abort here
-				// For compatibility, we just log the error but should consider adding a strict mode option
 				output_debug_string(("Certificate verification failed: " + err + "\n").c_str());
+				if (m->webcx->m->strict_certificate_verification) {
+					throw InetClient::Error("Certificate verification failed: " + err, InetClient::Error::Security);
+				}
 			}
 
 			// Log certificate info in debug mode if needed
@@ -1448,6 +1455,9 @@ void WebClient::close()
 
 void WebClient::add_header(std::string const &text)
 {
+	if (header_contains_newline(text)) {
+		throw InetClient::Error("Invalid header: contains newline characters", InetClient::Error::Security);
+	}
 	m->request_header.push_back(text);
 }
 
@@ -1528,6 +1538,7 @@ WebContext::WebContext(WebClient::HttpVersion httpver)
 	SSL_library_init();
 	m->ctx = SSL_CTX_new(TLS_client_method());
 	SSL_CTX_set_default_verify_paths(m->ctx);
+	SSL_CTX_set_min_proto_version(m->ctx, TLS1_2_VERSION);
 #endif
 }
 
@@ -1590,6 +1601,16 @@ bool WebContext::load_cacert(char const *path)
 #endif
 }
 
+void WebContext::set_strict_certificate_verification(bool strict)
+{
+	m->strict_certificate_verification = strict;
+}
+
+bool WebContext::is_strict_certificate_verification() const
+{
+	return m->strict_certificate_verification;
+}
+
 void WebContext::notify_broken_pipe()
 {
 	m->broken_pipe = true;
@@ -1612,4 +1633,77 @@ std::string WebClient::checkip()
 	return (std::string)trimmed(s);
 }
 
+#ifdef NDEBUG
+#define ASSERT_REPORT(msg) do { fprintf(stderr, "%s\n", msg); std::abort(); } while (0)
+#else
+#define ASSERT_REPORT(msg) assert(false && (msg))
+#endif
+
+#define ASSERT_EQ(a, b) do { auto const &_a = (a); auto const &_b = (b); if (!(_a == _b)) ASSERT_REPORT("ASSERT_EQ failed: " #a " == " #b); } while (0)
+#define ASSERT_NE(a, b) do { auto const &_a = (a); auto const &_b = (b); if (_a == _b) ASSERT_REPORT("ASSERT_NE failed: " #a " != " #b); } while (0)
+#define ASSERT_TRUE(a) do { bool _v = (a); if (!_v) ASSERT_REPORT("ASSERT_TRUE failed: " #a); } while (0)
+#define ASSERT_FALSE(a) do { bool _v = (a); if (_v) ASSERT_REPORT("ASSERT_FALSE failed: " #a); } while (0)
+
+void WebClient::self_test()
+{
+	auto test_decode = [](char const *input)->std::string {
+		std::vector<char> out;
+		ASSERT_TRUE(decode_chunked(input, input + strlen(input), &out));
+		return std::string(out.begin(), out.end());
+	};
+
+	// decode_chunked 正常系
+	ASSERT_EQ(test_decode("5\r\nhello\r\n0\r\n\r\n"), "hello");
+	ASSERT_EQ(test_decode("5\r\nhello\r\n5\r\nworld\r\n0\r\n\r\n"), "helloworld");
+	ASSERT_EQ(test_decode("5;ext=value\r\nhello\r\n0\r\n\r\n"), "hello");
+	ASSERT_EQ(test_decode("5\r\nhello\r\n0\r\nTrailer: value\r\n\r\n"), "hello");
+	ASSERT_EQ(test_decode("0\r\n\r\n"), "");
+	ASSERT_EQ(test_decode("A\r\n0123456789\r\n0\r\n\r\n"), "0123456789");
+	ASSERT_EQ(test_decode("a\r\n0123456789\r\n0\r\n\r\n"), "0123456789");
+
+	// decode_chunked 異常系
+	{
+		std::vector<char> out;
+		std::string bad = "5\r\nhi\r\n0\r\n\r\n";
+		ASSERT_FALSE(decode_chunked(bad.data(), bad.data() + bad.size(), &out));
+	}
+	{
+		std::vector<char> out;
+		std::string bad = "5\r\nhello\r\n";
+		ASSERT_FALSE(decode_chunked(bad.data(), bad.data() + bad.size(), &out));
+	}
+	{
+		std::vector<char> out;
+		std::string bad = "zz\r\n\r\n";
+		ASSERT_FALSE(decode_chunked(bad.data(), bad.data() + bad.size(), &out));
+	}
+	{
+		std::vector<char> out;
+		std::string bad = "5\r\nhello\r\n0\r\nTrailer\r\n";
+		ASSERT_FALSE(decode_chunked(bad.data(), bad.data() + bad.size(), &out));
+	}
+
+	// ヘッダー改行検証
+	{
+		bool caught = false;
+		try {
+			InetClient::Request req("http://example.com/");
+			req.add_header("X-Evil: value\r\nX-Injected: evil");
+		} catch (InetClient::Error const &) {
+			caught = true;
+		}
+		ASSERT_TRUE(caught);
+	}
+	{
+		bool caught = false;
+		try {
+			WebContext wc(WebClient::HTTP_1_1);
+			WebClient http(&wc);
+			http.add_header("X-Evil: value\r\nX-Injected: evil");
+		} catch (InetClient::Error const &) {
+			caught = true;
+		}
+		ASSERT_TRUE(caught);
+	}
+}
 

@@ -83,7 +83,7 @@ private:
 	Private *m;
 	void clear_error();
 	static int get_port(InetClient::URL const *url, char const *scheme, char const *protocol);
-	void set_default_header(InetClient::Request const &url, bool is_standard_port, InetClient::Post const *postdata, const RequestOption &opt);
+        void set_default_header(InetClient::Request const &url, bool is_standard_port, InetClient::Post const *postdata, const RequestOption &opt);
 	std::string make_http_request(InetClient::Request const &url, InetClient::Post const *postdata, const WebProxy *proxy, bool https);
 	void parse_http_header(char const *begin, char const *end, std::vector<std::string> *header);
 	void parse_http_header(char const *begin, char const *end, InetClient::Response *out);
@@ -130,6 +130,7 @@ public:
 
 	static std::string quick_get(const std::string &url);
 	static std::string checkip();
+	static void self_test();
 };
 
 class WebContext {
@@ -153,6 +154,9 @@ public:
 	WebProxy const *https_proxy() const;
 
 	bool load_cacert(char const *path);
+
+	void set_strict_certificate_verification(bool strict);
+	bool is_strict_certificate_verification() const;
 
 	void notify_broken_pipe();
 };
