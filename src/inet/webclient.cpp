@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <condition_variable>
 #include <cstring>
+#include <limits>
 #include <mutex>
 #include <thread>
 
@@ -58,6 +59,10 @@ typedef void SSL_CTX;
 #endif
 
 namespace {
+
+constexpr size_t MAX_CHUNK_HEADER_VALUE = 10 * 1024 * 1024; // 10 MB
+constexpr size_t MAX_CHUNK_TOTAL_SIZE   = 100 * 1024 * 1024; // 100 MB
+constexpr size_t MAX_CHUNK_LINE_LENGTH  = 4096;
 
 void vappend(std::vector<char> *vec, char const *begin, char const *end)
 {
@@ -247,21 +252,28 @@ static inline std::string to_s(size_t n)
 	return tmp;
 }
 
-void WebClient::set_default_header(InetClient::Request const &url, InetClient::Post const *postdata, RequestOption const &opt)
+void WebClient::set_default_header(InetClient::Request const &url, bool is_standard_port, InetClient::Post const *postdata, RequestOption const &opt)
 {
 	std::vector<std::string> header;
-	std::set<std::string> names;
 	auto AddHeader = [&](std::string const &s){
 		size_t i = s.find(':');
 		if (i != std::string::npos) {
 			std::string name = s.substr(0, i);
-			if (names.find(name) == names.end()) {
-				names.insert(names.end(), name);
-				header.push_back(s);
+			auto it = std::find_if(header.begin(), header.end(), [&](std::string const &h){
+					return h.size() > i && x_strnicmp(h.c_str(), name.c_str(), i) == 0 && h[i] == ':';
+					});
+			if (it != header.end()) {
+				header.erase(it);
 			}
+			header.push_back(s);
 		}
 	};
-	AddHeader("Host: " + url.url().host());
+	std::string host = url.url().host();
+	if (!is_standard_port) {
+		host += ':';
+		host += std::to_string(url.url().port());
+	}
+	AddHeader("Host: " + host);
 	AddHeader("User-Agent: " USER_AGENT);
 	AddHeader("Accept: */*");
 	if (opt.keep_alive) {
@@ -371,9 +383,10 @@ void WebClient::parse_http_header(char const *begin, char const *end, InetClient
 static void send_(socket_t s, char const *ptr, int len)
 {
 	while (len > 0) {
-		int n = std::min(len, 65536);
+		int n = std::min(len, 4096);
 		n = send(s, ptr, n, 0);
-		if (n < 1 || n > len) {
+		if (n < 1) {
+			auto e = WSAGetLastError();
 			throw InetClient::Error("send request failed.");
 		}
 		ptr += n;
@@ -401,7 +414,7 @@ void WebClient::append(char const *ptr, size_t len, std::vector<char> *out, WebC
 		// nop
 	} else {
 		for (size_t i = 0; i < len; i++) {
-			int c = ptr[i] & 0xff;
+			int c = (unsigned char)ptr[i];
 			if (c == '\r') {
 				m->crlf_state |= 1;
 			} else if (c == '\n') {
@@ -539,19 +552,128 @@ void WebClient::receive_(RequestOption const &opt, std::function<int(char *, int
 {
 	char buf[4096];
 	size_t pos = 0;
+	enum ChunkState {
+		NO_CHUNK,
+		CHUNK_HEADER,
+		CHUNK_EXTENSION,
+		CHUNK_DATA,
+		CHUNK_END,
+		CHUNK_TRAILER,
+	};
+
+	int chunk_state = NO_CHUNK;
+	size_t chunked_offset = 0;
+	size_t chunked_length = 0;
+	size_t line_length = 0; // chunk size/extension 行の長さ
+	size_t trailer_line_length = 0; // trailer 行の長さ
 	while (1) {
 		int n;
-		if (rh->state == ResponseHeader::Content && rh->content_length >= 0) {
-			n = int(rh->pos + rh->content_length - pos);
-			if (n > (int)sizeof(buf)) {
-				n = sizeof(buf);
+		if (rh->state == ResponseHeader::Content && chunk_state != NO_CHUNK) {
+			if (chunked_length == 0) {
+				std::string_view view(out->data() + chunked_offset, out->size() - chunked_offset);
+				size_t i = 0;
+				while (i < view.size()) {
+					int c = (unsigned char)view[i++];
+					if (chunk_state == CHUNK_HEADER) {
+						if (c == '\n') {
+							line_length = 0;
+							if (chunked_length == 0) {
+								chunk_state = CHUNK_TRAILER;
+								continue;
+							}
+							chunk_state = CHUNK_DATA;
+							continue;
+						}
+						if (c == '\r') continue;
+						if (c == ';') {
+							chunk_state = CHUNK_EXTENSION;
+							continue;
+						}
+						if (!isxdigit(c)) {
+							throw InetClient::Error("Invalid chunked encoding: unexpected character in chunk size");
+						}
+						if (++line_length > MAX_CHUNK_LINE_LENGTH) {
+							throw InetClient::Error("Invalid chunked encoding: chunk size line too long");
+						}
+						// 16進変換（ロケール非依存）
+						size_t digit;
+						if (c >= '0' && c <= '9') {
+							digit = c - '0';
+						} else if (c >= 'a' && c <= 'f') {
+							digit = c - 'a' + 10;
+						} else {
+							digit = c - 'A' + 10;
+						}
+						// オーバーフロー防止
+						if (chunked_length > (std::numeric_limits<size_t>::max() - digit) / 16) {
+							throw InetClient::Error("Invalid chunked encoding: chunk size overflow");
+						}
+						chunked_length = chunked_length * 16 + digit;
+						if (chunked_length > MAX_CHUNK_HEADER_VALUE) {
+							throw InetClient::Error("Invalid chunked encoding: chunk size exceeds limit");
+						}
+					} else if (chunk_state == CHUNK_EXTENSION) {
+						if (c == '\n') {
+							line_length = 0;
+							if (chunked_length == 0) {
+								chunk_state = CHUNK_TRAILER;
+								continue;
+							}
+							chunk_state = CHUNK_DATA;
+							continue;
+						}
+						if (c == '\r') continue;
+						if (++line_length > MAX_CHUNK_LINE_LENGTH) {
+							throw InetClient::Error("Invalid chunked encoding: chunk extension line too long");
+						}
+					} else if (chunk_state == CHUNK_DATA) {
+						if (chunked_length > 0) {
+							chunked_offset++;
+							chunked_length--;
+							if (chunked_length == 0) {
+								chunk_state = CHUNK_END;
+							}
+						}
+					} else if (chunk_state == CHUNK_END) {
+						if (c == '\n') {
+							chunk_state = CHUNK_HEADER;
+							chunked_offset++;
+							chunked_length = 0;
+							continue;
+						}
+						if (c == '\r') {
+							chunked_offset++;
+							continue;
+						}
+						throw InetClient::Error("Invalid chunked encoding: expected CRLF after chunk data");
+					} else if (chunk_state == CHUNK_TRAILER) {
+						if (c == '\n') {
+							if (trailer_line_length == 0) return;
+							trailer_line_length = 0;
+							continue;
+						}
+						if (c == '\r') continue;
+						if (++trailer_line_length > MAX_CHUNK_LINE_LENGTH) {
+							throw InetClient::Error("Invalid chunked encoding: trailer line too long");
+						}
+					}
+				}
 			}
+			n = (int)sizeof(buf);
+		} else if (rh->state == ResponseHeader::Content && rh->content_length >= 0) {
+			n = int(rh->pos + rh->content_length - pos);
+			n = std::min(n, (int)sizeof(buf));
 			if (n < 1) break;
 		} else {
 			n = (int)sizeof(buf);
 		}
 		n = rcv(buf, n);
-		if (n < 1) break;
+		if (n < 1) {
+			if (chunk_state != NO_CHUNK) {
+				throw InetClient::Error("Invalid chunked encoding: connection closed before end of chunks");
+			}
+			break;
+		}
 		append(buf, n, out, opt.handler);
 		pos += n;
 		if (rh->state == ResponseHeader::Header) {
@@ -559,6 +681,10 @@ void WebClient::receive_(RequestOption const &opt, std::function<int(char *, int
 				rh->put(buf[i]);
 				if (rh->state == ResponseHeader::Content) {
 					m->keep_alive = rh->connection_keep_alive && !rh->connection_close;
+					if (rh->internal.chunked) {
+						chunk_state = CHUNK_HEADER;
+						chunked_offset = rh->pos;
+					}
 					break;
 				}
 			}
@@ -671,7 +797,7 @@ static socket_t inet_connect(std::string const &hostname, int port)
 	return sock;
 }
 
-bool WebClient::http_get(InetClient::Request const &request, InetClient::Post const *postdata, RequestOption const &opt, ResponseHeader *rh, std::vector<char> *out)
+bool WebClient::http_getpost(InetClient::Request const &request, InetClient::Post const *postdata, RequestOption const &opt, ResponseHeader *rh, std::vector<char> *out)
 {
 	clear_error();
 	out->clear();
@@ -700,28 +826,44 @@ bool WebClient::http_get(InetClient::Request const &request, InetClient::Post co
 	m->last_host_name = hostname;
 	m->last_port = port;
 
-	set_default_header(request, postdata, opt);
+	constexpr int standard_port = 80;
+	set_default_header(request, port == standard_port, postdata, opt);
 
 	std::string req = make_http_request(request, postdata, proxy, false);
 
-	send_(m->sock, req.c_str(), (int)req.size());
-	if (postdata && !postdata->data.empty()) {
-		send_(m->sock, (char const *)&postdata->data[0], (int)postdata->data.size());
+	bool ok = false;
+	try {
+		std::vector<char> sending;
+		sending.reserve(req.size() + (postdata ? postdata->data.size() : 0));
+		sending.insert(sending.end(), req.begin(), req.end());
+		if (postdata && !postdata->data.empty()) {
+			sending.insert(sending.end(), postdata->data.begin(), postdata->data.end());
+		}
+		// send_(m->sock, req.c_str(), (int)req.size());
+		// if (postdata && !postdata->data.empty()) {
+		// 	send_(m->sock, (char const *)&postdata->data[0], (int)postdata->data.size());
+		// }
+		send_(m->sock, sending.data(), (int)sending.size());
+		ok = true;
+	} catch (InetClient::Error const &e) {
+		fprintf(stderr, "Send failed: %s\n", e.what().c_str());
 	}
 
 	m->crlf_state = 0;
 	m->content_offset = 0;
 
-	receive_(opt, [&](char *ptr, int len){
-		return recv(m->sock, ptr, len, 0);
-	}, rh, out);
+	if (ok) {
+		receive_(opt, [&](char *ptr, int len){
+			return recv(m->sock, ptr, len, 0);
+		}, rh, out);
 
-	if (!m->keep_alive) close();
+		if (!m->keep_alive) close();
+	}
 
-	return true;
+	return ok;
 }
 
-bool WebClient::https_get(InetClient::Request const &request_req, InetClient::Post const *postdata, RequestOption const &opt, ResponseHeader *rh, std::vector<char> *out)
+bool WebClient::https_getpost(InetClient::Request const &request_req, InetClient::Post const *postdata, RequestOption const &opt, ResponseHeader *rh, std::vector<char> *out)
 {
 #if USE_OPENSSL
 
@@ -735,11 +877,11 @@ bool WebClient::https_get(InetClient::Request const &request_req, InetClient::Po
 	out->clear();
 
 	auto get_ssl_error = []()->std::string{
-		char tmp[1000];
-		unsigned long e = ERR_get_error();
-		ERR_error_string_n(e, tmp, sizeof(tmp));
-		return tmp;
-	};
+			char tmp[1000];
+			unsigned long e = ERR_get_error();
+			ERR_error_string_n(e, tmp, sizeof(tmp));
+			return tmp;
+			};
 
 	InetClient::Request server_req;
 
@@ -790,8 +932,8 @@ bool WebClient::https_get(InetClient::Request const &request_req, InetClient::Po
 				bool found_ok = false;
 				int i;
 				for (i = 0; i < n - 8; i++) {
-					if (strncmp(tmp + i, "200 OK", 6) == 0 || 
-						strncmp(tmp + i, "200 Connection established", 26) == 0) {
+					if (strncmp(tmp + i, "200 OK", 6) == 0 ||
+							strncmp(tmp + i, "200 Connection established", 26) == 0) {
 						found_ok = true;
 						break;
 					}
@@ -894,7 +1036,8 @@ bool WebClient::https_get(InetClient::Request const &request_req, InetClient::Po
 	m->last_port = port;
 
 	// Prepare request
-	set_default_header(request_req, postdata, opt);
+	constexpr int standard_port = 443;
+	set_default_header(request_req, port == standard_port, postdata, opt);
 	std::string request = make_http_request(request_req, postdata, proxy, true);
 
 	// Send request
@@ -980,70 +1123,117 @@ bool WebClient::https_get(InetClient::Request const &request_req, InetClient::Po
 	return false;
 }
 
-bool decode_chunked(char const *ptr, char const *end, std::vector<char> *out)
+bool decode_chunked(char const *begin, char const *end, std::vector<char> *out)
 {
-	if (!ptr || !end || !out || ptr >= end) return false;
-	
+	if (!out) return false;
 	out->clear();
-	const size_t MAX_CHUNK_SIZE = 10 * 1024 * 1024; // 10 MB max chunk size for safety
-	size_t length = 0;
-	
+	if (!begin || begin > end) return false;
+	if (begin == end) return true;
+
+	char const *ptr = begin;
+	size_t total_size = 0;
+
+	auto parse_hex_digit = [](int c)->size_t {
+		if (c >= '0' && c <= '9') return c - '0';
+		if (c >= 'a' && c <= 'f') return c - 'a' + 10;
+		return c - 'A' + 10;
+	};
+
 	while (ptr < end) {
-		// Parse chunk size (hex)
-		if (isxdigit((unsigned char)*ptr)) {
-			// Handle chunk terminator (0-length chunk)
-			if (*ptr == '0' && length == 0) {
-				if (ptr + 2 < end && ptr[1] == '\r' && ptr[2] == '\n') {
-					return true; // normal exit
-				}
-				return false;
-			}
-			
-			// Parse hex digit safely
-			size_t old_length = length;
-			length *= 16;
-			
-			// Check for overflow
-			if (length / 16 != old_length) {
-				return false; // Integer overflow
-			}
-			
-			if (isdigit(*ptr)) {
-				length += *ptr - '0';
-			} else {
-				length += toupper(*ptr) - 'A' + 10;
-			}
-			
-			// Prevent excessive memory allocation
-			if (length > MAX_CHUNK_SIZE) {
-				return false;
-			}
-			
-			ptr++;
-		} else {
-			// End of chunk size, start of chunk data
-			if (ptr + 1 < end && ptr[0] == '\r' && ptr[1] == '\n') {
-				// Check if we have enough data for the chunk plus terminating CRLF
-				if (ptr + 2 + length + 2 <= end && 
-				    ptr[length + 2] == '\r' && ptr[length + 3] == '\n') {
-					ptr += 2; // Skip CRLF after chunk size
-					// Append chunk data to output
-					out->insert(out->end(), ptr, ptr + length);
-					ptr += length + 2; // Skip chunk data and terminating CRLF
-				} else {
-					return false; // Malformed chunk or incomplete data
-				}
-				length = 0;
-			} else {
-				// Unexpected character in chunk size
-				return false;
-			}
+		// chunk size 行の終わりを探す
+		char const *line_end = ptr;
+		while (line_end < end && *line_end != '\n') {
+			line_end++;
 		}
+		if (line_end >= end) {
+			fprintf(stderr, "decode_chunked: truncated chunk size line\n");
+			return false;
+		}
+
+		size_t line_len = static_cast<size_t>(line_end - ptr);
+		if (line_len > MAX_CHUNK_LINE_LENGTH) {
+			fprintf(stderr, "decode_chunked: chunk size line too long\n");
+			return false;
+		}
+
+		// chunk size をパース（';' または '\r' まで）
+		char const *p = ptr;
+		size_t chunk_size = 0;
+		while (p < line_end && *p != ';' && *p != '\r') {
+			int c = (unsigned char)*p;
+			if (!isxdigit(c)) {
+				fprintf(stderr, "decode_chunked: invalid character in chunk size\n");
+				return false;
+			}
+			size_t digit = parse_hex_digit(c);
+			if (chunk_size > (std::numeric_limits<size_t>::max() - digit) / 16) {
+				fprintf(stderr, "decode_chunked: chunk size overflow\n");
+				return false;
+			}
+			chunk_size = chunk_size * 16 + digit;
+			if (chunk_size > MAX_CHUNK_HEADER_VALUE) {
+				fprintf(stderr, "decode_chunked: chunk size exceeds limit\n");
+				return false;
+			}
+			p++;
+		}
+
+		// chunk-extension は line_end までスキップ（既に line_len で制限済み）
+		ptr = line_end + 1;
+
+		if (chunk_size == 0) {
+			// 終端チャンク。trailer ヘッダーを空行までスキップ
+			while (ptr < end) {
+				char const *trailer_end = ptr;
+				while (trailer_end < end && *trailer_end != '\n') {
+					trailer_end++;
+				}
+				if (trailer_end >= end) {
+					fprintf(stderr, "decode_chunked: truncated trailer\n");
+					return false;
+				}
+				size_t trailer_line_len = static_cast<size_t>(trailer_end - ptr);
+				if (trailer_line_len > MAX_CHUNK_LINE_LENGTH) {
+					fprintf(stderr, "decode_chunked: trailer line too long\n");
+					return false;
+				}
+				// 空行判定（"\r\n" または "\n"）
+				if (trailer_line_len == 0 || (trailer_line_len == 1 && *ptr == '\r')) {
+					return true;
+				}
+				ptr = trailer_end + 1;
+			}
+			fprintf(stderr, "decode_chunked: truncated trailer terminator\n");
+			return false;
+		}
+
+		// chunk データ + 終端 CRLF が収まるか
+		size_t remaining = static_cast<size_t>(end - ptr);
+		if (remaining < chunk_size + 2) {
+			fprintf(stderr, "decode_chunked: truncated chunk data\n");
+			return false;
+		}
+		if (ptr[chunk_size] != '\r' || ptr[chunk_size + 1] != '\n') {
+			fprintf(stderr, "decode_chunked: missing CRLF after chunk data\n");
+			return false;
+		}
+
+		// 総サイズ上限
+		if (total_size > MAX_CHUNK_TOTAL_SIZE - chunk_size) {
+			fprintf(stderr, "decode_chunked: total size exceeds limit\n");
+			return false;
+		}
+		total_size += chunk_size;
+
+		out->insert(out->end(), ptr, ptr + chunk_size);
+		ptr += chunk_size + 2;
 	}
-	return false; // Unexpected end of data
+
+	fprintf(stderr, "decode_chunked: unexpected end of chunked data\n");
+	return false;
 }
 
-bool WebClient::get(InetClient::Request const &req, InetClient::Post const *postdata, InetClient::Response *out, WebClientHandler *handler)
+bool WebClient::getpost(InetClient::Request const &req, InetClient::Post const *postdata, InetClient::Response *out, WebClientHandler *handler)
 {
 	reset();
 	bool ok = false;
@@ -1059,10 +1249,10 @@ bool WebClient::get(InetClient::Request const &req, InetClient::Post const *post
 		std::vector<char> res;
 		if (req.url().is_ssl()) {
 #if USE_OPENSSL
-			https_get(req, postdata, opt, &rh, &res);
+			https_getpost(req, postdata, opt, &rh, &res);
 #endif
 		} else {
-			http_get(req, postdata, opt, &rh, &res);
+			http_getpost(req, postdata, opt, &rh, &res);
 		}
 		if (!res.empty()) {
 			char const *begin = &res[0];
@@ -1112,7 +1302,7 @@ void WebClient::parse_header(std::vector<std::string> const *header, InetClient:
 			while (1) {
 				int c = 0;
 				if (ptr < end) {
-					c = *ptr & 0xff;
+					c = (unsigned char)*ptr;
 				}
 				switch (state) {
 				case 0:
@@ -1155,6 +1345,32 @@ void WebClient::parse_header(std::vector<std::string> const *header, InetClient:
 			}
 		}
 	}
+}
+
+int WebClient::get(const InetClient::Request &req, WebClientHandler *handler)
+{
+	if (getpost(req, nullptr, &m->response, handler)) {
+		return m->response.code;
+	}
+	return -1;
+}
+
+int WebClient::post(const InetClient::Request &req, const InetClient::Post *postdata, WebClientHandler *handler)
+{
+	if (getpost(req, postdata, &m->response, handler)) {
+		return m->response.code;
+	}
+	return -1;
+}
+
+int WebClient::get(const InetClient::Request &req)
+{
+	return get(req, nullptr);
+}
+
+int WebClient::post(const InetClient::Request &req, const InetClient::Post *postdata)
+{
+	return post(req, postdata, nullptr);
 }
 
 std::string WebClient::header_value(std::vector<std::string> const *header, std::string const &name)
@@ -1204,18 +1420,6 @@ char const *WebClient::content_data() const
 {
 	if (m->response.content.empty()) return "";
 	return &m->response.content[0];
-}
-
-int WebClient::get(InetClient::Request const &req, WebClientHandler *handler)
-{
-	get(req, nullptr, &m->response, handler);
-	return m->response.code;
-}
-
-int WebClient::post(InetClient::Request const &req, InetClient::Post const *postdata, WebClientHandler *handler)
-{
-	get(req, postdata, &m->response, handler);
-	return m->response.code;
 }
 
 void WebClient::close()

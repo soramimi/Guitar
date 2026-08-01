@@ -79,3 +79,4 @@ subprojects/IncrementalSearchPlugin/mecab/mecab/src/mecab-test-gen
 docker/home/run.sh
 .kilo/
 debug/
+*.bak

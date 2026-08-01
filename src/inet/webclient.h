@@ -83,13 +83,13 @@ private:
 	Private *m;
 	void clear_error();
 	static int get_port(InetClient::URL const *url, char const *scheme, char const *protocol);
-	void set_default_header(InetClient::Request const &url, InetClient::Post const *postdata, const RequestOption &opt);
+	void set_default_header(InetClient::Request const &url, bool is_standard_port, InetClient::Post const *postdata, const RequestOption &opt);
 	std::string make_http_request(InetClient::Request const &url, InetClient::Post const *postdata, const WebProxy *proxy, bool https);
 	void parse_http_header(char const *begin, char const *end, std::vector<std::string> *header);
 	void parse_http_header(char const *begin, char const *end, InetClient::Response *out);
-	bool http_get(InetClient::Request const &request_req, InetClient::Post const *postdata, RequestOption const &opt, ResponseHeader *rh, std::vector<char> *out);
-	bool https_get(InetClient::Request const &request_url, InetClient::Post const *postdata, RequestOption const &opt, ResponseHeader *rh, std::vector<char> *out);
-	bool get(InetClient::Request const &req, InetClient::Post const *post, InetClient::Response *out, WebClientHandler *handler);
+	bool http_getpost(InetClient::Request const &request_req, InetClient::Post const *postdata, RequestOption const &opt, ResponseHeader *rh, std::vector<char> *out);
+	bool https_getpost(InetClient::Request const &request_url, InetClient::Post const *postdata, RequestOption const &opt, ResponseHeader *rh, std::vector<char> *out);
+	bool getpost(InetClient::Request const &req, InetClient::Post const *post, InetClient::Response *out, WebClientHandler *handler);
 	static void parse_header(std::vector<std::string> const *header, InetClient::Response *res);
 	static std::string header_value(std::vector<std::string> const *header, std::string const &name);
 	void append(char const *ptr, size_t len, std::vector<char> *out, WebClientHandler *handler);
@@ -97,6 +97,9 @@ private:
 	void receive_(const RequestOption &opt, std::function<int (char *, int)> const &, ResponseHeader *rh, std::vector<char> *out);
 	void output_debug_string(char const *str);
 	void output_debug_strings(const std::vector<std::string> &vec);
+
+	int get(InetClient::Request const &req, WebClientHandler *handler);
+	int post(InetClient::Request const &req, InetClient::Post const *postdata, WebClientHandler *handler);
 protected:
 	void reset() override;
 public:
@@ -111,16 +114,8 @@ public:
 	void set_http_version(HttpVersion httpver);
 
 	InetClient::Error const &error() const override;
-	int get(InetClient::Request const &req, WebClientHandler *handler);
-	int get(InetClient::Request const &req) override
-	{
-		return get(req, nullptr);
-	}
-	int post(InetClient::Request const &req, InetClient::Post const *postdata, WebClientHandler *handler);
-	int post(InetClient::Request const &req, InetClient::Post const *postdata) override
-	{
-		return post(req, postdata, nullptr);
-	}
+	int get(InetClient::Request const &req) override;
+	int post(InetClient::Request const &req, InetClient::Post const *postdata) override;
 	void close() override;
 	void add_header(std::string const &text);
 	InetClient::Response const &response() const override;
