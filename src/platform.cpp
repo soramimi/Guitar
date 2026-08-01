@@ -42,8 +42,11 @@ void initNetworking()
 	} else if (global->appsettings.proxy_type == "manual") {
 		http_proxy = global->appsettings.proxy_server.toStdString();
 	}
+#ifdef USE_LIBCURL
+#else
 	global->webcx.set_http_proxy(http_proxy);
 	global->webcx.set_https_proxy(https_proxy);
+#endif
 }
 
 } // namespace platform

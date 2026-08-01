@@ -13,6 +13,10 @@
 #include <subprojects/FileTypePlugin/src/FileType.h>
 #include <subprojects/IncrementalSearchPlugin/src/IncrementalSearch.h>
 
+#ifdef USE_LIBCURL
+#include <inet/curlclient.h>
+#endif
+
 class IncrementalSearch;
 class OnePassword;
 

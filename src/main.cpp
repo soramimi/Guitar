@@ -82,7 +82,10 @@ void onSigTerm(int)
 void onSigPipe(int)
 {
 	qDebug() << "SIGPIPE caught";
+#ifdef USE_LIBCURL
+#else
 	global->webcx.notify_broken_pipe();
+#endif
 }
 
 int main(int argc, char *argv[])
@@ -280,7 +283,10 @@ int main(int argc, char *argv[])
 		}
 	}
 
+#ifdef USE_LIBCURL
+#else
 	global->webcx.set_keep_alive_enabled(true);
+#endif
 	global->avatar_loader.start(&w);
 
 	int r = QApplication::exec();
