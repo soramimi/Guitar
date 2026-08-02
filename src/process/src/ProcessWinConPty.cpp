@@ -19,6 +19,7 @@ ProcessWinConPty::ProcessWinConPty()
 {
 	BasicProcessWinConPty::Options opts;
 	opts.output_vector = true;
+	opts.output_queue = true;
 	set_options(opts);
 }
 

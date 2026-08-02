@@ -50,6 +50,8 @@ public:
 
 	static bool isUncommitted(GitCommitItem const &item);
 
+	static std::string quoted_text(std::string const &str);
+
 private:
 	std::vector<std::string> make_branch_list_(const std::optional<GitResult> &result);
 	std::vector<GitFileStatus> status_s_u_(std::string *out);
@@ -57,7 +59,6 @@ private:
 	static void parseAheadBehind(const std::string &s, GitBranch *b);
 	Git();
 	void _init(const GitContext &cx);
-	static std::string quoted_text(std::string const &str);
 	static std::optional<GitCommitItem> parseCommitItem(const std::string &line);
 	std::string submoduleURL(std::string const &path);
 public:

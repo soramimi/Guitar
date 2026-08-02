@@ -5,8 +5,8 @@ CONFIG -= qt
 CONFIG += console
 CONFIG += c++17
 
-win32:INCLUDEPATH += winpty\include
-win32:LIBS += -L$$PWD\winpty\x64\lib -lwinpty
+win32:INCLUDEPATH += $$PWD/winpty/include
+win32:LIBS += -L$$PWD/../../misc/winpty/x64/lib -lwinpty
 
 win32:DEFINES += NOMINMAX
 

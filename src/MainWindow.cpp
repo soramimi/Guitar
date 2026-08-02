@@ -6972,7 +6972,6 @@ void MainWindow::onLogIdle()
 	if (lines.empty()) {
 		lines = readLogHistoryLines(LogChannel::Default);
 		if (lines.empty()) return;
-		qDebug();
 	}
 
 	auto RegExp = [&](LogInspectionIndex i) -> std::regex {

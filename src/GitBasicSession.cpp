@@ -61,29 +61,44 @@ std::optional<GitResult> GitBasicSession::exec_git(std::string const &arg, const
 
 	QString env;
 	std::string ssh = sshCommand();
-	if (ssh.empty() || gitinfo().ssh_key_override.empty()) {
-		// nop
-	} else {
-		if ((FOUND)ssh.find('\"')) return std::nullopt;
-		if ((FOUND)gitinfo().ssh_key_override.find('\"')) return std::nullopt;
-		if (!QFileInfo(QString::fromStdString(ssh)).isExecutable()) return std::nullopt;
-		env = QString("GIT_SSH_COMMAND=\"%1\" -i \"%2\" ").arg(QString::fromStdString(ssh)).arg(QString::fromStdString(gitinfo().ssh_key_override));
-	}
+	// if (ssh.empty() || gitinfo().ssh_key_override.empty()) {
+	// 	// nop
+	// } else {
+	// 	if ((FOUND)ssh.find('\"')) return std::nullopt;
+	// 	if ((FOUND)gitinfo().ssh_key_override.find('\"')) return std::nullopt;
+	// 	if (!QFileInfo(QString::fromStdString(ssh)).isExecutable()) return std::nullopt;
+	// 	env = QString("GIT_SSH_COMMAND=\"%1\" -i \"%2\" ").arg(QString::fromStdString(ssh)).arg(QString::fromStdString(gitinfo().ssh_key_override));
+	// }
 
 	int exit_code = 0;
 	GitResult result;
 
 	auto DoIt = [&](){
-		std::string cmd = fmt("\"%s\" --no-pager ")(gitCommand());
+		// std::string cmd = fmt("%s %s --no-pager ")(Git::quoted_text(gitCommand()));
+		std::string cmd = Git::quoted_text(gitCommand());
+		if (!ssh.empty()) {
+			std::string sshkey = gitinfo().ssh_key_override;
+			std::string sshcmd = Git::quoted_text(ssh);
+			if (!sshkey.empty()) {
+				sshcmd += " -i ";
+				sshcmd += Git::quoted_text(sshkey);
+			}
+			cmd += " -c core.sshCommand=";
+			cmd += Git::quoted_text(sshcmd);
+		}
 
 		if (opt.chdir) {
 			std::string cwd = workingDir();
 			if (!cwd.empty()) {
-				cmd += fmt("-C \"%s\" ")(cwd);
+				cmd += " -C ";
+				cmd += Git::quoted_text(cwd);
 			}
 		}
 
+		cmd += " --no-pager ";
 		cmd += arg;
+
+		// fprintf(stderr, "--- %s\n", cmd.c_str());
 
 		if (opt.log) {
 			std::string s = fmt("> git %s\n")(arg);

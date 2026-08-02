@@ -136,8 +136,13 @@ int main(int argc, char **argv)
 #else
 int main(int argc, char **argv)
 {
+	std::string ssh = find_windows_openssh();
+
 	std::string cmd = R"("C:\Program Files\Git\cmd\git.exe")";
+	// cmd += " -c core.sshCommand=\"" + ssh + "\" ";
+
 	cmd += " --version";
+	// cmd += " fetch";
 
 	main_basic_win(cmd);
 	main_basic_win_conpty(cmd);

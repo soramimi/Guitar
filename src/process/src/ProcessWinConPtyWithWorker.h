@@ -25,7 +25,7 @@ public:
 	ProcessWinConPtyWithWorker();
 	~ProcessWinConPtyWithWorker() override;
 
-	void set_options(BasicProcessWin::Options const &options);
+	// void set_options(BasicProcessWin::Options const &options);
 
 	void start(std::string const &command, std::string const &env, bool use_input) override;
 	ProcessResult wait(int time = INT_MAX) override;

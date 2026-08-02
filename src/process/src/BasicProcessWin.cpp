@@ -177,8 +177,7 @@ bool BasicProcessWin::start(std::string const &cmd)
 		m->d.result.error_message_ = misc::get_error_message(error_code);
 		return false;
 	}
-	if (!SetHandleInformation(m->d.hInputWrite, HANDLE_FLAG_INHERIT, 0)
-		|| !SetHandleInformation(m->d.hOutputRead, HANDLE_FLAG_INHERIT, 0)) {
+	if (!SetHandleInformation(m->d.hInputWrite, HANDLE_FLAG_INHERIT, 0) || !SetHandleInformation(m->d.hOutputRead, HANDLE_FLAG_INHERIT, 0)) {
 		DWORD error_code = GetLastError();
 		m->d = { };
 		m->d.result.error_code_ = error_code;

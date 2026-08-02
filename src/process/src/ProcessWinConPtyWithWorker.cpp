@@ -23,7 +23,9 @@ ProcessWinConPtyWithWorker::ProcessWinConPtyWithWorker()
 {
 	BasicProcessWin::Options opts;
 	opts.output_vector = true; // output monitoring
-	set_options(opts);
+	opts.output_queue = true;
+	m->proc.set_options(opts);
+	// set_options(opts);
 }
 
 ProcessWinConPtyWithWorker::~ProcessWinConPtyWithWorker()
@@ -32,10 +34,9 @@ ProcessWinConPtyWithWorker::~ProcessWinConPtyWithWorker()
 	delete m;
 }
 
-void ProcessWinConPtyWithWorker::set_options(BasicProcessWin::Options const &options)
-{
-	m->proc.set_options(options);
-}
+// void ProcessWinConPtyWithWorker::set_options(BasicProcessWin::Options const &options)
+// {
+// }
 
 int ProcessWinConPtyWithWorker::run_worker(int argc, char **argv)
 {
@@ -144,6 +145,7 @@ void ProcessWinConPtyWithWorker::start(std::string const &command, std::string c
 	}, this->user_data_);
 
 	m->proc.set_change_dir(change_dir_);
+	// fprintf(stderr, "--- %s\n", cmd.c_str());
 	m->started = m->proc.start(cmd);
 	m->running = m->started;
 	if (m->started) {
