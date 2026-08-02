@@ -674,7 +674,6 @@ public:
 	BranchLabelList rowLabels(int row, bool sorted = true) const;
 	void setProgress(float progress);
 	void showProgress(QString const &text, float progress = -1.0f);
-	void hideProgress();
 	void internalAfterFetch();
 	void onRepositoryTreeSortRecent(bool f);
 	

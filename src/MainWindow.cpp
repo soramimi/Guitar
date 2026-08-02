@@ -722,6 +722,20 @@ bool MainWindow::eventFilter(QObject *watched, QEvent *event)
 				return !(alt || ctrl) && appendCharToFilterText(text, target);
 			};
 
+			if (ctrl) {
+				auto CheckOnline = [&](){
+					if (!isOnlineMode()) {
+						if (k == Qt::Key_U) return false; // Push command
+						if (k == Qt::Key_S) return false; // Pull command
+					}
+					return true;
+				};
+				if (!CheckOnline()) {
+					QMessageBox::warning(this, tr("Offline Mode"), tr("Currently offline mode is enabled. Please enable online mode to use this command."));
+					return true;
+				}
+			}
+
 			if (k == Qt::Key_Escape) {
 				clearAllFilters();
 				updateRepositoryList(RepositoryTreeWidget::RepositoryListStyle::Standard);
@@ -1051,11 +1065,6 @@ void MainWindow::showProgress(QString const &text, float progress)
 {
 	StatusInfo info = StatusInfo::progress(text, progress);
 	emit signalShowStatusInfo(info);
-}
-
-void MainWindow::hideProgress()
-{
-	clearStatusInfo();
 }
 
 void MainWindow::setStatusInfo(StatusInfo const &info)
@@ -3686,6 +3695,7 @@ void MainWindow::abortPtyProcess()
 	stopPtyProcess();
 	setPtyProcessOk(false);
 	setInteractionEnabled(false);
+	clearStatusInfo();
 }
 
 AbstractPtyProcess *MainWindow::getPtyProcess()
@@ -4569,7 +4579,7 @@ void MainWindow::updateStatusBarText()
 		return;
 	}
 
-	hideProgress();
+	clearStatusInfo();
 
 	StatusInfo::Message msg;
 
@@ -7032,23 +7042,7 @@ void MainWindow::onLogIdle()
 	while (!lines.empty() && lines.back().empty()) {
 		lines.pop_back();
 	}
-
-#if 0
-	if (Contains(CONSIDER_GIT_REBASE_QUIT_OR_WORKTREE_ADD)) {
-		QString text;
-		{
-			for (std::string const &line : lines) {
-				QString qline = QString::fromStdString(line);
-				text += qline + '\n';
-			}
-		}
-		TextEditDialog dlg(this);
-		dlg.setWindowTitle(tr("Consider git rebase --quit or git worktree add"));
-		dlg.setText(text, true);
-		dlg.exec();
-		return;
-	}
-#endif
+	if (lines.empty()) return;
 
 	{
 		QString dir = QString::fromStdString(parseDetectedDubiousOwnershipInRepositoryAt(lines));
@@ -7091,7 +7085,7 @@ void MainWindow::onLogIdle()
 		}
 	}
 
-	{
+	auto Do = [&](){
 		std::string line = lines.back();
 		line = misc::trimmed(line);
 		if (!line.empty()) {
@@ -7184,7 +7178,10 @@ void MainWindow::onLogIdle()
 				return;
 			}
 		}
-	}
+	};
+
+	Do();
+	clearStatusInfo();
 }
 
 void MainWindow::on_action_edit_tags_triggered()

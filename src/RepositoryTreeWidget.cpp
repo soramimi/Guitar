@@ -304,7 +304,7 @@ void RepositoryTreeWidget::updateList(RepositoryListStyle style, std::vector<Rep
 			std::sort(items.begin(), items.end(), [](Item const &a, Item const &b){
 				return a.lastModified > b.lastModified;
 			});
-			mainwindow()->hideProgress();
+			mainwindow()->clearStatusInfo();
 			GlobalRestoreOverrideCursor();
 		}
 
