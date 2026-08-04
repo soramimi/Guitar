@@ -72,7 +72,7 @@ std::vector<Model> const &ai_model_presets()
 		{ProviderID::Moonshot,         "kimi-k2.7-code"},
 		{ProviderID::Moonshot,         "kimi-k2.6"},
 		{ProviderID::Sakura,           "sakura:gpt-oss-120b"},
-		{ProviderID::DeepSeek,         "deepseek-chat"},
+		{ProviderID::DeepSeek,         "deepseek-v4-flash"},
 		{ProviderID::OpenRouter,       "openrouter:///anthropic/claude-4.6-sonnet"},
 		{ProviderID::Ollama,           "ollama:///gemma4"},
 		{ProviderID::LMStudio,         "lmstudio:///meta-llama-3-8b-instruct"},
