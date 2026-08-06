@@ -154,7 +154,7 @@ QImage loadImage(QString const &path, QString const &role = QString())
  * @param gamma The gamma correction factor.
  * @return The corrected value clamped between 0 and 255.
  */
-inline int value_correct(int v, float wl, float ww, float gamma)
+inline int level_correct(int v, float wl, float ww, float gamma)
 {
 	float t = v;
 	if (ww != 0) {
@@ -164,6 +164,14 @@ inline int value_correct(int v, float wl, float ww, float gamma)
 	}
 	t = floorf(t + 0.5);
 	return std::clamp((int)t, 0, 255);
+}
+
+QColor level_collect(QColor color, float wl, float ww, float gamma)
+{
+	int r = level_correct(color.red(), wl, ww, gamma);
+	int g = level_correct(color.green(), wl, ww, gamma);
+	int b = level_correct(color.blue(), wl, ww, gamma);
+	return QColor(r, g, b, color.alpha());
 }
 
 inline QRgb blend_color(QRgb color1, QRgb color2, unsigned char ratio)
@@ -190,6 +198,44 @@ QRgb correct_brightness(QRgb color, int light, int alpha)
 	rgba = qRgba(qRed(rgba), qGreen(rgba), qBlue(rgba), alpha);
 	return rgba;
 }
+
+class LevelLUT {
+private:
+	int lut[256];
+public:
+	void setup(std::function<int (int)> calc)
+	{
+		for (int i = 0; i < 256; i++) {
+			lut[i] = calc(i);
+		}
+	}
+	int operator [] (int i)
+	{
+		return lut[i];
+	}
+};
+
+class Lighten : public LevelLUT {
+private:
+	int lut[256];
+public:
+	Lighten()
+	{
+		setup([](int v){
+			return 255 - (255 - v) * 192 / 256;
+		});
+	}
+};
+
+class LevelCorrect : public LevelLUT {
+public:
+	LevelCorrect(float wl, float ww, float gamma)
+	{
+		setup([wl, ww, gamma](int v){
+			return level_correct(v, wl, ww, gamma);
+		});
+	}
+};
 
 } // namespace
 
@@ -326,24 +372,6 @@ QImage DarkStyle::loadColorizedImage(QString const &path, QString const &role)
 	return image;
 }
 
-namespace {
-class Lighten {
-private:
-	int lut[256];
-public:
-	Lighten()
-	{
-		for (int i = 0; i < 256; i++) {
-			lut[i] = 255 - (255 - i) * 192 / 256;
-		}
-	}
-	int operator [] (int i)
-	{
-		return lut[i];
-	}
-};
-}
-
 ButtonImages DarkStyle::generateButtonImages(QString const &path)
 {
 	QImage source = loadImage(path).convertedTo(QImage::Format_ARGB32);
@@ -411,8 +439,9 @@ QImage DarkStyle::generateHoverImage(QImage const &source)
 	return newimage;
 }
 
-static void correctImage(QImage *image, bool ninepatch, int bias, int lower, int upper, float gamma = 1.0f)
+static void correct_image_level(QImage *image, bool ninepatch, float wl, float ww, float gamma)
 {
+	LevelCorrect level_correct(wl, ww, gamma);
 	int x1 = 0;
 	int y1 = 0;
 	int x2 = image->width();
@@ -432,32 +461,9 @@ static void correctImage(QImage *image, bool ninepatch, int bias, int lower, int
 			int b = p[x * 4 + 2];
 			int a = p[x * 4 + 3];
 
-			auto Scale = [](int in, int lower, int upper){
-				if (in < lower) {
-					in = 0;
-				} else if (in > upper) {
-					in = 255;
-				} else {
-					in = (in - lower) * 255 / (upper - lower);
-				}
-				return in;
-			};
-
-			r = Scale(r + bias, lower, upper);
-			g = Scale(g + bias, lower, upper);
-			b = Scale(b + bias, lower, upper);
-
-			if (gamma != 1) {
-				float R  = r / 255.0f;
-				float G  = g / 255.0f;
-				float B  = b / 255.0f;
-				R = pow(R, gamma);
-				G = pow(G, gamma);
-				B = pow(B, gamma);
-				r = int(R * 255);
-				g = int(G * 255);
-				b = int(B * 255);
-			}
+			r = level_correct[r];
+			g = level_correct[g];
+			b = level_correct[b];
 
 			p[x * 4 + 0] = r;
 			p[x * 4 + 1] = g;
@@ -467,84 +473,64 @@ static void correctImage(QImage *image, bool ninepatch, int bias, int lower, int
 	}
 }
 
-static void correctImage(ButtonImages *images, bool ninepatch, int bias, int lower, int upper, float gamma = 1.0f)
+static void correct_image_level(ButtonImages *images, bool ninepatch, float wl, float ww, float gamma)
 {
-	correctImage(&images->im_normal, ninepatch, bias, lower, upper, gamma);
-	correctImage(&images->im_pressed, ninepatch, bias, lower, upper, gamma);
+	correct_image_level(&images->im_normal, ninepatch, wl, ww, gamma);
+	correct_image_level(&images->im_pressed, ninepatch, wl, ww, gamma);
 }
 
 void DarkStyle::loadImages()
 {
 	if (m->images_loaded) return;
 
-	if (!baseColor().isValid()) {
-		setBaseColor(Qt::white);
-	}
+	m->button_normal        = loadColorizedImage(QLatin1String(":/darktheme/button/button_normal.png"), QLatin1String("normal"));
+	m->button_press         = loadColorizedImage(QLatin1String(":/darktheme/button/button_press.png"), QLatin1String("press"));
 
-	if (theme() == Theme::Dark) {
-		m->button_normal        = loadColorizedImage(QLatin1String(":/darktheme/button/button_normal.png"), QLatin1String("normal"));
-		m->button_press         = loadColorizedImage(QLatin1String(":/darktheme/button/button_press.png"), QLatin1String("press"));
+	m->hsb.sub_line         = generateButtonImages(QLatin1String(":/darktheme/hsb/hsb_sub_line.png"));
+	m->hsb.add_line         = generateButtonImages(QLatin1String(":/darktheme/hsb/hsb_add_line.png"));
+	m->hsb.page_bg          = loadColorizedImage(QLatin1String(":/darktheme/hsb/hsb_page_bg.png"));
+	m->hsb.slider.im_normal = loadColorizedImage(QLatin1String(":/darktheme/hsb/hsb_slider.png"));
+	m->hsb.slider.im_pressed  = generateHoverImage(m->hsb.slider.im_normal);
 
-		m->hsb.sub_line         = generateButtonImages(QLatin1String(":/darktheme/hsb/hsb_sub_line.png"));
-		m->hsb.add_line         = generateButtonImages(QLatin1String(":/darktheme/hsb/hsb_add_line.png"));
-		m->hsb.page_bg          = loadColorizedImage(QLatin1String(":/darktheme/hsb/hsb_page_bg.png"));
-		m->hsb.slider.im_normal = loadColorizedImage(QLatin1String(":/darktheme/hsb/hsb_slider.png"));
-		m->hsb.slider.im_pressed  = generateHoverImage(m->hsb.slider.im_normal);
+	m->vsb.sub_line         = generateButtonImages(QLatin1String(":/darktheme/vsb/vsb_sub_line.png"));
+	m->vsb.add_line         = generateButtonImages(QLatin1String(":/darktheme/vsb/vsb_add_line.png"));
+	m->vsb.page_bg          = loadColorizedImage(QLatin1String(":/darktheme/vsb/vsb_page_bg.png"));
+	m->vsb.slider.im_normal = loadColorizedImage(QLatin1String(":/darktheme/vsb/vsb_slider.png"));
+	m->vsb.slider.im_pressed  = generateHoverImage(m->vsb.slider.im_normal);
 
-		m->vsb.sub_line         = generateButtonImages(QLatin1String(":/darktheme/vsb/vsb_sub_line.png"));
-		m->vsb.add_line         = generateButtonImages(QLatin1String(":/darktheme/vsb/vsb_add_line.png"));
-		m->vsb.page_bg          = loadColorizedImage(QLatin1String(":/darktheme/vsb/vsb_page_bg.png"));
-		m->vsb.slider.im_normal = loadColorizedImage(QLatin1String(":/darktheme/vsb/vsb_slider.png"));
-		m->vsb.slider.im_pressed  = generateHoverImage(m->vsb.slider.im_normal);
+	m->progress_horz = loadImage(QLatin1String(":/darktheme/progress/horz.png"));
+	m->progress_vert = loadImage(QLatin1String(":/darktheme/progress/vert.png"));
 
-		m->progress_horz = loadImage(QLatin1String(":/darktheme/progress/horz.png"));
-		m->progress_vert = loadImage(QLatin1String(":/darktheme/progress/vert.png"));
-	} else if (theme() == Theme::Light || theme() == Theme::Gray) {
-		m->button_normal        = loadColorizedImage(QLatin1String(":/themes/light/button/button_normal.png"), QLatin1String("normal"));
-		m->button_press         = loadColorizedImage(QLatin1String(":/themes/light/button/button_press.png"), QLatin1String("press"));
+	if (theme() == Theme::Gray) {
+		float wl = 60;
+		float ww = 280;
+		float gamma = 0.8;
+		correct_image_level(&m->hsb.sub_line           , true, wl, ww, gamma);
+		correct_image_level(&m->hsb.add_line           , true, wl, ww, gamma);
+		correct_image_level(&m->hsb.page_bg            , true, wl, ww, gamma);
+		correct_image_level(&m->hsb.slider.im_normal   , true, wl, ww, gamma);
+		correct_image_level(&m->hsb.slider.im_pressed  , true, wl, ww, gamma);
 
-		m->hsb.sub_line         = generateButtonImages(QLatin1String(":/themes/light/sb/hsb_sub_line.png"));
-		m->hsb.add_line         = generateButtonImages(QLatin1String(":/themes/light/sb/hsb_add_line.png"));
-		m->hsb.page_bg          = loadColorizedImage(QLatin1String(":/themes/light/sb/hsb_page_bg.png"));
-		m->hsb.slider.im_normal = loadColorizedImage(QLatin1String(":/themes/light/sb/hsb_slider.png"));
-		m->hsb.slider.im_pressed  = generateHoverImage(m->hsb.slider.im_normal);
+		correct_image_level(&m->vsb.sub_line           , true, wl, ww, gamma);
+		correct_image_level(&m->vsb.add_line           , true, wl, ww, gamma);
+		correct_image_level(&m->vsb.page_bg            , true, wl, ww, gamma);
+		correct_image_level(&m->vsb.slider.im_normal   , true, wl, ww, gamma);
+		correct_image_level(&m->vsb.slider.im_pressed  , true, wl, ww, gamma);
+	} else if (theme() == Theme::Light) {
+		float wl = 50;
+		float ww = 300;
+		float gamma = 0.7;
+		correct_image_level(&m->hsb.sub_line           , true, wl, ww, gamma);
+		correct_image_level(&m->hsb.add_line           , true, wl, ww, gamma);
+		correct_image_level(&m->hsb.page_bg            , true, wl, ww, gamma);
+		correct_image_level(&m->hsb.slider.im_normal   , true, wl, ww, gamma);
+		correct_image_level(&m->hsb.slider.im_pressed  , true, wl, ww, gamma);
 
-		m->vsb.sub_line         = generateButtonImages(QLatin1String(":/themes/light/sb/vsb_sub_line.png"));
-		m->vsb.add_line         = generateButtonImages(QLatin1String(":/themes/light/sb/vsb_add_line.png"));
-		m->vsb.page_bg          = loadColorizedImage(QLatin1String(":/themes/light/sb/vsb_page_bg.png"));
-		m->vsb.slider.im_normal = loadColorizedImage(QLatin1String(":/themes/light/sb/vsb_slider.png"));
-		m->vsb.slider.im_pressed  = generateHoverImage(m->vsb.slider.im_normal);
-
-		m->progress_horz = loadImage(QLatin1String(":/themes/light/progress/horz.png"));
-		m->progress_vert = loadImage(QLatin1String(":/themes/light/progress/vert.png"));
-
-		m->progress_vert = loadImage(QLatin1String(":/themes/light/progress/vert.png"));
-
-		if (theme() == Theme::Gray) {
-			correctImage(&m->hsb.sub_line         , true, 0, 0, 160);
-			correctImage(&m->hsb.add_line         , true, 0, 0, 160);
-			correctImage(&m->hsb.page_bg          , true, 0, 0, 160, 0.5f);
-			correctImage(&m->hsb.slider.im_normal , true, 0, 0, 160);
-			correctImage(&m->hsb.slider.im_pressed  , true, 0, 0, 224);
-
-			correctImage(&m->vsb.sub_line         , true, 0, 0, 160);
-			correctImage(&m->vsb.add_line         , true, 0, 0, 160);
-			correctImage(&m->vsb.page_bg          , true, 0, 0, 160, 0.5f);
-			correctImage(&m->vsb.slider.im_normal , true, 0, 0, 160);
-			correctImage(&m->vsb.slider.im_pressed  , true, 0, 0, 224);
-		} else if (theme() == Theme::Light) {
-			correctImage(&m->hsb.sub_line         , true, 0, 0, 128);
-			correctImage(&m->hsb.add_line         , true, 0, 0, 128);
-			correctImage(&m->hsb.page_bg          , true, 0, 0, 128, 0.25f);
-			correctImage(&m->hsb.slider.im_normal , true, 0, 0, 128);
-			correctImage(&m->hsb.slider.im_pressed  , true, 0, 0, 170);
-
-			correctImage(&m->vsb.sub_line         , true, 0, 0, 128);
-			correctImage(&m->vsb.add_line         , true, 0, 0, 128);
-			correctImage(&m->vsb.page_bg          , true, 0, 0, 128, 0.25f);
-			correctImage(&m->vsb.slider.im_normal , true, 0, 0, 128);
-			correctImage(&m->vsb.slider.im_pressed  , true, 0, 0, 170);
-		}
+		correct_image_level(&m->vsb.sub_line           , true, wl, ww, gamma);
+		correct_image_level(&m->vsb.add_line           , true, wl, ww, gamma);
+		correct_image_level(&m->vsb.page_bg            , true, wl, ww, gamma);
+		correct_image_level(&m->vsb.slider.im_normal   , true, wl, ww, gamma);
+		correct_image_level(&m->vsb.slider.im_pressed  , true, wl, ww, gamma);
 	}
 
 	m->check_msdf = loadImage(QLatin1String(":/themes/check.msdf.png"));
@@ -889,22 +875,25 @@ void DarkStyle::polish(QPalette &palette)
 	loadImages();
 	if (theme() == Theme::Dark) {
 		palette = QPalette(color(64));
+		palette.setColor(QPalette::Normal, QPalette::Base, Qt::black);
 		palette.setColor(QPalette::Disabled, QPalette::Text, color(160));
-		palette.setColor(QPalette::Normal, QPalette::Highlight, selectionColor().lighter(75));
 		palette.setColor(QPalette::Disabled, QPalette::ButtonText, color(128));
+		palette.setColor(QPalette::Normal, QPalette::Highlight, selectionColor().lighter(75));
 #ifndef Q_OS_WIN
 		palette.setColor(QPalette::ToolTipText, Qt::black); // ツールチップの文字色
 #endif
 	} else if (theme() == Theme::Gray) {
-		palette = QPalette(color(192));
+		palette = QPalette(color(160));
+		palette.setColor(QPalette::Normal, QPalette::Base, color(192));
 		palette.setColor(QPalette::Disabled, QPalette::Text, color(96));
-		palette.setColor(QPalette::Normal, QPalette::Highlight, selectionColor().lighter(125));
 		palette.setColor(QPalette::Disabled, QPalette::ButtonText, color(128));
+		palette.setColor(QPalette::Normal, QPalette::Highlight, selectionColor().lighter(125));
 	} else if (theme() == Theme::Light) {
 		palette = QPalette(color(240));
+		palette.setColor(QPalette::Normal, QPalette::Base, Qt::white);
 		palette.setColor(QPalette::Disabled, QPalette::Text, color(64));
-		palette.setColor(QPalette::Normal, QPalette::Highlight, selectionColor().lighter(192));
 		palette.setColor(QPalette::Disabled, QPalette::ButtonText, color(160));
+		palette.setColor(QPalette::Normal, QPalette::Highlight, selectionColor().lighter(192));
 	}
 	m->palette = palette;
 }
