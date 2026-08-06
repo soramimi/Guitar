@@ -146,44 +146,49 @@ QImage loadImage(QString const &path, QString const &role = QString())
 	return image;
 }
 
-// inline QRgb blendColor(QRgb color1, QRgb color2, unsigned char ratio)
-// {
-// 	int r = (qRed(color1) * (255 - ratio) + qRed(color2) * ratio) / 255;
-// 	int g = (qGreen(color1) * (255 - ratio) + qGreen(color2) * ratio) / 255;
-// 	int b = (qBlue(color1) * (255 - ratio) + qBlue(color2) * ratio) / 255;
-// 	int a = (qAlpha(color1) * (255 - ratio) + qAlpha(color2) * ratio) / 255;
-// 	return qRgba(r, g, b, a);
-// }
-
-inline QColor blendColor(QColor color1, QColor color2, unsigned char ratio)
+/**
+ * @brief Corrects the value based on window level, window width, and gamma.
+ * @param v The input value to be corrected.
+ * @param wl The window level.
+ * @param ww The window width.
+ * @param gamma The gamma correction factor.
+ * @return The corrected value clamped between 0 and 255.
+ */
+inline int value_correct(int v, float wl, float ww, float gamma)
 {
-	int r = (color1.red() * (255 - ratio) + color2.red() * ratio) / 255;
-	int g = (color1.green() * (255 - ratio) + color2.green() * ratio) / 255;
-	int b = (color1.blue() * (255 - ratio) + color2.blue() * ratio) / 255;
-	int a = (color1.alpha() * (255 - ratio) + color2.alpha() * ratio) / 255;
-	return QColor(r, g, b, a);
+	float t = v;
+	if (ww != 0) {
+		t -= wl - 0.5 - ww / 2;
+		t = t / ww;
+		t = powf(t, gamma) * 255;
+	}
+	t = floorf(t + 0.5);
+	return std::clamp((int)t, 0, 255);
 }
 
-QRgb correctBrightness(QRgb color, int light, int alpha)
+inline QRgb blend_color(QRgb color1, QRgb color2, unsigned char ratio)
 {
-	int r, g, b;
-	r = g = b = 0;
-	if (alpha != 0) {
-		r = qRed(color);
-		g = qGreen(color);
-		b = qBlue(color);
-		if (light < 128) {
-			r = r * light / 127;
-			g = g * light / 127;
-			b = b * light / 127;
-		} else {
-			int u = 255 - light;
-			r = 255 - (255 - r) * u / 127;
-			g = 255 - (255 - g) * u / 127;
-			b = 255 - (255 - b) * u / 127;
-		}
+	int r = (qRed(color1) * (255 - ratio) + qRed(color2) * ratio) / 255;
+	int g = (qGreen(color1) * (255 - ratio) + qGreen(color2) * ratio) / 255;
+	int b = (qBlue(color1) * (255 - ratio) + qBlue(color2) * ratio) / 255;
+	int a = (qAlpha(color1) * (255 - ratio) + qAlpha(color2) * ratio) / 255;
+	r = std::clamp(r, 0, 255);
+	g = std::clamp(g, 0, 255);
+	b = std::clamp(b, 0, 255);
+	a = std::clamp(a, 0, 255);
+	return qRgba(r, g, b, a);
+}
+
+QRgb correct_brightness(QRgb color, int light, int alpha)
+{
+	QRgb rgba;
+	if (light < 128) {
+		rgba = blend_color(qRgba(0, 0, 0, 255), color, light * 2);
+	} else {
+		rgba = blend_color(color, qRgba(255, 255, 255, 255), (light - 128) * 2);
 	}
-	return qRgba(r, g, b, alpha);
+	rgba = qRgba(qRed(rgba), qGreen(rgba), qBlue(rgba), alpha);
+	return rgba;
 }
 
 } // namespace
@@ -305,7 +310,7 @@ QImage DarkStyle::colorizeImage(QImage image)
 		for (int y = 0; y < h; y++) {
 			QRgb *p = reinterpret_cast<QRgb *>(image.scanLine(y));
 			for (int x = 0; x < w; x++) {
-				p[x] = correctBrightness(rgb, qGray(p[x]), qAlpha(p[x]));
+				p[x] = correct_brightness(rgb, qGray(p[x]), qAlpha(p[x]));
 			}
 		}
 	}
@@ -367,9 +372,9 @@ ButtonImages DarkStyle::generateButtonImages(QString const &path)
 				int v = (int)qAlpha(src3[x + 3]) - (int)qAlpha(src1[x + 1]);
 				v = (v + 256) / 2;
 				int alpha = qAlpha(src2[x + 2]);
-				dst0[x] = correctBrightness(rgb, v, alpha);
+				dst0[x] = correct_brightness(rgb, v, alpha);
 				v = lighten[v];
-				dst1[x] = correctBrightness(rgb, v, alpha);
+				dst1[x] = correct_brightness(rgb, v, alpha);
 			}
 		}
 		buttons.im_normal.setText("name", source.text("name"));
@@ -398,7 +403,7 @@ QImage DarkStyle::generateHoverImage(QImage const &source)
 			for (int x = 0; x < w; x++) {
 				int v = qGray(ptr[x]);
 				v = lighten[v];
-				ptr[x] = correctBrightness(rgb, v, qAlpha(ptr[x]));
+				ptr[x] = correct_brightness(rgb, v, qAlpha(ptr[x]));
 			}
 		}
 		newimage.setText("role", "hover");
@@ -707,6 +712,13 @@ void DarkStyle::drawButton(QPainter *p, const QStyleOption *option, bool mac_mar
 			drawNinePatchImage(p, m->button_press, rect, w, h);
 		} else {
 			drawNinePatchImage(p, m->button_normal, rect, w, h);
+		}
+	}
+	if (QStyleOptionButton *o = qstyleoption_cast<QStyleOptionButton *>(const_cast<QStyleOption *>(option))) {
+		if (o->features & QStyleOptionButton::DefaultButton) {
+			drawFocusFrame(p, rect, 0);
+		} else {
+			qDebug() << o->features;
 		}
 	}
 
@@ -2903,9 +2915,9 @@ void DarkStyle::drawComplexControl(ComplexControl cc, const QStyleOptionComplex 
 
 					QColor highlight_color;
 					if (theme() == Theme::Dark) {
-						highlight_color = correctBrightness(color(160).rgb(), 192, 255);
+						highlight_color = correct_brightness(color(160).rgb(), 192, 255);
 					} else if (theme() == Theme::Gray || theme() == Theme::Light) {
-						highlight_color = correctBrightness(color(255).rgb(), 255, 255);
+						highlight_color = correct_brightness(color(255).rgb(), 255, 255);
 					}
 
 					handlePainter.setPen(QPen(highlight_color, 2));
