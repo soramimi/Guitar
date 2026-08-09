@@ -518,12 +518,12 @@ void FileDiffWidget::_setDiff(ViewStyle viewstyle, GitDiff const &diff, QByteArr
 		} else if (viewstyle == ViewStyle::LeftOnly) {
 			for (std::string const &line : m->diffdata.original_lines) {
 				data.left_lines.push_back(TextDiffLine::View(line, Document::LineType::Del));
-				data.right_lines.push_back(TextDiffLine()); // right side is empty
+				data.right_lines.push_back(TextDiffLine::None());
 				data.inline_lines.push_back(TextDiffLine::View(line, Document::LineType::Del));
 			}
 		} else if (viewstyle == ViewStyle::RightOnly) {
 			for (std::string const &line : m->diffdata.original_lines) {
-				data.left_lines.push_back(TextDiffLine()); // left side is empty
+				data.left_lines.push_back(TextDiffLine::None());
 				data.right_lines.push_back(TextDiffLine::View(line, Document::LineType::Add));
 				data.inline_lines.push_back(TextDiffLine::View(line, Document::LineType::Add));
 			}

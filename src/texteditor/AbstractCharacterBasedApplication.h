@@ -104,6 +104,13 @@ public:
 		{
 		}
 		
+		static Line None()
+		{
+			Line line;
+			line.type = Unknown;
+			return line;
+		}
+		
 		static Line View(std::string_view v, LineType type = Normal)
 		{
 			Line line;
