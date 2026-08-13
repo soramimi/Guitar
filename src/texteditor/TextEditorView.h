@@ -32,16 +32,14 @@ struct PreEditText {
 class TextEditorView : public QWidget, public AbstractTextEditorApplication {
 	Q_OBJECT
 public:
-	class FormattedLine {
+	class FormattedLine : public Document::LineProperty {
 	public:
-		std::shared_ptr<std::vector<Char>> chars;
-		std::shared_ptr<std::vector<CharAttr>> atts2;
-		bool has_diff_flags = false;
-		FormattedLine()
-			: chars(std::make_shared<std::vector<Char>>())
-			, atts2(std::make_shared<std::vector<CharAttr>>())
-		{
-		}
+		// std::vector<Char> chars;
+		// std::vector<CharAttr> attrs;
+		// bool has_diff_flags = false;
+		// FormattedLine()
+		// {
+		// }
 	};
 	class FormattedLines {
 	public:
@@ -74,14 +72,27 @@ public://@
 	void internalUpdateScrollBar();
 private:
 	void moveCursorByMouse();
-	void calcPixelPosX(std::vector<Char> *chars, const QFontMetrics &fm) const;
-	int posX_px(int row, int col, bool adjust_scroll, std::vector<Char> *chars, std::vector<CharAttr> *attrs = nullptr) const;
+	
+	int textWidth(const QFontMetrics &fm, const QString &text) const;
+	void _calc_pos_x(std::vector<Character> *chars, const QFontMetrics &fm) const;
+	
+	int pos_x_px(row_index_t row, int col, bool adjust_scroll, std::vector<Character> *chars, std::vector<CharFlags> *flags = nullptr) const;
 	int scrollPosX() const;
 	int view_y_from_row(int row) const;
-	FormattedLines _fetchLines(int row, int count) const;
+	int linenumber_area_width() const;
+	void invalidateFormattedLineAll();
+	void invalidateFormattedLine(row_index_t row);
+protected:
+	void invalidateLineFormat(row_index_t row) override;
+protected:
+	void timerEvent(QTimerEvent *) override;
+	void setCursorCol(int col) override;
+	void setCursorRow(int row, bool auto_scroll, bool by_mouse) override;
+	void calc_pos_x(std::vector<Character> *chars) const;
+	
 public:
-	std::unordered_map<int, TextEditorView::FormattedLine> fetchLines() const;
-	FormattedLines *fetchLines2(bool all);
+	const Document::LineProperty *queryFormattedLine(row_index_t row) const;
+	std::pair<row_index_t, row_index_t> visibleRowAndCount();
 	int basisCharWidth() const;
 protected:
 	void paintEvent(QPaintEvent *) override;
@@ -93,14 +104,11 @@ protected:
 	void contextMenuEvent(QContextMenuEvent *event) override;
 	QFont textFont() const;
 	void drawText(QPainter *painter, int px, int py, QString const &str);
-protected:
-	void timerEvent(QTimerEvent *) override;
-	void setCursorCol(int col) override;
-	void setCursorRow(int row, bool auto_scroll, bool by_mouse) override;
-	void invalidateLineFormat(int row) override;
 public:
 	explicit TextEditorView(QWidget *parent = nullptr);
 	~TextEditorView() override;
+	
+	void _force_update();
 	
 	void setTheme(const TextEditorThemePtr &theme);
 	TextEditorTheme const *theme() const;
@@ -131,7 +139,6 @@ public:
 	int scrollUnit() const;
 	
 	void setTextFont(const QFont &font);
-	void updateLayout();
 	
 	struct PointInView {
 		int x = 0;
@@ -146,6 +153,7 @@ signals:
 	void moved(int cur_row, int cur_col, int scr_row, int scr_col);
 	void updateScrollBar();
 	void idle();
+	
 };
 
 

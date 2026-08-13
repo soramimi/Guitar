@@ -42,6 +42,9 @@ MainWindow::MainWindow(QWidget *parent)
 
 	texteditor()->setWriteMode(AbstractCharacterBasedApplication::WriteMode::Insert);
 
+	texteditor()->setAutoLayout(true);
+	texteditor()->setWrappingMode(TextEditorView::WrappingMode::CharWrap);
+
 	texteditor()->loadExampleFile();
 
 	connect(&m->tm, SIGNAL(timeout()), this, SLOT(updateIm()));
@@ -65,6 +68,7 @@ void MainWindow::keyPressEvent(QKeyEvent *e)
 	if (texteditor()->state() == TextEditorView::State::Exit) {
 		close();
 	}
+
 }
 
 bool MainWindow::event(QEvent *e)

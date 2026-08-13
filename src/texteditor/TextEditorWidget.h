@@ -19,10 +19,17 @@ public:
 	{
 		return view_;
 	}
-	void updateLayoutAndMoveToBottom()
+	void moveToBottom()
 	{
-		view_->updateLayout();
 		view_->moveToBottom();
+	}
+	void setAutoLauout(bool f)
+	{
+		view_->setAutoLayout(f);
+	}
+	void setWrappingMode(TextEditorView::WrappingMode mode)
+	{
+		view_->setWrappingMode(mode);
 	}
 };
 

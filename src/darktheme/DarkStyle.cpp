@@ -704,7 +704,7 @@ void DarkStyle::drawButton(QPainter *p, const QStyleOption *option, bool mac_mar
 		if (o->features & QStyleOptionButton::DefaultButton) {
 			drawFocusFrame(p, rect, 0);
 		} else {
-			qDebug() << o->features;
+			// qDebug() << o->features;
 		}
 	}
 

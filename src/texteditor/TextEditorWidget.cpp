@@ -1,6 +1,8 @@
 #include "TextEditorWidget.h"
 
 
+
+
 TextEditorWidget::TextEditorWidget(QWidget *parent)
 	: QWidget(parent)
 {

@@ -54,13 +54,13 @@ public:
 		int x = o.rect.x();
 		int y = o.rect.y();
 		int h = o.rect.height();
-		int w = 2 + h + painter->fontMetrics().size(0, " Aaa").width() + 2;
+		int w = 2 + h + painter->fontMetrics().horizontalAdvance(" Aaa") + 2;
 
 		// バッジの描画
 		Badge badge;
 		if (header == "(unmerged) ") {
 			badge = Badge("Unmerged", QColor(255, 80, 160), QIcon());
-			w = 4 + painter->fontMetrics().size(0, badge.text).width() + 4;
+			w = 4 + painter->fontMetrics().horizontalAdvance(badge.text) + 4;
 		}
 		{
 			QColor color;

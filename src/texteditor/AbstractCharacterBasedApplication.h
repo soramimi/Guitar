@@ -50,14 +50,7 @@ struct CharAttr {
 		Invert,
 		Hilite,
 	};
-	enum Flag {
-		Selected = 0x0001,
-		CurrentLine = 0x0002,
-		Underline1 = 0x0004, //! wip
-		Underline2 = 0x0008,
-	};
 	uint16_t index = 0;
-	uint16_t flags = 0;
 	QColor color;
 	CharAttr(int index = Normal)
 		: index(index)
@@ -73,24 +66,78 @@ struct CharAttr {
 	}
 };
 
+struct CharFlags {
+	enum DiffMarker {
+		Undefined,
+		Del,
+		Add,
+	};
+	union {
+		struct {
+			bool selected : 1;
+			bool current_line : 1;
+			uint8_t diff_marker : 2;
+			
+		};
+		uint16_t all = 0;
+	};
+};
+
+struct Character {
+	char32_t unicode = 0;
+	int left_x = 0;
+	int right_x = 0;
+	CharAttr attr;
+	Character() = default;
+	Character(char32_t unicode)
+		: unicode(unicode)
+	{
+	}
+	operator char32_t () const
+	{
+		return unicode;
+	}
+};
+
+typedef int32_t row_index_t;
+
 class Document {
 public:
 	typedef std::variant<std::vector<char>, std::string_view> varline_t;
 	
+	struct LineProperty {
+		std::vector<Character> chars;
+		std::vector<CharFlags> flags;
+		bool char_diff = false;
+	};
+	
 	enum LineType {
-		Unknown,
+		Invalid,
 		Normal,
 		Add,
 		Del,
 	};
 	struct Line {
-		LineType type = Unknown;
-		int line_number = 0;
-		size_t byte_offset = 0;
+		LineType type = Normal;
+		int32_t line_number = -1;
 		varline_t text_ = std::string_view();
-		std::optional<std::vector<CharAttr>> attr_;
+		mutable std::shared_ptr<LineProperty> detail_;
 		
 		Line() = default;
+		
+		static Line InvalidLine()
+		{
+			Line line;
+			line.type = Invalid;
+			return line;
+		}
+		
+		static Line NormalEmptyLine()
+		{
+			Line line;
+			line.type = Normal;
+			return line;
+		}
 		
 		explicit Line(std::vector<char> const &ba, LineType type = Normal)
 			: type(type)
@@ -107,7 +154,7 @@ public:
 		static Line None()
 		{
 			Line line;
-			line.type = Unknown;
+			line.type = Invalid;
 			return line;
 		}
 		
@@ -117,6 +164,22 @@ public:
 			line.type = type;
 			line.text_ = v;
 			return line;
+		}
+		
+		LineProperty *detail() const
+		{
+			return detail_.get();
+		}
+		
+		LineProperty *newDetail()
+		{
+			detail_ = std::make_shared<LineProperty>();
+			return detail();
+		}
+		
+		void clearDetail()
+		{
+			detail_.reset();
 		}
 		
 		bool endsWithNewLine() const
@@ -129,16 +192,16 @@ public:
 		{
 			if (std::holds_alternative<std::string_view>(text_)) {
 				return std::get<std::string_view>(text_);
-			} else {
-				std::vector<char> const &vec = std::get<std::vector<char>>(text_);
-				return std::string_view(vec.data(), vec.size());
+			} else if (std::vector<char> const *v = std::get_if<std::vector<char>>(&text_)) {
+				return std::string_view(v->data(), v->size());
 			}
+			return {};
 		}
 		
 		void set_text(const std::vector<char> &new_text)
 		{
 			text_ = new_text;
-			attr_ = std::nullopt; // invalidate cached attributes
+			detail_.reset();
 		}
 		
 		std::vector<char> *to_vector()
@@ -175,7 +238,7 @@ public:
 	
 	QByteArray all;
 	std::vector<varline_t> raw_lines;
-	
+
 	std::vector<Line> lines;
 };
 
@@ -237,7 +300,7 @@ using TextEditorEngine_sp = std::shared_ptr<TextEditorEngine>;
 struct TextEditorContext {
 	QRect cursor_rect;
 	bool single_line = false;
-	int current_row = 0;
+	row_index_t current_row = 0;
 	int current_col = 0; // 桁位置
 	int current_col_hint = 0;
 	int current_col_pixel_x = 0; // 桁ピクセル座標
@@ -255,6 +318,7 @@ struct TextEditorContext {
 	int tab_indent_size = 4;
 	int bottom_line_y = -1;
 	TextEditorEngine_sp engine;
+	std::vector<Document::Line> wrapped_lines;
 };
 
 struct RowCol {
@@ -284,30 +348,20 @@ public:
 		Exit,
 	};
 	
+	enum class WrappingMode {
+		NoWrap,
+		CharWrap,
+	};
+	
 	struct Option {
-		CharAttr char_attr;
+		CharAttr char_attr = {};
+		CharFlags char_flag = {};
 		QRect clip;
 	};
 	
-	struct Character {
+	struct Char16 {
 		uint16_t c = 0;
 		CharAttr a;
-	};
-	
-	struct Char {
-		char32_t unicode = 0;
-		int left_x = 0;
-		int right_x = 0;
-		CharAttr attr;
-		Char() = default;
-		Char(char32_t unicode)
-			: unicode(unicode)
-		{
-		}
-		operator char32_t () const
-		{
-			return unicode;
-		}
 	};
 	
 	enum LineFlag {
@@ -345,19 +399,26 @@ protected:
 	SelectionAnchor selection_end;
 	const int reference_char_width_ = 1; // TODO: remove
 protected:
+
+	std::vector<Document::Line> *lines();
+	
+	std::vector<Document::Line> const *lines() const
+	{
+		return const_cast<AbstractCharacterBasedApplication *>(this)->lines();
+	}
 	
 	int char_screen_w() const;
 	int char_screen_h() const;
-	std::vector<Character> *char_screen();
-	std::vector<Character> const *char_screen() const;
+	std::vector<Char16> *char_screen();
+	std::vector<Char16> const *char_screen() const;
 	std::vector<uint8_t> *line_flags();
 	
 	void initEditor();
 	
 public:
-	Document::Line *fetchLine(int row);
+	static std::optional<Document::Line> fetchLine(std::vector<Document::Line> const *lines, int row);
 protected:
-	void fetchCurrentLine();
+	std::optional<Document::Line> fetchCurrentLine(const std::vector<Document::Line> *lines, row_index_t row);
 	void clearParsedLine();
 	
 	int currentColX() const;
@@ -395,7 +456,7 @@ protected:
 	int printArea(const TextEditorContext *cx, SelectionAnchor const *sel_a = nullptr, SelectionAnchor const *sel_b = nullptr);
 	
 	virtual void updateVisibility(bool ensure_current_line_visible, bool change_col, bool auto_scroll) = 0;
-	void commitLine(const std::vector<Char> &vec);
+	void commitLine(const std::vector<Character> &vec);
 	
 	void doDelete();
 	void doBackspace();
@@ -405,8 +466,11 @@ protected:
 	void closeDialog(bool result);
 	void setDialogOption(QString const &title, QString const &value, const DialogHandler &handler);
 	void execDialog(QString const &dialog_title, const QString &dialog_value, const DialogHandler &handler);
+	
+	virtual void calc_pos_x(std::vector<Character> *chars) const {}
+	
 private:
-	int internalParseLine(Document::Line *parsed_line, int current_col, std::vector<Char> *out, std::vector<CharAttr> *out2);
+	int internalParseLine(Document::Line *parsed_line, int current_col, std::vector<Character> *out_chars, std::vector<CharFlags> *out_flags);
 	void internalWrite(const ushort *begin, const ushort *end);
 	void pressLetterWithControl(int c);
 	void invalidateAreaBelowTheCurrentLine();
@@ -419,21 +483,19 @@ private:
 		Cut,
 		Copy,
 	};
-	void editSelected(EditOperation op, std::vector<Char> *cutbuffer);
+	void editSelected(EditOperation op, std::vector<Character> *cutbuffer);
 	int calcColumnToIndex(int column);
 	void edit_(EditOperation op);
 	bool isCurrentLineWritable() const;
 	void initEngine(const std::shared_ptr<TextEditorContext>& cx);
 	void writeCR();
 	bool deleteIfSelected();
-	// static int findSyntax(const std::vector<Document::CharAttr_> *list, size_t offset);
-	// static void insertSyntax(std::vector<Document::CharAttr_> *list, size_t offset, const Document::CharAttr_ &a);
 	void setCursorCol_(int col, bool auto_scroll = true, bool by_mouse = false);
-	virtual void invalidateLineFormat(int row = -1);
+	virtual void invalidateLineFormat(row_index_t row = -1);
 protected:
 	void deselect();
-	void parseCurrentLine(std::vector<Char> *chars, std::vector<CharAttr> *attrs, bool force);
-	void parseLine(int row, std::vector<Char> *chars, std::vector<CharAttr> *attrs);
+	void parseCurrentLine(const std::vector<Document::Line> *lines, std::vector<Character> *chars, std::vector<CharFlags> *flags, bool force);
+	void parseLine(const std::vector<Document::Line> *lines, int row, std::vector<Character> *chars, std::vector<CharFlags> *flags);
 	
 	virtual void setCursorRow(int row, bool auto_scroll = true, bool by_mouse = false);
 	virtual void setCursorCol(int col)
@@ -458,7 +520,7 @@ protected:
 	void setPaintingSuppressed(bool f);
 	
 	void addNewLineToBottom();
-	void appendNewLine(std::vector<Char> *vec);
+	void appendNewLine(std::vector<Character> *vec);
 	void writeNewLine();
 	void updateCursorPos(bool auto_scroll);
 	
@@ -475,7 +537,7 @@ protected:
 	void restorePos();
 public:
 	
-	int currentRow() const;
+	row_index_t currentRow() const;
 	int currentCol() const;
 	
 	virtual void layoutEditor();
@@ -498,6 +560,7 @@ public:
 	int screenWidth() const;
 	int screenHeight() const;
 	void setScreenSize(int w, int h, bool update_layout);
+	void setContentWidth(int w);
 	void setTextEditorEngine(const TextEditorEngine_sp &e);
 	void openFile(QString const &path);
 	void saveFile(QString const &path);
@@ -544,12 +607,14 @@ public:
 	void logicalMoveToBottom2();
 	void appendBulk(std::string_view const &str);
 	void clear();
-	std::vector<AbstractCharacterBasedApplication::Char> *parsedCurrentLine();
+	std::vector<Character> *parsedCurrentLine();
+	void doWrapping();
+	void setWrappingMode(WrappingMode mode);
 protected:
 	void write_(char const *ptr, bool by_keyboard);
 	void write_(QString const &text, bool by_keyboard);
 	void makeColumnPosList(std::vector<int> *out);
-	bool isValidRowIndex(int row_index) const;
+	bool isValidRowIndex(row_index_t row_index) const;
 	bool hasSelection() const;
 	void updateSelectionAnchor1(bool auto_scroll);
 	void updateSelectionAnchor2(bool auto_scroll);

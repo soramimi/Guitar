@@ -64,7 +64,7 @@ void CursesOreApplication::paintScreen()
 		int i = m->width * y;
 		if (i < 0 || i >= char_screen()->size()) continue;
 		if (line_flags()->at(y) & LineChanged) {
-			Character const *line = &char_screen()->at(char_screen_w() * y);
+			Char16 const *line = &char_screen()->at(char_screen_w() * y);
 			std::vector<char> vec;
 			vec.reserve(m->width * 3);
 			int x = 0;

@@ -19,7 +19,7 @@ void InputMethodPopup::setPreEditText(const PreEditText &preedit)
 		QPainter pr(&pm);
 		pr.setFont(font());
 		QFontMetrics fm = pr.fontMetrics();
-		int w = fm.size(0, data.preedit.text).width();
+		int w = fm.horizontalAdvance(data.preedit.text);
 		int h = fm.height() + 2;
 		setFixedSize(w, h);
 	}
@@ -39,7 +39,7 @@ void InputMethodPopup::paintEvent(QPaintEvent *)
 		int y = 0;
 		for (PreEditText::Format const &f : data.preedit.format) {
 			QString s = data.preedit.text.mid(f.start, f.length);
-			int w = fm.size(0, s).width();
+			int w = fm.horizontalAdvance(s);
 			if (f.format.hasProperty(QTextFormat::TextUnderlineStyle)) {
 				QColor color;
 				if (f.format.hasProperty(QTextFormat::TextUnderlineColor)) {

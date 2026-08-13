@@ -79,7 +79,7 @@ QPixmap FileDiffSliderWidget::makeDiffPixmap(int width, int height, TextDiffLine
 		};
 		Loop([&](Document::LineType t)->QColor{
 			switch (t) {
-			case Document::LineType::Unknown: return theme->diff_slider_unknown_bg;
+			case Document::LineType::Invalid: return theme->diff_slider_unknown_bg;
 			}
 			return QColor();
 		});

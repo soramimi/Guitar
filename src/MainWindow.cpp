@@ -1011,11 +1011,13 @@ void MainWindow::internalWriteLog(LogData const &logdata, LogChannel channel)
 			str += '\n';
 		}
 	}
-
-	ui->widget_log->view()->logicalMoveToBottom();
-	ui->widget_log->view()->appendBulk(str);
-	ui->widget_log->view()->setChanged(false);
-	ui->widget_log->updateLayoutAndMoveToBottom();
+	
+	auto *logview = ui->widget_log->view();
+	
+	logview->logicalMoveToBottom();
+	logview->appendBulk(str);
+	logview->setChanged(false);
+	logview->moveToBottom();
 
 	setInteractionEnabled(true);
 }
@@ -1032,7 +1034,6 @@ void MainWindow::onShowStatusInfo(StatusInfo const &info)
 		m->status_bar_label->hide();
 		m->background_process_work_in_progress = true;
 		if (info.message_) {
-			// ui->statusBar->clearMessage();
 			progress_widget()->setVisible(true);
 			progress_widget()->setText(info.message_->text);
 		}

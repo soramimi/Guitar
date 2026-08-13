@@ -74,7 +74,7 @@ public:
 	};
 
 	struct LineFragment {
-		Document::LineType type = Document::LineType::Unknown;
+		Document::LineType type = Document::LineType::Invalid;
 		int line_index;
 		int line_count;
 		LineFragment() = default;
