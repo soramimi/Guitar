@@ -3690,6 +3690,7 @@ void MainWindow::abortPtyProcess()
 	stopPtyProcess();
 	setPtyProcessOk(false);
 	setInteractionEnabled(false);
+
 	clearStatusInfo();
 }
 
@@ -7080,103 +7081,106 @@ void MainWindow::onLogIdle()
 		}
 	}
 
-	auto Do = [&](){
+	auto Do = [&]()-> bool {
 		std::string line = lines.back();
 		line = misc::trimmed(line);
-		if (!line.empty()) {
-			auto ExecLineEditDialog = [&](QWidget *parent, QString const &title, QString const &prompt, QString const &val, bool password) {
-				LineEditDialog dlg(parent, title, prompt, val, password);
-				if (dlg.exec() == QDialog::Accepted) {
-					std::string ret = dlg.text().toStdString();
-					std::string str = ret + '\n';
-					getPtyProcess()->write_input(str.c_str(), (int)str.size());
-					return ret;
-				}
-				abortPtyProcess();
-				return std::string();
-			};
+		if (line.empty()) return false;
 
-			if (Match(line, ARE_YOU_SURE_YOU_WANT_TO_CONTINUE_CONNECTING)) {
-				execAreYouSureYouWantToContinueConnectingDialog(QString::fromStdString(line).trimmed());
-				return;
+		auto ExecLineEditDialog = [&](QWidget *parent, QString const &title, QString const &prompt, QString const &val, bool password) {
+			LineEditDialog dlg(parent, title, prompt, val, password);
+			if (dlg.exec() == QDialog::Accepted) {
+				std::string ret = dlg.text().toStdString();
+				std::string str = ret + '\n';
+				getPtyProcess()->write_input(str.c_str(), (int)str.size());
+				return ret;
 			}
+			abortPtyProcess();
+			return std::string();
+		};
 
-			if (Match(line, CONSIDER_GIT_REBASE_QUIT_OR_WORKTREE_ADD)) {
-				// execConsiderGitRebaseQuitOrWorktreeAddDialog(QString::fromStdString(line).trimmed());
-				auto button = QMessageBox::question(this, tr("Consider git rebase --quit or git worktree add"), QString::fromStdString(line).trimmed());
-				if (button == QMessageBox::Yes) {
-					git().rebase_quit();
-				}
-				return;
+		if (Match(line, ARE_YOU_SURE_YOU_WANT_TO_CONTINUE_CONNECTING)) {
+			execAreYouSureYouWantToContinueConnectingDialog(QString::fromStdString(line).trimmed());
+			return true;
+		}
+
+		if (Match(line, CONSIDER_GIT_REBASE_QUIT_OR_WORKTREE_ADD)) {
+			// execConsiderGitRebaseQuitOrWorktreeAddDialog(QString::fromStdString(line).trimmed());
+			auto button = QMessageBox::question(this, tr("Consider git rebase --quit or git worktree add"), QString::fromStdString(line).trimmed());
+			if (button == QMessageBox::Yes) {
+				git().rebase_quit();
 			}
+			return true;
+		}
 
-			if (Equals(line, ENTER_PASSPHRASE)) {
-				ExecLineEditDialog(this, "Passphrase", QString::fromStdString(line), QString(), true);
-				return;
-			}
+		if (Equals(line, ENTER_PASSPHRASE)) {
+			ExecLineEditDialog(this, "Passphrase", QString::fromStdString(line), QString(), true);
+			return true;
+		}
 
-			if (StartsWith(line, ENTER_PASSPHRASE_FOR_KEY)) {
-				std::string keyfile;
-				{
-					std::string pattern = Pattern(ENTER_PASSPHRASE_FOR_KEY);
-					char const *p = line.c_str() + pattern.size();
-					char const *q = strrchr(p, ':');
-					if (q && p + 2 < q && q[-1] == '\'') {
-						keyfile.assign(p, q - 1);
-					}
-				}
-				if (!keyfile.empty()) {
-					if (keyfile == sshPassphraseUser() && !sshPassphrasePass().empty()) {
-						std::string text = sshPassphrasePass() + '\n';
-						getPtyProcess()->write_input(text.c_str(), (int)text.size());
-					} else {
-						std::string secret = ExecLineEditDialog(this, "Passphrase for key", QString::fromStdString(line), QString(), true);
-						sshSetPassphrase(keyfile, secret);
-					}
-					return;
+		if (StartsWith(line, ENTER_PASSPHRASE_FOR_KEY)) {
+			std::string keyfile;
+			{
+				std::string pattern = Pattern(ENTER_PASSPHRASE_FOR_KEY);
+				char const *p = line.c_str() + pattern.size();
+				char const *q = strrchr(p, ':');
+				if (q && p + 2 < q && q[-1] == '\'') {
+					keyfile.assign(p, q - 1);
 				}
 			}
-
-			char const *begin = line.c_str();
-			char const *end = line.c_str() + line.size();
-			auto Input = [&](QString const &title, bool password, std::string *value) {
-				Q_ASSERT(value);
-				std::string header = QString("%1 for '").arg(title).toStdString();
-				if (strncmp(begin, header.c_str(), header.size()) == 0) {
-					QString msg;
-					if (memcmp(end - 2, "':", 2) == 0) {
-						msg = QString::fromUtf8(begin, int(end - begin - 1));
-					} else if (memcmp(end - 3, "': ", 3) == 0) {
-						msg = QString::fromUtf8(begin, int(end - begin - 2));
-					}
-					if (!msg.isEmpty()) {
-						std::string s = ExecLineEditDialog(this, title, msg, value ? QString::fromStdString(*value) : QString(), password);
-						*value = s;
-						return true;
-					}
+			if (!keyfile.empty()) {
+				if (keyfile == sshPassphraseUser() && !sshPassphrasePass().empty()) {
+					std::string text = sshPassphrasePass() + '\n';
+					getPtyProcess()->write_input(text.c_str(), (int)text.size());
+				} else {
+					std::string secret = ExecLineEditDialog(this, "Passphrase for key", QString::fromStdString(line), QString(), true);
+					sshSetPassphrase(keyfile, secret);
 				}
-				return false;
-			};
-			std::string uid = httpAuthenticationUser();
-			std::string pwd = httpAuthenticationPass();
-			bool ok = false;
-			if (Input("Username", false, &uid)) ok = true;
-			if (Input("Password", true, &pwd)) ok = true;
-			if (ok) {
-				httpSetAuthentication(uid, pwd);
-				return;
-			}
-
-			if (StartsWith(line, FATAL_AUTHENTICATION_FAILED_FOR)) {
-				QMessageBox::critical(this, tr("Authentication Failed"), QString::fromStdString(line));
-				abortPtyProcess();
-				return;
+				return true;
 			}
 		}
+
+		char const *begin = line.c_str();
+		char const *end = line.c_str() + line.size();
+		auto Input = [&](QString const &title, bool password, std::string *value) {
+			Q_ASSERT(value);
+			std::string header = QString("%1 for '").arg(title).toStdString();
+			if (strncmp(begin, header.c_str(), header.size()) == 0) {
+				QString msg;
+				if (memcmp(end - 2, "':", 2) == 0) {
+					msg = QString::fromUtf8(begin, int(end - begin - 1));
+				} else if (memcmp(end - 3, "': ", 3) == 0) {
+					msg = QString::fromUtf8(begin, int(end - begin - 2));
+				}
+				if (!msg.isEmpty()) {
+					std::string s = ExecLineEditDialog(this, title, msg, value ? QString::fromStdString(*value) : QString(), password);
+					*value = s;
+					return true;
+				}
+			}
+			return false;
+		};
+		std::string uid = httpAuthenticationUser();
+		std::string pwd = httpAuthenticationPass();
+		bool ok = false;
+		if (Input("Username", false, &uid)) ok = true;
+		if (Input("Password", true, &pwd)) ok = true;
+		if (ok) {
+			httpSetAuthentication(uid, pwd);
+			return true;
+		}
+
+		if (StartsWith(line, FATAL_AUTHENTICATION_FAILED_FOR)) {
+			QMessageBox::critical(this, tr("Authentication Failed"), QString::fromStdString(line));
+			abortPtyProcess();
+			return true;
+		}
+
+		return true;
 	};
 
-	Do();
-	clearStatusInfo();
+	if (!Do()) {
+		clearStatusInfo();
+	}
 }
 
 void MainWindow::on_action_edit_tags_triggered()
