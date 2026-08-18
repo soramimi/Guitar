@@ -43,7 +43,11 @@ MainWindow::MainWindow(QWidget *parent)
 	texteditor()->setWriteMode(AbstractCharacterBasedApplication::WriteMode::Insert);
 
 	texteditor()->setAutoLayout(true);
+<<<<<<< HEAD
 	texteditor()->setWrappingMode(TextEditorView::WrappingMode::CharWrap);
+=======
+	// texteditor()->setWrappingMode(TextEditorView::WrappingMode::CharWrap);
+>>>>>>> 9a86b070 (wip)
 
 	texteditor()->loadExampleFile();
 

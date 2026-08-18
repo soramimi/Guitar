@@ -350,14 +350,14 @@ void TextEditorView::setCursorRow(int row, bool auto_scroll, bool by_mouse)
 	AbstractCharacterBasedApplication::setCursorRow(row, false, by_mouse);
 
 	// ピクセル座標を更新
-	cx()->current_row_pixel_y = (cx()->viewport_org_y + cursorRow()) * lineHeight();
+	cx()->current_visual_pixel_y = (cx()->viewport_org_y + cursorRow()) * lineHeight();
 
 	// ピクセル座標から桁位置を再計算する
-	int x = cx()->current_col_pixel_x;
-	int y = cx()->current_row_pixel_y;
+	int x = cx()->current_visual_pixel_x;
+	int y = cx()->current_visual_pixel_y;
 	auto cr = mapFromPixel({x, y});
 
-	setCurrentCol(cr.col); // 桁位置
+	setCurrentVisualCol(cr.col); // 桁位置
 
 	updateSelectionAnchor2(auto_scroll);
 }
@@ -373,7 +373,7 @@ void TextEditorView::setCursorCol(int col)
 	// 水平ピクセル座標を更新
 	parseCurrentLine(lines(), nullptr, nullptr, true);
 	auto *chars = parsedCurrentLine();
-	cx()->current_col_pixel_x = pos_x_px(currentRow(), currentCol(), true, chars);
+	cx()->current_visual_pixel_x = pos_x_px(currentVisualRow(), currentVisualCol(), true, chars);
 }
 
 void TextEditorView::bindScrollBar(QScrollBar *vsb, QScrollBar *hsb)
@@ -441,7 +441,7 @@ void TextEditorView::internalUpdateVisibility(bool ensure_current_line_visible, 
 	updateCursorRect(auto_scroll);
 
 	if (change_col) {
-		cx()->current_col_hint = currentCol();
+		cx()->current_visual_col_hint = currentVisualCol();
 	}
 
 	if (isPaintingSuppressed()) {
@@ -494,14 +494,14 @@ void TextEditorView::updateVisibility(bool ensure_current_line_visible, bool cha
 	}
 
 	internalUpdateVisibility(ensure_current_line_visible, change_col, auto_scroll);
-	emit moved(currentRow(), currentCol(), cx()->scroll_row_pos, cx()->scroll_col_pos);
+	emit moved(currentVisualRow(), currentVisualCol(), cx()->scroll_row_pos, cx()->scroll_col_pos);
 }
 
 void TextEditorView::move(int cur_row, int cur_col, int scr_row, int scr_col, bool auto_scroll)
 {
-	if ((cur_row >= 0 && currentRow() != cur_row) || (cur_col >= 0 && currentCol() != cur_col) || cx()->scroll_row_pos != scr_row || cx()->scroll_col_pos != scr_col) {
-		if (cur_row >= 0) setCurrentRow(cur_row);
-		if (cur_col >= 0) setCurrentCol(cur_col);
+	if ((cur_row >= 0 && currentVisualRow() != cur_row) || (cur_col >= 0 && currentVisualCol() != cur_col) || cx()->scroll_row_pos != scr_row || cx()->scroll_col_pos != scr_col) {
+		if (cur_row >= 0) setCurrentVisualRow(cur_row);
+		if (cur_col >= 0) setCurrentVisualCol(cur_col);
 		if (scr_row >= 0) cx()->scroll_row_pos = scr_row;
 		if (scr_col >= 0) cx()->scroll_col_pos = scr_col;
 		internalUpdateVisibility(false, true, auto_scroll);
@@ -707,7 +707,7 @@ void TextEditorView::drawCursor(int row, int col, QPainter *pr, QColor const &co
  */
 void TextEditorView::drawCursor(QPainter *pr)
 {
-	drawCursor(currentRow(), currentCol(), pr, theme()->fg_cursor);
+	drawCursor(currentVisualRow(), currentVisualCol(), pr, theme()->fg_cursor);
 }
 
 int TextEditorView::linenumber_area_width() const
@@ -777,7 +777,7 @@ void TextEditorView::paintEvent(QPaintEvent *)
 					const QRect rect_line(vsplit_x, view_y_from_row(line_row), text_area_w, lineHeight()); // 行全体の矩形
 					const QRect rect_text(0, view_y_from_row(line_row), width(), lineHeight()); // テキスト領域矩形
 					
-					const bool iscurrentline = has_focus && line_row == editor_cx->current_row; // 現在の行？
+					const bool iscurrentline = has_focus && line_row == editor_cx->current_visual_row; // 現在の行？
 					const int text_origin_y = view_row * line_height; // テキスト原点座標Y（ピクセル単位）
 					
 					std::vector<Character> const &chars = formatted_line->chars;
@@ -849,6 +849,7 @@ void TextEditorView::paintEvent(QPaintEvent *)
 						int right_x = 0;
 						std::size_t j = 0;
 						pr.save();
+						pr.setFont(textFont());
 						pr.setClipRect(linenum_width, 0, width() - linenum_width, height());
 						while (j < chars.size()) {
 							int n = 0;
@@ -955,6 +956,7 @@ void TextEditorView::paintEvent(QPaintEvent *)
 
 			pr.setBackground(Qt::transparent);
 			pr.setPen(theme()->fg_line_number);
+			pr.setFont(textFont());
 			drawText(&pr, 0, y * lineHeight(), text);
 			if (line) {
 				char const *mark = nullptr;

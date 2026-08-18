@@ -9,8 +9,7 @@
 MyTextEditorWidget::MyTextEditorWidget(QWidget *parent)
 	: TextEditorView(parent)
 {
-	QFont font = QFontDatabase::systemFont(QFontDatabase::FixedFont);
-	view()->setTextFont(font);
+	view()->setTextFont(global->textFont());
 }
 
 TextEditorView *MyTextEditorWidget::view()

@@ -14,6 +14,7 @@
 #include <QListWidgetItem>
 #include <QThread>
 #include <common/misc.h>
+#include <QFontDatabase>
 #include <memory>
 
 namespace ver {
@@ -50,6 +51,17 @@ const char *ApplicationGlobal::product_version()
 const char *ApplicationGlobal::source_revision()
 {
 	return ver::source_revision;
+}
+
+QFont ApplicationGlobal::textFont()
+{
+#ifdef Q_OS_WIN
+	// WindowsのFixedFontは漢字と英数字が別フォントの合字なので使えない
+	QFont font("Noto Sans Mono CJK JP", 9);
+#else
+	QFont font = QFontDatabase::systemFont(QFontDatabase::FixedFont);
+#endif
+	return font;
 }
 
 void ApplicationGlobal::open_trace_logger()

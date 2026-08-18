@@ -300,11 +300,11 @@ using TextEditorEngine_sp = std::shared_ptr<TextEditorEngine>;
 struct TextEditorContext {
 	QRect cursor_rect;
 	bool single_line = false;
-	row_index_t current_row = 0;
-	int current_col = 0; // 桁位置
-	int current_col_hint = 0;
-	int current_col_pixel_x = 0; // 桁ピクセル座標
-	int current_row_pixel_y = 0; // 行ピクセル座標
+	row_index_t current_visual_row = 0;
+	int current_visual_col = 0; // 桁位置
+	int current_visual_col_hint = 0;
+	int current_visual_pixel_x = 0; // 桁ピクセル座標
+	int current_visual_pixel_y = 0; // 行ピクセル座標
 	int saved_row = 0;
 	int saved_col = 0;
 	int saved_col_hint = 0;
@@ -397,7 +397,7 @@ private:
 protected:
 	SelectionAnchor selection_start;
 	SelectionAnchor selection_end;
-	const int reference_char_width_ = 1; // TODO: remove
+	const int reference_char_width_ = 1; //@ TODO: remove
 protected:
 
 	std::vector<Document::Line> *lines();
@@ -418,12 +418,12 @@ protected:
 public:
 	static std::optional<Document::Line> fetchLine(std::vector<Document::Line> const *lines, int row);
 protected:
-	std::optional<Document::Line> fetchCurrentLine(const std::vector<Document::Line> *lines, row_index_t row);
+	void fetchCurrentLine(const std::vector<Document::Line> *lines);
 	void clearParsedLine();
 	
-	int currentColX() const;
-	void setCurrentRow(int row);
-	void setCurrentCol(int col);
+	int currentVisualPixelX() const;
+	void setCurrentVisualRow(row_index_t row);
+	void setCurrentVisualCol(int col);
 	
 	int cursorCol() const;
 	int cursorRow() const;
@@ -506,7 +506,7 @@ protected:
 	{
 		setCursorRow(pos.row, false, true);
 		setCursorCol_(pos.col, false, true);
-		cx()->current_col_pixel_x = pt.x();
+		cx()->current_visual_pixel_x = pt.x();
 	}
 	void setCursorPos(int row, int col)
 	{
@@ -537,8 +537,8 @@ protected:
 	void restorePos();
 public:
 	
-	row_index_t currentRow() const;
-	int currentCol() const;
+	row_index_t currentVisualRow() const;
+	int currentVisualCol() const;
 	
 	virtual void layoutEditor();
 	void scrollUp();
@@ -610,6 +610,11 @@ public:
 	std::vector<Character> *parsedCurrentLine();
 	void doWrapping();
 	void setWrappingMode(WrappingMode mode);
+
+	void setCurrentLogicalRow(row_index_t row);
+	void setCurrentLogicalCol(int col);
+	row_index_t currentLogicalRow() const;
+	int currentLogicalCol() const;
 protected:
 	void write_(char const *ptr, bool by_keyboard);
 	void write_(QString const &text, bool by_keyboard);

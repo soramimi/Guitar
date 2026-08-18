@@ -290,19 +290,13 @@ MainWindow::MainWindow(QWidget *parent)
 	setShowGraph(appsettings()->show_graph, false);
 	setShowAvatars(appsettings()->show_avatars, false);
 
-	{
-		QFont font = QFontDatabase::systemFont(QFontDatabase::FixedFont);
-		ui->widget_log->view()->setTextFont(font);
-		// ui->widget_log->view()->setSomethingBadFlag(true); // TODO:
-	}
+	ui->widget_log->view()->setTextFont(global->textFont());
 	ui->widget_log->view()->setupForLogWidget(themeForTextEditor());
 	onLogVisibilityChanged();
 
 	platform::initNetworking();
 
 	m->graph_color = global->theme->graphColorMap();
-
-	ui->widget_log->view()->setTextFont(QFontDatabase::systemFont(QFontDatabase::FixedFont));
 
 	connect(ui->dockWidget_log, &QDockWidget::visibilityChanged, this, &MainWindow::onLogVisibilityChanged);
 	connect(ui->widget_log->view(), &TextEditorView::idle, this, &MainWindow::onLogIdle);

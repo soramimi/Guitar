@@ -165,7 +165,7 @@ void CursesOreApplication::updateVisibility(bool ensure_current_line_visible, bo
 	int y = cx()->viewport_org_y + cursorRow();
 
 	if (change_col) {
-		cx()->current_col_hint = cx()->current_col;
+		cx()->current_visual_col_hint = cx()->current_visual_col;
 	}
 
 	if (isPaintingSuppressed()) {
