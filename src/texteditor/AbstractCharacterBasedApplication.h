@@ -123,6 +123,11 @@ public:
 		varline_t text_ = std::string_view();
 		mutable std::shared_ptr<LineProperty> detail_;
 		
+		std::shared_ptr<std::vector<Line>> visual_lines() const
+		{
+			return {};
+		}
+		
 		Line() = default;
 		
 		static Line InvalidLine()
@@ -239,7 +244,7 @@ public:
 	QByteArray all;
 	std::vector<varline_t> raw_lines;
 
-	std::vector<Line> lines;
+	std::vector<Line> logical_lines;
 };
 
 class TextEditorEngine {
@@ -400,11 +405,20 @@ protected:
 	const int reference_char_width_ = 1; //@ TODO: remove
 protected:
 
-	std::vector<Document::Line> *lines();
+	std::vector<Document::Line> *_lines();
 	
-	std::vector<Document::Line> const *lines() const
+	std::vector<Document::Line> const *_lines() const
 	{
-		return const_cast<AbstractCharacterBasedApplication *>(this)->lines();
+		return const_cast<AbstractCharacterBasedApplication *>(this)->_lines();
+	}
+	
+	row_index_t nlines() const;
+
+	Document::Line *line(row_index_t row);
+	
+	Document::Line const *line(row_index_t row) const
+	{
+		return const_cast<AbstractCharacterBasedApplication *>(this)->line(row);
 	}
 	
 	int char_screen_w() const;
@@ -416,9 +430,9 @@ protected:
 	void initEditor();
 	
 public:
-	static std::optional<Document::Line> fetchLine(std::vector<Document::Line> const *lines, int row);
+	std::optional<Document::Line> fetchLine(int row);
 protected:
-	void fetchCurrentLine(const std::vector<Document::Line> *lines);
+	void fetchCurrentLine();
 	void clearParsedLine();
 	
 	int currentVisualPixelX() const;
@@ -494,8 +508,8 @@ private:
 	virtual void invalidateLineFormat(row_index_t row = -1);
 protected:
 	void deselect();
-	void parseCurrentLine(const std::vector<Document::Line> *lines, std::vector<Character> *chars, std::vector<CharFlags> *flags, bool force);
-	void parseLine(const std::vector<Document::Line> *lines, int row, std::vector<Character> *chars, std::vector<CharFlags> *flags);
+	void parseCurrentLine(std::vector<Character> *chars, std::vector<CharFlags> *flags, bool force);
+	void parseLine(int row, std::vector<Character> *chars, std::vector<CharFlags> *flags);
 	
 	virtual void setCursorRow(int row, bool auto_scroll = true, bool by_mouse = false);
 	virtual void setCursorCol(int col)

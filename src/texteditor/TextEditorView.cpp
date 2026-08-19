@@ -244,13 +244,13 @@ Document::LineProperty const *TextEditorView::queryFormattedLine(row_index_t row
 	}
 	return &it->second;
 #else
-	if (row >= 0 && row < lines()->size()) {
-		Document::LineProperty *detail = (*lines())[row].detail();
+	if (row >= 0 && row < nlines()) {
+		Document::LineProperty *detail = line(row)->detail();
 		if (!detail) {
-			(*lines())[row].detail_ = std::make_shared<Document::LineProperty>();
-			detail = (*lines())[row].detail();
+			line(row)->detail_ = std::make_shared<Document::LineProperty>();
+			detail = line(row)->detail();
 		}
-		const_cast<TextEditorView *>(this)->parseLine(lines(), row, &detail->chars, &detail->flags);
+		const_cast<TextEditorView *>(this)->parseLine(row, &detail->chars, &detail->flags);
 		calc_pos_x(&detail->chars);
 		return detail;
 	}
@@ -306,7 +306,7 @@ RowCol TextEditorView::mapFromPixel(QPoint const &pt)
 		t.row = maxrow - 1;
 		if (maxrow > 0) {
 			std::vector<Character> chars;
-			parseLine(lines(), t.row, &chars, nullptr);
+			parseLine(t.row, &chars, nullptr);
 			if (!chars.empty()) {
 				t.col = (int)chars.size();
 			}
@@ -371,7 +371,7 @@ void TextEditorView::setCursorCol(int col)
 	AbstractCharacterBasedApplication::setCursorCol(col);
 
 	// 水平ピクセル座標を更新
-	parseCurrentLine(lines(), nullptr, nullptr, true);
+	parseCurrentLine(nullptr, nullptr, true);
 	auto *chars = parsedCurrentLine();
 	cx()->current_visual_pixel_x = pos_x_px(currentVisualRow(), currentVisualCol(), true, chars);
 }
@@ -413,7 +413,7 @@ void TextEditorView::internalUpdateScrollBar()
 	sb = m->scroll_bar_v;
 	if (sb) {
 		sb->blockSignals(true);
-		sb->setRange(0, document()->lines.size() - cx()->viewport_height / 2);
+		sb->setRange(0, document()->logical_lines.size() - cx()->viewport_height / 2);
 		sb->setPageStep(editorViewportHeight());
 		sb->setValue(cx()->scroll_row_pos);
 		sb->blockSignals(false);
@@ -478,10 +478,8 @@ void TextEditorView::invalidateFormattedLine(row_index_t row)
 
 std::pair<row_index_t, row_index_t> TextEditorView::visibleRowAndCount()
 {
-	std::vector<Document::Line> const *lines = this->lines();
-
 	row_index_t row_start = scrollTopRow();
-	row_index_t row_count = std::min(editor_cx->viewport_height, (row_index_t)lines->size() - row_start);
+	row_index_t row_count = std::min(editor_cx->viewport_height, nlines() - row_start);
 
 	return std::make_pair(row_start, row_count);
 }
@@ -749,8 +747,6 @@ void TextEditorView::paintEvent(QPaintEvent *)
 		pr.fillRect(0, bottom_y, width(), height() - bottom_y, theme()->bg_diff_unknown);
 	}
 	
-	std::vector<Document::Line> const *lines = this->lines();
-
 	{
 		const int line_height = lineHeight();
 		
@@ -771,7 +767,7 @@ void TextEditorView::paintEvent(QPaintEvent *)
 		for (int pass = 0; pass < 3; pass++) {
 			int view_row = 0; // 描画行番号（ビューポートの左上隅を0とした行位置）
 			int line_row = scrollTopRow(); // 行インデックス（view_row位置に描画すべき論理行インデックス）
-			for (int i = 0; i < (int)editor_cx->viewport_height && line_row < (int)lines->size(); i++) {
+			for (int i = 0; i < (int)editor_cx->viewport_height && line_row < (int)nlines(); i++) {
 				Document::LineProperty const *formatted_line = queryFormattedLine(line_row);
 				if (formatted_line) {
 					const QRect rect_line(vsplit_x, view_y_from_row(line_row), text_area_w, lineHeight()); // 行全体の矩形
@@ -788,7 +784,7 @@ void TextEditorView::paintEvent(QPaintEvent *)
 					auto DrawBackground = [&](){
 						
 						{ // diff差分背景
-							Document::LineType type = (*lines)[line_row].type;
+							Document::LineType type = line(line_row)->type;
 							auto FillBG = [&](QColor color){
 								pr.fillRect(rect_text, color);
 							};
@@ -1003,7 +999,7 @@ void TextEditorView::moveCursorByMouse()
 		if (pos.row < 0) {
 			pos.row = 0;
 		} else {
-			int maxrow = cx()->engine->document.lines.size();
+			int maxrow = cx()->engine->document.logical_lines.size();
 			maxrow = maxrow > 0 ? (maxrow - 1) : 0;
 			if (pos.row > maxrow) {
 				pos.row = maxrow;

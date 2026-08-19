@@ -193,7 +193,7 @@ GitObject FileDiffWidget::catFile(GitRunner g, std::string const &id)
 
 int FileDiffWidget::totalTextLines() const
 {
-	return (int)m->engine_left->document.lines.size();
+	return (int)m->engine_left->document.logical_lines.size();
 }
 
 void FileDiffWidget::clearDiffView()
@@ -743,11 +743,11 @@ void FileDiffWidget::onUpdateSliderBar()
 	int value = 0;
 	int page = 0;
 	if (isSideBySideView()) {
-		total = (int)m->engine_left->document.lines.size();
+		total = (int)m->engine_left->document.logical_lines.size();
 		value = ui->verticalScrollBar->value();
 		page = ui->verticalScrollBar->pageStep();
 	} else if (viewstyle() == InlineTextDiff) {
-		total = (int)m->engine_inline->document.lines.size();
+		total = (int)m->engine_inline->document.logical_lines.size();
 		value = ui->verticalScrollBar_inline->value();
 		page = ui->verticalScrollBar_inline->pageStep();
 		
