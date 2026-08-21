@@ -406,27 +406,26 @@ void TextEditorView::updateCursorRect(bool auto_scroll)
 	QApplication::inputMethod()->update(Qt::ImCursorRectangle);
 }
 
-void TextEditorView::internalUpdateScrollBar()
+void TextEditorView::updateScrollBarRange()
 {
-	QScrollBar *sb;
-
-	sb = m->scroll_bar_v;
-	if (sb) {
-		sb->blockSignals(true);
-		sb->setRange(0, document()->logical_lines.size() - cx()->viewport_height / 2);
-		sb->setPageStep(editorViewportHeight());
-		sb->setValue(cx()->scroll_row_pos);
-		sb->blockSignals(false);
+	QScrollBar *vsb = m->scroll_bar_v;
+	QScrollBar *hsb = m->scroll_bar_h;
+	
+	if (vsb) {
+		vsb->blockSignals(true);
+		vsb->setRange(0, nlines() - cx()->viewport_height / 2);
+		vsb->setPageStep(editorViewportHeight());
+		vsb->setValue(cx()->scroll_row_pos);
+		vsb->blockSignals(false);
 	}
 
-	sb = m->scroll_bar_h;
-	if (sb) {
+	if (hsb) {
 		int w = editorViewportWidth();
-		sb->blockSignals(true);
-		sb->setRange(0, (w + 100) * reference_char_width_);
-		sb->setPageStep(w * reference_char_width_);
-		sb->setValue(cx()->scroll_col_pos);
-		sb->blockSignals(false);
+		hsb->blockSignals(true);
+		hsb->setRange(0, (w + 100) * reference_char_width_);
+		hsb->setPageStep(w * reference_char_width_);
+		hsb->setValue(cx()->scroll_col_pos);
+		hsb->blockSignals(false);
 	}
 
 	emit updateScrollBar();
@@ -448,7 +447,7 @@ void TextEditorView::internalUpdateVisibility(bool ensure_current_line_visible, 
 		return;
 	}
 
-	internalUpdateScrollBar();
+	updateScrollBarRange();
 
 	update();
 }
@@ -484,6 +483,26 @@ std::pair<row_index_t, row_index_t> TextEditorView::visibleRowAndCount()
 	return std::make_pair(row_start, row_count);
 }
 
+std::pair<row_index_t, int> TextEditorView::currentVisualPosition()
+{
+	row_index_t vrow = currentVisualRow();
+	int vcol = currentVisualCol();
+	return std::make_pair(vrow, vcol);
+}
+
+std::pair<row_index_t, int> TextEditorView::currentLogicalPosition()
+{
+	auto [vrow, vcol] = currentVisualPosition();
+	row_index_t lrow = 0;
+	int lcol = 0;
+	Document::Line const *line = this->line(vrow);
+	if (line) {
+		lrow = line->logical_row;
+		lcol = line->logical_col + vcol;
+	}
+	return std::make_pair(lrow, lcol);
+}
+
 void TextEditorView::updateVisibility(bool ensure_current_line_visible, bool change_col, bool auto_scroll)
 {
 	auto [row_start, row_count] = visibleRowAndCount();
@@ -492,6 +511,16 @@ void TextEditorView::updateVisibility(bool ensure_current_line_visible, bool cha
 	}
 
 	internalUpdateVisibility(ensure_current_line_visible, change_col, auto_scroll);
+	
+	int vrow = currentVisualRow();
+	int vcol = currentVisualCol();
+
+	auto [lrow, lcol] = currentLogicalPosition();
+	setCurrentLogicalRow(lrow);
+	setCurrentLogicalCol(lcol);
+	
+	qDebug() << vrow << vcol << lrow << lcol;
+
 	emit moved(currentVisualRow(), currentVisualCol(), cx()->scroll_row_pos, cx()->scroll_col_pos);
 }
 
@@ -1138,7 +1167,7 @@ void TextEditorView::resizeEvent(QResizeEvent * /*event*/)
 	if (isAutoLayout()) {
 		layoutEditor();
 	}
-	internalUpdateScrollBar();
+	updateScrollBarRange();
 }
 
 void TextEditorView::wheelEvent(QWheelEvent *event)

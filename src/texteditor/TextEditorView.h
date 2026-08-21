@@ -32,15 +32,6 @@ struct PreEditText {
 class TextEditorView : public QWidget, public AbstractTextEditorApplication {
 	Q_OBJECT
 public:
-	class FormattedLine : public Document::LineProperty {
-	public:
-		// std::vector<Char> chars;
-		// std::vector<CharAttr> attrs;
-		// bool has_diff_flags = false;
-		// FormattedLine()
-		// {
-		// }
-	};
 	class FormattedLines {
 	public:
 		int row_start = 0;
@@ -69,7 +60,7 @@ private:
 	QColor colorForIndex(CharAttr const &attr, bool foreground);
 	void internalUpdateVisibility(bool ensure_current_line_visible, bool change_col, bool auto_scroll);
 public://@
-	void internalUpdateScrollBar();
+	void updateScrollBarRange() override;
 private:
 	void moveCursorByMouse();
 	
@@ -149,6 +140,8 @@ public:
 	
 	int scrollTopRow() const;
 	
+	std::pair<row_index_t, int> currentVisualPosition();
+	std::pair<row_index_t, int> currentLogicalPosition();
 signals:
 	void moved(int cur_row, int cur_col, int scr_row, int scr_col);
 	void updateScrollBar();

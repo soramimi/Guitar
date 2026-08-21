@@ -120,13 +120,10 @@ public:
 	struct Line {
 		LineType type = Normal;
 		int32_t line_number = -1;
+		row_index_t logical_row = 0; //@ TODO:
+		int logical_col = 0;
 		varline_t text_ = std::string_view();
 		mutable std::shared_ptr<LineProperty> detail_;
-		
-		std::shared_ptr<std::vector<Line>> visual_lines() const
-		{
-			return {};
-		}
 		
 		Line() = default;
 		
@@ -323,7 +320,7 @@ struct TextEditorContext {
 	int tab_indent_size = 4;
 	int bottom_line_y = -1;
 	TextEditorEngine_sp engine;
-	std::vector<Document::Line> wrapped_lines;
+	std::vector<Document::Line> visual_lines;
 };
 
 struct RowCol {
@@ -508,8 +505,11 @@ private:
 	virtual void invalidateLineFormat(row_index_t row = -1);
 protected:
 	void deselect();
+	void parseCurrentLogicalLine(std::vector<Character> *chars);
 	void parseCurrentLine(std::vector<Character> *chars, std::vector<CharFlags> *flags, bool force);
 	void parseLine(int row, std::vector<Character> *chars, std::vector<CharFlags> *flags);
+
+	virtual void updateScrollBarRange() {};
 	
 	virtual void setCursorRow(int row, bool auto_scroll = true, bool by_mouse = false);
 	virtual void setCursorCol(int col)
