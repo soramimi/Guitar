@@ -19,6 +19,7 @@ enum class ProviderID {
 	Sakura, // さくらの AI Engine（OpenAI chat completions 互換）
 	DeepSeek,
 	OpenRouter,
+	OrcaRouter,
 	Ollama, // experimental
 	LMStudio, // experimental
 	LLAMACPP, // experimental
@@ -40,6 +41,7 @@ public:
 	virtual T case_Sakura() = 0;
 	virtual T case_DeepSeek() = 0;
 	virtual T case_OpenRouter() = 0;
+	virtual T case_OrcaRouter() = 0;
 	virtual T case_Ollama() = 0;
 	virtual T case_LMStudio() = 0;
 	virtual T case_LLAMACPP() = 0;
@@ -59,6 +61,7 @@ public:
 		case ProviderID::Sakura:                  return case_Sakura();
 		case ProviderID::DeepSeek:                return case_DeepSeek();
 		case ProviderID::OpenRouter:              return case_OpenRouter();
+		case ProviderID::OrcaRouter:              return case_OrcaRouter();
 		case ProviderID::Ollama:                  return case_Ollama();
 		case ProviderID::LMStudio:                return case_LMStudio();
 		case ProviderID::LLAMACPP:                return case_LLAMACPP();
