@@ -29,6 +29,12 @@
 // 	}
 // };
 
+class AbstractTextMetrics {
+public:
+	virtual int basisCharWidth() const = 0;
+	virtual int textWidth(QString const &text) const = 0;
+};
+
 namespace EscapeCode {
 enum EscapeCode {
 	Up = 0x1b5b4100,
@@ -120,8 +126,6 @@ public:
 	struct Line {
 		LineType type = Normal;
 		int32_t line_number = -1;
-		row_index_t logical_row = 0; //@ TODO:
-		int logical_col = 0;
 		varline_t text_ = std::string_view();
 		mutable std::shared_ptr<LineProperty> detail_;
 		
@@ -478,10 +482,10 @@ protected:
 	void setDialogOption(QString const &title, QString const &value, const DialogHandler &handler);
 	void execDialog(QString const &dialog_title, const QString &dialog_value, const DialogHandler &handler);
 	
-	virtual void calc_pos_x(std::vector<Character> *chars) const {}
+	virtual void calc_pos_x(std::vector<Character> *chars) const {};
 	
 private:
-	int internalParseLine(Document::Line *parsed_line, int current_col, std::vector<Character> *out_chars, std::vector<CharFlags> *out_flags);
+	std::vector<Character> internalParseLine(const TextEditorContext *cx, const Document::Line *parsed_line, int current_col) const;
 	void internalWrite(const ushort *begin, const ushort *end);
 	void pressLetterWithControl(int c);
 	void invalidateAreaBelowTheCurrentLine();
@@ -505,9 +509,9 @@ private:
 	virtual void invalidateLineFormat(row_index_t row = -1);
 protected:
 	void deselect();
-	void parseCurrentLogicalLine(std::vector<Character> *chars);
-	void parseCurrentLine(std::vector<Character> *chars, std::vector<CharFlags> *flags, bool force);
-	void parseLine(int row, std::vector<Character> *chars, std::vector<CharFlags> *flags);
+	std::vector<Character> parseCurrentLogicalLine(const TextEditorContext *cx, row_index_t row, int col) const;
+	void parseCurrentLine(std::vector<Character> *chars, bool force);
+	std::vector<Character> parseLine(int row);
 
 	virtual void updateScrollBarRange() {};
 	
@@ -527,7 +531,7 @@ protected:
 		setCursorRow(row, false);
 		setCursorCol_(col, false, false);
 	}
-	int nextTabStop(int x) const;
+	static int nextTabStop(TextEditorContext const *cx, int x);
 	int scrollBottomLimit() const;
 	int scrollBottomLimit2() const;
 	bool isPaintingSuppressed() const;
@@ -624,11 +628,13 @@ public:
 	std::vector<Character> *parsedCurrentLine();
 	void doWrapping();
 	void setWrappingMode(WrappingMode mode);
+	AbstractCharacterBasedApplication::WrappingMode wrappingMode() const;
 
 	void setCurrentLogicalRow(row_index_t row);
 	void setCurrentLogicalCol(int col);
 	row_index_t currentLogicalRow() const;
 	int currentLogicalCol() const;
+	bool isWidthFixed() const;
 protected:
 	void write_(char const *ptr, bool by_keyboard);
 	void write_(QString const &text, bool by_keyboard);

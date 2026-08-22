@@ -29,6 +29,25 @@ struct PreEditText {
 	std::vector<Format> format;
 };
 
+class TextMetrics : public AbstractTextMetrics {
+public:	
+	struct TextWidthCache {
+		std::unordered_map<QString, int> map;
+	};
+	QFont text_font_;
+	std::unique_ptr<QFontMetrics> fm_;
+	int ascent_ = 0;
+	int descent_ = 0;
+	QSize basic_character_size_;
+	mutable TextWidthCache text_width_cache_;
+
+	void setTextFont(QFont const &font);
+
+	int basisCharWidth() const override;
+	int textWidth(QString const &text) const override;
+};
+
+
 class TextEditorView : public QWidget, public AbstractTextEditorApplication {
 	Q_OBJECT
 public:
@@ -64,15 +83,25 @@ public://@
 private:
 	void moveCursorByMouse();
 	
-	int textWidth(const QFontMetrics &fm, const QString &text) const;
-	void _calc_pos_x(std::vector<Character> *chars, const QFontMetrics &fm) const;
+	static void _calc_pos_x(std::vector<Character> *chars, const TextEditorContext *cx, const TextMetrics &tm);
+	int pos_x_px(row_index_t row, int col) const;
 	
-	int pos_x_px(row_index_t row, int col, bool adjust_scroll, std::vector<Character> *chars, std::vector<CharFlags> *flags = nullptr) const;
 	int scrollPosX() const;
 	int view_y_from_row(int row) const;
 	int linenumber_area_width() const;
 	void invalidateFormattedLineAll();
 	void invalidateFormattedLine(row_index_t row);
+
+	struct VisualRowInfo {
+		row_index_t logical_row = -1;
+		int logical_col = -1;
+		operator bool () const
+		{
+			return logical_row >= 0 && logical_col >= 0;
+		}
+	};
+	void invalidateVisualRowInfo(row_index_t vrow);
+	VisualRowInfo queryVisualRowInfo(row_index_t vrow);
 protected:
 	void invalidateLineFormat(row_index_t row) override;
 protected:
