@@ -254,6 +254,7 @@ MainWindow::MainWindow(QWidget *parent)
 	setupAddFileObjectData();
 
 	ui->tableWidget_log->setup(this);
+	ui->widget_log->hide();
 
 	setupExternalPrograms();
 

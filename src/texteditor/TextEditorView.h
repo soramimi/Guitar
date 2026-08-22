@@ -92,7 +92,7 @@ private:
 	void invalidateFormattedLineAll();
 	void invalidateFormattedLine(row_index_t row);
 
-	void invalidateVisualRowInfo(row_index_t vrow);
+	void invalidateVisualRowInfo(row_index_t vrow) override;
 	VisualRowInfo queryVisualRowInfo(row_index_t vrow) override;
 protected:
 	void invalidateLineFormat(row_index_t row) override;
@@ -103,7 +103,7 @@ protected:
 	void calc_pos_x(std::vector<Character> *chars) const;
 	
 public:
-	const Document::LineProperty *queryFormattedLine(row_index_t row) const;
+	const Document::LineProperty *queryFormattedLine(row_index_t vrow) const;
 	std::pair<row_index_t, row_index_t> visibleRowAndCount();
 	int basisCharWidth() const;
 protected:

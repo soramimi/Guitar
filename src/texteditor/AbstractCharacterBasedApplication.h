@@ -126,7 +126,8 @@ public:
 	};
 	struct Line {
 		LineType type = Normal;
-		// int32_t line_number = -1;
+		col_index_t logical_col = 0;
+		int32_t line_number_override = -1;
 		varline_t text_ = std::string_view();
 		mutable std::shared_ptr<LineProperty> detail_;
 		
@@ -474,6 +475,8 @@ protected:
 	int printArea(const TextEditorContext *cx, SelectionAnchor const *sel_a = nullptr, SelectionAnchor const *sel_b = nullptr);
 	
 	virtual void updateVisibility(bool ensure_current_line_visible, bool change_col, bool auto_scroll) = 0;
+
+	void insertLine();
 	void commitLine(const std::vector<Character> &vec);
 	
 	void doDelete();
@@ -485,11 +488,11 @@ protected:
 	void setDialogOption(QString const &title, QString const &value, const DialogHandler &handler);
 	void execDialog(QString const &dialog_title, const QString &dialog_value, const DialogHandler &handler);
 	
+	virtual void invalidateVisualRowInfo(row_index_t vrow) {}
 	virtual VisualRowInfo queryVisualRowInfo(row_index_t vrow) { return {}; }
 	virtual void calc_pos_x(std::vector<Character> *chars) const {}
 	
 private:
-	std::vector<Character> internalParseLine(const TextEditorContext *cx, const Document::Line *parsed_line) const;
 	void internalWrite(const ushort *begin, const ushort *end);
 	void pressLetterWithControl(int c);
 	void invalidateAreaBelowTheCurrentLine();
@@ -511,10 +514,12 @@ private:
 	bool deleteIfSelected();
 	void setCursorCol_(int col, bool auto_scroll = true, bool by_mouse = false);
 	virtual void invalidateLineFormat(row_index_t row = -1);
+        std::vector<Document::Line> *documentLinesForWrite(bool check_readonly = true);
 protected:
 	void deselect();
 	std::vector<Character> parseLogicalLine(const TextEditorContext *cx, row_index_t lrow, col_index_t lcol) const;
 	void parseCurrentLine(std::vector<Character> *chars, bool force);
+	std::vector<Character> parseLine(const TextEditorContext *cx, const Document::Line *line) const;
 	std::vector<Character> parseLine(int row);
 
 	virtual void updateScrollBarRange() {}

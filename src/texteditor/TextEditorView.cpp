@@ -151,7 +151,7 @@ VisualRowInfo TextEditorView::queryVisualRowInfo(row_index_t vrow)
 		info.logical_row++;
 		info.logical_col = 0;
 	}
-	Document *doc = &cx()->engine->document;
+	Document *doc = document();
 	while (m->visual_row_info.size() <= vrow) {
 		Document::Line *line = nullptr;
 		if (info.logical_row < doc->logical_lines.size()) {
@@ -161,6 +161,7 @@ VisualRowInfo TextEditorView::queryVisualRowInfo(row_index_t vrow)
 		std::vector<Document::Line> lines = doCharWrapLine(*line);
 		if (!lines.empty()) {
 			for (size_t i = 0; i < lines.size(); i++) {
+				info.logical_col = lines[i].logical_col;
 				m->visual_row_info.push_back(info);
 			}
 		}
@@ -270,7 +271,7 @@ void TextEditorView::calc_pos_x(std::vector<Character> *chars) const
 	_calc_pos_x(chars, cx(), m->text_metrics);
 }
 
-Document::LineProperty const *TextEditorView::queryFormattedLine(row_index_t row) const
+Document::LineProperty const *TextEditorView::queryFormattedLine(row_index_t vrow) const
 {
 #if 0
 	auto &map = m->formatted_lines.lines;
@@ -284,13 +285,13 @@ Document::LineProperty const *TextEditorView::queryFormattedLine(row_index_t row
 	}
 	return &it->second;
 #else
-	if (row >= 0 && row < nlines()) {
-		Document::LineProperty *detail = line(row)->detail();
+	if (vrow >= 0 && vrow < nlines()) {
+		Document::LineProperty *detail = line(vrow)->detail();
 		if (!detail) {
-			line(row)->detail_ = std::make_shared<Document::LineProperty>();
-			detail = line(row)->detail();
+			line(vrow)->detail_ = std::make_shared<Document::LineProperty>();
+			detail = line(vrow)->detail();
 		}
-		detail->chars = const_cast<TextEditorView *>(this)->parseLine(row);
+		detail->chars = const_cast<TextEditorView *>(this)->parseLine(vrow);
 		detail->flags.resize(detail->chars.size());
 		calc_pos_x(&detail->chars);
 		return detail;
@@ -467,6 +468,7 @@ void TextEditorView::updateScrollBarRange()
 			hsb->setPageStep(w * reference_char_width_);
 			hsb->setValue(cx()->scroll_col_pos);
 		}
+		hsb->setVisible(!fixedwidth);
 		hsb->blockSignals(false);
 	}
 
@@ -557,7 +559,7 @@ void TextEditorView::updateVisibility(bool ensure_current_line_visible, bool cha
 	setCurrentLogicalRow(lrow);
 	setCurrentLogicalCol(lcol);
 	
-	qDebug() << vrow << vcol << lrow << lcol;
+	// qDebug() << vrow << vcol << lrow << lcol;
 
 	emit moved(currentVisualRow(), currentVisualCol(), cx()->scroll_row_pos, cx()->scroll_col_pos);
 }
@@ -783,11 +785,6 @@ int TextEditorView::linenumber_area_width() const
 	return editor_cx->viewport_org_x * m->text_metrics.basisCharWidth();
 }
 
-/**
- * @brief 描画
- *
- * 	テキストの描画前に fetchLines() を呼ぶこと
- */
 void TextEditorView::paintEvent(QPaintEvent *)
 {
 	bool has_focus = hasFocus();
@@ -803,7 +800,8 @@ void TextEditorView::paintEvent(QPaintEvent *)
 	
 	int vsplit_x = linenum_width - 2;
 	int text_area_w = width() - vsplit_x;
-	int bottom_y = editor_cx->bottom_line_y < 0 ? height() : ((editor_cx->viewport_org_y + editor_cx->bottom_line_y) * lineHeight() + 1);
+	TextEditorContext *cx = editor_cx.get();
+	int bottom_y = cx->bottom_line_y < 0 ? height() : ((cx->viewport_org_y + cx->bottom_line_y) * lineHeight() + 1);
 	
 	if (bottom_y > 0) {
 		// テキスト領域の背景
@@ -852,7 +850,6 @@ void TextEditorView::paintEvent(QPaintEvent *)
 					
 					// 背景の描画
 					auto DrawBackground = [&](){
-						
 						{ // diff差分背景
 							Document::LineType type = line(line_row)->type;
 							auto FillBG = [&](QColor color){
