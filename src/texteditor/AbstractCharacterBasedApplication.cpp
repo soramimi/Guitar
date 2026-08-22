@@ -1790,12 +1790,12 @@ void AbstractCharacterBasedApplication::writeNewLine()
 	commitLine(curr_line_chars);
 	// next line index
 	setCurrentLogicalRow(currentLogicalRow() + 1);
+	std::vector<Document::Line> *lines = &engine()->document.logical_lines;
+	lines->insert(lines->begin() + currentLogicalRow(), Document::Line::NormalEmptyLine());
 	commitLine(next_line);
 	// commit current line
 	// insert next line
 	// setCurrentLogicalRow(currentLogicalRow());
-	// std::vector<Document::Line> *lines = &engine()->document.logical_lines;
-	// lines->insert(lines->begin() + currentLogicalRow(), Document::Line::NormalEmptyLine());
 	// commit next line
 	
 	setCurrentVisualRow(currentVisualRow() + 1);
