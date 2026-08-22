@@ -78,7 +78,7 @@ private:
 	QColor defaultBackgroundColor();
 	QColor colorForIndex(CharAttr const &attr, bool foreground);
 	void internalUpdateVisibility(bool ensure_current_line_visible, bool change_col, bool auto_scroll);
-public://@
+public:
 	void updateScrollBarRange() override;
 private:
 	void moveCursorByMouse();
@@ -92,16 +92,8 @@ private:
 	void invalidateFormattedLineAll();
 	void invalidateFormattedLine(row_index_t row);
 
-	struct VisualRowInfo {
-		row_index_t logical_row = -1;
-		int logical_col = -1;
-		operator bool () const
-		{
-			return logical_row >= 0 && logical_col >= 0;
-		}
-	};
 	void invalidateVisualRowInfo(row_index_t vrow);
-	VisualRowInfo queryVisualRowInfo(row_index_t vrow);
+	VisualRowInfo queryVisualRowInfo(row_index_t vrow) override;
 protected:
 	void invalidateLineFormat(row_index_t row) override;
 protected:
@@ -170,7 +162,7 @@ public:
 	int scrollTopRow() const;
 	
 	std::pair<row_index_t, int> currentVisualPosition();
-	std::pair<row_index_t, int> currentLogicalPosition();
+	std::pair<row_index_t, col_index_t> currentLogicalPosition();
 signals:
 	void moved(int cur_row, int cur_col, int scr_row, int scr_col);
 	void updateScrollBar();

@@ -77,7 +77,7 @@ struct TextEditorView::Private {
 
 	TextEditorView::FormattedLines formatted_lines;
 	
-	std::vector<TextEditorView::VisualRowInfo> visual_row_info;
+	std::vector<VisualRowInfo> visual_row_info;
 };
 
 TextEditorView::TextEditorView(QWidget *parent)
@@ -133,13 +133,39 @@ TextEditorView::~TextEditorView()
 
 void TextEditorView::invalidateVisualRowInfo(row_index_t vrow)
 {
-	if (vrow < m->visual_row_info.size()) {
+	if (vrow < 0) {
+		m->visual_row_info.clear();
+	} else if (vrow < m->visual_row_info.size()) {
 		m->visual_row_info.resize(vrow);
 	}
 }
 
-TextEditorView::VisualRowInfo TextEditorView::queryVisualRowInfo(row_index_t vrow)
+VisualRowInfo TextEditorView::queryVisualRowInfo(row_index_t vrow)
 {
+	if (vrow < 0) return {};
+
+	VisualRowInfo info;
+	row_index_t row = m->visual_row_info.size();
+	if (row > 0) {
+		info = m->visual_row_info[row - 1];
+		info.logical_row++;
+		info.logical_col = 0;
+	}
+	while (row < vrow) {
+		Document::Line *line = nullptr;
+		line = this->line(row);
+		if (!line) break;
+		std::vector<Document::Line> lines = doCharWrapLine(*line);
+		for (size_t i = 0; i < lines.size(); i++) {
+			m->visual_row_info.push_back(info);
+			info.logical_row++;
+			row++;
+		}
+	}
+
+	if (vrow < m->visual_row_info.size()) {
+		return m->visual_row_info[vrow];
+	}
 
 	return {};	
 }
@@ -502,16 +528,12 @@ std::pair<row_index_t, int> TextEditorView::currentVisualPosition()
 	return std::make_pair(vrow, vcol);
 }
 
-std::pair<row_index_t, int> TextEditorView::currentLogicalPosition()
+std::pair<row_index_t, col_index_t> TextEditorView::currentLogicalPosition()
 {
 	auto [vrow, vcol] = currentVisualPosition();
-	row_index_t lrow = 0;
-	int lcol = 0;
-	Document::Line const *line = this->line(vrow);
-	if (line) {
-		// lrow = line->logical_row;
-		// lcol = line->logical_col + vcol;
-	}
+	VisualRowInfo rowinfo = queryVisualRowInfo(vrow);
+	row_index_t lrow = rowinfo.logical_row;
+	col_index_t lcol = rowinfo.logical_col + vcol;
 	return std::make_pair(lrow, lcol);
 }
 

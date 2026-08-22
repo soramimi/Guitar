@@ -106,6 +106,7 @@ struct Character {
 };
 
 typedef int32_t row_index_t;
+typedef int32_t col_index_t;
 
 class Document {
 public:
@@ -125,7 +126,7 @@ public:
 	};
 	struct Line {
 		LineType type = Normal;
-		int32_t line_number = -1;
+		// int32_t line_number = -1;
 		varline_t text_ = std::string_view();
 		mutable std::shared_ptr<LineProperty> detail_;
 		
@@ -251,6 +252,11 @@ public:
 class TextEditorEngine {
 public:
 	Document document;
+};
+
+struct VisualRowInfo {
+	row_index_t logical_row = 0;
+	col_index_t logical_col = 0;
 };
 
 struct SelectionAnchor {
@@ -429,9 +435,6 @@ protected:
 	std::vector<uint8_t> *line_flags();
 	
 	void initEditor();
-	
-public:
-	std::optional<Document::Line> fetchLine(int row);
 protected:
 	void fetchCurrentLine();
 	void clearParsedLine();
@@ -482,10 +485,11 @@ protected:
 	void setDialogOption(QString const &title, QString const &value, const DialogHandler &handler);
 	void execDialog(QString const &dialog_title, const QString &dialog_value, const DialogHandler &handler);
 	
-	virtual void calc_pos_x(std::vector<Character> *chars) const {};
+	virtual VisualRowInfo queryVisualRowInfo(row_index_t vrow) { return {}; }
+	virtual void calc_pos_x(std::vector<Character> *chars) const {}
 	
 private:
-	std::vector<Character> internalParseLine(const TextEditorContext *cx, const Document::Line *parsed_line, int current_col) const;
+	std::vector<Character> internalParseLine(const TextEditorContext *cx, const Document::Line *parsed_line) const;
 	void internalWrite(const ushort *begin, const ushort *end);
 	void pressLetterWithControl(int c);
 	void invalidateAreaBelowTheCurrentLine();
@@ -509,11 +513,11 @@ private:
 	virtual void invalidateLineFormat(row_index_t row = -1);
 protected:
 	void deselect();
-	std::vector<Character> parseCurrentLogicalLine(const TextEditorContext *cx, row_index_t row, int col) const;
+	std::vector<Character> parseLogicalLine(const TextEditorContext *cx, row_index_t lrow, col_index_t lcol) const;
 	void parseCurrentLine(std::vector<Character> *chars, bool force);
 	std::vector<Character> parseLine(int row);
 
-	virtual void updateScrollBarRange() {};
+	virtual void updateScrollBarRange() {}
 	
 	virtual void setCursorRow(int row, bool auto_scroll = true, bool by_mouse = false);
 	virtual void setCursorCol(int col)
@@ -625,7 +629,9 @@ public:
 	void logicalMoveToBottom2();
 	void appendBulk(std::string_view const &str);
 	void clear();
-	std::vector<Character> *parsedCurrentLine();
+protected:
+	std::vector<Document::Line> doCharWrapLine(Document::Line line) const;
+public:
 	void doWrapping();
 	void setWrappingMode(WrappingMode mode);
 	AbstractCharacterBasedApplication::WrappingMode wrappingMode() const;
