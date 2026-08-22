@@ -89,7 +89,7 @@ struct AbstractCharacterBasedApplication::Private {
 	std::vector<AbstractCharacterBasedApplication::Char16> screen;
 	std::vector<uint8_t> line_flags;
 	row_index_t current_logical_row = 0;
-	int current_logical_col = 0;
+	col_index_t current_logical_col = 0;
 	bool parsed_for_edit = false;
 	Document::Line current_line_data;
 	
@@ -378,7 +378,8 @@ void AbstractCharacterBasedApplication::doWrapping()
 		return;
 	}
 	
-	std::vector<Document::Line> const &original = cx()->engine->document.logical_lines;
+	TextEditorContext *cx = this->cx();
+	std::vector<Document::Line> const &original = cx->engine->document.logical_lines;
 
 	std::vector<Document::Line> visual_lines;
 	for (row_index_t logical_row = 0; logical_row < original.size(); logical_row++) {
@@ -386,7 +387,7 @@ void AbstractCharacterBasedApplication::doWrapping()
 		std::vector<Document::Line> wrapped_lines = doCharWrapLine(line);
 		visual_lines.insert(visual_lines.end(), wrapped_lines.begin(), wrapped_lines.end());
 	}
-	cx()->visual_lines = std::move(visual_lines);
+	cx->visual_lines = std::move(visual_lines);
 	
 	updateScrollBarRange();
 }
@@ -527,15 +528,14 @@ row_index_t AbstractCharacterBasedApplication::nlines() const
 
 Document::Line *AbstractCharacterBasedApplication::line(row_index_t row)
 {
+	std::vector<Document::Line> *lines = nullptr;
 	if (m->wrapping_mode == WrappingMode::CharWrap) {
-		std::vector<Document::Line> *lines = &cx()->visual_lines;
-		if (row >= 0 && row < (row_index_t)lines->size()) {
-			return &(*lines)[row];
-		}
+		lines = &cx()->visual_lines;
 	} else {
-		if (row >= 0 && row < cx()->engine->document.logical_lines.size()) {
-			return &cx()->engine->document.logical_lines[row];
-		}
+		lines = &document()->logical_lines;
+	}
+	if (row >= 0 && row < (row_index_t)lines->size()) {
+		return &(*lines)[row];
 	}
 	return nullptr;
 }
@@ -550,7 +550,7 @@ row_index_t AbstractCharacterBasedApplication::currentLogicalRow() const
 	return m->current_logical_row;
 }
 
-int AbstractCharacterBasedApplication::currentLogicalCol() const
+col_index_t AbstractCharacterBasedApplication::currentLogicalCol() const
 {
 	return m->current_logical_col;
 }
@@ -560,7 +560,7 @@ void AbstractCharacterBasedApplication::setCurrentLogicalRow(row_index_t row)
 	m->current_logical_row = row;
 }
 
-void AbstractCharacterBasedApplication::setCurrentLogicalCol(int col)
+void AbstractCharacterBasedApplication::setCurrentLogicalCol(col_index_t col)
 {
 	m->current_logical_col = col;
 }
@@ -699,6 +699,7 @@ void AbstractCharacterBasedApplication::commitLine(std::vector<Character> const 
 	Document::Line *line = &(*lines)[currentLogicalRow()];
 	
 	line->set_text(std::vector<char>(ba.data(), ba.data() + ba.size()));
+	doWrapping();
 	
 	if (m->valid_line_index > currentLogicalRow()) {
 		m->valid_line_index = currentLogicalRow();
@@ -1330,55 +1331,35 @@ void AbstractCharacterBasedApplication::doDelete()
 	
 	parseCurrentLine(nullptr, false);
 	std::vector<Character> *vec = &m->parsed_current_line_chars;
-	int index = m->current_logical_col;
-	int c = -1;
-	if (index >= 0 && index < (int)vec->size()) {
-		c = (*vec)[index].unicode;
+	col_index_t lrow = currentLogicalRow();
+	col_index_t lcol = currentLogicalCol();
+	char32_t c = -1;
+	if (lcol >= 0 && lcol < (int)vec->size()) {
+		c = (*vec)[lcol].unicode;
 	}
 	if (c == '\n' || c == '\r' || c == -1) {
-		if (index == 0) {
-			setCurrentLogicalRow(currentLogicalRow() - 1);
-		}
 		invalidateAreaBelowTheCurrentLine();
-		if (isSingleLineMode()) {
-			// nop
-		} else {
-			if (c != -1) {
-				vec->erase(vec->begin() + index);
-				if (c == '\r' && index < (int)vec->size() && (*vec)[index].unicode == '\n') {
-					vec->erase(vec->begin() + index);
-				}
+		if (isSingleLineMode()) return;
+		if (c != -1) {
+			vec->erase(vec->begin() + lcol);
+			if (c == '\r' && lcol < (int)vec->size() && (*vec)[lcol].unicode == '\n') {
+				vec->erase(vec->begin() + lcol);
 			}
-			if (vec->empty()) {
-				clearParsedLine();
-				if (currentVisualRow() + 1 < (int)document()->logical_lines.size()) {
-					doc->logical_lines.erase(doc->logical_lines.begin() + currentVisualRow());
-					moveCursorHome();
-				}
-			} else {
-				commitLine(*vec);
-				setCursorCol(index);
-				if (index == (int)vec->size()) {
-					int nextrow = currentVisualRow() + 1;
-					int lines = documentLines();
-					if (nextrow < lines) {
-						Document::Line *ba1 = &doc->logical_lines[currentVisualRow()];
-						Document::Line const &ba2 = doc->logical_lines[nextrow];
-						ba1->append_text(ba2.text());
-						doc->logical_lines.erase(doc->logical_lines.begin() + nextrow);
-					}
-				}
+		}
+		if (lcol == (int)vec->size()) {
+			row_index_t next_lrow = lrow + 1;
+			std::vector<Character> next = parseLine(next_lrow);
+			vec->insert(vec->end(), next.begin(), next.end());
+			if (next_lrow < documentLines()) {
+				doc->logical_lines.erase(doc->logical_lines.begin() + next_lrow);
 			}
-			clearParsedLine();
-			invalidateLineFormat();
-			updateVisibility(true, true, true);
 		}
 	} else {
-		vec->erase(vec->begin() + index);
-		commitLine(*vec);
-		setCursorCol(index);
-		updateVisibility(true, true, true);
+		vec->erase(vec->begin() + lcol);
 	}
+	commitLine(*vec);
+	setCursorCol(lcol);
+	updateVisibility(true, true, true);
 }
 
 void AbstractCharacterBasedApplication::doBackspace()

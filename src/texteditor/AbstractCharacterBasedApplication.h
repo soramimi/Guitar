@@ -642,9 +642,9 @@ public:
 	AbstractCharacterBasedApplication::WrappingMode wrappingMode() const;
 
 	void setCurrentLogicalRow(row_index_t row);
-	void setCurrentLogicalCol(int col);
+	void setCurrentLogicalCol(col_index_t col);
 	row_index_t currentLogicalRow() const;
-	int currentLogicalCol() const;
+	col_index_t currentLogicalCol() const;
 	bool isWidthFixed() const;
 protected:
 	void write_(char const *ptr, bool by_keyboard);
