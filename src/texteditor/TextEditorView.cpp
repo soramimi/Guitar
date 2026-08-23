@@ -291,7 +291,7 @@ Document::LineProperty const *TextEditorView::queryFormattedLine(row_index_t vro
  * @param col
  * @return
  */
-int TextEditorView::pos_x_px(row_index_t row, int col) const
+int TextEditorView::pos_x_px(row_index_t row, row_index_t col) const
 {
 	Document::LineProperty const *line = queryFormattedLine(row);
 	if (!line) return 0;
@@ -316,7 +316,7 @@ RowCol TextEditorView::mapFromPixel(QPoint const &pt)
 {
 	const int y = pt.y() / lineHeight();
 	const int row = y + cx()->scroll_row_pos - cx()->viewport_org_y;
-	const int maxrow = logicalLines();
+	const int maxrow = nlines();
 	if (row >= maxrow) {
 		// 最終行より下だったら、最終行の列数を返す
 		RowCol t;
@@ -331,32 +331,34 @@ RowCol TextEditorView::mapFromPixel(QPoint const &pt)
 	}
 	const int w = m->text_metrics.basisCharWidth(); // 基準文字幅
 	const int x = pt.x() + (cx()->scroll_col_pos - cx()->viewport_org_x) * w;
-	std::vector<Character> chars;
+	std::vector<Character> const *chars = nullptr;
 	Document::LineProperty const *line = queryFormattedLine(row);
 	if (line) {
-		chars = line->chars;
+		chars = &line->chars;
+		if (chars) {
+			size_t end = chars->size();
+			int left = 0;
+			for (size_t col = 0; col < end; col++) {
+				int right = (*chars)[col].right_x;
+				if (x < right) {
+					int l = left - x;
+					int r = right - x;
+					if (l * l < r * r) {
+						return RowCol(row, (int)col);
+					} else {
+						return RowCol(row, (int)col + 1);
+					}
+				}
+				left = right;
+			}
+			while (end > 0 && ((*chars)[end - 1] == '\r' || (*chars)[end - 1] == '\n')) {
+				end--;
+			}
+			return RowCol((int)row, (int)end);
+		}
 	}
 	// pos_x_px(row, -1, false, &chars);
-
-	size_t end = chars.size();
-	int left = 0;
-	for (size_t col = 0; col < end; col++) {
-		int right = chars[col].right_x;
-		if (x < right) {
-			int l = left - x;
-			int r = right - x;
-			if (l * l < r * r) {
-				return RowCol(row, (int)col);
-			} else {
-				return RowCol(row, (int)col + 1);
-			}
-		}
-		left = right;
-	}
-	while (end > 0 && (chars[end - 1] == '\r' || chars[end - 1] == '\n')) {
-		end--;
-	}
-	return RowCol((int)row, (int)end);
+	return {};
 }
 
 /**

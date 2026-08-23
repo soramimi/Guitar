@@ -1677,8 +1677,13 @@ void AbstractCharacterBasedApplication::moveCursorLeft()
 			// nop
 		} else {
 			if (currentVisualRow() > 0) {
+				VisualRowInfo info0 = queryVisualRowInfo(currentVisualRow() - 1);
+				VisualRowInfo info1 = queryVisualRowInfo(currentVisualRow());
 				setCursorRow(currentVisualRow() - 1); // 上へ移動
 				moveCursorEnd(); // 行末へ移動
+				if (info0.logical_row == info1.logical_row) {
+					moveCursorLeft();
+				}
 			}
 		}
 		return;
@@ -1701,6 +1706,9 @@ void AbstractCharacterBasedApplication::moveCursorRight()
 		}
 	}
 
+	VisualRowInfo info0 = queryVisualRowInfo(currentVisualRow());
+	VisualRowInfo info1 = queryVisualRowInfo(currentVisualRow() + 1);
+	
 	int col = 0;
 	int i = 0;
 	while (1) {
@@ -1711,7 +1719,7 @@ void AbstractCharacterBasedApplication::moveCursorRight()
 		if (c == '\r' || c == '\n' || c == (char32_t)-1) {
 			if (!isSingleLineMode()) {
 				int nextrow = currentVisualRow() + 1;
-				int lines = document()->logical_lines.size();
+				int lines = nlines();
 				if (nextrow < lines) {
 					setCursorPos(nextrow, 0);
 					clearParsedLine();
@@ -1723,6 +1731,18 @@ void AbstractCharacterBasedApplication::moveCursorRight()
 		}
 		col++;
 		if (col > currentVisualCol()) {
+			if (info0.logical_row == info1.logical_row) {
+				if (col >= info1.logical_col - info0.logical_col) {
+					int nextrow = currentVisualRow() + 1;
+					int lines = nlines();
+					if (nextrow < lines) {
+						setCursorPos(nextrow, 0);
+						clearParsedLine();
+						updateVisibility(true, true, true);
+						return;
+					}
+				}
+			}
 			break;
 		}
 		i++;
