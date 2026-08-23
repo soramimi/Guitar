@@ -677,8 +677,11 @@ public:
 	void clear();
 protected:
 	std::vector<Document::Line> doCharWrapLine(Document::Line line) const;
+private:
+	void updateVisualLines(row_index_t lrow, bool force);
 public:
-	void doWrapping(bool force);
+	void updateVisualLinesAll(bool force);
+	void doWrapping();
 	void setWrappingMode(WrappingMode mode);
 	AbstractCharacterBasedApplication::WrappingMode wrappingMode() const;
 

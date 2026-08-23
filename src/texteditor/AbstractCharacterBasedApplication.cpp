@@ -373,26 +373,48 @@ std::vector<Document::Line> AbstractCharacterBasedApplication::doCharWrapLine(Do
 	return ret;
 }
 
-void AbstractCharacterBasedApplication::doWrapping(bool force)
+void AbstractCharacterBasedApplication::updateVisualLines(row_index_t lrow, bool force)
 {
-	if (m->wrapping_mode == WrappingMode::NoWrap) {
-		return;
-	}
-	
 	TextEditorContext *cx = this->cx();
 	std::vector<Document::Line> *llines = &cx->engine->document.logical_lines;
-
-	for (row_index_t lrow = 0; lrow < llines->size(); lrow++) {
+	if (lrow >= 0 && lrow < llines->size()) {
 		Document::Line *line = &(*llines)[lrow];
 		if (force || line->meta.visual_lines.empty()) {
 			line->meta.visual_lines = doCharWrapLine(*line);
 		}
 	}
+}
+
+void AbstractCharacterBasedApplication::updateVisualLinesAll(bool force)
+{
+	if (m->wrapping_mode == WrappingMode::NoWrap) {
+		return;
+	}
 	
+	for (row_index_t lrow = 0; lrow < logicalLines(); lrow++) {
+		updateVisualLines(lrow, force);
+	}
+}
+
+void AbstractCharacterBasedApplication::doWrapping()
+{
+	if (m->wrapping_mode == WrappingMode::NoWrap) {
+		return;
+	}
+	
+	// for (row_index_t lrow = 0; lrow < logicalLines(); lrow++) {
+	// 	updateVisualLines(lrow, force);
+	// }
+	
+	TextEditorContext *cx = this->cx();
 	std::vector<Document::Line> vlines;
-	for (row_index_t lrow = 0; lrow < llines->size(); lrow++) {
-		std::vector<Document::Line> const &vl = (*llines)[lrow].meta.visual_lines;
-		vlines.insert(vlines.end(), vl.begin(), vl.end());
+	{
+		std::vector<Document::Line> *llines = &cx->engine->document.logical_lines;
+	
+		for (row_index_t lrow = 0; lrow < llines->size(); lrow++) {
+			std::vector<Document::Line> const &vl = (*llines)[lrow].meta.visual_lines;
+			vlines.insert(vlines.end(), vl.begin(), vl.end());
+		}
 	}
 	cx->visual_lines = std::move(vlines);
 	
@@ -711,8 +733,6 @@ void AbstractCharacterBasedApplication::commitLine(std::vector<Character> const 
 	if (y >= 0 && y < (int)m->line_flags.size()) {
 		m->line_flags[y] |= LineChanged;
 	}
-	
-	doWrapping(false); //@ TODO:
 }
 
 
@@ -919,7 +939,8 @@ void AbstractCharacterBasedApplication::openFile(QString const &path)
 	}
 	
 	invalidateVisualRowInfo(0);
-	doWrapping(true);
+	updateVisualLinesAll(false);
+	doWrapping(); //@ TODO:
 	
 	scrollToTop();
 }
@@ -1203,6 +1224,8 @@ void AbstractCharacterBasedApplication::editSelected(EditOperation op, std::vect
 		if (op == EditOperation::Cut) {
 			chars.erase(begin, end);
 			commitLine(chars);
+			updateVisualLinesAll(false);
+			doWrapping(); //@ TODO:
 			UpdateVisibility();
 		}
 	} else {
@@ -1219,6 +1242,8 @@ void AbstractCharacterBasedApplication::editSelected(EditOperation op, std::vect
 			if (op == EditOperation::Cut) {
 				chars.erase(begin, end);
 				commitLine(chars);
+				updateVisualLinesAll(false);
+				doWrapping(); //@ TODO:
 				UpdateVisibility();
 			}
 		}
@@ -1251,6 +1276,8 @@ void AbstractCharacterBasedApplication::editSelected(EditOperation op, std::vect
 			chars2.resize(index);
 			chars2.insert(chars2.end(), chars.begin(), chars.end());
 			commitLine(chars2);
+			updateVisualLinesAll(false);
+			doWrapping(); //@ TODO:
 			UpdateVisibility();
 		}
 	}
@@ -1327,36 +1354,41 @@ void AbstractCharacterBasedApplication::doDelete()
 	
 	Document *doc = document();
 	
-	parseCurrentLine(nullptr, false);
-	std::vector<Character> *vec = &m->parsed_current_line_chars;
 	col_index_t lrow = currentLogicalRow();
 	col_index_t lcol = currentLogicalCol();
+	std::vector<Character> vec = parseLogicalLine(cx(), lrow);
 	char32_t c = -1;
-	if (lcol >= 0 && lcol < (int)vec->size()) {
-		c = (*vec)[lcol].unicode;
+	if (lcol >= 0 && lcol < (int)vec.size()) {
+		c = (vec)[lcol].unicode;
 	}
 	if (c == '\n' || c == '\r' || c == -1) {
 		invalidateAreaBelowTheCurrentLine();
 		if (isSingleLineMode()) return;
 		if (c != -1) {
-			vec->erase(vec->begin() + lcol);
-			if (c == '\r' && lcol < (int)vec->size() && (*vec)[lcol].unicode == '\n') {
-				vec->erase(vec->begin() + lcol);
+			vec.erase(vec.begin() + lcol);
+			if (c == '\r' && lcol < (int)vec.size() && (vec)[lcol].unicode == '\n') {
+				vec.erase(vec.begin() + lcol);
 			}
 		}
-		if (lcol == (int)vec->size()) {
+		if (lcol == (int)vec.size()) {
 			row_index_t next_lrow = lrow + 1;
 			std::vector<Character> next = parseLogicalLine(cx(), next_lrow);
-			vec->insert(vec->end(), next.begin(), next.end());
+			vec.insert(vec.end(), next.begin(), next.end());
 			if (next_lrow < logicalLines()) {
 				doc->logical_lines.erase(doc->logical_lines.begin() + next_lrow);
 			}
 		}
 	} else {
-		vec->erase(vec->begin() + lcol);
+		vec.erase(vec.begin() + lcol);
 	}
-	commitLine(*vec);
-	invalidateVisualRowInfo(currentVisualRow());
+	commitLine(vec);
+	// updateVisualLinesAll(false);
+	// doWrapping(); //@ TODO:
+	// invalidateVisualRowInfo(currentVisualRow());
+	invalidateVisualRowInfo(0);
+	updateVisualLinesAll(true);
+	doWrapping();
+
 	setCursorCol(lcol);
 	updateVisibility(true, true, true);
 }
@@ -1789,12 +1821,11 @@ void AbstractCharacterBasedApplication::writeNewLine()
 	setCurrentLogicalRow(currentLogicalRow() + 1);
 	insertLine();
 	commitLine(next_line);
+	updateVisualLinesAll(false);
 	
-	row_index_t vrow =	currentVisualRow();
-	setCurrentVisualRow(vrow + 1);
-	
-	invalidateVisualRowInfo(vrow);
-	// doWrapping(); //@ TODO:
+	invalidateVisualRowInfo(0);
+	updateVisualLinesAll(true);
+	doWrapping();
 	
 	setCursorCol(0);
 	clearParsedLine();
@@ -2317,7 +2348,6 @@ void AbstractCharacterBasedApplication::internalWrite(const ushort *begin, const
 	if (doc->logical_lines.empty()) {
 		Document::Line line;
 		line.meta.type = Document::LineType::Normal;
-		// line.line_number = 1;
 		doc->logical_lines.push_back(line);
 	}
 
@@ -2371,7 +2401,8 @@ void AbstractCharacterBasedApplication::internalWrite(const ushort *begin, const
 	}
 	commitLine(*vec);
 	m->current_logical_col = col_index;
-	doWrapping(false); //@ TODO:
+	updateVisualLinesAll(false);
+	doWrapping(); //@ TODO:
 	setCursorCol(col_index);
 	updateVisibility(true, true, true);
 }

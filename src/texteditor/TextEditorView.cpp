@@ -153,17 +153,18 @@ VisualRowInfo TextEditorView::queryVisualRowInfo(row_index_t vrow)
 	}
 	Document *doc = document();
 	while (m->visual_row_info.size() <= vrow) {
-		Document::Line *line = nullptr;
+		Document::Line *lline = nullptr;
 		if (info.logical_row < doc->logical_lines.size()) {
-			line = &doc->logical_lines[info.logical_row];
+			lline = &doc->logical_lines[info.logical_row];
+		} else {
+			break;
 		}
-		if (!line) break;
-		if (line->meta.visual_lines.empty()) {
-			line->meta.visual_lines = doCharWrapLine(*line);
+		if (lline->meta.visual_lines.empty()) {
+			lline->meta.visual_lines = doCharWrapLine(*lline);
 		}
-		std::vector<Document::Line> const &lines = line->meta.visual_lines;
-		for (size_t i = 0; i < lines.size(); i++) {
-			info.logical_col = lines[i].meta.logical_col;
+		std::vector<Document::Line> const &vlines = lline->meta.visual_lines;
+		for (size_t i = 0; i < vlines.size(); i++) {
+			info.logical_col = vlines[i].meta.logical_col;
 			m->visual_row_info.push_back(info);
 		}
 		info.logical_row++;
@@ -1146,7 +1147,8 @@ void TextEditorView::layoutEditor()
 		setContentWidth(content_width);
 		
 		invalidateVisualRowInfo(0);
-		doWrapping(true);
+		updateVisualLinesAll(true);
+		doWrapping();
 		
 		updateVisibility(true, false, true);
 	}
