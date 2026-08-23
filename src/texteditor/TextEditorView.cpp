@@ -1190,6 +1190,7 @@ void TextEditorView::layoutEditor()
 		setScreenSize(w, h, false);
 
 		invalidateLineFormat(-1);
+		invalidateVisualRowInfo(0);
 		
 		int content_width = width() - linenumber_area_width();
 		setContentWidth(content_width);
