@@ -61,11 +61,11 @@ QPixmap FileDiffSliderWidget::makeDiffPixmap(int width, int height, TextDiffLine
 		auto Loop = [&](std::function<QColor(Document::LineType)> const &getcolor){
 			int i = 0;
 			while (i < (int)lines.size()) {
-				auto type = (Document::LineType)lines[i].type;
+				auto type = (Document::LineType)lines[i].type();
 				int j = i + 1;
 				if (type != Document::LineType::Normal) {
 					while (j < (int)lines.size()) {
-						if (lines[j].type != type) break;
+						if (lines[j].type() != type) break;
 						j++;
 					}
 					int y = i * pixmap.height() / (int)lines.size();

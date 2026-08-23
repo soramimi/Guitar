@@ -368,24 +368,24 @@ void FileDiffWidget::setDiffText(GitDiff const &diff, TextDiffData const &data)
 		for (TextDiffLine const &line : lines) {
 			TextDiffLine item = line;
 
-			switch (item.type) {
+			switch (item.type()) {
 			case Document::LineType::Normal:
-				item.line_number_override = linenum++;
+				item.set_line_number_override(linenum++);
 				break;
 			case Document::LineType::Add:
 				if (pane == Pane::Right || pane == Pane::Inline) {
-					item.line_number_override = linenum++;
+					item.set_line_number_override(linenum++);
 				}
 				break;
 			case Document::LineType::Del:
 				if (pane == Pane::Left) {
-					item.line_number_override = linenum++;
+					item.set_line_number_override(linenum++);
 				} else if (pane == Pane::Inline) {
-					item.line_number_override = 0; // 削除行はインラインビューでは行番号を表示しない
+					item.set_line_number_override(0); // 削除行はインラインビューでは行番号を表示しない
 				}
 				break;
 			default:
-				item.line_number_override = linenum; // 行番号は設定するが、インクリメントはしない
+				item.set_line_number_override(linenum); // 行番号は設定するが、インクリメントはしない
 				break;
 			}
 

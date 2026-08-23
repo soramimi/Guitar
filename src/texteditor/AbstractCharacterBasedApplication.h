@@ -125,69 +125,105 @@ public:
 		Del,
 	};
 	struct Line {
-		LineType type = Normal;
-		col_index_t logical_col = 0;
-		int32_t line_number_override = -1;
 		varline_t text_ = std::string_view();
-		mutable std::shared_ptr<LineProperty> detail_;
+		struct Meta {
+			LineType type = Normal;
+			col_index_t logical_col = 0;
+			int32_t line_number_override = -1;
+			mutable std::shared_ptr<LineProperty> detail;
+			mutable std::vector<Document::Line> visual_lines;
+		} meta;
 		
 		Line() = default;
 		
 		static Line InvalidLine()
 		{
 			Line line;
-			line.type = Invalid;
+			line.meta.type = Invalid;
 			return line;
 		}
 		
 		static Line NormalEmptyLine()
 		{
 			Line line;
-			line.type = Normal;
+			line.meta.type = Normal;
 			return line;
 		}
 		
 		explicit Line(std::vector<char> const &ba, LineType type = Normal)
-			: type(type)
-			, text_(ba)
+			: text_(ba)
 		{
+			meta.type = type;
 		}
 		
 		explicit Line(QByteArray const &ba, LineType type = Normal)
-			: type(type)
-			, text_(std::vector<char>(ba.data(), ba.data() + ba.size()))
+			: text_(std::vector<char>(ba.data(), ba.data() + ba.size()))
 		{
+			meta.type = type;
 		}
 		
 		static Line None()
 		{
 			Line line;
-			line.type = Invalid;
+			line.meta.type = Invalid;
 			return line;
 		}
 		
-		static Line View(std::string_view v, LineType type = Normal)
+		static Line View(std::string_view v, LineType type)
 		{
 			Line line;
-			line.type = type;
 			line.text_ = v;
+			line.meta.type = type;
 			return line;
+		}
+		
+		static Line View(std::string_view v, Meta const &meta)
+		{
+			Line line;
+			line.text_ = v;
+			line.meta = meta;
+			return line;
+		}
+		
+		static Line View(std::string_view v)
+		{
+			return View(v, {});
+		}
+		
+		static Line View(Line const &line)
+		{
+			if (std::holds_alternative<std::string_view>(line.text_)) {
+				return line;
+			}
+			std::vector<char> const *v = std::get_if<std::vector<char>>(&line.text_);
+			assert(v);
+			return View(std::string_view(v->data(), v->size()), line.meta);
+		}
+		
+		LineType type() const
+		{
+			return meta.type;
+		}
+		
+		void set_line_number_override(int32_t num)
+		{
+			meta.line_number_override = num;
 		}
 		
 		LineProperty *detail() const
 		{
-			return detail_.get();
+			return meta.detail.get();
 		}
 		
 		LineProperty *newDetail()
 		{
-			detail_ = std::make_shared<LineProperty>();
+			meta.detail = std::make_shared<LineProperty>();
 			return detail();
 		}
 		
 		void clearDetail()
 		{
-			detail_.reset();
+			meta.detail.reset();
 		}
 		
 		bool endsWithNewLine() const
@@ -200,16 +236,17 @@ public:
 		{
 			if (std::holds_alternative<std::string_view>(text_)) {
 				return std::get<std::string_view>(text_);
-			} else if (std::vector<char> const *v = std::get_if<std::vector<char>>(&text_)) {
-				return std::string_view(v->data(), v->size());
 			}
-			return {};
+			std::vector<char> const *v = std::get_if<std::vector<char>>(&text_);
+			assert(v);
+			return std::string_view(v->data(), v->size());
 		}
 		
 		void set_text(const std::vector<char> &new_text)
 		{
 			text_ = new_text;
-			detail_.reset();
+			meta.detail.reset();
+			clear_visual_lines();
 		}
 		
 		std::vector<char> *to_vector()
@@ -240,6 +277,11 @@ public:
 		void append_text(char c)
 		{
 			append_text(std::string_view(&c, 1));
+		}
+		
+		void clear_visual_lines()
+		{
+			meta.visual_lines.clear();
 		}
 	};
 	
@@ -460,7 +502,7 @@ protected:
 	
 	Document *document();
 	Document const *document() const;
-	int documentLines() const;
+	int logicalLines() const;
 	
 	bool isSingleLineMode() const;
 	
@@ -513,14 +555,13 @@ private:
 	void writeCR();
 	bool deleteIfSelected();
 	void setCursorCol_(int col, bool auto_scroll = true, bool by_mouse = false);
-	virtual void invalidateLineFormat(row_index_t row = -1);
-        std::vector<Document::Line> *documentLinesForWrite(bool check_readonly = true);
+	std::vector<Document::Line> *documentLinesForWrite(bool check_readonly = true);
 protected:
 	void deselect();
-	std::vector<Character> parseLogicalLine(const TextEditorContext *cx, row_index_t lrow, col_index_t lcol) const;
+	std::vector<Character> parseLogicalLine(const TextEditorContext *cx, row_index_t lrow) const;
 	void parseCurrentLine(std::vector<Character> *chars, bool force);
 	std::vector<Character> parseLine(const TextEditorContext *cx, const Document::Line *line) const;
-	std::vector<Character> parseLine(int row);
+	std::vector<Character> parseLine(int vrow);
 
 	virtual void updateScrollBarRange() {}
 	
@@ -637,7 +678,7 @@ public:
 protected:
 	std::vector<Document::Line> doCharWrapLine(Document::Line line) const;
 public:
-	void doWrapping();
+	void doWrapping(bool force);
 	void setWrappingMode(WrappingMode mode);
 	AbstractCharacterBasedApplication::WrappingMode wrappingMode() const;
 

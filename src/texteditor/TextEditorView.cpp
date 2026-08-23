@@ -75,7 +75,7 @@ struct TextEditorView::Private {
 
 	std::function<void(void)> custom_context_menu_requested;
 
-	TextEditorView::FormattedLines formatted_lines;
+	// TextEditorView::FormattedLines formatted_lines;
 	
 	std::vector<VisualRowInfo> visual_row_info;
 };
@@ -158,12 +158,13 @@ VisualRowInfo TextEditorView::queryVisualRowInfo(row_index_t vrow)
 			line = &doc->logical_lines[info.logical_row];
 		}
 		if (!line) break;
-		std::vector<Document::Line> lines = doCharWrapLine(*line);
-		if (!lines.empty()) {
-			for (size_t i = 0; i < lines.size(); i++) {
-				info.logical_col = lines[i].logical_col;
-				m->visual_row_info.push_back(info);
-			}
+		if (line->meta.visual_lines.empty()) {
+			line->meta.visual_lines = doCharWrapLine(*line);
+		}
+		std::vector<Document::Line> const &lines = line->meta.visual_lines;
+		for (size_t i = 0; i < lines.size(); i++) {
+			info.logical_col = lines[i].meta.logical_col;
+			m->visual_row_info.push_back(info);
 		}
 		info.logical_row++;
 	}
@@ -175,11 +176,7 @@ VisualRowInfo TextEditorView::queryVisualRowInfo(row_index_t vrow)
 	return {};	
 }
 
-void TextEditorView::_force_update()
-{
-	invalidateLineFormat(-1);
-	scrollToTop();
-}
+
 
 void TextEditorView::setTheme(TextEditorThemePtr const &theme)
 {
@@ -273,22 +270,10 @@ void TextEditorView::calc_pos_x(std::vector<Character> *chars) const
 
 Document::LineProperty const *TextEditorView::queryFormattedLine(row_index_t vrow) const
 {
-#if 0
-	auto &map = m->formatted_lines.lines;
-	auto it = map.find(row);
-	if (it == map.end()) {
-		if (row < 0 || row >= lines()->size()) return nullptr;
-		TextEditorView::FormattedLine line;
-		const_cast<TextEditorView *>(this)->parseLine(lines(), row, &line.chars, &line.attrs);
-		calc_pos_x(&line.chars);
-		it = map.insert(map.end(), std::make_pair(row, line));
-	}
-	return &it->second;
-#else
 	if (vrow >= 0 && vrow < nlines()) {
 		Document::LineProperty *detail = line(vrow)->detail();
 		if (!detail) {
-			line(vrow)->detail_ = std::make_shared<Document::LineProperty>();
+			line(vrow)->meta.detail = std::make_shared<Document::LineProperty>();
 			detail = line(vrow)->detail();
 		}
 		detail->chars = const_cast<TextEditorView *>(this)->parseLine(vrow);
@@ -297,7 +282,6 @@ Document::LineProperty const *TextEditorView::queryFormattedLine(row_index_t vro
 		return detail;
 	}
 	return nullptr;
-#endif
 }
 
 /**
@@ -331,7 +315,7 @@ RowCol TextEditorView::mapFromPixel(QPoint const &pt)
 {
 	const int y = pt.y() / lineHeight();
 	const int row = y + cx()->scroll_row_pos - cx()->viewport_org_y;
-	const int maxrow = documentLines();
+	const int maxrow = logicalLines();
 	if (row >= maxrow) {
 		// 最終行より下だったら、最終行の列数を返す
 		RowCol t;
@@ -496,29 +480,6 @@ void TextEditorView::internalUpdateVisibility(bool ensure_current_line_visible, 
 	update();
 }
 
-void TextEditorView::invalidateLineFormat(row_index_t row)
-{
-	if (row == -1) {
-		m->formatted_lines = {};
-	} else {
-		auto &map = m->formatted_lines.lines;
-		auto it = map.find(row);
-		if (it != map.end()) {
-			map.erase(it);
-		}
-	}
-}
-
-void TextEditorView::invalidateFormattedLineAll()
-{
-	invalidateLineFormat(-1);
-}
-
-void TextEditorView::invalidateFormattedLine(row_index_t row)
-{
-	invalidateLineFormat(row);
-}
-
 std::pair<row_index_t, row_index_t> TextEditorView::visibleRowAndCount()
 {
 	row_index_t row_start = scrollTopRow();
@@ -545,16 +506,8 @@ std::pair<row_index_t, col_index_t> TextEditorView::currentLogicalPosition()
 
 void TextEditorView::updateVisibility(bool ensure_current_line_visible, bool change_col, bool auto_scroll)
 {
-	auto [row_start, row_count] = visibleRowAndCount();
-	for (int i = 0; i < row_count; i++) { // 見えている行の書式を無効化
-		invalidateLineFormat(row_start + i);
-	}
-
 	internalUpdateVisibility(ensure_current_line_visible, change_col, auto_scroll);
 	
-	int vrow = currentVisualRow();
-	int vcol = currentVisualCol();
-
 	auto [lrow, lcol] = currentLogicalPosition();
 	setCurrentLogicalRow(lrow);
 	setCurrentLogicalCol(lcol);
@@ -851,7 +804,7 @@ void TextEditorView::paintEvent(QPaintEvent *)
 					// 背景の描画
 					auto DrawBackground = [&](){
 						{ // diff差分背景
-							Document::LineType type = line(line_row)->type;
+							Document::LineType type = line(line_row)->meta.type;
 							auto FillBG = [&](QColor color){
 								pr.fillRect(rect_text, color);
 							};
@@ -1023,9 +976,9 @@ void TextEditorView::paintEvent(QPaintEvent *)
 			drawText(&pr, 0, y * lineHeight(), text);
 			if (line) {
 				char const *mark = nullptr;
-				if (line->type == Document::LineType::Add) {
+				if (line->meta.type == Document::LineType::Add) {
 					mark = "+";
-				} else if (line->type == Document::LineType::Del) {
+				} else if (line->meta.type == Document::LineType::Del) {
 					mark = "-";
 				}
 				if (mark) {
@@ -1188,14 +1141,13 @@ void TextEditorView::layoutEditor()
 		int h = height() / lineHeight() + 1;
 		int w = width() / m->text_metrics.basisCharWidth();
 		setScreenSize(w, h, false);
-
-		invalidateLineFormat(-1);
-		invalidateVisualRowInfo(0);
 		
 		int content_width = width() - linenumber_area_width();
 		setContentWidth(content_width);
-
-		doWrapping();
+		
+		invalidateVisualRowInfo(0);
+		doWrapping(true);
+		
 		updateVisibility(true, false, true);
 	}
 	AbstractTextEditorApplication::layoutEditor();

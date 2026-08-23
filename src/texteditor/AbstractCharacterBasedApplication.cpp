@@ -321,6 +321,7 @@ AbstractCharacterBasedApplication::WrappingMode AbstractCharacterBasedApplicatio
 
 std::vector<Document::Line> AbstractCharacterBasedApplication::doCharWrapLine(Document::Line line) const
 {
+	qDebug() << Q_FUNC_INFO;
 	const int width_px = m->content_width_px;
 	
 	std::vector<Document::Line> ret;
@@ -364,7 +365,7 @@ std::vector<Document::Line> AbstractCharacterBasedApplication::doCharWrapLine(Do
 				unicode_helper_::encode_utf8(c.unicode, [&](char d){v.push_back(d);});
 			}
 			Document::Line line(v);
-			line.logical_col = logical_col;
+			line.meta.logical_col = logical_col;
 			ret.emplace_back(line);
 			logical_col += w.size();
 		}
@@ -372,22 +373,28 @@ std::vector<Document::Line> AbstractCharacterBasedApplication::doCharWrapLine(Do
 	return ret;
 }
 
-void AbstractCharacterBasedApplication::doWrapping()
+void AbstractCharacterBasedApplication::doWrapping(bool force)
 {
 	if (m->wrapping_mode == WrappingMode::NoWrap) {
 		return;
 	}
 	
 	TextEditorContext *cx = this->cx();
-	std::vector<Document::Line> const &original = cx->engine->document.logical_lines;
+	std::vector<Document::Line> *llines = &cx->engine->document.logical_lines;
 
-	std::vector<Document::Line> visual_lines;
-	for (row_index_t logical_row = 0; logical_row < original.size(); logical_row++) {
-		Document::Line const &line = original[logical_row];
-		std::vector<Document::Line> wrapped_lines = doCharWrapLine(line);
-		visual_lines.insert(visual_lines.end(), wrapped_lines.begin(), wrapped_lines.end());
+	for (row_index_t lrow = 0; lrow < llines->size(); lrow++) {
+		Document::Line *line = &(*llines)[lrow];
+		if (force || line->meta.visual_lines.empty()) {
+			line->meta.visual_lines = doCharWrapLine(*line);
+		}
 	}
-	cx->visual_lines = std::move(visual_lines);
+	
+	std::vector<Document::Line> vlines;
+	for (row_index_t lrow = 0; lrow < llines->size(); lrow++) {
+		std::vector<Document::Line> const &vl = (*llines)[lrow].meta.visual_lines;
+		vlines.insert(vlines.end(), vl.begin(), vl.end());
+	}
+	cx->visual_lines = std::move(vlines);
 	
 	updateScrollBarRange();
 }
@@ -522,7 +529,7 @@ row_index_t AbstractCharacterBasedApplication::nlines() const
 	if (m->wrapping_mode == WrappingMode::CharWrap) {
 		return cx()->visual_lines.size();
 	} else {
-		return documentLines();
+		return logicalLines();
 	}
 }
 
@@ -640,9 +647,7 @@ void AbstractCharacterBasedApplication::setPaintingSuppressed(bool f)
 	m->is_painting_suppressed = f;
 }
 
-void AbstractCharacterBasedApplication::invalidateLineFormat(row_index_t row)
-{
-}
+
 
 std::vector<Document::Line> *AbstractCharacterBasedApplication::documentLinesForWrite(bool check_readonly)
 {
@@ -660,8 +665,6 @@ void AbstractCharacterBasedApplication::setDocument(std::vector<Document::Line> 
 	} else {
 		lines->clear();
 	}
-	
-	invalidateLineFormat();
 }
 
 void AbstractCharacterBasedApplication::insertLine()
@@ -693,13 +696,12 @@ void AbstractCharacterBasedApplication::commitLine(std::vector<Character> const 
 	}
 	if (currentLogicalRow() == lines->size()) {
 		Document::Line newline;
-		newline.type = Document::LineType::Normal;
+		newline.meta.type = Document::LineType::Normal;
 		lines->push_back(newline);
 	}
 	Document::Line *line = &(*lines)[currentLogicalRow()];
 	
 	line->set_text(std::vector<char>(ba.data(), ba.data() + ba.size()));
-	doWrapping();
 	
 	if (m->valid_line_index > currentLogicalRow()) {
 		m->valid_line_index = currentLogicalRow();
@@ -710,12 +712,12 @@ void AbstractCharacterBasedApplication::commitLine(std::vector<Character> const 
 		m->line_flags[y] |= LineChanged;
 	}
 	
-	invalidateLineFormat(currentLogicalRow());
+	doWrapping(false); //@ TODO:
 }
 
 
 
-std::vector<Character> AbstractCharacterBasedApplication::parseLogicalLine(TextEditorContext const *cx, row_index_t lrow, col_index_t lcol) const
+std::vector<Character> AbstractCharacterBasedApplication::parseLogicalLine(TextEditorContext const *cx, row_index_t lrow) const
 {
 	std::vector<Document::Line> *lines = &cx->engine->document.logical_lines;
 	if (lrow >= 0 && lrow < lines->size()) {
@@ -752,7 +754,7 @@ bool AbstractCharacterBasedApplication::isCurrentLineWritable() const
 
 	int row = currentVisualRow();
 	if (row >= 0 && row < nlines()) {
-		if (line(row)->type != Document::LineType::Invalid) {
+		if (line(row)->meta.type != Document::LineType::Invalid) {
 			return true;
 		}
 	}
@@ -902,9 +904,7 @@ void AbstractCharacterBasedApplication::openFile(QString const &path)
 			assert(std::holds_alternative<std::string_view>(lines[i]));
 			std::string_view sv = std::get<std::string_view>(lines[i]);
 			auto line = Document::Line::View(sv);
-			// line.byte_offset = sv.data() - begin;
-			line.type = Document::LineType::Normal;
-			// line.line_number = (int)(i + 1);
+			line.meta.type = Document::LineType::Normal;
 			document()->logical_lines.push_back(line);
 		}
 		document()->raw_lines = std::move(lines);
@@ -914,15 +914,12 @@ void AbstractCharacterBasedApplication::openFile(QString const &path)
 
 	if (document()->logical_lines.empty()) {
 		Document::Line line;
-		line.type = Document::LineType::Normal;
-		// line.line_number = 1;
+		line.meta.type = Document::LineType::Normal;
 		document()->logical_lines.push_back(line);
 	}
 	
-	invalidateLineFormat();
 	invalidateVisualRowInfo(0);
-
-	doWrapping();
+	doWrapping(true);
 	
 	scrollToTop();
 }
@@ -979,7 +976,7 @@ Document const *AbstractCharacterBasedApplication::document() const
 	return &engine()->document;
 }
 
-int AbstractCharacterBasedApplication::documentLines() const
+int AbstractCharacterBasedApplication::logicalLines() const
 {
 	return document()->logical_lines.size();
 }
@@ -1349,9 +1346,9 @@ void AbstractCharacterBasedApplication::doDelete()
 		}
 		if (lcol == (int)vec->size()) {
 			row_index_t next_lrow = lrow + 1;
-			std::vector<Character> next = parseLine(next_lrow);
+			std::vector<Character> next = parseLogicalLine(cx(), next_lrow);
 			vec->insert(vec->end(), next.begin(), next.end());
-			if (next_lrow < documentLines()) {
+			if (next_lrow < logicalLines()) {
 				doc->logical_lines.erase(doc->logical_lines.begin() + next_lrow);
 			}
 		}
@@ -1359,6 +1356,7 @@ void AbstractCharacterBasedApplication::doDelete()
 		vec->erase(vec->begin() + lcol);
 	}
 	commitLine(*vec);
+	invalidateVisualRowInfo(currentVisualRow());
 	setCursorCol(lcol);
 	updateVisibility(true, true, true);
 }
@@ -1509,12 +1507,12 @@ void AbstractCharacterBasedApplication::invalidateAreaBelowTheCurrentLine()
 
 int AbstractCharacterBasedApplication::scrollBottomLimit() const
 {
-	return documentLines() - editorViewportHeight() / 2;
+	return logicalLines() - editorViewportHeight() / 2;
 }
 
 int AbstractCharacterBasedApplication::scrollBottomLimit2() const
 {
-	return documentLines() - editorViewportHeight();
+	return logicalLines() - editorViewportHeight();
 }
 
 void AbstractCharacterBasedApplication::writeCR()
@@ -1725,7 +1723,7 @@ void AbstractCharacterBasedApplication::movePageUp()
 void AbstractCharacterBasedApplication::movePageDown()
 {
 	if (!isSingleLineMode()) {
-		int limit = documentLines();
+		int limit = logicalLines();
 		if (limit > 0) {
 			limit--;
 			int step = editorViewportHeight();
@@ -1774,30 +1772,29 @@ void AbstractCharacterBasedApplication::writeNewLine()
 
 	invalidateVisualRowInfo(currentVisualRow());
 	
-	std::vector<Character> curr_line_chars = parseLogicalLine(cx(), currentLogicalRow(), currentLogicalCol());
+	std::vector<Character> curr_line = parseLogicalLine(cx(), currentLogicalRow());
 	int index = currentLogicalCol();
 	if (index < 0) {
 		addNewLineToBottom();
 		index = 0;
 	}
 	std::vector<Character> next_line;
-	// split line
-	next_line.insert(next_line.end(), curr_line_chars.begin() + index, curr_line_chars.end());
-	// shrink current line
-	curr_line_chars.resize(index);
+	// divide line
+	next_line.insert(next_line.end(), curr_line.begin() + index, curr_line.end());
+	curr_line.resize(index);
 	// append new line code
-	appendNewLine(&curr_line_chars);
-	commitLine(curr_line_chars);
+	appendNewLine(&curr_line);
+	commitLine(curr_line);
 	// next line
 	setCurrentLogicalRow(currentLogicalRow() + 1);
 	insertLine();
 	commitLine(next_line);
 	
-	setCurrentVisualRow(currentVisualRow() + 1);
-	doWrapping(); //@ TODO:
+	row_index_t vrow =	currentVisualRow();
+	setCurrentVisualRow(vrow + 1);
 	
-
-	invalidateLineFormat(-1);
+	invalidateVisualRowInfo(vrow);
+	// doWrapping(); //@ TODO:
 	
 	setCursorCol(0);
 	clearParsedLine();
@@ -2007,7 +2004,7 @@ void AbstractCharacterBasedApplication::paintLineNumbers(std::function<void(int,
 				}
 				while (m->valid_line_index <= visual_row) {
 					Document::Line const &line = Line(m->valid_line_index);
-					if (line.type != Document::LineType::Invalid) {
+					if (line.meta.type != Document::LineType::Invalid) {
 						// offset += line.text().size();
 						num++;
 					}
@@ -2017,12 +2014,12 @@ void AbstractCharacterBasedApplication::paintLineNumbers(std::function<void(int,
 			if (left_margin > 1) {
 				line = &Line(visual_row);
 				unsigned int linenum = 0;
-				if (line->line_number_override >= 0) {
-					linenum = line->line_number_override;
+				if (line->meta.line_number_override >= 0) {
+					linenum = line->meta.line_number_override;
 				} else if (rowinfo.logical_col == 0) {
 					linenum = rowinfo.logical_row + 1;
 				}
-				if (line->type != Document::LineType::Invalid) {
+				if (line->meta.type != Document::LineType::Invalid) {
 					tmp = LineNumberText(linenum);
 				}
 			}
@@ -2266,7 +2263,7 @@ void AbstractCharacterBasedApplication::logicalMoveToBottom()
 {
 	deselect();
 
-	setCurrentVisualRow(documentLines());
+	setCurrentVisualRow(logicalLines());
 	setCurrentVisualCol(0);
 	if (currentVisualRow() > 0) {
 		setCurrentVisualRow(currentVisualRow() - 1);
@@ -2285,7 +2282,7 @@ void AbstractCharacterBasedApplication::logicalMoveToBottom2()
 {
 	deselect();
 
-	setCurrentVisualRow(documentLines());
+	setCurrentVisualRow(logicalLines());
 	setCurrentVisualCol(0);
 	if (currentVisualRow() > 0) {
 		setCurrentVisualRow(currentVisualRow() - 1);
@@ -2319,7 +2316,7 @@ void AbstractCharacterBasedApplication::internalWrite(const ushort *begin, const
 	Document *doc = document();
 	if (doc->logical_lines.empty()) {
 		Document::Line line;
-		line.type = Document::LineType::Normal;
+		line.meta.type = Document::LineType::Normal;
 		// line.line_number = 1;
 		doc->logical_lines.push_back(line);
 	}
@@ -2374,7 +2371,7 @@ void AbstractCharacterBasedApplication::internalWrite(const ushort *begin, const
 	}
 	commitLine(*vec);
 	m->current_logical_col = col_index;
-	doWrapping(); //@ TODO:
+	doWrapping(false); //@ TODO:
 	setCursorCol(col_index);
 	updateVisibility(true, true, true);
 }

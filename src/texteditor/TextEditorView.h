@@ -89,13 +89,9 @@ private:
 	int scrollPosX() const;
 	int view_y_from_row(int row) const;
 	int linenumber_area_width() const;
-	void invalidateFormattedLineAll();
-	void invalidateFormattedLine(row_index_t row);
 
 	void invalidateVisualRowInfo(row_index_t vrow) override;
 	VisualRowInfo queryVisualRowInfo(row_index_t vrow) override;
-protected:
-	void invalidateLineFormat(row_index_t row) override;
 protected:
 	void timerEvent(QTimerEvent *) override;
 	void setCursorCol(int col) override;
@@ -119,8 +115,6 @@ protected:
 public:
 	explicit TextEditorView(QWidget *parent = nullptr);
 	~TextEditorView() override;
-	
-	void _force_update();
 	
 	void setTheme(const TextEditorThemePtr &theme);
 	TextEditorTheme const *theme() const;
