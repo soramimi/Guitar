@@ -77,7 +77,7 @@ struct TextEditorView::Private {
 
 	// TextEditorView::FormattedLines formatted_lines;
 	
-	std::vector<VisualRowInfo> visual_row_info;
+	// std::vector<VisualRowInfo> visual_row_info;
 };
 
 TextEditorView::TextEditorView(QWidget *parent)
@@ -131,51 +131,9 @@ TextEditorView::~TextEditorView()
 	delete m;
 }
 
-void TextEditorView::invalidateVisualRowInfo(row_index_t vrow)
-{
-	if (vrow < 0) {
-		m->visual_row_info.clear();
-	} else if (vrow < m->visual_row_info.size()) {
-		m->visual_row_info.resize(vrow);
-	}
-}
 
-VisualRowInfo TextEditorView::queryVisualRowInfo(row_index_t vrow)
-{
-	if (vrow < 0) return {};
 
-	VisualRowInfo info;
-	row_index_t row = m->visual_row_info.size();
-	if (row > 0) {
-		info = m->visual_row_info[row - 1];
-		info.logical_row++;
-		info.logical_col = 0;
-	}
-	Document *doc = document();
-	while (m->visual_row_info.size() <= vrow) {
-		Document::Line *lline = nullptr;
-		if (info.logical_row < doc->logical_lines.size()) {
-			lline = &doc->logical_lines[info.logical_row];
-		} else {
-			break;
-		}
-		if (lline->meta.visual_lines.empty()) {
-			lline->meta.visual_lines = doCharWrapLine(*lline);
-		}
-		std::vector<Document::Line> const &vlines = lline->meta.visual_lines;
-		for (size_t i = 0; i < vlines.size(); i++) {
-			info.logical_col = vlines[i].meta.logical_col;
-			m->visual_row_info.push_back(info);
-		}
-		info.logical_row++;
-	}
 
-	if (vrow < m->visual_row_info.size()) {
-		return m->visual_row_info[vrow];
-	}
-
-	return {};	
-}
 
 
 

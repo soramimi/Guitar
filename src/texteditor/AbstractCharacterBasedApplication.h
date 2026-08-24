@@ -374,6 +374,7 @@ struct TextEditorContext {
 	int bottom_line_y = -1;
 	TextEditorEngine_sp engine;
 	std::vector<Document::Line> visual_lines;
+	std::vector<VisualRowInfo> visual_row_info;
 };
 
 struct RowCol {
@@ -530,8 +531,9 @@ protected:
 	void setDialogOption(QString const &title, QString const &value, const DialogHandler &handler);
 	void execDialog(QString const &dialog_title, const QString &dialog_value, const DialogHandler &handler);
 	
-	virtual void invalidateVisualRowInfo(row_index_t vrow) {}
-	virtual VisualRowInfo queryVisualRowInfo(row_index_t vrow) { return {}; }
+	void invalidateVisualRowInfo(row_index_t vrow);
+	VisualRowInfo queryVisualRowInfo(row_index_t vrow);
+
 	virtual void calc_pos_x(std::vector<Character> *chars) const {}
 	
 private:

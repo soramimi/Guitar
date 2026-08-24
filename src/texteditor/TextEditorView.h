@@ -90,8 +90,6 @@ private:
 	int view_y_from_row(int row) const;
 	int linenumber_area_width() const;
 
-	void invalidateVisualRowInfo(row_index_t vrow) override;
-	VisualRowInfo queryVisualRowInfo(row_index_t vrow) override;
 protected:
 	void timerEvent(QTimerEvent *) override;
 	void setCursorCol(int col) override;

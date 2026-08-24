@@ -328,32 +328,54 @@ std::vector<Document::Line> AbstractCharacterBasedApplication::doCharWrapLine(Do
 	std::vector<Character> chrs_in = parseLine(cx(), &line);
 	std::vector<std::vector<Character>> chrs_out;
 	
-	{
-		int x_px = 0;
+	if (chrs_in.empty()) {
+		chrs_out.push_back({});
+	} else {
+		size_t left = 0;
+		size_t last = 0;
+		size_t right = 0;
 		int left_x_px = 0;
-		size_t i = 0;
-		{
-			for (size_t j = 0; j < chrs_in.size(); j++) {
-				if (x_px > 0 && chrs_in[j].right_x - left_x_px >= width_px) {
-					std::vector<Character> chrs;
-					for (auto it = chrs_in.begin() + i; it != chrs_in.begin() + j; it++) {
-						Character c = *it;
-						c.left_x = chrs_in[j].left_x - left_x_px;
-						chrs.push_back(c);
-					}
-					chrs_out.push_back(chrs);
-					chrs.clear();
-					left_x_px = chrs_in[j].left_x;
-					i = j;
-				} else {
-					x_px = chrs_in[j].right_x;
-				}
-			}
-		}
-		if (i < chrs_in.size() || chrs_in.empty()) {
+		int right_x_px = 0;
+
+		auto Out = [&](size_t i, size_t n){
 			std::vector<Character> chrs;
-			chrs.insert(chrs.end(), chrs_in.begin() + i, chrs_in.end());
+			for (size_t j = 0; j < n; j++) {
+				Character c = chrs_in[i + j];
+				c.left_x = right_x_px - left_x_px;
+				chrs.push_back(c);
+			}
 			chrs_out.push_back(chrs);
+		};
+
+		char32_t c = 0;
+		char32_t d = 0;
+		while (right < chrs_in.size()) {
+			Character const &ch = chrs_in[right];
+			auto Check = [&](){
+				c = d;
+				d = ch.unicode;
+				if (c < 0x80 && d < 0x80) {
+					if (isupper(c) && isalpha(d)) return false;
+					if (isalpha(c) && islower(d)) return false;
+					if (isalpha(c) && isspace(d)) return false;
+				}
+				return true;
+			};
+			if (Check()) {
+				if (ch.right_x - left_x_px > width_px) { // 幅オーバーフロー
+					size_t n = last - left;
+					Out(left, n);
+					left_x_px = ch.left_x;
+					left = right;
+				}
+				right_x_px = ch.right_x;
+				last = right;
+			}
+			right++;
+		}
+		if (left < chrs_in.size()) {
+			size_t n = chrs_in.size() - left;
+			Out(left, n);
 		}
 	}
 	
@@ -371,29 +393,6 @@ std::vector<Document::Line> AbstractCharacterBasedApplication::doCharWrapLine(Do
 		}
 	}
 	return ret;
-}
-
-void AbstractCharacterBasedApplication::updateVisualLines(row_index_t lrow, bool force)
-{
-	TextEditorContext *cx = this->cx();
-	std::vector<Document::Line> *llines = &cx->engine->document.logical_lines;
-	if (lrow >= 0 && lrow < llines->size()) {
-		Document::Line *line = &(*llines)[lrow];
-		if (force || line->meta.visual_lines.empty()) {
-			line->meta.visual_lines = doCharWrapLine(*line);
-		}
-	}
-}
-
-void AbstractCharacterBasedApplication::updateVisualLinesAll(bool force)
-{
-	if (m->wrapping_mode == WrappingMode::NoWrap) {
-		return;
-	}
-	
-	for (row_index_t lrow = 0; lrow < logicalLines(); lrow++) {
-		updateVisualLines(lrow, force);
-	}
 }
 
 void AbstractCharacterBasedApplication::doWrapping()
@@ -419,6 +418,83 @@ void AbstractCharacterBasedApplication::doWrapping()
 	cx->visual_lines = std::move(vlines);
 	
 	updateScrollBarRange();
+}
+
+VisualRowInfo AbstractCharacterBasedApplication::queryVisualRowInfo(row_index_t vrow)
+{
+	if (vrow < 0) return {};
+	
+	VisualRowInfo info;
+	row_index_t row = cx()->visual_row_info.size();
+	if (row > 0) {
+		info = cx()->visual_row_info[row - 1];
+		info.logical_row++;
+		info.logical_col = 0;
+	}
+	Document *doc = document();
+	while (cx()->visual_row_info.size() <= vrow) {
+		Document::Line *lline = nullptr;
+		if (info.logical_row < doc->logical_lines.size()) {
+			lline = &doc->logical_lines[info.logical_row];
+		} else {
+			break;
+		}
+		if (lline->meta.visual_lines.empty()) {
+			lline->meta.visual_lines = doCharWrapLine(*lline);
+		}
+		std::vector<Document::Line> const &vlines = lline->meta.visual_lines;
+		for (size_t i = 0; i < vlines.size(); i++) {
+			info.logical_col = vlines[i].meta.logical_col;
+			cx()->visual_row_info.push_back(info);
+		}
+		info.logical_row++;
+	}
+	
+	if (vrow < cx()->visual_row_info.size()) {
+		return cx()->visual_row_info[vrow];
+	}
+	
+	return {};	
+}
+
+void AbstractCharacterBasedApplication::closeDialog(bool result)
+{
+	if (isDialogMode()) {
+		deselect();
+		QString line;
+		if (!dialog_cx->engine->document.logical_lines.empty()) {
+			Document::Line const &l = dialog_cx->engine->document.logical_lines.front();
+			line = QString::fromUtf8(l.text().data(), (int)l.text().size());
+		}
+		setDialogMode(false);
+		if (m->dialog_handler) {
+			m->dialog_handler(result, line);
+		}
+		return;
+	}
+}
+
+void AbstractCharacterBasedApplication::updateVisualLines(row_index_t lrow, bool force)
+{
+	TextEditorContext *cx = this->cx();
+	std::vector<Document::Line> *llines = &cx->engine->document.logical_lines;
+	if (lrow >= 0 && lrow < llines->size()) {
+		Document::Line *line = &(*llines)[lrow];
+		if (force || line->meta.visual_lines.empty()) {
+			line->meta.visual_lines = doCharWrapLine(*line);
+		}
+	}
+}
+
+void AbstractCharacterBasedApplication::updateVisualLinesAll(bool force)
+{
+	if (m->wrapping_mode == WrappingMode::NoWrap) {
+		return;
+	}
+	
+	for (row_index_t lrow = 0; lrow < logicalLines(); lrow++) {
+		updateVisualLines(lrow, force);
+	}
 }
 
 void AbstractCharacterBasedApplication::layoutEditor()
@@ -1456,20 +1532,12 @@ void AbstractCharacterBasedApplication::execDialog(QString const &dialog_title, 
 	setDialogMode(true);
 }
 
-void AbstractCharacterBasedApplication::closeDialog(bool result)
+void AbstractCharacterBasedApplication::invalidateVisualRowInfo(row_index_t vrow)
 {
-	if (isDialogMode()) {
-		deselect();
-		QString line;
-		if (!dialog_cx->engine->document.logical_lines.empty()) {
-			Document::Line const &l = dialog_cx->engine->document.logical_lines.front();
-			line = QString::fromUtf8(l.text().data(), (int)l.text().size());
-		}
-		setDialogMode(false);
-		if (m->dialog_handler) {
-			m->dialog_handler(result, line);
-		}
-		return;
+	if (vrow < 0) {
+		cx()->visual_row_info.clear();
+	} else if (vrow < cx()->visual_row_info.size()) {
+		cx()->visual_row_info.resize(vrow);
 	}
 }
 
@@ -1838,7 +1906,12 @@ void AbstractCharacterBasedApplication::writeNewLine()
 	appendNewLine(&curr_line);
 	commitLine(curr_line);
 	// next line
+	{
+		row_index_t lrow = currentLogicalRow();
+		
+	}
 	setCurrentLogicalRow(currentLogicalRow() + 1);
+	setCurrentVisualRow(currentVisualRow() + 1);
 	insertLine();
 	commitLine(next_line);
 	updateVisualLinesAll(false);
