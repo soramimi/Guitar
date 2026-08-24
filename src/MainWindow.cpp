@@ -784,9 +784,10 @@ bool MainWindow::eventFilter(QObject *watched, QEvent *event)
 					if (isIncrementalSearching()) {
 						chooseRepository();
 						return true;
+					} else {
+						openSelectedRepository();
+						return true;
 					}
-					openSelectedRepository();
-					return true;
 				}
 				if (ctrl) {
 					if (k == Qt::Key_R) {
@@ -1943,13 +1944,16 @@ void MainWindow::reopenRepositoryAsNewSession()
 void MainWindow::openSelectedRepository()
 {
 	std::optional<RepositoryInfo> repo = selectedRepositoryItem();
-
 	if (repo) {
-		setCurrentRepository(*repo, true);
-		// reopenRepository(true);
-		OpenRepositoryOption opt;
-		opt.validate = true;
-		openRepository(opt);
+		if (QApplication::keyboardModifiers() & Qt::AltModifier) {
+			std::optional<RepositoryInfo> repo = selectedRepositoryItem();
+			execRepositoryPropertyDialog(*repo);
+		} else {
+			setCurrentRepository(*repo, true);
+			OpenRepositoryOption opt;
+			opt.validate = true;
+			openRepository(opt);
+		}
 	}
 }
 
