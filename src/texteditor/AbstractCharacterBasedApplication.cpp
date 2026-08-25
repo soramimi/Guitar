@@ -394,7 +394,7 @@ std::vector<Document::Line> AbstractCharacterBasedApplication::doCharWrapLine(Do
 
 			// If the width exceeds the limit, output the line from last to curr (or next) and update last and curr accordingly.
 			if (right_px - left_px > width_px) {
-				if (last < curr) { // least one character must be output
+				if (last < curr) {
 					Out(last, curr - last);
 					left_px = ch->left_x;
 					last = curr;
