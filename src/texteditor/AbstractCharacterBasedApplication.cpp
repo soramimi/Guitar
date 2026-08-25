@@ -357,11 +357,30 @@ std::vector<Document::Line> AbstractCharacterBasedApplication::doCharWrapLine(Do
 			}
 			return true;
 		};
-		
+
 		size_t last = 0;
 		size_t curr = 0;
 		const size_t N = chrs_in.size();
+		size_t firstbreak = 0;
 		while (curr < N) {
+			if (firstbreak == 0) {
+				char32_t b = -1; // before
+				char32_t c = chrs_in[curr].unicode; // current
+				for (size_t i = curr + 1; i <= N; i++) {
+					b = c;
+					c = -1;
+					if (i < N) { // next < N means not end of line
+						c = chrs_in[i].unicode; // next character
+						if (c == '\n' || c == '\r') {
+							c = -1;
+						}
+					}
+					if (IsBreakable(b, c)) {
+						firstbreak = i;
+						break;
+					}
+				}
+			}
 			char32_t b = -1; // before
 			char32_t c = -1; // current
 			Character const *ch = &chrs_in[curr];
@@ -371,7 +390,7 @@ std::vector<Document::Line> AbstractCharacterBasedApplication::doCharWrapLine(Do
 				c = -1;
 			}
 			size_t next = curr + 1;
-			if (wrappingMode() == WrappingMode::CharWrap) {
+			if (curr < firstbreak || wrappingMode() == WrappingMode::CharWrap) {
 				// nop: breakable position is next character
 			} else if (wrappingMode() == WrappingMode::WordWrap) {
 				// find next breakable position
@@ -394,6 +413,7 @@ std::vector<Document::Line> AbstractCharacterBasedApplication::doCharWrapLine(Do
 
 			// If the width exceeds the limit, output the line from last to curr (or next) and update last and curr accordingly.
 			if (right_px - left_px > width_px) {
+				firstbreak = 0;
 				if (last < curr) {
 					Out(last, curr - last);
 					left_px = ch->left_x;
