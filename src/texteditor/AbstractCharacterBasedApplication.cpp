@@ -321,7 +321,9 @@ AbstractCharacterBasedApplication::WrappingMode AbstractCharacterBasedApplicatio
 
 std::vector<Document::Line> AbstractCharacterBasedApplication::doCharWrapLine(Document::Line line) const
 {
-	qDebug() << Q_FUNC_INFO;
+	if (wrappingMode() == WrappingMode::NoWrap) return {};
+	
+	// qDebug() << Q_FUNC_INFO;
 	const int width_px = m->content_width_px;
 	
 	std::vector<Document::Line> ret;
@@ -331,9 +333,6 @@ std::vector<Document::Line> AbstractCharacterBasedApplication::doCharWrapLine(Do
 	if (chrs_in.empty()) {
 		chrs_out.push_back({});
 	} else {
-		size_t left = 0;
-		size_t last = 0;
-		size_t right = 0;
 		int left_x_px = 0;
 		int right_x_px = 0;
 
@@ -346,36 +345,63 @@ std::vector<Document::Line> AbstractCharacterBasedApplication::doCharWrapLine(Do
 			}
 			chrs_out.push_back(chrs);
 		};
-
-		char32_t c = 0;
-		char32_t d = 0;
-		while (right < chrs_in.size()) {
-			Character const &ch = chrs_in[right];
-			auto Check = [&](){
-				c = d;
-				d = ch.unicode;
-				if (c < 0x80 && d < 0x80) {
-					if (isupper(c) && isalpha(d)) return false;
-					if (isalpha(c) && islower(d)) return false;
-					if (isalpha(c) && isspace(d)) return false;
+		
+		auto Breakable = [](char32_t b, char32_t c){ // 分割可能
+			if (b < 0x80 && c < 0x80) {
+				if (isupper(b) && isalnum(c)) return false;
+				if (isalnum(b)) {
+					if (islower(c)) return false;
+					if (isdigit(c)) return false;
+					if (isspace(c)) return false;
 				}
-				return true;
-			};
-			if (Check()) {
-				if (ch.right_x - left_x_px > width_px) { // 幅オーバーフロー
-					size_t n = last - left;
-					Out(left, n);
-					left_x_px = ch.left_x;
-					left = right;
-				}
-				right_x_px = ch.right_x;
-				last = right;
+				if (isspace(b) && isspace(c)) return false;
 			}
-			right++;
-		}
-		if (left < chrs_in.size()) {
-			size_t n = chrs_in.size() - left;
-			Out(left, n);
+			return true;
+		};
+		
+		size_t k = 0;
+		size_t i = 0;
+		const size_t N = chrs_in.size();
+		while (i < N) {
+			char32_t b = -1; // before
+			char32_t c = -1; // current
+			Character const *ch = &chrs_in[i];
+			right_x_px = ch->right_x;
+			c = ch->unicode;
+			size_t j;
+			if (wrappingMode() == WrappingMode::CharWrap) {
+				j = i + 1;
+			} else if (wrappingMode() == WrappingMode::WordWrap) {
+				for (j = i + 1; j <= N; j++) {
+					b = c;
+					c = -1;
+					if (j < N) {
+						c = chrs_in[j].unicode;
+					}
+					if (Breakable(b, c)) break;
+					right_x_px = chrs_in[j].right_x;
+				}
+			} else {
+				assert(0);
+			}
+			if (right_x_px - left_x_px > width_px) {
+				if (k < i) {
+					left_x_px = ch->left_x;
+					Out(k, i - k);
+					k = i;
+				} else {
+					Out(k, j - k);
+					if (c == '\n' || c == '\r' || c == -1) break;
+					k = j;
+					i = j;
+				}
+			} else {
+				if (j == N || c == '\n' || c == '\r' || c == -1) {
+					Out(k, j - k);
+					break;
+				}
+				i = j;
+			}
 		}
 	}
 	
@@ -616,28 +642,29 @@ std::vector<FormattedLine> AbstractCharacterBasedApplication::formatLine_(Docume
 
 std::vector<Document::Line> *AbstractCharacterBasedApplication::_lines()
 {
-	if (m->wrapping_mode == WrappingMode::CharWrap) {
+	if (m->wrapping_mode == WrappingMode::NoWrap) {
+		return &cx()->engine->document.logical_lines;
+	} else {
 		return &cx()->visual_lines;
 	}
-	return &cx()->engine->document.logical_lines;
 }
 
 row_index_t AbstractCharacterBasedApplication::nlines() const
 {
-	if (m->wrapping_mode == WrappingMode::CharWrap) {
-		return cx()->visual_lines.size();
-	} else {
+	if (m->wrapping_mode == WrappingMode::NoWrap) {
 		return logicalLines();
+	} else {
+		return cx()->visual_lines.size();
 	}
 }
 
 Document::Line *AbstractCharacterBasedApplication::line(row_index_t row)
 {
 	std::vector<Document::Line> *lines = nullptr;
-	if (m->wrapping_mode == WrappingMode::CharWrap) {
-		lines = &cx()->visual_lines;
-	} else {
+	if (m->wrapping_mode == WrappingMode::NoWrap) {
 		lines = &document()->logical_lines;
+	} else {
+		lines = &cx()->visual_lines;
 	}
 	if (row >= 0 && row < (row_index_t)lines->size()) {
 		return &(*lines)[row];

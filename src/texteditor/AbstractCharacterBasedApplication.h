@@ -407,6 +407,7 @@ public:
 	enum class WrappingMode {
 		NoWrap,
 		CharWrap,
+		WordWrap,
 	};
 	
 	struct Option {
