@@ -323,84 +323,92 @@ std::vector<Document::Line> AbstractCharacterBasedApplication::doCharWrapLine(Do
 {
 	if (wrappingMode() == WrappingMode::NoWrap) return {};
 	
-	// qDebug() << Q_FUNC_INFO;
 	const int width_px = m->content_width_px;
 	
 	std::vector<Document::Line> ret;
-	std::vector<Character> chrs_in = parseLine(cx(), &line);
 	std::vector<std::vector<Character>> chrs_out;
+	std::vector<Character> chrs_in = parseLine(cx(), &line);
 	
 	if (chrs_in.empty()) {
 		chrs_out.push_back({});
 	} else {
-		int left_x_px = 0;
-		int right_x_px = 0;
+		int left_px = 0;
+		int right_px = 0;
 
 		auto Out = [&](size_t i, size_t n){
 			std::vector<Character> chrs;
 			for (size_t j = 0; j < n; j++) {
 				Character c = chrs_in[i + j];
-				c.left_x = right_x_px - left_x_px;
+				c.left_x = right_px - left_px;
 				chrs.push_back(c);
 			}
 			chrs_out.push_back(chrs);
 		};
 		
-		auto Breakable = [](char32_t b, char32_t c){ // 分割可能
+		auto IsBreakable = [](char32_t b, char32_t c){ // 分割可能テスト
 			if (b < 0x80 && c < 0x80) {
+				if (isspace(b) && isspace(c)) return false;
 				if (isupper(b) && isalnum(c)) return false;
 				if (isalnum(b)) {
 					if (islower(c)) return false;
 					if (isdigit(c)) return false;
 					if (isspace(c)) return false;
 				}
-				if (isspace(b) && isspace(c)) return false;
 			}
 			return true;
 		};
 		
-		size_t k = 0;
-		size_t i = 0;
+		size_t last = 0;
+		size_t curr = 0;
 		const size_t N = chrs_in.size();
-		while (i < N) {
+		while (curr < N) {
 			char32_t b = -1; // before
 			char32_t c = -1; // current
-			Character const *ch = &chrs_in[i];
-			right_x_px = ch->right_x;
+			Character const *ch = &chrs_in[curr];
+			right_px = ch->right_x;
 			c = ch->unicode;
-			size_t j;
+			if (c == '\n' || c == '\r') {
+				c = -1;
+			}
+			size_t next = curr + 1;
 			if (wrappingMode() == WrappingMode::CharWrap) {
-				j = i + 1;
+				// nop: breakable position is next character
 			} else if (wrappingMode() == WrappingMode::WordWrap) {
-				for (j = i + 1; j <= N; j++) {
+				// find next breakable position
+				while (next <= N) { // next == N means end of line
 					b = c;
 					c = -1;
-					if (j < N) {
-						c = chrs_in[j].unicode;
+					if (next < N) { // next < N means not end of line
+						c = chrs_in[next].unicode; // next character
+						if (c == '\n' || c == '\r') {
+							c = -1;
+						}
 					}
-					if (Breakable(b, c)) break;
-					right_x_px = chrs_in[j].right_x;
+					if (IsBreakable(b, c)) break;
+					right_px = chrs_in[next].right_x;
+					next++;
 				}
 			} else {
 				assert(0);
 			}
-			if (right_x_px - left_x_px > width_px) {
-				if (k < i) {
-					left_x_px = ch->left_x;
-					Out(k, i - k);
-					k = i;
-				} else {
-					Out(k, j - k);
-					if (c == '\n' || c == '\r' || c == -1) break;
-					k = j;
-					i = j;
+
+			// If the width exceeds the limit, output the line from last to curr (or next) and update last and curr accordingly.
+			if (right_px - left_px > width_px) {
+				if (last < curr) { // least one character must be output
+					Out(last, curr - last);
+					left_px = ch->left_x;
+					last = curr;
+				} else { // If the current character itself exceeds the width limit, output it and move to the next character.
+					Out(last, next - last);
+					if (c == -1) break;
+					last = curr = next;
 				}
-			} else {
-				if (j == N || c == '\n' || c == '\r' || c == -1) {
-					Out(k, j - k);
+			} else { // Otherwise, move curr to next.
+				if (next == N || c == -1) { // If the next character is the end of the line, output the remaining characters.
+					Out(last, next - last);
 					break;
 				}
-				i = j;
+				curr = next;
 			}
 		}
 	}
@@ -423,13 +431,7 @@ std::vector<Document::Line> AbstractCharacterBasedApplication::doCharWrapLine(Do
 
 void AbstractCharacterBasedApplication::doWrapping()
 {
-	if (m->wrapping_mode == WrappingMode::NoWrap) {
-		return;
-	}
-	
-	// for (row_index_t lrow = 0; lrow < logicalLines(); lrow++) {
-	// 	updateVisualLines(lrow, force);
-	// }
+	if (m->wrapping_mode == WrappingMode::NoWrap) return;
 	
 	TextEditorContext *cx = this->cx();
 	std::vector<Document::Line> vlines;
@@ -2011,7 +2013,7 @@ void AbstractCharacterBasedApplication::updateCursorPos(bool auto_scroll)
 	}
 	cx()->current_char_span = char_span;
 
-	if (auto_scroll) {
+	if (auto_scroll && wrappingMode() == WrappingMode::NoWrap) {
 		int pos = decideColumnScrollPos();
 		if (cx()->scroll_col_pos != pos) {
 			cx()->scroll_col_pos = pos;

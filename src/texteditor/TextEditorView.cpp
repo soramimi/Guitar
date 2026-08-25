@@ -388,7 +388,7 @@ void TextEditorView::updateCursorRect(bool auto_scroll)
 
 void TextEditorView::updateScrollBarRange()
 {
-	bool fixedwidth = (wrappingMode() == TextEditorView::WrappingMode::CharWrap);
+	bool fixedwidth = (wrappingMode() != TextEditorView::WrappingMode::NoWrap);
 	
 	QScrollBar *vsb = m->scroll_bar_v;
 	QScrollBar *hsb = m->scroll_bar_h;
@@ -760,7 +760,6 @@ void TextEditorView::paintEvent(QPaintEvent *)
 					
 					std::vector<Character> const &chars = formatted_line->chars;
 					std::vector<CharFlags> const &flags = formatted_line->flags;
-					// std::vector<CharAttr> const &attrs = *line.attrs;
 					
 					// 背景の描画
 					auto DrawBackground = [&](){
@@ -926,7 +925,7 @@ void TextEditorView::paintEvent(QPaintEvent *)
 
 	// 行番号描画
 	{
-		const int bottom = -1;//editor_cx->bottom_line_y;
+		const int bottom = -1;
 
 		paintLineNumbers([&](int y, QString const &text, Document::Line const *line){
 			if (bottom >= 0 && y > bottom) return;
