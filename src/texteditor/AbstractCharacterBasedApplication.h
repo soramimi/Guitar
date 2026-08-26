@@ -481,7 +481,7 @@ protected:
 	
 	void initEditor();
 protected:
-	void fetchCurrentLine();
+	Document::Line *fetchCurrentLine();
 	void clearParsedLine();
 	
 	int currentVisualPixelX() const;
@@ -564,7 +564,7 @@ protected:
 	std::vector<Character> parseLogicalLine(const TextEditorContext *cx, row_index_t lrow) const;
 	void parseCurrentLine(std::vector<Character> *chars, bool force);
 	std::vector<Character> parseLine(const TextEditorContext *cx, const Document::Line *line) const;
-	std::vector<Character> parseLine(int vrow);
+        std::vector<Character> parseLine(row_index_t vrow);
 
 	virtual void updateScrollBarRange() {}
 	
@@ -660,7 +660,6 @@ public:
 	bool isTerminalMode() const;
 	void moveToTop();
 	void moveToBottom();
-	bool isBottom() const;
 	void setLineMargin(int n);
 	void write(uint32_t c, bool by_keyboard);
 	void write(char const *ptr, int len, bool by_keyboard);

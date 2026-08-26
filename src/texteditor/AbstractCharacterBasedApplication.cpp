@@ -91,7 +91,7 @@ struct AbstractCharacterBasedApplication::Private {
 	row_index_t current_logical_row = 0;
 	col_index_t current_logical_col = 0;
 	bool parsed_for_edit = false;
-	Document::Line current_line_data;
+	// Document::Line current_line_data;
 	
 	std::vector<Character> parsed_current_line_chars;
 	
@@ -284,7 +284,7 @@ std::vector<Character> AbstractCharacterBasedApplication::parseLine(TextEditorCo
 	return ret;
 }
 
-std::vector<Character> AbstractCharacterBasedApplication::parseLine(int vrow)
+std::vector<Character> AbstractCharacterBasedApplication::parseLine(row_index_t vrow)
 {
 	Document::Line *line = nullptr;
 	if (vrow >= 0 && vrow < nlines()) {
@@ -295,17 +295,19 @@ std::vector<Character> AbstractCharacterBasedApplication::parseLine(int vrow)
 	return parseLine(cx(), line);
 }
 
-void AbstractCharacterBasedApplication::fetchCurrentLine()
+Document::Line *AbstractCharacterBasedApplication::fetchCurrentLine()
 {
-	int row = currentVisualRow();
+	row_index_t vrow = currentVisualRow();
 
-	if (row >= 0 && row < nlines()) {
-		Document::Line *line = this->line(row);
+	if (vrow >= 0 && vrow < nlines()) {
+		Document::Line *line = this->line(vrow);
 		assert(line);
 		line->to_vector();
-		m->current_line_data = *line;
+		// m->current_line_data = *line;
+		return line;
 	} else {
-		m->current_line_data = {};
+		// m->current_line_data = {};
+		return nullptr;
 	}
 }
 
@@ -750,7 +752,7 @@ void AbstractCharacterBasedApplication::setCurrentVisualCol(int col)
 void AbstractCharacterBasedApplication::clearParsedLine()
 {
 	m->parsed_for_edit = false;
-	m->current_line_data = {};
+	// m->current_line_data = {};
 }
 
 int AbstractCharacterBasedApplication::cursorCol() const
@@ -888,8 +890,7 @@ void AbstractCharacterBasedApplication::parseCurrentLine(std::vector<Character> 
 	}
 
 	if (force || !m->parsed_for_edit) {
-		fetchCurrentLine();
-		*chars = parseLine(cx(), &m->current_line_data);
+		*chars = parseLine(cx(), fetchCurrentLine());
 		m->parsed_for_edit = true;
 	} else {
 		*chars = m->parsed_current_line_chars;
@@ -1596,10 +1597,9 @@ void AbstractCharacterBasedApplication::invalidateVisualRowInfo(row_index_t vrow
 int AbstractCharacterBasedApplication::calcColumnToIndex(int column)
 {
 	int index = 0;
-	Document::Line *line = &m->current_line_data;
-	{//if (&line) {
-		if (column > 0) {
-			fetchCurrentLine();
+	// Document::Line *line = &m->current_line_data;
+	if (column > 0) {
+		if (Document::Line *line = fetchCurrentLine()) {
 			std::string_view text = line->text();
 			int col = 0;
 			int len = text.size();
@@ -1683,11 +1683,10 @@ void AbstractCharacterBasedApplication::moveCursorOut()
 
 void AbstractCharacterBasedApplication::moveCursorHome()
 {
-	fetchCurrentLine();
-	{//if (m->current_line_data) {
-		std::string_view line = m->current_line_data.text();
-		char const *ptr = line.data();
-		char const *end = ptr + line.size();
+	if (Document::Line *line = fetchCurrentLine()) {
+		std::string_view sv = line->text();
+		char const *ptr = sv.data();
+		char const *end = ptr + sv.size();
 		int x = 0;
 		while (1) {
 			int c = -1;
@@ -1714,10 +1713,9 @@ void AbstractCharacterBasedApplication::moveCursorHome()
 
 void AbstractCharacterBasedApplication::moveCursorEnd()
 {
-	fetchCurrentLine();
-	{//if (m->current_line_data) {
-		std::string_view line = m->current_line_data.text();
-		int col = calcVisualWidth(Document::Line::View(line));
+	if (Document::Line *line = fetchCurrentLine()) {
+		std::string_view sv = line->text();
+		int col = calcVisualWidth(Document::Line::View(sv));
 		setCursorCol(col);
 		clearParsedLine();
 		updateVisibility(true, true, true);
@@ -2409,16 +2407,6 @@ bool AbstractCharacterBasedApplication::isTerminalMode() const
 	return m->is_terminal_mode;
 }
 
-bool AbstractCharacterBasedApplication::isBottom() const
-{
-	if (currentVisualRow() == currentLogicalRow()) { //@ TODO:
-		if (m->current_logical_col == (int)m->parsed_current_line_chars.size()) {
-			return true;
-		}
-	}
-	return false;
-}
-
 void AbstractCharacterBasedApplication::moveToTop()
 {
 	if (isSingleLineMode()) return;
@@ -2444,9 +2432,8 @@ void AbstractCharacterBasedApplication::logicalMoveToBottom()
 	if (currentVisualRow() > 0) {
 		setCurrentVisualRow(currentVisualRow() - 1);
 		clearParsedLine();
-		fetchCurrentLine();
-		{//if (m->current_line_data) {
-			int col = calcVisualWidth(Document::Line::View(m->current_line_data.text()));
+		if (Document::Line *line = fetchCurrentLine()) {
+			int col = calcVisualWidth(Document::Line::View(line->text()));
 			setCurrentVisualCol(col);
 			cx()->current_visual_col_hint = col;
 		}
@@ -2463,9 +2450,8 @@ void AbstractCharacterBasedApplication::logicalMoveToBottom2()
 	if (currentVisualRow() > 0) {
 		setCurrentVisualRow(currentVisualRow() - 1);
 		clearParsedLine();
-		fetchCurrentLine();
-		{//if (m->current_line_data) {
-			int col = calcVisualWidth(Document::Line::View(m->current_line_data.text()));
+		if (Document::Line *line = fetchCurrentLine()) {
+			int col = calcVisualWidth(Document::Line::View(line->text()));
 			setCurrentVisualCol(col);
 			cx()->current_visual_col_hint = col;
 		}
