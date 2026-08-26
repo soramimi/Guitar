@@ -378,9 +378,9 @@ struct TextEditorContext {
 };
 
 struct RowCol {
-	int row = 0;
-	int col = 0;
-	RowCol(int row = 0, int col = 0)
+	row_index_t row = 0;
+	col_index_t col = 0;
+	RowCol(row_index_t row = 0, col_index_t col = 0)
 		: row(row)
 		, col(col)
 	{
@@ -481,7 +481,7 @@ protected:
 	
 	void initEditor();
 protected:
-	Document::Line *fetchCurrentLine();
+        const Document::Line *currentLine() const;
 	void clearParsedLine();
 	
 	int currentVisualPixelX() const;
@@ -562,9 +562,9 @@ private:
 protected:
 	void deselect();
 	std::vector<Character> parseLogicalLine(const TextEditorContext *cx, row_index_t lrow) const;
-	void parseCurrentLine(std::vector<Character> *chars, bool force);
-	std::vector<Character> parseLine(const TextEditorContext *cx, const Document::Line *line) const;
-        std::vector<Character> parseLine(row_index_t vrow);
+        const std::vector<Character> &parseCurrentLine(bool force);
+	std::vector<Character> _parseLine(const TextEditorContext *cx, const Document::Line *line) const;
+	std::vector<Character> parseLine(row_index_t vrow) const;
 
 	virtual void updateScrollBarRange() {}
 	
@@ -678,12 +678,12 @@ public:
 	void appendBulk(std::string_view const &str);
 	void clear();
 protected:
-	std::vector<Document::Line> doCharWrapLine(Document::Line line) const;
+	std::vector<Document::Line> doWrapping(Document::Line line) const;
 private:
 	void updateVisualLines(row_index_t lrow, bool force);
 public:
 	void updateVisualLinesAll(bool force);
-	void doWrapping();
+	void updateVisualLines();
 	void setWrappingMode(WrappingMode mode);
 	AbstractCharacterBasedApplication::WrappingMode wrappingMode() const;
 

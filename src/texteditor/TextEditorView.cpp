@@ -351,7 +351,7 @@ void TextEditorView::setCursorCol(int col)
 	AbstractCharacterBasedApplication::setCursorCol(col);
 
 	// 水平ピクセル座標を更新
-	parseCurrentLine(nullptr, true);
+	parseCurrentLine(true);
 	// auto *chars = parsedCurrentLine();
 	cx()->current_visual_pixel_x = pos_x_px(currentVisualRow(), currentVisualCol());
 }
@@ -1107,7 +1107,7 @@ void TextEditorView::layoutEditor()
 		
 		invalidateVisualRowInfo(0);
 		updateVisualLinesAll(true);
-		doWrapping();
+		updateVisualLines();
 		
 		updateVisibility(true, false, true);
 	}
