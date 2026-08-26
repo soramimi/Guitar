@@ -347,12 +347,12 @@ std::vector<Document::Line> AbstractCharacterBasedApplication::doCharWrapLine(Do
 		
 		auto IsBreakable = [](char32_t b, char32_t c){ // 分割可能テスト
 			if (b < 0x80 && c < 0x80) {
-				if (isspace(b) && isspace(c)) return false;
-				if (isupper(b) && isalnum(c)) return false;
+				if (isspace(b) && isspace(c)) return false; // 連続する空白では折り返し不可
+				if (isupper(b) && isalnum(c)) return false; // 大文字と英数字の間は折り返し不可
 				if (isalnum(b)) {
-					if (islower(c)) return false;
-					if (isdigit(c)) return false;
-					if (isspace(c)) return false;
+					if (isalnum(c)) return false; // 英数字の間は折り返し不可
+					if (isspace(c)) return false; // 英数字に後続する空白では折り返さない
+					if (isupper(c)) return true;  // 小文字と大文字の間は折り返し可
 				}
 			}
 			return true;
@@ -361,70 +361,66 @@ std::vector<Document::Line> AbstractCharacterBasedApplication::doCharWrapLine(Do
 		size_t last = 0;
 		size_t curr = 0;
 		const size_t N = chrs_in.size();
-		size_t firstbreak = 0;
+		char32_t b = '\n'; // before
+		char32_t c = '\n'; // current
+		
+		WrappingMode wrapping_mode;
+		auto Reset = [&](){
+			wrapping_mode = WrappingMode::CharWrap; // 初期状態は文字単位での折り返し
+			c = '\n';
+		};
+		Reset();
+		
 		while (curr < N) {
-			if (firstbreak == 0) {
-				char32_t b = -1; // before
-				char32_t c = chrs_in[curr].unicode; // current
-				for (size_t i = curr + 1; i <= N; i++) {
-					b = c;
-					c = -1;
-					if (i < N) { // next < N means not end of line
-						c = chrs_in[i].unicode; // next character
-						if (c == '\n' || c == '\r') {
-							c = -1;
-						}
-					}
-					if (IsBreakable(b, c)) {
-						firstbreak = i;
-						break;
-					}
-				}
-			}
-			char32_t b = -1; // before
-			char32_t c = -1; // current
 			Character const *ch = &chrs_in[curr];
 			right_px = ch->right_x;
+			b = c;
 			c = ch->unicode;
-			if (c == '\n' || c == '\r') {
-				c = -1;
+			if (c == '\r') {
+				c = '\n';
 			}
 			size_t next = curr + 1;
-			if (curr < firstbreak || wrappingMode() == WrappingMode::CharWrap) {
-				// nop: breakable position is next character
-			} else if (wrappingMode() == WrappingMode::WordWrap) {
-				// find next breakable position
+			if (wrapping_mode == WrappingMode::CharWrap) {
+				// 分割可能な位置に来たら、折り返しモードを単語単位に切り替えます。
+				// （最初の分割可能位置までは、常に文字単位での折り返し）
+				if (last < curr && IsBreakable(b, c)) {
+					wrapping_mode = wrappingMode();
+					// WordWrapの場合、そのまま下のifに入る
+				}
+			}
+			if (wrapping_mode == WrappingMode::WordWrap) {
+				// 次の分割可能位置を探す
+				char32_t d = c;
 				while (next <= N) { // next == N means end of line
-					b = c;
-					c = -1;
+					b = d;
+					d = -1;
 					if (next < N) { // next < N means not end of line
-						c = chrs_in[next].unicode; // next character
-						if (c == '\n' || c == '\r') {
-							c = -1;
+						d = chrs_in[next].unicode; // next character
+						if (d == '\r') {
+							d = '\n';
 						}
 					}
-					if (IsBreakable(b, c)) break;
+					if (IsBreakable(b, d)) break;
 					right_px = chrs_in[next].right_x;
 					next++;
 				}
-			} else {
-				assert(0);
 			}
 
-			// If the width exceeds the limit, output the line from last to curr (or next) and update last and curr accordingly.
+			// 幅が制限を超えた場合、lastからcurr（またはnext）までの行を出力し、lastとcurrを適切に更新します。
 			if (right_px - left_px > width_px) {
-				firstbreak = 0;
 				if (last < curr) {
 					Out(last, curr - last);
 					left_px = ch->left_x;
 					last = curr;
-				} else { // If the current character itself exceeds the width limit, output it and move to the next character.
+				} else { // 現在の文字自体が幅の制限を超えている場合、それを出力し、次の文字に移動します。
 					Out(last, next - last);
-					if (c == -1) break;
+					if (c == '\n') break;
 					last = curr = next;
 				}
-			} else { // Otherwise, move curr to next.
-				if (next == N || c == -1) { // If the next character is the end of the line, output the remaining characters.
+				// 折り返しモードを文字単位に戻します。
+				Reset();
+			} else { // それ以外の場合、currをnextに移動します。
+				if (next == N || c == '\n') { // 次の文字が行末の場合、残りの文字を出力します。
 					Out(last, next - last);
 					break;
 				}
@@ -471,6 +467,13 @@ void AbstractCharacterBasedApplication::doWrapping()
 VisualRowInfo AbstractCharacterBasedApplication::queryVisualRowInfo(row_index_t vrow)
 {
 	if (vrow < 0) return {};
+
+	if (wrappingMode() == WrappingMode::NoWrap) {
+		VisualRowInfo info;
+		info.logical_row = vrow; // NoWrapの場合、論理行と物理行は同じ
+		info.logical_col = 0;
+		return info;
+	}
 	
 	VisualRowInfo info;
 	row_index_t row = cx()->visual_row_info.size();

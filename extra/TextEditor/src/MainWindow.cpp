@@ -44,6 +44,7 @@ MainWindow::MainWindow(QWidget *parent)
 
 	texteditor()->setAutoLayout(true);
 	texteditor()->setWrappingMode(TextEditorView::WrappingMode::WordWrap);
+	// texteditor()->setWrappingMode(TextEditorView::WrappingMode::CharWrap);
 
 	texteditor()->loadExampleFile();
 

@@ -355,13 +355,13 @@ using TextEditorEngine_sp = std::shared_ptr<TextEditorEngine>;
 struct TextEditorContext {
 	QRect cursor_rect;
 	bool single_line = false;
-	row_index_t current_visual_row = 0;
-	int current_visual_col = 0; // 桁位置
+	row_index_t current_visual_row = 0; // a.k.a. physical row
+	col_index_t current_visual_col = 0; // physical column
 	int current_visual_col_hint = 0;
 	int current_visual_pixel_x = 0; // 桁ピクセル座標
 	int current_visual_pixel_y = 0; // 行ピクセル座標
-	int saved_row = 0;
-	int saved_col = 0;
+	row_index_t saved_row = 0;
+	col_index_t saved_col = 0;
 	int saved_col_hint = 0;
 	int current_char_span = 1;
 	int scroll_row_pos = 0;
