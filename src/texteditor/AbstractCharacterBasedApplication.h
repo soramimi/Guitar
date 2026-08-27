@@ -126,63 +126,72 @@ public:
 		Del,
 	};
 	struct Line {
-		varline_t text_ = std::string_view();
 		struct Meta {
 			LineType type = Normal;
 			col_index_t logical_col = 0;
 			int32_t line_number_override = -1;
 			mutable std::shared_ptr<LineProperty> detail;
 			mutable std::vector<Document::Line> visual_lines;
-		} meta;
+		};
+		struct D {
+			varline_t text = std::string_view();
+			Meta meta;
+		};
+		std::shared_ptr<D> d;
 		
-		Line() = default;
+		Line()
+			: d(std::make_shared<D>())
+		{
+		}
+		
+		explicit Line(std::vector<char> const &ba, LineType type = Normal)
+			: d(std::make_shared<D>())
+		{
+			d->text = ba;
+			d->meta.type = type;
+		}
+		
+		explicit Line(QByteArray const &ba, LineType type = Normal)
+			: d(std::make_shared<D>())
+		{
+			d->text = std::vector<char>(ba.data(), ba.data() + ba.size());
+			d->meta.type = type;
+		}
 		
 		static Line InvalidLine()
 		{
 			Line line;
-			line.meta.type = Invalid;
+			line.d->meta.type = Invalid;
 			return line;
 		}
 		
 		static Line NormalEmptyLine()
 		{
 			Line line;
-			line.meta.type = Normal;
+			line.d->meta.type = Normal;
 			return line;
-		}
-		
-		explicit Line(std::vector<char> const &ba, LineType type = Normal)
-			: text_(ba)
-		{
-			meta.type = type;
-		}
-		
-		explicit Line(QByteArray const &ba, LineType type = Normal)
-			: text_(std::vector<char>(ba.data(), ba.data() + ba.size()))
-		{
-			meta.type = type;
 		}
 		
 		static Line None()
 		{
 			Line line;
-			line.meta.type = Invalid;
+			line.d->meta.type = Invalid;
 			return line;
 		}
 		
 		static Line View(std::string_view v, LineType type)
 		{
 			Line line;
-			line.text_ = v;
-			line.meta.type = type;
+			line.d->text = v;
+			line.d->meta.type = type;
 			return line;
 		}
 		
 		static Line View(std::string_view v, Meta const &meta)
 		{
 			Line line;
-			line.text_ = v;
-			line.meta = meta;
+			line.d->text = v;
+			line.d->meta = meta;
 			return line;
 		}
 		
@@ -193,38 +202,38 @@ public:
 		
 		static Line View(Line const &line)
 		{
-			if (std::holds_alternative<std::string_view>(line.text_)) {
+			if (std::holds_alternative<std::string_view>(line.d->text)) {
 				return line;
 			}
-			std::vector<char> const *v = std::get_if<std::vector<char>>(&line.text_);
+			std::vector<char> const *v = std::get_if<std::vector<char>>(&line.d->text);
 			assert(v);
-			return View(std::string_view(v->data(), v->size()), line.meta);
+			return View(std::string_view(v->data(), v->size()), line.d->meta);
 		}
 		
 		LineType type() const
 		{
-			return meta.type;
+			return d->meta.type;
 		}
 		
 		void set_line_number_override(int32_t num)
 		{
-			meta.line_number_override = num;
+			d->meta.line_number_override = num;
 		}
 		
 		LineProperty *detail() const
 		{
-			return meta.detail.get();
+			return d->meta.detail.get();
 		}
 		
 		LineProperty *newDetail()
 		{
-			meta.detail = std::make_shared<LineProperty>();
+			d->meta.detail = std::make_shared<LineProperty>();
 			return detail();
 		}
 		
 		void clearDetail()
 		{
-			meta.detail.reset();
+			d->meta.detail.reset();
 		}
 		
 		bool endsWithNewLine() const
@@ -235,27 +244,27 @@ public:
 		
 		std::string_view text() const
 		{
-			if (std::holds_alternative<std::string_view>(text_)) {
-				return std::get<std::string_view>(text_);
+			if (std::holds_alternative<std::string_view>(d->text)) {
+				return std::get<std::string_view>(d->text);
 			}
-			std::vector<char> const *v = std::get_if<std::vector<char>>(&text_);
+			std::vector<char> const *v = std::get_if<std::vector<char>>(&d->text);
 			assert(v);
 			return std::string_view(v->data(), v->size());
 		}
 		
 		void set_text(const std::vector<char> &new_text)
 		{
-			text_ = new_text;
-			meta.detail.reset();
+			d->text = new_text;
+			d->meta.detail.reset();
 			clear_visual_lines();
 		}
 		
 		std::vector<char> *to_vector()
 		{
-			if (std::string_view *sv = std::get_if<std::string_view>(&text_)) {
-				text_ = std::vector<char>(sv->data(), sv->data() + sv->size());
+			if (std::string_view *sv = std::get_if<std::string_view>(&d->text)) {
+				d->text = std::vector<char>(sv->data(), sv->data() + sv->size());
 			}
-			std::vector<char> *v = std::get_if<std::vector<char>>(&text_);
+			std::vector<char> *v = std::get_if<std::vector<char>>(&d->text);
 			assert(v);
 			return v;
 		}
@@ -282,7 +291,7 @@ public:
 		
 		void clear_visual_lines()
 		{
-			meta.visual_lines.clear();
+			d->meta.visual_lines.clear();
 		}
 	};
 	

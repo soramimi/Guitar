@@ -232,7 +232,7 @@ Document::LineProperty const *TextEditorView::queryFormattedLine(row_index_t vro
 	if (vrow >= 0 && vrow < nlines()) {
 		Document::LineProperty *detail = line(vrow)->detail();
 		if (!detail) {
-			line(vrow)->meta.detail = std::make_shared<Document::LineProperty>();
+			line(vrow)->d->meta.detail = std::make_shared<Document::LineProperty>();
 			detail = line(vrow)->detail();
 		}
 		detail->chars = const_cast<TextEditorView *>(this)->parseLine(vrow);
@@ -764,7 +764,7 @@ void TextEditorView::paintEvent(QPaintEvent *)
 					// 背景の描画
 					auto DrawBackground = [&](){
 						{ // diff差分背景
-							Document::LineType type = line(line_row)->meta.type;
+							Document::LineType type = line(line_row)->d->meta.type;
 							auto FillBG = [&](QColor color){
 								pr.fillRect(rect_text, color);
 							};
@@ -936,9 +936,9 @@ void TextEditorView::paintEvent(QPaintEvent *)
 			drawText(&pr, 0, y * lineHeight(), text);
 			if (line) {
 				char const *mark = nullptr;
-				if (line->meta.type == Document::LineType::Add) {
+				if (line->d->meta.type == Document::LineType::Add) {
 					mark = "+";
-				} else if (line->meta.type == Document::LineType::Del) {
+				} else if (line->d->meta.type == Document::LineType::Del) {
 					mark = "-";
 				}
 				if (mark) {

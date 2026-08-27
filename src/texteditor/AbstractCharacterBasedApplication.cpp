@@ -498,7 +498,7 @@ std::vector<Document::Line> AbstractCharacterBasedApplication::wrapLine(Document
 				unicode_helper_::encode_utf8(c.unicode, [&](char d){v.push_back(d);});
 			}
 			Document::Line line(v);
-			line.meta.logical_col = logical_col;
+			line.d->meta.logical_col = logical_col;
 			ret.emplace_back(line);
 			logical_col += w.size();
 		}
@@ -511,11 +511,11 @@ bool AbstractCharacterBasedApplication::updateVisualLine(row_index_t lrow, bool 
 	std::vector<Document::Line> *llines = &cx()->engine->document.logical_lines;
 	if (lrow >= 0 && lrow < llines->size()) {
 		Document::Line *line = &(*llines)[lrow];
-		size_t nvlines = line->meta.visual_lines.size();
-		if (force || line->meta.visual_lines.empty()) {
-			line->meta.visual_lines = wrapLine(*line, mutex); // 折り返し処理
+		size_t nvlines = line->d->meta.visual_lines.size();
+		if (force || line->d->meta.visual_lines.empty()) {
+			line->d->meta.visual_lines = wrapLine(*line, mutex); // 折り返し処理
 		}
-		bool vline_count_changed = (nvlines != line->meta.visual_lines.size());
+		bool vline_count_changed = (nvlines != line->d->meta.visual_lines.size());
 		return vline_count_changed; // 折り返し後の物理行数が変化したかどうかを返す
 	}
 	return false;
@@ -570,7 +570,7 @@ void AbstractCharacterBasedApplication::updateVisualLinesAll(bool force)
 		std::vector<Document::Line> const &llines = cx->engine->document.logical_lines;
 		
 		for (Document::Line const &ll : llines) {
-			std::vector<Document::Line> const &vl = ll.meta.visual_lines;
+			std::vector<Document::Line> const &vl = ll.d->meta.visual_lines;
 			vlines.insert(vlines.end(), vl.begin(), vl.end());
 		}
 		
@@ -613,12 +613,12 @@ VisualRowInfo AbstractCharacterBasedApplication::queryVisualRowInfo(row_index_t 
 	while (cx()->visual_row_info.size() <= vrow && info.logical_row < doc->logical_lines.size()) {
 		Document::Line *ll = &doc->logical_lines[info.logical_row];
 		
-		if (ll->meta.visual_lines.empty()) { // 物理行が未構築の場合
-			ll->meta.visual_lines = wrapLine(*ll, nullptr); // 折り返し処理
+		if (ll->d->meta.visual_lines.empty()) { // 物理行が未構築の場合
+			ll->d->meta.visual_lines = wrapLine(*ll, nullptr); // 折り返し処理
 		}
 		
-		for (Document::Line const &vl : ll->meta.visual_lines) { // 折り返し処理済みの物理行
-			info.logical_col = vl.meta.logical_col; // 論理行内の開始桁位置を設定
+		for (Document::Line const &vl : ll->d->meta.visual_lines) { // 折り返し処理済みの物理行
+			info.logical_col = vl.d->meta.logical_col; // 論理行内の開始桁位置を設定
 			cx()->visual_row_info.push_back(info); // 物理行情報を追加
 		}
 		
@@ -881,7 +881,7 @@ void AbstractCharacterBasedApplication::commitLine(std::vector<Character> const 
 	}
 	if (currentLogicalRow() == llines->size()) {
 		Document::Line newline;
-		newline.meta.type = Document::LineType::Normal;
+		newline.d->meta.type = Document::LineType::Normal;
 		llines->push_back(newline);
 	}
 	Document::Line *lline = &(*llines)[currentLogicalRow()];
@@ -918,7 +918,7 @@ bool AbstractCharacterBasedApplication::isCurrentLineWritable() const
 
 	int row = currentVisualRow();
 	if (row >= 0 && row < nlines()) {
-		if (line(row)->meta.type != Document::LineType::Invalid) {
+		if (line(row)->d->meta.type != Document::LineType::Invalid) {
 			return true;
 		}
 	}
@@ -1068,7 +1068,7 @@ void AbstractCharacterBasedApplication::openFile(QString const &path)
 			assert(std::holds_alternative<std::string_view>(lines[i]));
 			std::string_view sv = std::get<std::string_view>(lines[i]);
 			auto line = Document::Line::View(sv);
-			line.meta.type = Document::LineType::Normal;
+			line.d->meta.type = Document::LineType::Normal;
 			document()->logical_lines.push_back(line);
 		}
 		document()->raw_lines = std::move(lines);
@@ -1078,13 +1078,12 @@ void AbstractCharacterBasedApplication::openFile(QString const &path)
 
 	if (document()->logical_lines.empty()) {
 		Document::Line line;
-		line.meta.type = Document::LineType::Normal;
+		line.d->meta.type = Document::LineType::Normal;
 		document()->logical_lines.push_back(line);
 	}
 	
 	invalidateVisualRowInfo(0);
 	updateVisualLinesAll(false);
-	// makeVisualLines(); //@ TODO:
 	
 	scrollToTop();
 }
@@ -1368,7 +1367,6 @@ void AbstractCharacterBasedApplication::editSelected(EditOperation op, std::vect
 			chars.erase(begin, end);
 			commitLine(chars);
 			updateVisualLinesAll(false);
-			// makeVisualLines(); //@ TODO:
 			UpdateVisibility();
 		}
 	} else {
@@ -1385,7 +1383,6 @@ void AbstractCharacterBasedApplication::editSelected(EditOperation op, std::vect
 				chars.erase(begin, end);
 				commitLine(chars);
 				updateVisualLinesAll(false);
-				// makeVisualLines(); //@ TODO:
 				UpdateVisibility();
 			}
 		}
@@ -1417,7 +1414,6 @@ void AbstractCharacterBasedApplication::editSelected(EditOperation op, std::vect
 			chars2.insert(chars2.end(), chars.begin(), chars.end());
 			commitLine(chars2);
 			updateVisualLinesAll(false);
-			// makeVisualLines(); //@ TODO:
 			UpdateVisibility();
 		}
 	}
@@ -1522,12 +1518,8 @@ void AbstractCharacterBasedApplication::doDelete()
 		vec.erase(vec.begin() + lcol);
 	}
 	commitLine(vec);
-	// updateVisualLinesAll(false);
-	// doWrapping(); //@ TODO:
-	// invalidateVisualRowInfo(currentVisualRow());
 	invalidateVisualRowInfo(0);
 	updateVisualLinesAll(true);
-	// makeVisualLines();
 
 	setCursorCol(lcol);
 	updateVisibility(true, true, true);
@@ -1968,7 +1960,6 @@ void AbstractCharacterBasedApplication::writeNewLine()
 	
 	invalidateVisualRowInfo(0);
 	updateVisualLinesAll(true);
-	// makeVisualLines();
 	
 	setCursorCol(0);
 	clearParsedLine();
@@ -2180,7 +2171,7 @@ void AbstractCharacterBasedApplication::paintLineNumbers(std::function<void(int,
 				}
 				while (m->valid_line_index <= visual_row) {
 					Document::Line const &line = Line(m->valid_line_index);
-					if (line.meta.type != Document::LineType::Invalid) {
+					if (line.d->meta.type != Document::LineType::Invalid) {
 						// offset += line.text().size();
 						num++;
 					}
@@ -2190,12 +2181,12 @@ void AbstractCharacterBasedApplication::paintLineNumbers(std::function<void(int,
 			if (left_margin > 1) {
 				line = &Line(visual_row);
 				unsigned int linenum = 0;
-				if (line->meta.line_number_override >= 0) {
-					linenum = line->meta.line_number_override;
+				if (line->d->meta.line_number_override >= 0) {
+					linenum = line->d->meta.line_number_override;
 				} else if (rowinfo.logical_col == 0) {
 					linenum = rowinfo.logical_row + 1;
 				}
-				if (line->meta.type != Document::LineType::Invalid) {
+				if (line->d->meta.type != Document::LineType::Invalid) {
 					tmp = LineNumberText(linenum);
 				}
 			}
@@ -2480,7 +2471,7 @@ void AbstractCharacterBasedApplication::internalWrite(const ushort *begin, const
 	Document *doc = document();
 	if (doc->logical_lines.empty()) {
 		Document::Line line;
-		line.meta.type = Document::LineType::Normal;
+		line.d->meta.type = Document::LineType::Normal;
 		doc->logical_lines.push_back(line);
 	}
 
@@ -2535,7 +2526,6 @@ void AbstractCharacterBasedApplication::internalWrite(const ushort *begin, const
 	commitLine(vec);
 	m->current_logical_col = col_index;
 	updateVisualLinesAll(false);
-	// makeVisualLines(); //@ TODO:
 	setCursorCol(col_index);
 	updateVisibility(true, true, true);
 }

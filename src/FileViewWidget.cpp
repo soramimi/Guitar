@@ -153,7 +153,7 @@ void FileViewWidget::setText(QByteArray const &ba, std::string const &object_id,
 	int num = 0;
 	for (std::string_view const &line : lines) {
 		auto t = Document::Line::View(line);
-		t.meta.line_number_override = ++num;
+		t.d->meta.line_number_override = ++num;
 		source.push_back(t);
 	}
 	setText(&source, object_id, object_path);
