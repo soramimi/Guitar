@@ -681,6 +681,7 @@ public:
 protected:
 	std::vector<Document::Line> wrapLine(Document::Line line, std::mutex *mutex) const;
 public:
+	bool updateVisualLine(row_index_t lrow, bool force, std::mutex *mutex);
 	void updateVisualLinesAll(bool force);
 	void setWrappingMode(WrappingMode mode);
 	AbstractCharacterBasedApplication::WrappingMode wrappingMode() const;

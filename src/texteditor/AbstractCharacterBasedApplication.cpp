@@ -506,6 +506,21 @@ std::vector<Document::Line> AbstractCharacterBasedApplication::wrapLine(Document
 	return ret;
 }
 
+bool AbstractCharacterBasedApplication::updateVisualLine(row_index_t lrow, bool force, std::mutex *mutex)
+{
+	std::vector<Document::Line> *llines = &cx()->engine->document.logical_lines;
+	if (lrow >= 0 && lrow < llines->size()) {
+		Document::Line *line = &(*llines)[lrow];
+		size_t nvlines = line->meta.visual_lines.size();
+		if (force || line->meta.visual_lines.empty()) {
+			line->meta.visual_lines = wrapLine(*line, mutex); // 折り返し処理
+		}
+		bool vline_count_changed = (nvlines != line->meta.visual_lines.size());
+		return vline_count_changed; // 折り返し後の物理行数が変化したかどうかを返す
+	}
+	return false;
+}
+
 void AbstractCharacterBasedApplication::updateVisualLinesAll(bool force)
 {
 	TextEditorContext *cx = this->cx();
@@ -514,20 +529,16 @@ void AbstractCharacterBasedApplication::updateVisualLinesAll(bool force)
 		cx->visual_lines = {};
 		return;
 	}
+
+	static int _ = 0;
+	qDebug() << Q_FUNC_INFO << ++_;
 	
 	{
 		std::vector<Document::Line> *llines = &cx->engine->document.logical_lines;
 		
-		auto Do = [&](row_index_t lrow, std::mutex *mutex){
-			Document::Line *line = &(*llines)[lrow];
-			if (force || line->meta.visual_lines.empty()) {
-				line->meta.visual_lines = wrapLine(*line, mutex); // 折り返し処理
-			}
-		};
-		
 		if (0) {
 			for (row_index_t lrow = 0; lrow < (row_index_t)llines->size(); lrow++) {
-				Do(lrow, nullptr);
+				updateVisualLine(lrow, force, nullptr);
 			}
 		} else {
 			constexpr int nthreads = 8;
@@ -540,7 +551,7 @@ void AbstractCharacterBasedApplication::updateVisualLinesAll(bool force)
 					while (1) {
 						row_index_t lrow = index++;
 						if (lrow >= nlines) break;
-						Do(lrow, &mutex);
+						updateVisualLine(lrow, force, &mutex);
 					}
 				});
 			}
