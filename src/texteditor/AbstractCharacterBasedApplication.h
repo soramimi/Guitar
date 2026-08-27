@@ -11,6 +11,7 @@
 #include <optional>
 #include <variant>
 #include <vector>
+#include <mutex>
 
 // class MyTextCodec {
 // private:
@@ -374,7 +375,7 @@ struct TextEditorContext {
 	int bottom_line_y = -1;
 	TextEditorEngine_sp engine;
 	std::vector<Document::Line> visual_lines;
-	std::vector<VisualRowInfo> visual_row_info;
+	std::vector<VisualRowInfo> visual_row_info; // 物理行から論理行へのマッピング情報
 };
 
 struct RowCol {
@@ -563,7 +564,7 @@ protected:
 	void deselect();
 	std::vector<Character> parseLogicalLine(const TextEditorContext *cx, row_index_t lrow) const;
         const std::vector<Character> &parseCurrentLine(bool force);
-	std::vector<Character> _parseLine(const TextEditorContext *cx, const Document::Line *line) const;
+	std::vector<Character> _parseLine(const TextEditorContext *cx, const Document::Line *line, std::mutex *mutex) const;
 	std::vector<Character> parseLine(row_index_t vrow) const;
 
 	virtual void updateScrollBarRange() {}
@@ -678,12 +679,9 @@ public:
 	void appendBulk(std::string_view const &str);
 	void clear();
 protected:
-	std::vector<Document::Line> doWrapping(Document::Line line) const;
-private:
-	void updateVisualLines(row_index_t lrow, bool force);
+	std::vector<Document::Line> wrapLine(Document::Line line, std::mutex *mutex) const;
 public:
 	void updateVisualLinesAll(bool force);
-	void updateVisualLines();
 	void setWrappingMode(WrappingMode mode);
 	AbstractCharacterBasedApplication::WrappingMode wrappingMode() const;
 

@@ -1107,7 +1107,6 @@ void TextEditorView::layoutEditor()
 		
 		invalidateVisualRowInfo(0);
 		updateVisualLinesAll(true);
-		updateVisualLines();
 		
 		updateVisibility(true, false, true);
 	}
