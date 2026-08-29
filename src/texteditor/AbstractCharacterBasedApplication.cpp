@@ -527,8 +527,14 @@ row_index_t AbstractCharacterBasedApplication::lrow_to_vrow(row_index_t lrow)
 	return vrow;
 }
 
-void AbstractCharacterBasedApplication::updateVisualLineByLogicalLine(col_index_t lrow, Document::Line const &ll)
+void AbstractCharacterBasedApplication::_updateVisualLineByLogicalLine(col_index_t lrow, Document::Line const &ll, std::mutex *mutex)
 {
+	if (mutex) {
+		std::lock_guard lock(*mutex);
+		_updateVisualLineByLogicalLine(lrow, ll, nullptr);
+		return;
+	}
+	
 	TextEditorContext *cx = this->cx();
 	auto lower = std::lower_bound(cx->visual_row_info.begin(), cx->visual_row_info.end(), lrow, [](VisualRowInfo const &info, col_index_t lrow){
 		return info.logical_row < lrow;
@@ -567,11 +573,11 @@ bool AbstractCharacterBasedApplication::updateVisualLine(row_index_t lrow, bool 
 			vline_count_changed = (nvlines != line->sp->meta.visual_lines.size());
 			
 			if (vline_count_changed) { // 折り返し後の物理行数が変化した場合、物理行情報を無効化する
-#if 1
+#if 0
 				row_index_t vrow = lrow_to_vrow(lrow);
 				invalidateVisualRowInfo(vrow);
 #else
-				updateVisualLineByLogicalLine(lrow, *line);
+				_updateVisualLineByLogicalLine(lrow, *line, mutex);
 #endif
 			}
 		}
@@ -579,7 +585,12 @@ bool AbstractCharacterBasedApplication::updateVisualLine(row_index_t lrow, bool 
 	return vline_count_changed; // 折り返し後の物理行数が変化したかどうかを返す
 }
 
-void AbstractCharacterBasedApplication::updateVisualLinesAll(bool force)
+bool AbstractCharacterBasedApplication::updateVisualLine(row_index_t lrow)
+{
+	return updateVisualLine(lrow, false, nullptr);
+}
+
+void AbstractCharacterBasedApplication::_updateVisualLinesAll(bool force)
 {
 	TextEditorContext *cx = this->cx();
 	
@@ -617,10 +628,14 @@ void AbstractCharacterBasedApplication::updateVisualLinesAll(bool force)
 	}
 	
 	//
-
+	
+	if (force) {
+		cx->visual_lines.clear();
+	}
+	
 	const size_t nreserve = cx->visual_lines.size() + 100;
-
-#if 1
+	
+#if 0
 	{
 		std::vector<Document::Line> vlines;
 		vlines.reserve(nreserve);
@@ -640,7 +655,7 @@ void AbstractCharacterBasedApplication::updateVisualLinesAll(bool force)
 	row_index_t vrow = 0;	
 	for (row_index_t lrow = 0; lrow < (row_index_t)llines.size(); lrow++) {
 		Document::Line const &ll = llines[lrow];
-		updateVisualLineByLogicalLine(lrow, ll);
+		_updateVisualLineByLogicalLine(lrow, ll, nullptr);
 		vrow++;
 	}
 	queryVisualRowInfo(vrow);
@@ -662,6 +677,13 @@ void AbstractCharacterBasedApplication::invalidateVisualRowInfo(row_index_t vrow
 		cx->visual_lines.resize(vrow);
 		cx->visual_row_info.resize(vrow);
 	}
+	
+	_updateVisualLinesAll(vrow == 0);
+}
+
+void AbstractCharacterBasedApplication::updateVisualLinesAll()
+{
+	invalidateVisualRowInfo(0);
 }
 
 void AbstractCharacterBasedApplication::reserveVisualRowInfo(row_index_t vrow)
@@ -670,6 +692,11 @@ void AbstractCharacterBasedApplication::reserveVisualRowInfo(row_index_t vrow)
 	cx->visual_row_info.reserve(vrow);
 }
 
+/**
+ * @brief 物理行番号から論理行番号と論理列番号を求める。折り返し処理も行う。
+ * @param vrow 物理行番号
+ * @return 論理行番号と論理列番号を含むVisualRowInfo構造体
+ */
 VisualRowInfo AbstractCharacterBasedApplication::queryVisualRowInfo(row_index_t vrow)
 {
 	if (vrow < 0) return {};
@@ -982,7 +1009,7 @@ bool AbstractCharacterBasedApplication::commitLine(std::vector<Character> const 
 
 	clearParsedLine();
 
-	return updateVisualLine(currentLogicalRow(), false, nullptr); // 折り返し後の物理行数が変化したかどうかを返す
+	return updateVisualLine(currentLogicalRow()); // 折り返し後の物理行数が変化したかどうかを返す
 }
 
 std::vector<Character> AbstractCharacterBasedApplication::parseLogicalLine(TextEditorContext const *cx, row_index_t lrow) const
@@ -999,9 +1026,9 @@ bool AbstractCharacterBasedApplication::isCurrentLineWritable() const
 {
 	if (isReadOnly()) return false;
 
-	int row = currentVisualRow();
-	if (row >= 0 && row < nlines()) {
-		if (line(row)->sp->meta.type != Document::LineType::Invalid) {
+	row_index_t vrow = currentVisualRow();
+	if (vrow >= 0 && vrow < nlines()) {
+		if (line(vrow)->sp->meta.type != Document::LineType::Invalid) {
 			return true;
 		}
 	}
@@ -1165,8 +1192,7 @@ void AbstractCharacterBasedApplication::openFile(QString const &path)
 		document()->logical_lines.push_back(line);
 	}
 	
-	invalidateVisualRowInfo(0);
-	updateVisualLinesAll(true);
+	updateVisualLinesAll();
 	
 	scrollToTop();
 }
@@ -1449,7 +1475,7 @@ void AbstractCharacterBasedApplication::editSelected(EditOperation op, std::vect
 		if (op == EditOperation::Cut) {
 			chars.erase(begin, end);
 			if (commitLine(chars)) {
-				updateVisualLinesAll(false);
+				updateVisualLinesAll();
 			}
 			UpdateVisibility();
 		}
@@ -1466,7 +1492,7 @@ void AbstractCharacterBasedApplication::editSelected(EditOperation op, std::vect
 			if (op == EditOperation::Cut) {
 				chars.erase(begin, end);
 				if (commitLine(chars)) {
-					updateVisualLinesAll(false);
+					updateVisualLinesAll();
 				}
 				UpdateVisibility();
 			}
@@ -1498,7 +1524,7 @@ void AbstractCharacterBasedApplication::editSelected(EditOperation op, std::vect
 			chars2.resize(index);
 			chars2.insert(chars2.end(), chars.begin(), chars.end());
 			if (commitLine(chars2)) {
-				updateVisualLinesAll(false);
+				updateVisualLinesAll();
 			}
 			UpdateVisibility();
 		}
@@ -1579,6 +1605,7 @@ void AbstractCharacterBasedApplication::doDelete()
 	col_index_t lrow = currentLogicalRow();
 	col_index_t lcol = currentLogicalCol();
 	std::vector<Character> vec = parseLogicalLine(cx(), lrow);
+	bool delete_nl = false; // 削除した文字が改行コードであるかどうか
 	char32_t c = -1;
 	if (lcol >= 0 && lcol < (int)vec.size()) {
 		c = (vec)[lcol].unicode;
@@ -1592,6 +1619,7 @@ void AbstractCharacterBasedApplication::doDelete()
 				vec.erase(vec.begin() + lcol);
 			}
 		}
+		delete_nl = true;
 		if (lcol == (int)vec.size()) {
 			row_index_t next_lrow = lrow + 1;
 			std::vector<Character> next = parseLogicalLine(cx(), next_lrow);
@@ -1604,10 +1632,13 @@ void AbstractCharacterBasedApplication::doDelete()
 		vec.erase(vec.begin() + lcol);
 	}
 	if (commitLine(vec)) {
-		updateVisualLinesAll(false);
-		// updateVisualLine(lrow, false, nullptr);
+		if (delete_nl) {
+			row_index_t vrow = lrow_to_vrow(lrow);
+			invalidateVisualRowInfo(vrow);
+		} else {
+			updateVisualLine(lrow);
+		}
 	}
-	// invalidateVisualRowInfo(0);
 
 	setCursorCol(lcol);
 	updateVisibility(true, true, true);
@@ -2022,7 +2053,8 @@ void AbstractCharacterBasedApplication::writeNewLine()
 
 	invalidateVisualRowInfo(currentVisualRow());
 	
-	std::vector<Character> curr_line = parseLogicalLine(cx(), currentLogicalRow());
+	row_index_t lrow = currentLogicalRow();
+	std::vector<Character> curr_line = parseLogicalLine(cx(), lrow);
 	int index = currentLogicalCol();
 	if (index < 0) {
 		addNewLineToBottom();
@@ -2035,19 +2067,23 @@ void AbstractCharacterBasedApplication::writeNewLine()
 	// append new line code
 	appendNewLine(&curr_line);
 	commitLine(curr_line);
+	updateVisualLine(lrow, true, nullptr);
+	
 	// next line
-	{
-		row_index_t lrow = currentLogicalRow();
-		
-	}
-	setCurrentLogicalRow(currentLogicalRow() + 1);
-	setCurrentVisualRow(currentVisualRow() + 1);
+	lrow++;
+	setCurrentLogicalRow(lrow);
+	setCurrentVisualRow(lrow);
 	insertLine();
 	commitLine(next_line);
-	// updateVisualLinesAll(false);
+	updateVisualLine(lrow, true, nullptr);
 	
-	invalidateVisualRowInfo(0);
-	updateVisualLinesAll(true);
+	// invalidateVisualRowInfo(0);
+	{
+		row_index_t vrow = lrow_to_vrow(lrow);
+		invalidateVisualRowInfo(vrow);
+		updateVisualLinesAll();
+	}
+	// updateVisualLinesAll(true);
 	
 	setCursorCol(0);
 	clearParsedLine();
@@ -2607,8 +2643,7 @@ void AbstractCharacterBasedApplication::internalWrite(const ushort *begin, const
 		}
 	}
 	if (commitLine(vec)) {
-		updateVisualLinesAll(false);
-		// updateVisualLine(lrow, false, nullptr);
+		updateVisualLine(lrow);
 	}
 	setCurrentLogicalCol(lcol);
 	setCursorCol(lcol);

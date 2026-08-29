@@ -746,17 +746,17 @@ void TextEditorView::paintEvent(QPaintEvent *)
 			selmin = {};
 			selmax = {};
 		}
-
+		
 		for (int pass = 0; pass < 3; pass++) {
 			int view_row = 0; // 描画行番号（ビューポートの左上隅を0とした行位置）
-			int line_row = scrollTopRow(); // 行インデックス（view_row位置に描画すべき論理行インデックス）
-			for (int i = 0; i < (int)editor_cx->viewport_height && line_row < (int)nlines(); i++) {
-				Document::LineProperty const *formatted_line = queryFormattedLine(line_row);
+			row_index_t vrow = scrollTopRow(); // 行インデックス（view_row位置に描画すべき論理行インデックス）
+			for (int i = 0; i < (int)editor_cx->viewport_height && vrow < nlines(); i++) {
+				Document::LineProperty const *formatted_line = queryFormattedLine(vrow);
 				if (formatted_line) {
-					const QRect rect_line(vsplit_x, view_y_from_row(line_row), text_area_w, lineHeight()); // 行全体の矩形
-					const QRect rect_text(0, view_y_from_row(line_row), width(), lineHeight()); // テキスト領域矩形
+					const QRect rect_line(vsplit_x, view_y_from_row(vrow), text_area_w, lineHeight()); // 行全体の矩形
+					const QRect rect_text(0, view_y_from_row(vrow), width(), lineHeight()); // テキスト領域矩形
 					
-					const bool iscurrentline = has_focus && line_row == editor_cx->current_visual_row; // 現在の行？
+					const bool iscurrentline = has_focus && vrow == editor_cx->current_visual_row; // 現在の行？
 					const int text_origin_y = view_row * line_height; // テキスト原点座標Y（ピクセル単位）
 					
 					std::vector<Character> const &chars = formatted_line->chars;
@@ -765,7 +765,7 @@ void TextEditorView::paintEvent(QPaintEvent *)
 					// 背景の描画
 					auto DrawBackground = [&](){
 						{ // diff差分背景
-							Document::LineType type = line(line_row)->sp->meta.type;
+							Document::LineType type = line(vrow)->sp->meta.type;
 							auto FillBG = [&](QColor color){
 								pr.fillRect(rect_text, color);
 							};
@@ -799,15 +799,15 @@ void TextEditorView::paintEvent(QPaintEvent *)
 						if (!chars.empty()) {
 							right_x = chars.back().right_x;
 						}
-						if (selmin.row > line_row) {
+						if (selmin.row > vrow) {
 							right_x = 0;
-						} else if (selmax.row < line_row) {
+						} else if (selmax.row < vrow) {
 							right_x = 0;
 						} else {
-							if (selmin.row == line_row) {
+							if (selmin.row == vrow) {
 								left_x = (selmin.col > 0 && selmin.col - 1 < (int)chars.size()) ? chars[selmin.col - 1].right_x : 0;
 							}
-							if (selmax.row == line_row) {
+							if (selmax.row == vrow) {
 								right_x = (selmax.col > 0 && selmax.col - 1 < (int)chars.size()) ? chars[selmax.col - 1].right_x : 0;
 							}
 						}
@@ -914,7 +914,7 @@ void TextEditorView::paintEvent(QPaintEvent *)
 					}
 				}
 				view_row++;
-				line_row++;
+				vrow++;
 			}
 		}
 	}
@@ -1106,8 +1106,7 @@ void TextEditorView::layoutEditor()
 		int content_width = width() - linenumber_area_width();
 		setContentWidth(content_width);
 		
-		invalidateVisualRowInfo(0);
-		updateVisualLinesAll(true);
+		updateVisualLinesAll();
 		
 		updateVisibility(true, false, true);
 	}

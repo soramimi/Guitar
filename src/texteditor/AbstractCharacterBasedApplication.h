@@ -693,10 +693,12 @@ public:
 protected:
 	std::vector<Document::Line> wrapLine(Document::Line line, std::mutex *mutex) const;
 private:
-	void updateVisualLineByLogicalLine(col_index_t lrow, Document::Line const &ll);
+	void _updateVisualLineByLogicalLine(col_index_t lrow, Document::Line const &ll, std::mutex *mutex);
+	void _updateVisualLinesAll(bool force);
 public:
 	bool updateVisualLine(row_index_t lrow, bool force, std::mutex *mutex);
-	void updateVisualLinesAll(bool force);
+	bool updateVisualLine(row_index_t lrow);
+	void updateVisualLinesAll();
 	void setWrappingMode(WrappingMode mode);
 	AbstractCharacterBasedApplication::WrappingMode wrappingMode() const;
 
