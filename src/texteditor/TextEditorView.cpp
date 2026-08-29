@@ -273,14 +273,15 @@ int TextEditorView::pos_x_px(row_index_t vrow, col_index_t vcol) const
  */
 RowCol TextEditorView::mapFromPixel(QPoint const &pt)
 {
+	TextEditorContext *cx = this->cx();
 	const int y = pt.y() / lineHeight();
-	const int row = y + cx()->scroll_row_pos - cx()->viewport_org_y;
-	const int maxrow = nlines();
-	if (row >= maxrow) {
+	const row_index_t vrow = y + cx->scroll_row_pos - cx->viewport_org_y;
+	const int max_vrow = nlines();
+	if (vrow >= max_vrow) {
 		// 最終行より下だったら、最終行の列数を返す
 		RowCol t;
-		t.row = maxrow - 1;
-		if (maxrow > 0) {
+		t.row = max_vrow - 1;
+		if (max_vrow > 0) {
 			std::vector<Character> chars = parseLine(t.row);
 			if (!chars.empty()) {
 				t.col = (int)chars.size();
@@ -289,9 +290,9 @@ RowCol TextEditorView::mapFromPixel(QPoint const &pt)
 		return t;
 	}
 	const int w = m->text_metrics.basisCharWidth(); // 基準文字幅
-	const int x = pt.x() + (cx()->scroll_col_pos - cx()->viewport_org_x) * w;
+	const int x = pt.x() + (cx->scroll_col_pos - cx->viewport_org_x) * w;
 	std::vector<Character> const *chars = nullptr;
-	Document::LineProperty const *line = queryFormattedLine(row);
+	Document::LineProperty const *line = queryFormattedLine(vrow);
 	if (line) {
 		chars = &line->chars;
 		if (chars) {
@@ -303,9 +304,9 @@ RowCol TextEditorView::mapFromPixel(QPoint const &pt)
 					int l = left - x;
 					int r = right - x;
 					if (l * l < r * r) {
-						return RowCol(row, (int)col);
+						return RowCol(vrow, (int)col);
 					} else {
-						return RowCol(row, (int)col + 1);
+						return RowCol(vrow, (int)col + 1);
 					}
 				}
 				left = right;
@@ -313,7 +314,7 @@ RowCol TextEditorView::mapFromPixel(QPoint const &pt)
 			while (end > 0 && ((*chars)[end - 1] == '\r' || (*chars)[end - 1] == '\n')) {
 				end--;
 			}
-			return RowCol((int)row, (int)end);
+			return RowCol((int)vrow, (int)end);
 		}
 	}
 	// pos_x_px(row, -1, false, &chars);
@@ -451,13 +452,21 @@ std::pair<row_index_t, row_index_t> TextEditorView::visibleRowAndCount()
 	return std::make_pair(row_start, row_count);
 }
 
-std::pair<row_index_t, int> TextEditorView::currentVisualPosition()
+/**
+ * @brief 現在の物理位置を取得する
+ * @return
+ */
+std::pair<row_index_t, int> TextEditorView::currentVisualPosition() const
 {
 	row_index_t vrow = currentVisualRow();
 	int vcol = currentVisualCol();
 	return std::make_pair(vrow, vcol);
 }
 
+/**
+ * @brief 現在の論理位置を取得する
+ * @return
+ */
 std::pair<row_index_t, col_index_t> TextEditorView::currentLogicalPosition()
 {
 	auto [vrow, vcol] = currentVisualPosition();
@@ -981,11 +990,9 @@ void TextEditorView::moveCursorByMouse()
 		if (pos.row < 0) {
 			pos.row = 0;
 		} else {
-			int maxrow = cx()->engine->document.logical_lines.size();
-			maxrow = maxrow > 0 ? (maxrow - 1) : 0;
-			if (pos.row > maxrow) {
-				pos.row = maxrow;
-			}
+			row_index_t max_vrow = nlines();
+			max_vrow = max_vrow > 0 ? (max_vrow - 1) : 0;
+			pos.row = std::min(pos.row, max_vrow);
 		}
 	}
 	setCursorPosByMouse(pos, mousepos);

@@ -765,7 +765,7 @@ void FileDiffWidget::onUpdateSliderBar()
 static void characterWiseDiff(TextEditorView *left_editor, TextEditorView *right_editor)
 {
 	auto [row_start_l, row_count_l] = left_editor->visibleRowAndCount();
-	auto [row_start_r, row_count_r] = left_editor->visibleRowAndCount();
+	auto [row_start_r, row_count_r] = right_editor->visibleRowAndCount();
 	Q_ASSERT(row_start_l == row_start_r); // 左右のスクロール位置は同じであるはず
 	const int row_start = row_start_l;
 	const int row_count = std::max(row_count_l, row_count_r);

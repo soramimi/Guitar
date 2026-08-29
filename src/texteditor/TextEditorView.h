@@ -153,7 +153,7 @@ public:
 	
 	int scrollTopRow() const;
 	
-	std::pair<row_index_t, int> currentVisualPosition();
+	std::pair<row_index_t, int> currentVisualPosition() const;
 	std::pair<row_index_t, col_index_t> currentLogicalPosition();
 signals:
 	void moved(int cur_row, int cur_col, int scr_row, int scr_col);
