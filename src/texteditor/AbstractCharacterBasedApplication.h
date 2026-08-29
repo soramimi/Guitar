@@ -570,6 +570,7 @@ private:
 	bool deleteIfSelected();
 	void setCursorCol_(col_index_t col, bool auto_scroll = true, bool by_mouse = false);
 	std::vector<Document::Line> *documentLinesForWrite(bool check_readonly = true);
+	row_index_t lrow_to_vrow(row_index_t lrow);
 protected:
 	void deselect();
 	std::vector<Character> parseLogicalLine(const TextEditorContext *cx, row_index_t lrow) const;
@@ -691,6 +692,8 @@ public:
 	void clear();
 protected:
 	std::vector<Document::Line> wrapLine(Document::Line line, std::mutex *mutex) const;
+private:
+	void updateVisualLineByLogicalLine(col_index_t lrow, Document::Line const &ll);
 public:
 	bool updateVisualLine(row_index_t lrow, bool force, std::mutex *mutex);
 	void updateVisualLinesAll(bool force);

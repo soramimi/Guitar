@@ -511,19 +511,72 @@ std::vector<Document::Line> AbstractCharacterBasedApplication::wrapLine(Document
 	return ret;
 }
 
+row_index_t AbstractCharacterBasedApplication::lrow_to_vrow(row_index_t lrow)
+{
+	if (wrappingMode() == WrappingMode::NoWrap) {
+		return lrow;
+	}
+	
+	row_index_t vrow = 0;
+	Document *doc = &cx()->engine->document;
+	std::vector<Document::Line> const &llines = doc->logical_lines;
+	for (row_index_t i = 0; i < lrow && i < (row_index_t)llines.size(); i++) {
+		Document::Line const &line = llines[i];
+		vrow += line.sp->meta.visual_lines.size();
+	}
+	return vrow;
+}
+
+void AbstractCharacterBasedApplication::updateVisualLineByLogicalLine(col_index_t lrow, Document::Line const &ll)
+{
+	TextEditorContext *cx = this->cx();
+	auto lower = std::lower_bound(cx->visual_row_info.begin(), cx->visual_row_info.end(), lrow, [](VisualRowInfo const &info, col_index_t lrow){
+		return info.logical_row < lrow;
+	});
+	auto upper = std::upper_bound(cx->visual_row_info.begin(), cx->visual_row_info.end(), lrow, [](col_index_t lrow, VisualRowInfo const &info){
+		return lrow < info.logical_row;
+	});
+	auto const &src = ll.sp->meta.visual_lines;
+	if (lower == cx->visual_row_info.end()) {
+		cx->visual_lines.insert(cx->visual_lines.end(), src.begin(), src.end());
+	} else {
+		size_t dstlen = std::distance(lower, upper);
+		size_t srclen = ll.sp->meta.visual_lines.size();
+		if (dstlen < srclen) {
+			cx->visual_lines.insert(cx->visual_lines.begin() + std::distance(cx->visual_row_info.begin(), lower) + dstlen, srclen - dstlen, Document::Line());
+		} else if (dstlen > srclen) {
+			auto it = cx->visual_lines.begin() + (std::distance(cx->visual_row_info.begin(), lower) - srclen);
+			cx->visual_lines.erase(it, it + (dstlen - srclen));
+		}
+		std::copy(src.begin(), src.end(), cx->visual_lines.begin() + std::distance(cx->visual_row_info.begin(), lower));
+	}
+}
+
 bool AbstractCharacterBasedApplication::updateVisualLine(row_index_t lrow, bool force, std::mutex *mutex)
 {
-	std::vector<Document::Line> *llines = &cx()->engine->document.logical_lines;
-	if (lrow >= 0 && lrow < llines->size()) {
-		Document::Line *line = &(*llines)[lrow];
-		size_t nvlines = line->sp->meta.visual_lines.size();
-		if (force || line->sp->meta.visual_lines.empty()) {
-			line->sp->meta.visual_lines = wrapLine(*line, mutex); // 折り返し処理
+	bool vline_count_changed = false;
+	if (m->wrapping_mode != WrappingMode::NoWrap) {
+		Document *doc = &cx()->engine->document;
+		std::vector<Document::Line> *llines = &doc->logical_lines;
+		if (lrow >= 0 && lrow < llines->size()) {
+			Document::Line *line = &(*llines)[lrow];
+			const size_t nvlines = line->sp->meta.visual_lines.size();
+			if (force || line->sp->meta.visual_lines.empty()) { // 折り返し未処理の場合
+				line->sp->meta.visual_lines = wrapLine(*line, mutex); // 折り返し処理
+			}
+			vline_count_changed = (nvlines != line->sp->meta.visual_lines.size());
+			
+			if (vline_count_changed) { // 折り返し後の物理行数が変化した場合、物理行情報を無効化する
+#if 1
+				row_index_t vrow = lrow_to_vrow(lrow);
+				invalidateVisualRowInfo(vrow);
+#else
+				updateVisualLineByLogicalLine(lrow, *line);
+#endif
+			}
 		}
-		bool vline_count_changed = (nvlines != line->sp->meta.visual_lines.size());
-		return vline_count_changed; // 折り返し後の物理行数が変化したかどうかを返す
 	}
-	return false;
+	return vline_count_changed; // 折り返し後の物理行数が変化したかどうかを返す
 }
 
 void AbstractCharacterBasedApplication::updateVisualLinesAll(bool force)
@@ -566,7 +619,8 @@ void AbstractCharacterBasedApplication::updateVisualLinesAll(bool force)
 	//
 
 	const size_t nreserve = cx->visual_lines.size() + 100;
-	
+
+#if 1
 	{
 		std::vector<Document::Line> vlines;
 		vlines.reserve(nreserve);
@@ -580,6 +634,17 @@ void AbstractCharacterBasedApplication::updateVisualLinesAll(bool force)
 		
 		cx->visual_lines = std::move(vlines);
 	}
+#else
+	std::vector<Document::Line> const &llines = cx->engine->document.logical_lines;
+	
+	row_index_t vrow = 0;	
+	for (row_index_t lrow = 0; lrow < (row_index_t)llines.size(); lrow++) {
+		Document::Line const &ll = llines[lrow];
+		updateVisualLineByLogicalLine(lrow, ll);
+		vrow++;
+	}
+	queryVisualRowInfo(vrow);
+#endif
 
 	reserveVisualRowInfo(nreserve);
 			
@@ -591,8 +656,10 @@ void AbstractCharacterBasedApplication::invalidateVisualRowInfo(row_index_t vrow
 	// qDebug() << Q_FUNC_INFO << vrow;
 	TextEditorContext *cx = this->cx();
 	if (vrow < 0) {
+		cx->visual_lines.clear();
 		cx->visual_row_info.clear();
 	} else if (vrow < cx->visual_row_info.size()) {
+		cx->visual_lines.resize(vrow);
 		cx->visual_row_info.resize(vrow);
 	}
 }
@@ -600,7 +667,7 @@ void AbstractCharacterBasedApplication::invalidateVisualRowInfo(row_index_t vrow
 void AbstractCharacterBasedApplication::reserveVisualRowInfo(row_index_t vrow)
 {
 	TextEditorContext *cx = this->cx();	
-	cx->visual_row_info.reserve(vrow + 10);
+	cx->visual_row_info.reserve(vrow);
 }
 
 VisualRowInfo AbstractCharacterBasedApplication::queryVisualRowInfo(row_index_t vrow)
@@ -618,6 +685,7 @@ VisualRowInfo AbstractCharacterBasedApplication::queryVisualRowInfo(row_index_t 
 	Document *doc =  &cx->engine->document;
 	
 	VisualRowInfo info;
+	
 	const row_index_t nvrow = cx->visual_row_info.size();
 	if (nvrow > 0) {
 		info = cx->visual_row_info[nvrow - 1]; // 最後のアイテム
@@ -1537,8 +1605,9 @@ void AbstractCharacterBasedApplication::doDelete()
 	}
 	if (commitLine(vec)) {
 		updateVisualLinesAll(false);
+		// updateVisualLine(lrow, false, nullptr);
 	}
-	invalidateVisualRowInfo(0);
+	// invalidateVisualRowInfo(0);
 
 	setCursorCol(lcol);
 	updateVisibility(true, true, true);
@@ -2539,6 +2608,7 @@ void AbstractCharacterBasedApplication::internalWrite(const ushort *begin, const
 	}
 	if (commitLine(vec)) {
 		updateVisualLinesAll(false);
+		// updateVisualLine(lrow, false, nullptr);
 	}
 	setCurrentLogicalCol(lcol);
 	setCursorCol(lcol);
