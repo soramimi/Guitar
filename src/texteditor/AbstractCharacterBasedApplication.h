@@ -319,8 +319,8 @@ struct SelectionAnchor {
 	};
 	
 	Enabled enabled = False;
-	int row = 0;
-	int col = 0;
+	row_index_t row = 0;
+	col_index_t col = 0;
 	int compare(SelectionAnchor const &a) const
 	{
 		if (enabled && a.enabled) {
@@ -476,11 +476,11 @@ protected:
 	
 	row_index_t nlines() const;
 
-	Document::Line *line(row_index_t row);
+	Document::Line *line(row_index_t vrow);
 	
-	Document::Line const *line(row_index_t row) const
+	Document::Line const *line(row_index_t vrow) const
 	{
-		return const_cast<AbstractCharacterBasedApplication *>(this)->line(row);
+		return const_cast<AbstractCharacterBasedApplication *>(this)->line(vrow);
 	}
 	
 	int char_screen_w() const;
@@ -531,7 +531,7 @@ protected:
 	virtual void updateVisibility(bool ensure_current_line_visible, bool change_col, bool auto_scroll) = 0;
 
 	void insertLine();
-	void commitLine(const std::vector<Character> &vec);
+	bool commitLine(const std::vector<Character> &vec);
 	
 	void doDelete();
 	void doBackspace();
