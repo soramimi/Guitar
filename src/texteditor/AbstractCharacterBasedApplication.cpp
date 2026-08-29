@@ -351,7 +351,7 @@ std::vector<Character> AbstractCharacterBasedApplication::_parseLine(TextEditorC
 
 std::vector<Character> AbstractCharacterBasedApplication::parseLine(Document::Line const *line, std::mutex *mutex) const
 {
-	return _parseLine(cx(), line, nullptr);
+	return _parseLine(cx(), line, mutex);
 }
 
 std::vector<Character> AbstractCharacterBasedApplication::parseLine(row_index_t vrow) const
@@ -544,9 +544,9 @@ void AbstractCharacterBasedApplication::updateVisualLinesAll(bool force)
 			}
 		} else {
 			constexpr int nthreads = 8;
-			std::vector<std::thread> thread(nthreads);
 			std::mutex mutex;
-			std::atomic<int32_t> index = 0;
+			std::vector<std::thread> thread(nthreads);
+			std::atomic<row_index_t> index = 0;
 			const row_index_t nlines = (row_index_t)llines->size();
 			for (int i = 0; i < nthreads; i++) {
 				thread[i] = std::thread([&](){
@@ -588,7 +588,7 @@ void AbstractCharacterBasedApplication::updateVisualLinesAll(bool force)
 
 void AbstractCharacterBasedApplication::invalidateVisualRowInfo(row_index_t vrow)
 {
-	qDebug() << Q_FUNC_INFO << vrow;
+	// qDebug() << Q_FUNC_INFO << vrow;
 	TextEditorContext *cx = this->cx();
 	if (vrow < 0) {
 		cx->visual_row_info.clear();
