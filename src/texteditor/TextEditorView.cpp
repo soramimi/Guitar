@@ -84,7 +84,8 @@ TextEditorView::TextEditorView(QWidget *parent)
 	: QWidget(parent)
 	, m(new Private)
 {
-
+	size_t n = sizeof(Document::Line::D);
+	
 #ifdef Q_OS_WIN
 
 
@@ -232,10 +233,10 @@ Document::LineProperty const *TextEditorView::queryFormattedLine(row_index_t vro
 	if (vrow >= 0 && vrow < nlines()) {
 		Document::LineProperty *detail = line(vrow)->detail();
 		if (!detail) {
-			line(vrow)->d->meta.detail = std::make_shared<Document::LineProperty>();
+			line(vrow)->sp->meta.detail = std::make_shared<Document::LineProperty>();
 			detail = line(vrow)->detail();
 		}
-		detail->chars = const_cast<TextEditorView *>(this)->parseLine(vrow);
+		detail->chars = parseLine(vrow);
 		detail->flags.resize(detail->chars.size());
 		calc_pos_x(&detail->chars);
 		return detail;
@@ -245,18 +246,18 @@ Document::LineProperty const *TextEditorView::queryFormattedLine(row_index_t vro
 
 /**
  * @brief 行と桁位置からピクセルX座標を求める
- * @param row
- * @param col
+ * @param vrow
+ * @param vcol
  * @return
  */
-int TextEditorView::pos_x_px(row_index_t row, row_index_t col) const
+int TextEditorView::pos_x_px(row_index_t vrow, col_index_t vcol) const
 {
-	Document::LineProperty const *line = queryFormattedLine(row);
+	Document::LineProperty const *line = queryFormattedLine(vrow);
 	if (!line) return 0;
 
 	int x = 0;
-	if (col > 0 && col - 1 < (int)line->chars.size()) {
-		x = (int)line->chars[col - 1].right_x;
+	if (vcol > 0 && vcol - 1 < (col_index_t)line->chars.size()) {
+		x = (int)line->chars[vcol - 1].right_x;
 	}
 
 	// 原点とスクロール位置に応じてずらす
@@ -346,7 +347,7 @@ void TextEditorView::setCursorRow(int row, bool auto_scroll, bool by_mouse)
  * @brief 桁位置を変更する
  * @param col
  */
-void TextEditorView::setCursorCol(int col)
+void TextEditorView::setCursorCol(col_index_t col)
 {
 	AbstractCharacterBasedApplication::setCursorCol(col);
 
@@ -764,7 +765,7 @@ void TextEditorView::paintEvent(QPaintEvent *)
 					// 背景の描画
 					auto DrawBackground = [&](){
 						{ // diff差分背景
-							Document::LineType type = line(line_row)->d->meta.type;
+							Document::LineType type = line(line_row)->sp->meta.type;
 							auto FillBG = [&](QColor color){
 								pr.fillRect(rect_text, color);
 							};
@@ -936,9 +937,9 @@ void TextEditorView::paintEvent(QPaintEvent *)
 			drawText(&pr, 0, y * lineHeight(), text);
 			if (line) {
 				char const *mark = nullptr;
-				if (line->d->meta.type == Document::LineType::Add) {
+				if (line->sp->meta.type == Document::LineType::Add) {
 					mark = "+";
-				} else if (line->d->meta.type == Document::LineType::Del) {
+				} else if (line->sp->meta.type == Document::LineType::Del) {
 					mark = "-";
 				}
 				if (mark) {

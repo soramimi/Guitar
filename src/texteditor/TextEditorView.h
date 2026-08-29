@@ -84,7 +84,7 @@ private:
 	void moveCursorByMouse();
 	
 	static void _calc_pos_x(std::vector<Character> *chars, const TextEditorContext *cx, const TextMetrics &tm);
-        int pos_x_px(row_index_t row, row_index_t col) const;
+	int pos_x_px(row_index_t vrow, col_index_t vcol) const;
 	
 	int scrollPosX() const;
 	int view_y_from_row(int row) const;
@@ -92,7 +92,7 @@ private:
 
 protected:
 	void timerEvent(QTimerEvent *) override;
-	void setCursorCol(int col) override;
+	void setCursorCol(col_index_t col) override;
 	void setCursorRow(int row, bool auto_scroll, bool by_mouse) override;
 	void calc_pos_x(std::vector<Character> *chars) const;
 	

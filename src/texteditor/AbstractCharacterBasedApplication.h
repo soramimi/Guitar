@@ -137,61 +137,61 @@ public:
 			varline_t text = std::string_view();
 			Meta meta;
 		};
-		std::shared_ptr<D> d;
+		std::shared_ptr<D> sp;
 		
 		Line()
-			: d(std::make_shared<D>())
+			: sp(std::make_shared<D>())
 		{
 		}
 		
 		explicit Line(std::vector<char> const &ba, LineType type = Normal)
-			: d(std::make_shared<D>())
+			: sp(std::make_shared<D>())
 		{
-			d->text = ba;
-			d->meta.type = type;
+			sp->text = ba;
+			sp->meta.type = type;
 		}
 		
 		explicit Line(QByteArray const &ba, LineType type = Normal)
-			: d(std::make_shared<D>())
+			: sp(std::make_shared<D>())
 		{
-			d->text = std::vector<char>(ba.data(), ba.data() + ba.size());
-			d->meta.type = type;
+			sp->text = std::vector<char>(ba.data(), ba.data() + ba.size());
+			sp->meta.type = type;
 		}
-		
+	
 		static Line InvalidLine()
 		{
 			Line line;
-			line.d->meta.type = Invalid;
+			line.sp->meta.type = Invalid;
 			return line;
 		}
 		
 		static Line NormalEmptyLine()
 		{
 			Line line;
-			line.d->meta.type = Normal;
+			line.sp->meta.type = Normal;
 			return line;
 		}
 		
 		static Line None()
 		{
 			Line line;
-			line.d->meta.type = Invalid;
+			line.sp->meta.type = Invalid;
 			return line;
 		}
 		
 		static Line View(std::string_view v, LineType type)
 		{
 			Line line;
-			line.d->text = v;
-			line.d->meta.type = type;
+			line.sp->text = v;
+			line.sp->meta.type = type;
 			return line;
 		}
 		
 		static Line View(std::string_view v, Meta const &meta)
 		{
 			Line line;
-			line.d->text = v;
-			line.d->meta = meta;
+			line.sp->text = v;
+			line.sp->meta = meta;
 			return line;
 		}
 		
@@ -202,38 +202,38 @@ public:
 		
 		static Line View(Line const &line)
 		{
-			if (std::holds_alternative<std::string_view>(line.d->text)) {
+			if (std::holds_alternative<std::string_view>(line.sp->text)) {
 				return line;
 			}
-			std::vector<char> const *v = std::get_if<std::vector<char>>(&line.d->text);
+			std::vector<char> const *v = std::get_if<std::vector<char>>(&line.sp->text);
 			assert(v);
-			return View(std::string_view(v->data(), v->size()), line.d->meta);
+			return View(std::string_view(v->data(), v->size()), line.sp->meta);
 		}
 		
 		LineType type() const
 		{
-			return d->meta.type;
+			return sp->meta.type;
 		}
 		
 		void set_line_number_override(int32_t num)
 		{
-			d->meta.line_number_override = num;
+			sp->meta.line_number_override = num;
 		}
 		
 		LineProperty *detail() const
 		{
-			return d->meta.detail.get();
+			return sp->meta.detail.get();
 		}
 		
 		LineProperty *newDetail()
 		{
-			d->meta.detail = std::make_shared<LineProperty>();
+			sp->meta.detail = std::make_shared<LineProperty>();
 			return detail();
 		}
 		
 		void clearDetail()
 		{
-			d->meta.detail.reset();
+			sp->meta.detail.reset();
 		}
 		
 		bool endsWithNewLine() const
@@ -244,27 +244,27 @@ public:
 		
 		std::string_view text() const
 		{
-			if (std::holds_alternative<std::string_view>(d->text)) {
-				return std::get<std::string_view>(d->text);
+			if (std::holds_alternative<std::string_view>(sp->text)) {
+				return std::get<std::string_view>(sp->text);
 			}
-			std::vector<char> const *v = std::get_if<std::vector<char>>(&d->text);
+			std::vector<char> const *v = std::get_if<std::vector<char>>(&sp->text);
 			assert(v);
 			return std::string_view(v->data(), v->size());
 		}
 		
 		void set_text(const std::vector<char> &new_text)
 		{
-			d->text = new_text;
-			d->meta.detail.reset();
+			sp->text = new_text;
+			sp->meta.detail.reset();
 			clear_visual_lines();
 		}
 		
 		std::vector<char> *to_vector()
 		{
-			if (std::string_view *sv = std::get_if<std::string_view>(&d->text)) {
-				d->text = std::vector<char>(sv->data(), sv->data() + sv->size());
+			if (std::string_view *sv = std::get_if<std::string_view>(&sp->text)) {
+				sp->text = std::vector<char>(sv->data(), sv->data() + sv->size());
 			}
-			std::vector<char> *v = std::get_if<std::vector<char>>(&d->text);
+			std::vector<char> *v = std::get_if<std::vector<char>>(&sp->text);
 			assert(v);
 			return v;
 		}
@@ -291,7 +291,7 @@ public:
 		
 		void clear_visual_lines()
 		{
-			d->meta.visual_lines.clear();
+			sp->meta.visual_lines.clear();
 		}
 	};
 	
@@ -543,6 +543,7 @@ protected:
 	void execDialog(QString const &dialog_title, const QString &dialog_value, const DialogHandler &handler);
 	
 	void invalidateVisualRowInfo(row_index_t vrow);
+	void reserveVisualRowInfo(row_index_t vrow);
 	VisualRowInfo queryVisualRowInfo(row_index_t vrow);
 
 	virtual void calc_pos_x(std::vector<Character> *chars) const {}
@@ -567,26 +568,27 @@ private:
 	void initEngine(const std::shared_ptr<TextEditorContext>& cx);
 	void writeCR();
 	bool deleteIfSelected();
-	void setCursorCol_(int col, bool auto_scroll = true, bool by_mouse = false);
+	void setCursorCol_(col_index_t col, bool auto_scroll = true, bool by_mouse = false);
 	std::vector<Document::Line> *documentLinesForWrite(bool check_readonly = true);
 protected:
 	void deselect();
 	std::vector<Character> parseLogicalLine(const TextEditorContext *cx, row_index_t lrow) const;
-        const std::vector<Character> &parseCurrentLine(bool force);
+	const std::vector<Character> &parseCurrentLine(bool force);
 	std::vector<Character> _parseLine(const TextEditorContext *cx, const Document::Line *line, std::mutex *mutex) const;
+	std::vector<Character> parseLine(Document::Line const *line, std::mutex *mutex = nullptr) const;
 	std::vector<Character> parseLine(row_index_t vrow) const;
 
 	virtual void updateScrollBarRange() {}
 	
-	virtual void setCursorRow(int row, bool auto_scroll = true, bool by_mouse = false);
-	virtual void setCursorCol(int col)
+	virtual void setCursorRow(row_index_t vrow, bool auto_scroll = true, bool by_mouse = false);
+	virtual void setCursorCol(col_index_t vcol)
 	{
-		setCursorCol_(col, true, false);
+		setCursorCol_(vcol, true, false);
 	}
-	void setCursorPosByMouse(RowCol pos, QPoint pt)
+	void setCursorPosByMouse(RowCol vpos, QPoint pt)
 	{
-		setCursorRow(pos.row, false, true);
-		setCursorCol_(pos.col, false, true);
+		setCursorRow(vpos.row, false, true);
+		setCursorCol_(vpos.col, false, true);
 		cx()->current_visual_pixel_x = pt.x();
 	}
 	void setCursorPos(int row, int col)
