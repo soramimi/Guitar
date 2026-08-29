@@ -326,7 +326,7 @@ RowCol TextEditorView::mapFromPixel(QPoint const &pt)
  * @param auto_scroll
  * @param by_mouse
  */
-void TextEditorView::setCursorRow(int row, bool auto_scroll, bool by_mouse)
+void TextEditorView::setCursorRow(row_index_t row, bool auto_scroll, bool by_mouse)
 {
 	AbstractCharacterBasedApplication::setCursorRow(row, false, by_mouse);
 
@@ -339,6 +339,7 @@ void TextEditorView::setCursorRow(int row, bool auto_scroll, bool by_mouse)
 	auto cr = mapFromPixel({x, y});
 
 	setCurrentVisualCol(cr.col); // 桁位置
+	clearParsedLine();
 
 	updateSelectionAnchor2(auto_scroll);
 }

@@ -13,23 +13,6 @@
 #include <vector>
 #include <mutex>
 
-// class MyTextCodec {
-// private:
-// public:
-// 	MyTextCodec() = default;
-// 	MyTextCodec(char const *name) //@ TODO:
-// 	{
-// 	}
-// 	QString toUnicode(QByteArray const &ba) const
-// 	{
-// 		return QString::fromUtf8(ba);
-// 	}
-// 	QByteArray fromUnicode(QString const &s) const
-// 	{
-// 		return s.toUtf8();
-// 	}
-// };
-
 class AbstractTextMetrics {
 public:
 	virtual int basisCharWidth() const = 0;
@@ -529,9 +512,9 @@ protected:
 	int printArea(const TextEditorContext *cx, SelectionAnchor const *sel_a = nullptr, SelectionAnchor const *sel_b = nullptr);
 	
 	virtual void updateVisibility(bool ensure_current_line_visible, bool change_col, bool auto_scroll) = 0;
-
-	void insertLine();
-	bool commitLine(const std::vector<Character> &vec);
+	
+	void insertLine(row_index_t lrow);
+	void commitLine(const std::vector<Character> &vec);
 	
 	void doDelete();
 	void doBackspace();
@@ -543,8 +526,9 @@ protected:
 	void execDialog(QString const &dialog_title, const QString &dialog_value, const DialogHandler &handler);
 	
 	void invalidateVisualRowInfo(row_index_t vrow);
-	void reserveVisualRowInfo(row_index_t vrow);
+	void _reserveVisualRowInfo(row_index_t vrow);
 	VisualRowInfo queryVisualRowInfo(row_index_t vrow);
+	void upadteVisualRow(row_index_t vrow);
 
 	virtual void calc_pos_x(std::vector<Character> *chars) const {}
 	
@@ -603,9 +587,8 @@ protected:
 	bool isPaintingSuppressed() const;
 	void setPaintingSuppressed(bool f);
 	
-	void addNewLineToBottom();
-	void appendNewLine(std::vector<Character> *vec);
 	void writeNewLine();
+	
 	void updateCursorPos(bool auto_scroll);
 	
 	QString statusLine() const;
@@ -696,9 +679,11 @@ private:
 	void _updateVisualLineByLogicalLine(col_index_t lrow, Document::Line const &ll, std::mutex *mutex);
 	void _updateVisualLinesAll(bool force);
 public:
-	bool updateVisualLine(row_index_t lrow, bool force, std::mutex *mutex);
-	bool updateVisualLine(row_index_t lrow);
-	void updateVisualLinesAll();
+	void updateVisualLine(row_index_t lrow, bool force, std::mutex *mutex = nullptr);
+	void updateVisualLinesAll()
+	{
+		invalidateVisualRowInfo(0);
+	}
 	void setWrappingMode(WrappingMode mode);
 	AbstractCharacterBasedApplication::WrappingMode wrappingMode() const;
 

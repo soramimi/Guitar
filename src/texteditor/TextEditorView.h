@@ -93,7 +93,7 @@ private:
 protected:
 	void timerEvent(QTimerEvent *) override;
 	void setCursorCol(col_index_t col) override;
-	void setCursorRow(int row, bool auto_scroll, bool by_mouse) override;
+	void setCursorRow(row_index_t row, bool auto_scroll, bool by_mouse) override;
 	void calc_pos_x(std::vector<Character> *chars) const;
 	
 public:

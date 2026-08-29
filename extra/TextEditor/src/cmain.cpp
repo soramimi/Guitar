@@ -158,7 +158,6 @@ void CursesOreApplication::updateVisibility(bool ensure_current_line_visible, bo
 		ensureCurrentLineVisible();
 	}
 
-//	clearParsedLine();
 	updateCursorPos(true);
 
 	int x = cx()->viewport_org_x + cursorCol();
