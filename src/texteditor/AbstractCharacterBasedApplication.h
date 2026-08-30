@@ -290,6 +290,10 @@ public:
 	Document document;
 };
 
+struct LogicalRowInfo {
+	row_index_t visual_row = 0;
+};
+
 struct VisualRowInfo {
 	row_index_t logical_row = 0;
 	col_index_t logical_col = 0;
@@ -366,8 +370,9 @@ struct TextEditorContext {
 	int tab_indent_size = 4;
 	int bottom_line_y = -1;
 	TextEditorEngine_sp engine;
-	std::vector<Document::Line> visual_lines;
+	std::vector<LogicalRowInfo> logical_row_info; // 論理行から物理行へのマッピング情報
 	std::vector<VisualRowInfo> visual_row_info; // 物理行から論理行へのマッピング情報
+	std::vector<Document::Line> visual_lines;
 };
 
 struct RowCol {
@@ -519,7 +524,7 @@ protected:
 	virtual void updateVisibility(bool ensure_current_line_visible, bool change_col, bool auto_scroll) = 0;
 	
 	void insertLine(row_index_t lrow);
-	void commitLine(const std::vector<Character> &vec);
+	bool commitLine(const std::vector<Character> &vec);
 	
 	void doDelete();
 	void doBackspace();
@@ -616,7 +621,7 @@ public:
 	void scrollUp();
 	void scrollDown();
 	void moveCursorOut();
-	void moveCursorHome();
+	void moveCursorHome(bool consider_indent);
 	void moveCursorEnd();
 	void moveCursorUp();
 	virtual void moveCursorDown();
@@ -684,7 +689,7 @@ private:
 	void _updateVisualLineByLogicalLine(col_index_t lrow, Document::Line const &ll, std::mutex *mutex);
 	void _updateVisualLinesAll(bool force);
 public:
-	void updateVisualLine(row_index_t lrow, bool force, std::mutex *mutex = nullptr);
+	bool updateVisualLine(row_index_t lrow, bool force, std::mutex *mutex = nullptr);
 	void updateVisualLinesAll()
 	{
 		invalidateVisualRowInfo(0);

@@ -531,20 +531,51 @@ std::vector<Document::Line> AbstractCharacterBasedApplication::wrapLine(Document
 	return ret;
 }
 
+/**
+ * @brief 論理行番号から物理行番号を求める。
+ * @param lrow 論理行番号
+ * @return 物理行番号
+ */
 row_index_t AbstractCharacterBasedApplication::lrow_to_vrow(row_index_t lrow)
 {
 	if (wrappingMode() == WrappingMode::NoWrap) {
 		return lrow;
 	}
 	
-	row_index_t vrow = 0;
-	Document *doc = &cx()->engine->document;
+	qDebug() << Q_FUNC_INFO << cx()->logical_row_info.size();
+
+	Document const *doc = &cx()->engine->document;
 	std::vector<Document::Line> const &llines = doc->logical_lines;
+#if 0
+	row_index_t vrow = 0;
 	for (row_index_t i = 0; i < lrow && i < (row_index_t)llines.size(); i++) {
 		Document::Line const &line = llines[i];
-		vrow += line.sp->meta.visual_lines.size();
+		vrow += line.sp->meta.visual_lines.size(); // 論理行に対応する物理行の数を加算
 	}
-	return vrow;
+#else
+
+	if (lrow == 0) {
+		return 0; // 最初の論理行は必ず物理行0に対応する
+	} else if (lrow < (row_index_t)cx()->logical_row_info.size()) {
+		return cx()->logical_row_info[lrow].visual_row; // 既に計算済みの場合はキャッシュから取得
+	}
+
+	LogicalRowInfo info;
+	row_index_t i = cx()->logical_row_info.size();
+	if (i == 0) {
+		cx()->logical_row_info.push_back(info); // 最初は必ず0
+	} else {
+		i--;
+		info = cx()->logical_row_info[i];
+	}
+	while (i < lrow && i < (row_index_t)llines.size()) {
+		Document::Line const &line = llines[i];
+		info.visual_row += line.sp->meta.visual_lines.size(); // 論理行に対応する物理行の数を加算
+		cx()->logical_row_info.push_back(info);
+		i++;
+	}
+#endif
+	return info.visual_row;
 }
 
 /**
@@ -637,21 +668,25 @@ void AbstractCharacterBasedApplication::_updateVisualLineByLogicalLine(col_index
 	if (lower == cx->visual_row_info.end()) { // 物理行情報が存在しない場合、末尾に追加する
 		cx->visual_lines.insert(cx->visual_lines.end(), src.begin(), src.end());
 	} else {
-		const size_t dstlen = std::distance(lower, upper);
-		const size_t srclen = src.size();
+		const size_t lower_pos = std::distance(cx->visual_row_info.begin(), lower);
+		const size_t upper_pos = std::distance(cx->visual_row_info.begin(), upper);
+		const size_t dstlen = std::min(upper_pos, cx->visual_lines.size()) - lower_pos;
+		const size_t srclen = src.size();//std::min(lower_pos + src.size(), cx->visual_lines.size()) - lower_pos;
+		const auto it_dst = cx->visual_lines.begin() + lower_pos; // 書き込み先
 		// 物理行情報の長さが変化した場合、visual_linesを挿入または削除する
-		auto it_dst = cx->visual_lines.begin() + std::distance(cx->visual_row_info.begin(), lower); // 書き込み先
 		if (dstlen < srclen) {
 			const size_t n = srclen - dstlen; // 挿入する行数
 			auto it_insert = it_dst + dstlen; // 挿入位置
 			cx->visual_lines.insert(it_insert, n, {});
 		} else if (dstlen > srclen) {
 			const size_t n = dstlen - srclen; // 削除する行数
-			auto it_erase = it_dst - srclen; // 削除位置
+			auto it_erase = it_dst + srclen; // 削除位置
 			cx->visual_lines.erase(it_erase, it_erase + n);
 		}
-		// 物理行情報を更新する
-		std::copy(src.begin(), src.end(), it_dst);
+		if (!src.empty()) {
+			// 物理行情報を更新する
+			std::copy(src.begin(), src.end(), it_dst);
+		}
 	}
 }
 
@@ -660,8 +695,9 @@ void AbstractCharacterBasedApplication::_updateVisualLineByLogicalLine(col_index
  * @param lrow 論理行番号
  * @param force 強制的に折り返し処理を行う場合はtrue
  * @param mutex 排他制御用のmutex（nullptrの場合は排他制御なし）
+ * @return 折り返し後の物理行数が変化したかどうか
  */
-void AbstractCharacterBasedApplication::updateVisualLine(row_index_t lrow, bool force, std::mutex *mutex)
+bool AbstractCharacterBasedApplication::updateVisualLine(row_index_t lrow, bool force, std::mutex *mutex)
 {
 	bool vline_count_changed = false;
 	if (m->wrapping_mode != WrappingMode::NoWrap) {
@@ -680,7 +716,7 @@ void AbstractCharacterBasedApplication::updateVisualLine(row_index_t lrow, bool 
 			}
 		}
 	}
-	// return vline_count_changed; // 折り返し後の物理行数が変化したかどうか
+	return vline_count_changed; // 折り返し後の物理行数が変化したかどうか
 }
 
 void AbstractCharacterBasedApplication::_reserveVisualRowInfo(row_index_t vrow)
@@ -992,10 +1028,15 @@ void AbstractCharacterBasedApplication::insertLine(row_index_t lrow)
 	llines->insert(llines->begin() + lrow, Document::Line::NormalEmptyLine());
 }
 
-void AbstractCharacterBasedApplication::commitLine(std::vector<Character> const &vec)
+/**
+ * @brief 論理行に文字列をコミットする
+ * @param vec 文字列（Characterの配列）
+ * @return 折り返し後の物理行数が変化したかどうか
+ */
+bool AbstractCharacterBasedApplication::commitLine(std::vector<Character> const &vec)
 {
 	std::vector<Document::Line> *llines = documentLinesForWrite();
-	if (!llines) return;
+	if (!llines) return false;
 	
 	std::vector<char> ba;
 	if (!vec.empty()){
@@ -1011,27 +1052,34 @@ void AbstractCharacterBasedApplication::commitLine(std::vector<Character> const 
 			return true;
 		});
 	}
-	if (currentLogicalRow() == llines->size()) {
+
+	row_index_t lrow = currentLogicalRow();
+
+	if (lrow == llines->size()) {
 		Document::Line newline;
 		newline.sp->meta.type = Document::LineType::Normal;
 		llines->push_back(newline);
 	}
-	Document::Line *lline = &(*llines)[currentLogicalRow()];
+	Document::Line *lline = &(*llines)[lrow];
 	
 	lline->set_text(std::vector<char>(ba.data(), ba.data() + ba.size()));
-	
-	if (m->valid_line_index > currentLogicalRow()) {
-		m->valid_line_index = currentLogicalRow();
+
+	if (lrow < cx()->logical_row_info.size()) {
+		cx()->logical_row_info.resize(lrow);
+	}
+
+	if (m->valid_line_index > lrow) {
+		m->valid_line_index = lrow;
 	}
 	
-	int y = currentLogicalRow() - scrollposRow() + cx()->viewport_org_y;
+	int y = lrow - scrollposRow() + cx()->viewport_org_y;
 	if (y >= 0 && y < (int)m->line_flags.size()) {
 		m->line_flags[y] |= LineChanged;
 	}
 
 	clearParsedLine();
 
-	updateVisualLine(currentLogicalRow(), true);
+	return updateVisualLine(lrow, true);
 }
 
 std::vector<Character> AbstractCharacterBasedApplication::parseLogicalLine(TextEditorContext const *cx, row_index_t lrow) const
@@ -1647,8 +1695,8 @@ void AbstractCharacterBasedApplication::doDelete()
 	} else {
 		vec.erase(vec.begin() + lcol);
 	}
-	commitLine(vec);
-	if (delete_nl) {
+
+	if (commitLine(vec) || delete_nl) { // 折り返し後の物理行数が変化した場合は、これ以降の物理行情報を無効化する
 		row_index_t vrow = lrow_to_vrow(lrow);
 		invalidateVisualRowInfo(vrow);
 	}
@@ -1797,9 +1845,31 @@ void AbstractCharacterBasedApplication::moveCursorOut()
 	setCursorRow(-1);
 }
 
-void AbstractCharacterBasedApplication::moveCursorHome()
+void AbstractCharacterBasedApplication::moveCursorHome(bool consider_indent)
 {
-	setCursorCol(0);
+	col_index_t vcol = 0;
+
+	if (consider_indent) { // 行頭の空白を飛ばす
+		row_index_t vrow = currentVisualRow();
+		VisualRowInfo info = queryVisualRowInfo(vrow);
+		if (vrow == lrow_to_vrow(currentLogicalRow())) { // 論理行の先頭なら
+			std::vector<Character> const &vline = parseCurrentLine(false);
+			const col_index_t ncols = vline.size();
+			col_index_t indent_vcol = 0;
+			while (indent_vcol < ncols) {
+				char32_t c = vline[indent_vcol].unicode;
+				if (c == ' ' || c == '\t') {
+					indent_vcol++;
+				} else {
+					break;
+				}
+			}
+			col_index_t curr_vcol = currentVisualCol();
+			vcol = (curr_vcol > 0 && curr_vcol <= indent_vcol) ? 0 : indent_vcol; // カーソルがインデントの範囲内なら行頭へ、そうでなければインデントの先頭へ
+		}
+	}
+
+	setCursorCol(vcol);
 	clearParsedLine();
 	updateVisibility(true, true, true);
 }
@@ -1941,7 +2011,7 @@ void AbstractCharacterBasedApplication::moveCursorRight()
 		int next_vrow = currentVisualRow() + 1;
 		if (next_vrow < nlines()) {
 			setCursorPos(next_vrow, 0); // 次の行の先頭へ移動
-			moveCursorHome(); // 行頭へ移動
+			moveCursorHome(false); // 行頭へ移動
 			return true;
 		}
 		return false;
@@ -2562,9 +2632,10 @@ void AbstractCharacterBasedApplication::internalWrite(const ushort *begin, const
 
 	if (!isCurrentLineWritable()) return;
 
+	row_index_t lrow = currentLogicalRow();
 	col_index_t lcol = currentLogicalCol();
 
-	std::vector<Character> vec = parseCurrentLine(false);
+	std::vector<Character> vec = parseLogicalLine(cx(), lrow);
 
 	auto WriteChar = [&](uint32_t c){
 		if (isInsertMode()) {
@@ -2603,7 +2674,11 @@ void AbstractCharacterBasedApplication::internalWrite(const ushort *begin, const
 			lcol++;
 		}
 	}
-	commitLine(vec);
+
+	if (commitLine(vec)) {
+		row_index_t vrow = lrow_to_vrow(lrow);
+		invalidateVisualRowInfo(vrow);
+	}
 	
 	setCurrentLogicalCol(lcol);
 	setCursorCol(lcol);
@@ -2645,7 +2720,7 @@ void AbstractCharacterBasedApplication::writeCR()
 {
 	deleteIfSelected();
 	
-	moveCursorHome();
+	moveCursorHome(false);
 }
 
 void AbstractCharacterBasedApplication::write(uint32_t c, bool by_keyboard)
@@ -2722,7 +2797,7 @@ void AbstractCharacterBasedApplication::write(uint32_t c, bool by_keyboard)
 			if (ok) moveCursorLeft();
 			break;
 		case EscapeCode::Home:
-			if (ok) moveCursorHome();
+			if (ok) moveCursorHome(true);
 			break;
 		case EscapeCode::End:
 			if (ok) moveCursorEnd();

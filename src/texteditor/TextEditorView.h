@@ -70,7 +70,7 @@ private:
 	Private *m;
 	
 	void paintScreen(QPainter *painter);
-	void drawCursor(int row, int col, QPainter *pr, QColor const &color);
+	void drawCursor(int row, int col, QPainter *pr);
 	void drawCursor(QPainter *pr);
 	void drawFocusFrame(QPainter *pr);
 	void updateCursorRect(bool auto_scroll);
@@ -90,6 +90,7 @@ private:
 	int view_y_from_row(int row) const;
 	int linenumber_area_width() const;
 
+	QColor cursorColor() const;
 protected:
 	void timerEvent(QTimerEvent *) override;
 	void setCursorCol(col_index_t col) override;

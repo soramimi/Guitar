@@ -16,6 +16,8 @@ INCLUDEPATH += $$PWD/src
 INCLUDEPATH += $$PWD/src/texteditor
 INCLUDEPATH += ../../src
 
+win32:LIBS += -lole32
+
 SOURCES += \
 	../../src/common/misc.cpp \
 	../../src/common/q/Dir.cpp \
@@ -23,6 +25,7 @@ SOURCES += \
 	../../src/common/qmisc.cpp \
 	../../src/common/realpath.cpp \
 	../../src/common/unicode_conversion.cpp \
+	../../src/common/wstring.cpp \
 	../../src/texteditor/AbstractCharacterBasedApplication.cpp \
 	../../src/texteditor/TextEditorTheme.cpp \
 	../../src/texteditor/TextEditorView.cpp \
@@ -41,6 +44,7 @@ HEADERS  += \
 	../../src/common/qmisc.h \
 	../../src/common/realpath.h \
 	../../src/common/unicode_conversion.h \
+	../../src/common/wstring.h \
 	../../src/texteditor/AbstractCharacterBasedApplication.h \
 	../../src/texteditor/TextEditorTheme.h \
 	../../src/texteditor/TextEditorView.h \

@@ -15,12 +15,6 @@
 #include <functional>
 #include "../Profile.h"
 
-#define PROPORTIONAL_FONT_SUPPORT 0
-
-
-
-
-
 void TextMetrics::setTextFont(const QFont &font)
 {
 	text_font_ = font;
@@ -53,6 +47,7 @@ int TextMetrics::textWidth(const QString &text) const
 	return ret;
 }
 
+constexpr int cursor_animation_cycle = 10;
 
 struct TextEditorView::Private {
 	TextMetrics text_metrics;
@@ -73,6 +68,8 @@ struct TextEditorView::Private {
 
 	unsigned int idle_count = 0;
 
+	int cursor_animation_counter = 0;
+
 	std::function<void(void)> custom_context_menu_requested;
 };
 
@@ -85,11 +82,8 @@ TextEditorView::TextEditorView(QWidget *parent)
 #ifdef Q_OS_WIN
 
 
-#if PROPORTIONAL_FONT_SUPPORT
-	setTextFont(QFont("MS PGothic", 30));
-#else
-	setTextFont(QFont("MS Gothic", 20));
-#endif
+	setTextFont(QFont("MS PGothic", 16));
+	// setTextFont(QFont("MS Gothic", 16));
 
 #else
 
@@ -120,6 +114,7 @@ TextEditorView::TextEditorView(QWidget *parent)
 
 	setScrollUnit(ScrollByCharacter);
 
+	m->cursor_animation_counter = cursor_animation_cycle;
 	startTimer(100);
 }
 
@@ -437,6 +432,7 @@ void TextEditorView::internalUpdateVisibility(bool ensure_current_line_visible, 
 
 	updateScrollBarRange();
 
+	m->cursor_animation_counter = cursor_animation_cycle;
 	update();
 }
 
@@ -676,6 +672,12 @@ TextEditorView::PointInView TextEditorView::pointInView(int row, int col) const
 	return pt;
 }
 
+QColor TextEditorView::cursorColor() const
+{
+	bool blink_on = m->cursor_animation_counter >= cursor_animation_cycle / 2;
+	return blink_on ? Qt::white : Qt::transparent;
+}
+
 /**
  * @brief カーソルを描画
  * @param row
@@ -683,8 +685,9 @@ TextEditorView::PointInView TextEditorView::pointInView(int row, int col) const
  * @param pr
  * @param color
  */
-void TextEditorView::drawCursor(int row, int col, QPainter *pr, QColor const &color)
+void TextEditorView::drawCursor(int row, int col, QPainter *pr)
 {
+	QColor color = cursorColor();
 	PointInView pt = pointInView(row, col);
 	pr->fillRect(pt.x -1, pt.y, 2, pt.height, color);
 	pr->fillRect(pt.x - 2, pt.y, 4, 2, color);
@@ -698,7 +701,7 @@ void TextEditorView::drawCursor(int row, int col, QPainter *pr, QColor const &co
  */
 void TextEditorView::drawCursor(QPainter *pr)
 {
-	drawCursor(currentVisualRow(), currentVisualCol(), pr, theme()->fg_cursor);
+	drawCursor(currentVisualRow(), currentVisualCol(), pr);
 }
 
 int TextEditorView::linenumber_area_width() const
@@ -1155,6 +1158,17 @@ void TextEditorView::timerEvent(QTimerEvent *)
 			m->idle_count = 0;
 			emit idle();
 		}
+	}
+
+	bool f = m->cursor_animation_counter >= cursor_animation_cycle / 2;
+	if (m->cursor_animation_counter > 0) {
+		m->cursor_animation_counter--;
+	} else {
+		m->cursor_animation_counter = cursor_animation_cycle;
+	}
+	bool g = m->cursor_animation_counter >= cursor_animation_cycle / 2;
+	if (f != g) {
+		update();
 	}
 }
 
