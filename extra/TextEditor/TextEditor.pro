@@ -16,9 +16,6 @@ INCLUDEPATH += $$PWD/src
 INCLUDEPATH += $$PWD/src/texteditor
 INCLUDEPATH += ../../src
 
-linux:LIBS += -lncursesw
-macx:LIBS += -lncurses
-
 SOURCES += \
 	../../src/common/misc.cpp \
 	../../src/common/q/Dir.cpp \
@@ -34,8 +31,7 @@ SOURCES += \
 	../../src/texteditor/unicode.cpp \
 	src/MainWindow.cpp \
 	src/MySettings.cpp \
-	src/main.cpp\
-	src/cmain.cpp
+	src/main.cpp
 
 HEADERS  += \
 	../../src/common/joinpath.h \
@@ -52,8 +48,7 @@ HEADERS  += \
 	../../src/texteditor/UnicodeWidth.h \
 	../../src/texteditor/unicode.h \
 	src/MainWindow.h \
-	src/MySettings.h \
-	src/cmain.h
+	src/MySettings.h
 
 FORMS    += \
 	src/MainWindow.ui

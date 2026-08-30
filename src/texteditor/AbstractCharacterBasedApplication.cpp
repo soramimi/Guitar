@@ -287,14 +287,34 @@ void AbstractCharacterBasedApplication::setCurrentVisualCol(int col)
 	cx()->current_visual_col = col;
 }
 
+int AbstractCharacterBasedApplication::scrollposRow() const
+{
+	return cx()->scroll_pos_row;
+}
+
+int AbstractCharacterBasedApplication::scrollposCol() const
+{
+	return cx()->scroll_pos_col;
+}
+
+void AbstractCharacterBasedApplication::setScrollPosRow(int row)
+{
+	cx()->scroll_pos_row = row;
+}
+
+void AbstractCharacterBasedApplication::setScrollPosCol(int col)
+{
+	cx()->scroll_pos_col = col;
+}
+
 int AbstractCharacterBasedApplication::cursorCol() const
 {
-	return currentVisualCol() - cx()->scroll_col_pos;
+	return currentVisualCol() - scrollposCol();
 }
 
 int AbstractCharacterBasedApplication::cursorRow() const
 {
-	return currentVisualRow() - cx()->scroll_row_pos;
+	return currentVisualRow() - scrollposRow();
 }
 
 Document::Line const *AbstractCharacterBasedApplication::currentLine() const
@@ -1004,7 +1024,7 @@ void AbstractCharacterBasedApplication::commitLine(std::vector<Character> const 
 		m->valid_line_index = currentLogicalRow();
 	}
 	
-	int y = currentLogicalRow() - cx()->scroll_row_pos + cx()->viewport_org_y;
+	int y = currentLogicalRow() - scrollposRow() + cx()->viewport_org_y;
 	if (y >= 0 && y < (int)m->line_flags.size()) {
 		m->line_flags[y] |= LineChanged;
 	}
@@ -1269,14 +1289,14 @@ void AbstractCharacterBasedApplication::setLineMargin(int n)
 void AbstractCharacterBasedApplication::ensureCurrentLineVisible()
 {
 	int margin = (cx()->viewport_height >= 6 && !isSingleLineMode()) ? m->line_margin : 0;
-	int pos = cx()->scroll_row_pos;
+	int pos = scrollposRow();
 	int top = currentVisualRow() - margin;
 	int bottom = currentVisualRow() + 1 - editorViewportHeight() + margin;
 	if (pos > top)    pos = top;
 	if (pos < bottom) pos = bottom;
 	if (pos < 0) pos = 0;
-	if (cx()->scroll_row_pos != pos) {
-		cx()->scroll_row_pos = pos;
+	if (scrollposRow() != pos) {
+		setScrollPosRow(pos);
 		invalidateArea();
 	}
 }
@@ -1541,11 +1561,11 @@ void AbstractCharacterBasedApplication::editSelected(EditOperation op, std::vect
 	if (op == EditOperation::Cut) {
 		deselect();
 		setCursorPos(a.row, a.col);
-		invalidateArea(a.row - cx()->scroll_row_pos);
+		invalidateArea(a.row - scrollposRow());
 	} else {
 		setCurrentVisualRow(curr_row);
 		setCurrentVisualCol(curr_col);
-		invalidateArea(curr_row - cx()->scroll_row_pos);
+		invalidateArea(curr_row - scrollposRow());
 	}
 
 	clearParsedLine();
@@ -1758,7 +1778,7 @@ void AbstractCharacterBasedApplication::invalidateAreaBelowTheCurrentLine()
 		m->valid_line_index = y;
 	}
 
-	y = currentLogicalRow() - cx()->scroll_row_pos;
+	y = currentLogicalRow() - scrollposRow();
 	invalidateArea(y);
 }
 
@@ -1805,8 +1825,8 @@ void AbstractCharacterBasedApplication::moveCursorEnd()
 
 void AbstractCharacterBasedApplication::scrollUp()
 {
-	if (cx()->scroll_row_pos > 0) {
-		cx()->scroll_row_pos--;
+	if (scrollposRow() > 0) {
+		setScrollPosRow(scrollposRow() - 1);
 		invalidateArea();
 		clearParsedLine();
 		updateVisibility(false, false, true);
@@ -1816,8 +1836,8 @@ void AbstractCharacterBasedApplication::scrollUp()
 void AbstractCharacterBasedApplication::scrollDown()
 {
 	int limit = scrollBottomLimit();
-	if (cx()->scroll_row_pos < limit) {
-		cx()->scroll_row_pos++;
+	if (scrollposRow() < limit) {
+		setScrollPosRow(scrollposRow() + 1);
 		invalidateArea();
 		clearParsedLine();
 		updateVisibility(false, false, true);
@@ -1852,7 +1872,7 @@ void AbstractCharacterBasedApplication::scrollToTop()
 
 	setCursorRow(0);
 	setCursorCol(0);
-	cx()->scroll_row_pos = 0;
+	setScrollPosRow(0);
 	invalidateArea();
 	clearParsedLine();
 	updateVisibility(true, false, true);
@@ -1962,12 +1982,12 @@ void AbstractCharacterBasedApplication::movePageUp()
 	if (!isSingleLineMode()) {
 		int step = editorViewportHeight();
 		setCursorRow(currentVisualRow() - step);
-		cx()->scroll_row_pos -= step;
+		setScrollPosRow(scrollposRow() - step);
 		if (currentVisualRow() < 0) {
 			setCurrentVisualRow(0);
 		}
-		if (cx()->scroll_row_pos < 0) {
-			cx()->scroll_row_pos = 0;
+		if (scrollposRow() < 0) {
+			setScrollPosRow(0);
 		}
 		invalidateArea();
 		clearParsedLine();
@@ -1978,22 +1998,19 @@ void AbstractCharacterBasedApplication::movePageUp()
 void AbstractCharacterBasedApplication::movePageDown()
 {
 	if (!isSingleLineMode()) {
-		int limit = logicalLines();
-		if (limit > 0) {
-			limit--;
+		row_index_t vrow_limit = nlines();
+		if (vrow_limit > 0) {
+			vrow_limit--;
 			int step = editorViewportHeight();
-			setCursorRow(currentVisualRow() + step);
-			cx()->scroll_row_pos += step;
-			if (currentVisualRow() > limit) {
-				setCurrentVisualRow(limit);
-			}
-			limit = scrollBottomLimit();
-			if (cx()->scroll_row_pos > limit) {
-				cx()->scroll_row_pos = limit;
-			}
+			row_index_t curr_vrow = currentVisualRow();
+			row_index_t next_vrow = std::min(curr_vrow + step, vrow_limit);
+			int scroll_pos = scrollposRow() + (next_vrow - curr_vrow);
+			scroll_pos = std::min(scroll_pos, scrollBottomLimit());
+			setCursorRow(next_vrow);
+			setScrollPosRow(scroll_pos);
 		} else {
 			setCursorRow(0);
-			cx()->scroll_row_pos = 0;
+			setScrollPosRow(0);
 		}
 		invalidateArea();
 		clearParsedLine();
@@ -2102,8 +2119,8 @@ void AbstractCharacterBasedApplication::updateCursorPos(bool auto_scroll)
 
 	if (auto_scroll && wrappingMode() == WrappingMode::NoWrap) {
 		int pos = decideColumnScrollPos();
-		if (cx()->scroll_col_pos != pos) {
-			cx()->scroll_col_pos = pos;
+		if (scrollposCol() != pos) {
+			setScrollPosCol(pos);
 			invalidateArea();
 		}
 	}
@@ -2142,13 +2159,13 @@ int AbstractCharacterBasedApplication::printArea(TextEditorContext const *cx, co
 	if (cx) {
 		int height = cx->viewport_height;
 		QRect clip(cx->viewport_org_x, cx->viewport_org_y, cx->viewport_width, height);
-		int row = cx->scroll_row_pos;
+		int row = scrollposRow();
 		for (int i = 0; i < height; i++) {
 			if (row < 0) continue;
 			int y = cx->viewport_org_y + i;
 			if (row < (int)nlines()) {
 				if (i < height) {
-					int x = cx->viewport_org_x - cx->scroll_col_pos;
+					int x = cx->viewport_org_x - cx->scroll_pos_col;
 					Document::Line const *line = this->line(row);
 					int anchor_a = -1;
 					int anchor_b = -1;
@@ -2221,7 +2238,7 @@ void AbstractCharacterBasedApplication::paintLineNumbers(std::function<void(int,
 	int num = 1;
 
 	for (int i = 0; i <= editor_cx->viewport_height; i++) {
-		row_index_t vrow = editor_cx->scroll_row_pos + i;
+		row_index_t vrow = editor_cx->scroll_pos_row + i;
 		auto LineNumberText = [&](int linenum){
 			if (linenum > 0) {
 				return QString::asprintf("%*u ", left_margin - rightpadding, linenum);
@@ -2477,7 +2494,7 @@ void AbstractCharacterBasedApplication::moveToTop()
 	setCurrentVisualRow(0);
 	setCurrentVisualCol(0);
 	cx()->current_visual_col_hint = 0;
-	cx()->scroll_row_pos = 0;
+	setScrollPosRow(0);
 	scrollToTop();
 	invalidateArea();
 	clearParsedLine();
@@ -2499,7 +2516,7 @@ void AbstractCharacterBasedApplication::logicalMoveToBottom()
 			cx()->current_visual_col_hint = col;
 		}
 	}
-	cx()->scroll_row_pos = scrollBottomLimit();
+	setScrollPosRow(scrollBottomLimit());
 }
 
 void AbstractCharacterBasedApplication::logicalMoveToBottom2()
@@ -2517,7 +2534,7 @@ void AbstractCharacterBasedApplication::logicalMoveToBottom2()
 			cx()->current_visual_col_hint = col;
 		}
 	}
-	cx()->scroll_row_pos = scrollBottomLimit2();
+	setScrollPosRow(scrollBottomLimit2());
 }
 
 void AbstractCharacterBasedApplication::moveToBottom()

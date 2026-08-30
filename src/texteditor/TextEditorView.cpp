@@ -74,10 +74,6 @@ struct TextEditorView::Private {
 	unsigned int idle_count = 0;
 
 	std::function<void(void)> custom_context_menu_requested;
-
-	// TextEditorView::FormattedLines formatted_lines;
-	
-	// std::vector<VisualRowInfo> visual_row_info;
 };
 
 TextEditorView::TextEditorView(QWidget *parent)
@@ -275,7 +271,7 @@ RowCol TextEditorView::mapFromPixel(QPoint const &pt)
 {
 	TextEditorContext *cx = this->cx();
 	const int y = pt.y() / lineHeight();
-	const row_index_t vrow = y + cx->scroll_row_pos - cx->viewport_org_y;
+	const row_index_t vrow = y + scrollposRow() - cx->viewport_org_y;
 	const int max_vrow = nlines();
 	if (vrow >= max_vrow) {
 		// 最終行より下だったら、最終行の列数を返す
@@ -290,7 +286,7 @@ RowCol TextEditorView::mapFromPixel(QPoint const &pt)
 		return t;
 	}
 	const int w = m->text_metrics.basisCharWidth(); // 基準文字幅
-	const int x = pt.x() + (cx->scroll_col_pos - cx->viewport_org_x) * w;
+	const int x = pt.x() + (cx->scroll_pos_col - cx->viewport_org_x) * w;
 	std::vector<Character> const *chars = nullptr;
 	Document::LineProperty const *line = queryFormattedLine(vrow);
 	if (line) {
@@ -400,7 +396,7 @@ void TextEditorView::updateScrollBarRange()
 		vsb->blockSignals(true);
 		vsb->setRange(0, nlines() - cx()->viewport_height / 2);
 		vsb->setPageStep(editorViewportHeight());
-		vsb->setValue(cx()->scroll_row_pos);
+		vsb->setValue(scrollposRow());
 		vsb->blockSignals(false);
 	}
 
@@ -412,9 +408,9 @@ void TextEditorView::updateScrollBarRange()
 			hsb->setPageStep(0);
 			hsb->setValue(0);
 		} else {
-			hsb->setRange(0, (w + 100) * reference_char_width_);
-			hsb->setPageStep(w * reference_char_width_);
-			hsb->setValue(cx()->scroll_col_pos);
+			hsb->setRange(0, w + 100);
+			hsb->setPageStep(w);
+			hsb->setValue(scrollposCol());
 		}
 		hsb->setVisible(!fixedwidth);
 		hsb->blockSignals(false);
@@ -486,7 +482,7 @@ void TextEditorView::updateVisibility(bool ensure_current_line_visible, bool cha
 	
 	// qDebug() << vrow << vcol << lrow << lcol;
 
-	emit moved(currentVisualRow(), currentVisualCol(), cx()->scroll_row_pos, cx()->scroll_col_pos);
+	emit moved(currentVisualRow(), currentVisualCol(), scrollposRow(), scrollposCol());
 }
 
 void TextEditorView::move(int cur_row, int cur_col, int scr_row, int scr_col, bool auto_scroll)
@@ -494,11 +490,11 @@ void TextEditorView::move(int cur_row, int cur_col, int scr_row, int scr_col, bo
 	if (isWidthFixed()) {
 		scr_col = 0;
 	}
-	if ((cur_row >= 0 && currentVisualRow() != cur_row) || (cur_col >= 0 && currentVisualCol() != cur_col) || cx()->scroll_row_pos != scr_row || cx()->scroll_col_pos != scr_col) {
+	if ((cur_row >= 0 && currentVisualRow() != cur_row) || (cur_col >= 0 && currentVisualCol() != cur_col) || scrollposRow() != scr_row || scrollposCol() != scr_col) {
 		if (cur_row >= 0) setCurrentVisualRow(cur_row);
 		if (cur_col >= 0) setCurrentVisualCol(cur_col);
-		if (scr_row >= 0) cx()->scroll_row_pos = scr_row;
-		if (scr_col >= 0) cx()->scroll_col_pos = scr_col;
+		if (scr_row >= 0) setScrollPosRow(scr_row);
+		if (scr_col >= 0) setScrollPosCol(scr_col);
 		internalUpdateVisibility(false, true, auto_scroll);
 	}
 }
@@ -646,7 +642,7 @@ int TextEditorView::scrollUnit() const
 int TextEditorView::scrollPosX() const
 {
 	int u = scrollUnit();
-	int n = editor_cx->scroll_col_pos;
+	int n = editor_cx->scroll_pos_col;
 	n *= (u == ScrollByCharacter) ? m->text_metrics.basisCharWidth() : u;
 	return n;
 }
@@ -657,7 +653,7 @@ int TextEditorView::scrollPosX() const
  */
 int TextEditorView::scrollTopRow() const
 {
-	return editor_cx->scroll_row_pos;
+	return editor_cx->scroll_pos_row;
 }
 
 int TextEditorView::view_y_from_row(int row) const

@@ -162,7 +162,4 @@ signals:
 	
 };
 
-
-
-
 #endif // TEXTEDITORVIEW_H

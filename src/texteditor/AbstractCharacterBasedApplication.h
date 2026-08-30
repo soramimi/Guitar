@@ -357,8 +357,8 @@ struct TextEditorContext {
 	col_index_t saved_col = 0;
 	int saved_col_hint = 0;
 	int current_char_span = 1;
-	int scroll_row_pos = 0;
-	int scroll_col_pos = 0;
+	int scroll_pos_row = 0;
+	int scroll_pos_col = 0;
 	int viewport_org_x = 0;
 	int viewport_org_y = 1;
 	int viewport_width = 80;
@@ -447,7 +447,6 @@ private:
 protected:
 	SelectionAnchor selection_start;
 	SelectionAnchor selection_end;
-	const int reference_char_width_ = 1; //@ TODO: remove
 protected:
 
 	std::vector<Document::Line> *_lines();
@@ -481,8 +480,14 @@ protected:
 	void setCurrentVisualRow(row_index_t row);
 	void setCurrentVisualCol(int col);
 	
+	int scrollposRow() const;
+	int scrollposCol() const;
+
 	int cursorCol() const;
 	int cursorRow() const;
+
+	void setScrollPosRow(int row);
+	void setScrollPosCol(int col);
 	
 	int editorViewportWidth() const;
 	int editorViewportHeight() const;
