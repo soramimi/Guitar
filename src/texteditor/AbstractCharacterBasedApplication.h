@@ -349,6 +349,143 @@ struct SelectionAnchor {
 
 using TextEditorEngine_sp = std::shared_ptr<TextEditorEngine>;
 
+class SomethingMap {
+public:
+	struct ValueItem {
+		uint32_t value = 0;
+		ValueItem() = default;
+		ValueItem(uint32_t value)
+			: value(value)
+		{
+		}
+	};
+	typedef uint32_t key_type;
+	typedef ValueItem value_type;
+	static constexpr size_t max_leaf_capacity = 256;
+	struct Leaf {
+		std::vector<value_type> values;
+		uint64_t sum_values = 0;
+	};
+	std::vector<Leaf> leaves;
+	
+	static inline uint32_t _value(ValueItem const &item)
+	{
+		return item.value;
+	}
+	
+	std::optional<value_type> find(key_type key) const
+	{
+		for (Leaf const &leaf : leaves) {
+			size_t nvalues = leaf.values.size();
+			if (key < nvalues) {
+				return leaf.values[key];
+			}
+			key -= nvalues;
+		}
+		return std::nullopt;
+	}
+	uint64_t count(key_type key) const
+	{
+		uint64_t sum = 0;
+		for (Leaf const &leaf : leaves) {
+			size_t nvalues = leaf.values.size();
+			if (key >= nvalues) {
+				sum += leaf.sum_values;
+				key -= nvalues;
+				if (key == 0) break;
+			} else {
+				for (size_t j = 0; j < key; j++) {
+					sum += _value(leaf.values[j]);
+				}
+				break;
+			}
+		}
+		return sum;
+	}
+private:
+	void append_leaf()
+	{
+		Leaf leaf;
+		leaf.values.reserve(max_leaf_capacity);
+		leaves.push_back(std::move(leaf));
+	}
+	void insert_into_leaf(size_t i, size_t offset, value_type value)
+	{
+		std::vector<value_type> &v = leaves[i].values;
+		v.insert(v.begin() + offset, value);
+		leaves[i].sum_values += _value(value);
+		if (v.size() > max_leaf_capacity) {
+			size_t half = v.size() / 2;
+			Leaf leaf;
+			leaf.values.reserve(max_leaf_capacity);
+			leaf.values.assign(v.begin() + half, v.end());
+			for (value_type x : leaf.values) {
+				leaf.sum_values += _value(x);
+			}
+			leaves[i].sum_values -= leaf.sum_values;
+			v.resize(half);
+			leaves.insert(leaves.begin() + i + 1, std::move(leaf));
+		}
+	}
+public:
+	void insert(key_type key, value_type value)
+	{
+		for (size_t i = 0; i < leaves.size(); i++) {
+			size_t nvalues = leaves[i].values.size();
+			if (key <= nvalues) {
+				insert_into_leaf(i, key, value);
+				return;
+			}
+			key -= nvalues;
+		}
+		while (key > 0) {
+			if (leaves.empty() || leaves.back().values.size() >= max_leaf_capacity) {
+				append_leaf();
+			}
+			std::vector<value_type> &v = leaves.back().values;
+			size_t n = std::min<size_t>(key, max_leaf_capacity - v.size());
+			v.insert(v.end(), n, {});
+			key -= n;
+		}
+		if (leaves.empty()) {
+			append_leaf();
+		}
+		insert_into_leaf(leaves.size() - 1, leaves.back().values.size(), value);
+	}
+	void update(key_type key, value_type value)
+	{
+		for (size_t i = 0; i < leaves.size(); i++) {
+			size_t nvalues = leaves[i].values.size();
+			if (key < nvalues) {
+				leaves[i].sum_values -= _value(leaves[i].values[key]);
+				leaves[i].sum_values += _value(value);
+				leaves[i].values[key] = value;
+				return;
+			}
+			key -= nvalues;
+		}
+		if (leaves.empty()) {
+			append_leaf();
+		}
+		insert_into_leaf(leaves.size() - 1, leaves.back().values.size(), value);
+	}
+	void erase(key_type key)
+	{
+		for (size_t i = 0; i < leaves.size(); i++) {
+			size_t nvalues = leaves[i].values.size();
+			if (key < nvalues) {
+				leaves[i].sum_values -= _value(leaves[i].values[key]);
+				leaves[i].values.erase(leaves[i].values.begin() + key);
+				if (leaves[i].values.empty()) {
+					leaves.erase(leaves.begin() + i);
+				}
+				return;
+			}
+			key -= nvalues;
+		}
+	}
+};
+
 struct TextEditorContext {
 	QRect cursor_rect;
 	bool single_line = false;
@@ -373,6 +510,7 @@ struct TextEditorContext {
 	std::vector<LogicalRowInfo> logical_row_info; // 論理行から物理行へのマッピング情報
 	std::vector<VisualRowInfo> visual_row_info; // 物理行から論理行へのマッピング情報
 	std::vector<Document::Line> visual_lines;
+	SomethingMap something_map;
 };
 
 struct RowCol {

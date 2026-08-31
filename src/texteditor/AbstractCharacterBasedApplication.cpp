@@ -542,7 +542,7 @@ row_index_t AbstractCharacterBasedApplication::lrow_to_vrow(row_index_t lrow)
 		return lrow;
 	}
 	
-	qDebug() << Q_FUNC_INFO << cx()->logical_row_info.size();
+	// qDebug() << Q_FUNC_INFO << cx()->logical_row_info.size();
 
 	Document const *doc = &cx()->engine->document;
 	std::vector<Document::Line> const &llines = doc->logical_lines;
@@ -554,16 +554,25 @@ row_index_t AbstractCharacterBasedApplication::lrow_to_vrow(row_index_t lrow)
 	}
 #else
 
+	SomethingMap::value_type v;
+	
 	if (lrow == 0) {
 		return 0; // 最初の論理行は必ず物理行0に対応する
 	} else if (lrow < (row_index_t)cx()->logical_row_info.size()) {
-		return cx()->logical_row_info[lrow].visual_row; // 既に計算済みの場合はキャッシュから取得
+		auto opt = cx()->something_map.find(lrow);
+		if (opt) {
+			v = *opt;
+		}
+		auto ret = cx()->logical_row_info[lrow].visual_row; // 既に計算済みの場合はキャッシュから取得
+		qDebug() << lrow << ret << v.value;
+		return ret;
 	}
 
 	LogicalRowInfo info;
 	row_index_t i = cx()->logical_row_info.size();
 	if (i == 0) {
 		cx()->logical_row_info.push_back(info); // 最初は必ず0
+		cx()->something_map.insert(0, {});
 	} else {
 		i--;
 		info = cx()->logical_row_info[i];
@@ -573,8 +582,11 @@ row_index_t AbstractCharacterBasedApplication::lrow_to_vrow(row_index_t lrow)
 		info.visual_row += line.sp->meta.visual_lines.size(); // 論理行に対応する物理行の数を加算
 		cx()->logical_row_info.push_back(info);
 		i++;
+		cx()->something_map.insert(i, info.visual_row);
+		v = info.visual_row;
 	}
 #endif
+	qDebug() << lrow << info.visual_row << v.value;
 	return info.visual_row;
 }
 
@@ -672,7 +684,7 @@ void AbstractCharacterBasedApplication::_updateVisualLineByLogicalLine(col_index
 		const size_t upper_pos = std::distance(cx->visual_row_info.begin(), upper);
 		const size_t dstlen = std::min(upper_pos, cx->visual_lines.size()) - lower_pos;
 		const size_t srclen = src.size();//std::min(lower_pos + src.size(), cx->visual_lines.size()) - lower_pos;
-		const auto it_dst = cx->visual_lines.begin() + lower_pos; // 書き込み先
+		auto it_dst = cx->visual_lines.begin() + lower_pos; // 書き込み先
 		// 物理行情報の長さが変化した場合、visual_linesを挿入または削除する
 		if (dstlen < srclen) {
 			const size_t n = srclen - dstlen; // 挿入する行数
@@ -685,6 +697,8 @@ void AbstractCharacterBasedApplication::_updateVisualLineByLogicalLine(col_index
 		}
 		if (!src.empty()) {
 			// 物理行情報を更新する
+			// 上の挿入削除でイテレーターが無効になっているので、書き込み先を再計算
+			it_dst = cx->visual_lines.begin() + lower_pos;
 			std::copy(src.begin(), src.end(), it_dst);
 		}
 	}
@@ -1067,6 +1081,7 @@ bool AbstractCharacterBasedApplication::commitLine(std::vector<Character> const 
 	if (lrow < cx()->logical_row_info.size()) {
 		cx()->logical_row_info.resize(lrow);
 	}
+	// cx()->something_map.erase(lrow);
 
 	if (m->valid_line_index > lrow) {
 		m->valid_line_index = lrow;
@@ -1690,18 +1705,36 @@ void AbstractCharacterBasedApplication::doDelete()
 			vec.insert(vec.end(), next.begin(), next.end());
 			if (next_lrow < logicalLines()) {
 				doc->logical_lines.erase(doc->logical_lines.begin() + next_lrow);
+				// cx()->logical_row_info.resize(next_lrow);
+				// cx()->something_map.erase(next_lrow);
 			}
 		}
 	} else {
 		vec.erase(vec.begin() + lcol);
 	}
 
+	row_index_t vrow = lrow_to_vrow(lrow);
+	col_index_t vcol = currentVisualCol();
+	
 	if (commitLine(vec) || delete_nl) { // 折り返し後の物理行数が変化した場合は、これ以降の物理行情報を無効化する
-		row_index_t vrow = lrow_to_vrow(lrow);
 		invalidateVisualRowInfo(vrow);
 	}
+	
+	vcol = lcol; // 論理行から物理行を再計算
+	std::vector<Document::Line> *llines = &doc->logical_lines;
+	Document::Line const &line = (*llines)[lrow];
+	for (size_t i = 0; i < line.sp->meta.visual_lines.size(); i++) {
+		std::vector<Character> chars = parseLine(&line.sp->meta.visual_lines[i]);
+		if (vcol <= chars.size()) break;
+		vcol -= chars.size();
+		vrow++;
+	}
+	if (nlines() > 0 && vrow >= nlines()) {
+		vrow = nlines() - 1;
+	}
+	setCursorPos(vrow, vcol);
 
-	setCursorCol(lcol);
+	// setCursorCol(vcol);
 	updateVisibility(true, true, true);
 }
 
@@ -2636,6 +2669,8 @@ void AbstractCharacterBasedApplication::internalWrite(const ushort *begin, const
 	col_index_t lcol = currentLogicalCol();
 
 	std::vector<Character> vec = parseLogicalLine(cx(), lrow);
+	qDebug() << lcol << vec.size();
+	
 
 	auto WriteChar = [&](uint32_t c){
 		if (isInsertMode()) {
@@ -2679,9 +2714,24 @@ void AbstractCharacterBasedApplication::internalWrite(const ushort *begin, const
 		row_index_t vrow = lrow_to_vrow(lrow);
 		invalidateVisualRowInfo(vrow);
 	}
+
+	col_index_t vcol = lcol; // 論理行から物理行を再計算
+	row_index_t vrow = currentVisualRow();
+	std::vector<Document::Line> *llines = &doc->logical_lines;
+	Document::Line const &line = (*llines)[lrow];
+	for (size_t i = 0; i < line.sp->meta.visual_lines.size(); i++) {
+		std::vector<Character> chars = parseLine(&line.sp->meta.visual_lines[i]);
+		if (vcol <= chars.size()) break;
+		vcol -= chars.size();
+		vrow++;
+	}
+	if (nlines() > 0 && vrow >= nlines()) {
+		vrow = nlines() - 1;
+	}
+	setCursorPos(vrow, vcol);
 	
-	setCurrentLogicalCol(lcol);
-	setCursorCol(lcol);
+	// setCurrentLogicalCol(lcol);
+	// setCursorCol(lcol);
 	updateVisibility(true, true, true);
 }
 
