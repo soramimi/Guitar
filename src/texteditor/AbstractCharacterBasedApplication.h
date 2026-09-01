@@ -351,34 +351,76 @@ using TextEditorEngine_sp = std::shared_ptr<TextEditorEngine>;
 
 class SomethingMap {
 public:
+	struct UserData {
+	};
 	struct ValueItem {
-		uint32_t value = 0;
-		ValueItem() = default;
-		ValueItem(uint32_t value)
-			: value(value)
+		// uint32_t value_ = 0;
+		std::shared_ptr<std::vector<UserData>> data_;
+		void _init(uint32_t value)
 		{
+			data_ = std::make_shared<std::vector<UserData>>(value);
+		}
+		ValueItem()
+			// : value_(0)
+		{
+			_init(0);
+		}
+		ValueItem(uint32_t value)
+			// : value_(value)
+		{
+			_init(value);
+		}
+		uint32_t value() const
+		{
+			// return value_;
+			assert(data_);
+			return data_->size();
 		}
 	};
 	typedef uint32_t key_type;
 	typedef ValueItem value_type;
+private:
 	static constexpr size_t max_leaf_capacity = 256;
 	struct Leaf {
-		std::vector<value_type> values;
+		std::vector<value_type> items;
 		uint64_t sum_values = 0;
 	};
-	std::vector<Leaf> leaves;
-	
-	static inline uint32_t _value(ValueItem const &item)
+	struct Node {
+		std::vector<Leaf> leaves;
+	};
+	Node root_;
+private:
+	void append_leaf()
 	{
-		return item.value;
+		Leaf leaf;
+		leaf.items.reserve(max_leaf_capacity);
+		root_.leaves.push_back(std::move(leaf));
 	}
-	
+	void insert_into_leaf(size_t i, size_t offset, value_type item)
+	{
+		std::vector<value_type> *items = &root_.leaves[i].items;
+		items->insert(items->begin() + offset, item);
+		root_.leaves[i].sum_values += item.value();
+		if (items->size() > max_leaf_capacity) {
+			size_t half = items->size() / 2;
+			Leaf leaf;
+			leaf.items.reserve(max_leaf_capacity);
+			leaf.items.assign(items->begin() + half, items->end());
+			for (value_type x : leaf.items) {
+				leaf.sum_values += x.value();
+			}
+			root_.leaves[i].sum_values -= leaf.sum_values;
+			items->resize(half);
+			root_.leaves.insert(root_.leaves.begin() + i + 1, std::move(leaf));
+		}
+	}
+public:
 	std::optional<value_type> find(key_type key) const
 	{
-		for (Leaf const &leaf : leaves) {
-			size_t nvalues = leaf.values.size();
+		for (Leaf const &leaf : root_.leaves) {
+			size_t nvalues = leaf.items.size();
 			if (key < nvalues) {
-				return leaf.values[key];
+				return leaf.items[key];
 			}
 			key -= nvalues;
 		}
@@ -387,97 +429,71 @@ public:
 	uint64_t count(key_type key) const
 	{
 		uint64_t sum = 0;
-		for (Leaf const &leaf : leaves) {
-			size_t nvalues = leaf.values.size();
+		for (Leaf const &leaf : root_.leaves) {
+			size_t nvalues = leaf.items.size();
 			if (key >= nvalues) {
 				sum += leaf.sum_values;
 				key -= nvalues;
 				if (key == 0) break;
 			} else {
 				for (size_t j = 0; j < key; j++) {
-					sum += _value(leaf.values[j]);
+					sum += leaf.items[j].value();
 				}
 				break;
 			}
 		}
 		return sum;
 	}
-private:
-	void append_leaf()
+	void insert(key_type key, value_type item)
 	{
-		Leaf leaf;
-		leaf.values.reserve(max_leaf_capacity);
-		leaves.push_back(std::move(leaf));
-	}
-	void insert_into_leaf(size_t i, size_t offset, value_type value)
-	{
-		std::vector<value_type> &v = leaves[i].values;
-		v.insert(v.begin() + offset, value);
-		leaves[i].sum_values += _value(value);
-		if (v.size() > max_leaf_capacity) {
-			size_t half = v.size() / 2;
-			Leaf leaf;
-			leaf.values.reserve(max_leaf_capacity);
-			leaf.values.assign(v.begin() + half, v.end());
-			for (value_type x : leaf.values) {
-				leaf.sum_values += _value(x);
-			}
-			leaves[i].sum_values -= leaf.sum_values;
-			v.resize(half);
-			leaves.insert(leaves.begin() + i + 1, std::move(leaf));
-		}
-	}
-public:
-	void insert(key_type key, value_type value)
-	{
-		for (size_t i = 0; i < leaves.size(); i++) {
-			size_t nvalues = leaves[i].values.size();
+		for (size_t i = 0; i < root_.leaves.size(); i++) {
+			size_t nvalues = root_.leaves[i].items.size();
 			if (key <= nvalues) {
-				insert_into_leaf(i, key, value);
+				insert_into_leaf(i, key, item);
 				return;
 			}
 			key -= nvalues;
 		}
 		while (key > 0) {
-			if (leaves.empty() || leaves.back().values.size() >= max_leaf_capacity) {
+			if (root_.leaves.empty() || root_.leaves.back().items.size() >= max_leaf_capacity) {
 				append_leaf();
 			}
-			std::vector<value_type> &v = leaves.back().values;
-			size_t n = std::min<size_t>(key, max_leaf_capacity - v.size());
-			v.insert(v.end(), n, {});
+			std::vector<value_type> *items = &root_.leaves.back().items;
+			size_t n = std::min<size_t>(key, max_leaf_capacity - items->size());
+			items->insert(items->end(), n, {});
 			key -= n;
 		}
-		if (leaves.empty()) {
+		if (root_.leaves.empty()) {
 			append_leaf();
 		}
-		insert_into_leaf(leaves.size() - 1, leaves.back().values.size(), value);
+		insert_into_leaf(root_.leaves.size() - 1, root_.leaves.back().items.size(), item);
 	}
 	void update(key_type key, value_type value)
 	{
-		for (size_t i = 0; i < leaves.size(); i++) {
-			size_t nvalues = leaves[i].values.size();
+		for (size_t i = 0; i < root_.leaves.size(); i++) {
+			size_t nvalues = root_.leaves[i].items.size();
 			if (key < nvalues) {
-				leaves[i].sum_values -= _value(leaves[i].values[key]);
-				leaves[i].sum_values += _value(value);
-				leaves[i].values[key] = value;
+				root_.leaves[i].sum_values -= root_.leaves[i].items[key].value();
+				root_.leaves[i].sum_values += value.value();
+				root_.leaves[i].items[key] = value;
 				return;
 			}
 			key -= nvalues;
 		}
-		if (leaves.empty()) {
+		if (root_.leaves.empty()) {
 			append_leaf();
 		}
-		insert_into_leaf(leaves.size() - 1, leaves.back().values.size(), value);
+		insert_into_leaf(root_.leaves.size() - 1, root_.leaves.back().items.size(), value);
 	}
 	void erase(key_type key)
 	{
-		for (size_t i = 0; i < leaves.size(); i++) {
-			size_t nvalues = leaves[i].values.size();
+		for (size_t i = 0; i < root_.leaves.size(); i++) {
+			size_t nvalues = root_.leaves[i].items.size();
 			if (key < nvalues) {
-				leaves[i].sum_values -= _value(leaves[i].values[key]);
-				leaves[i].values.erase(leaves[i].values.begin() + key);
-				if (leaves[i].values.empty()) {
-					leaves.erase(leaves.begin() + i);
+				root_.leaves[i].sum_values -= root_.leaves[i].items[key].value();
+				root_.leaves[i].items.erase(root_.leaves[i].items.begin() + key);
+				if (root_.leaves[i].items.empty()) {
+					root_.leaves.erase(root_.leaves.begin() + i);
 				}
 				return;
 			}

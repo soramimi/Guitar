@@ -564,7 +564,7 @@ row_index_t AbstractCharacterBasedApplication::lrow_to_vrow(row_index_t lrow)
 			v = *opt;
 		}
 		auto ret = cx()->logical_row_info[lrow].visual_row; // 既に計算済みの場合はキャッシュから取得
-		qDebug() << lrow << ret << v.value;
+		qDebug() << lrow << ret << v.value();
 		return ret;
 	}
 
@@ -586,7 +586,7 @@ row_index_t AbstractCharacterBasedApplication::lrow_to_vrow(row_index_t lrow)
 		v = info.visual_row;
 	}
 #endif
-	qDebug() << lrow << info.visual_row << v.value;
+	qDebug() << lrow << info.visual_row << v.value();
 	return info.visual_row;
 }
 
@@ -2669,7 +2669,7 @@ void AbstractCharacterBasedApplication::internalWrite(const ushort *begin, const
 	col_index_t lcol = currentLogicalCol();
 
 	std::vector<Character> vec = parseLogicalLine(cx(), lrow);
-	qDebug() << lcol << vec.size();
+	// qDebug() << lcol << vec.size();
 	
 
 	auto WriteChar = [&](uint32_t c){
