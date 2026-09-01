@@ -50,6 +50,7 @@ HEADERS  += \
 	../../src/texteditor/TextEditorView.h \
 	../../src/texteditor/TextEditorWidget.h \
 	../../src/texteditor/UnicodeWidth.h \
+	../../src/texteditor/somethingmap.h \
 	../../src/texteditor/unicode.h \
 	src/MainWindow.h \
 	src/MySettings.h
