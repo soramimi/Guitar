@@ -461,10 +461,24 @@ std::pair<row_index_t, int> TextEditorView::currentVisualPosition() const
  */
 std::pair<row_index_t, col_index_t> TextEditorView::currentLogicalPosition()
 {
+	row_index_t lr = 0;
+	row_index_t vr = 0;
+	
 	auto [vrow, vcol] = currentVisualPosition();
 	VisualRowInfo rowinfo = queryVisualRowInfo(vrow);
 	row_index_t lrow = rowinfo.logical_row;
 	col_index_t lcol = rowinfo.logical_col + vcol;
+
+	{
+		auto opt = cx()->something_map.visual_to_logical(vrow);
+		if (opt) {
+			lr = opt->first;
+		}
+		vr = cx()->something_map.logical_to_visual(lrow);
+	}
+	
+	qDebug() << QString::asprintf("(%d, %d), (%d, %d), lr:(%d), vr:(%d)", lrow, lcol, vrow, vcol, lr, vr);
+
 	return std::make_pair(lrow, lcol);
 }
 
@@ -475,8 +489,6 @@ void TextEditorView::updateVisibility(bool ensure_current_line_visible, bool cha
 	auto [lrow, lcol] = currentLogicalPosition();
 	setCurrentLogicalRow(lrow);
 	setCurrentLogicalCol(lcol);
-	
-	// qDebug() << vrow << vcol << lrow << lcol;
 
 	emit moved(currentVisualRow(), currentVisualCol(), scrollposRow(), scrollposCol());
 }

@@ -176,6 +176,11 @@ public:
 		}
 		return true;
 	}
+	// すべて消去
+	void clear()
+	{
+		nodes_.clear();
+	}
 	// key 位置の値を返す。範囲外は nullopt。
 	std::optional<value_type> find(key_type key) const
 	{
@@ -199,8 +204,9 @@ public:
 	// [0, key) の範囲の値の合計を返す。
 	// 論理行 key の先頭の表示行番号に相当する。key が総要素数を超えていたら
 	// 全体の合計(=総表示行数)を返す。
-	uint64_t count(key_type key) const
+	std::pair<uint64_t, ValueItem const *> count(key_type key) const
 	{
+		ValueItem const *item = nullptr;
 		uint64_t sum = 0;
 		for (Node const &node : nodes_) {
 			// Node全体が範囲に収まるなら集計値を一括加算してスキップ
@@ -220,6 +226,7 @@ public:
 				} else {
 					// 境界がかかる最後のLeafだけ個別に加算する
 					for (size_t j = 0; j < key; j++) {
+						item = &leaf.items[j];
 						sum += leaf.items[j].value();
 					}
 					break;
@@ -227,7 +234,7 @@ public:
 			}
 			break;
 		}
-		return sum;
+		return {sum, item};
 	}
 	// key の位置に item を挿入する。後続のキーは1つ後ろへずれる。
 	// key が末尾より先の場合は、隙間をデフォルト値(value 0)で埋めてから配置する。
@@ -329,11 +336,9 @@ public:
 		}
 	}
 	// 論理行番号から表示行番号を求める。countの順変換。
-	std::optional<uint32_t> logical_to_visual(uint64_t logical_row) const
+	uint64_t logical_to_visual(uint64_t logical_row) const
 	{
-		auto opt = find(logical_row);
-		if (opt) return opt->value();
-		return std::nullopt;
+		return count(logical_row).first;
 	}
 	// 表示行番号から (論理行番号, 行内の折り返し行オフセット) を求める。countの逆変換。
 	// count(i) <= visual_row < count(i+1) となる論理行 i を返す。
