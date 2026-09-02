@@ -16,9 +16,11 @@
 // - キー = 論理行番号(0ベース)。安定したIDではなく「位置」であり、
 //   insert で後続キーは1つ後ろへずれ、erase で1つ前へ詰まる
 // - 値 = その論理行が折り返しで占める表示行数。表示行1つにつき UserData を
-//   1要素持ち、その個数(value())が折り返し数を兼ねる
+//   1要素持ち、その個数(value())が折り返し数を兼ねる。UserData の col_len に
+//   各折り返し行の桁数を持たせると、論理列まで含めた座標変換ができる
 // - count(i) = 論理行 0..i-1 の表示行数の合計 = 論理行 i の先頭の表示行番号
-// - visual_to_logical(r) = count の逆変換
+// - logical_to_visual(行, 列) = 順変換(論理座標 → 表示行番号)
+// - visual_to_logical(表示行) = 逆変換(表示行番号 → 論理行と行内オフセット)
 //
 // 内部は固定3階層の B+-tree: root(nodes_)→ Node → Leaf。
 // Node に「配下の総要素数」と「配下の値の合計」をキャッシュしておき、
@@ -26,34 +28,29 @@
 // 各操作の計算量は O(root内Node数 + fanout + 葉容量)。
 class SomethingMap {
 public:
-	// 表示行1行ぶんに付随するユーザーデータ(折り返し位置などを載せる想定)
+	// 表示行(折り返し行)1行ぶんに付随するユーザーデータ
 	struct UserData {
-		uint32_t col_len = 0;
+		uint32_t col_len = 0; // この折り返し行が保持する桁数(0 = 未設定)
 	};
 	// 論理行1行ぶんの値。表示行ごとの UserData の配列を共有ポインタで保持し、
 	// その要素数が折り返し数(=この行が占める表示行数)を表す。
+	// コピーは shared_ptr の浅い共有なのでコピーコストは小さい。
+	// data_ は private のため外部からは変更できず、折り返し数の変更は
+	// 必ず SomethingMap::update() を通る(sum_values との整合が保たれる)。
 	class ValueItem {
 		friend class SomethingMap;
 	private:
 		std::shared_ptr<std::vector<UserData>> data_;
 	public:
-		void _init(uint32_t value)
+		// 折り返し数だけ指定して構築する(col_len はすべて未設定)
+		ValueItem(uint32_t value = 0)
 		{
 			data_ = std::make_shared<std::vector<UserData>>(value);
 		}
-		ValueItem()
+		// 各折り返し行の桁数を指定して構築する(折り返し数 = collens.size())
+		ValueItem(std::vector<uint32_t> const &collens)
 		{
-			_init(0);
-		}
-		ValueItem(uint32_t value)
-		{
-			_init(value);
-		}
-		ValueItem(uint32_t value, std::vector<uint32_t> const &collens)
-		{
-			_init(value);
-
-			assert(value == collens.size());
+			data_ = std::make_shared<std::vector<UserData>>(collens.size());
 			for (size_t i = 0; i < collens.size(); i++) {
 				(*data_)[i].col_len = collens[i];
 			}
@@ -63,6 +60,25 @@ public:
 		{
 			assert(data_);
 			return data_->size();
+		}
+		// 論理列がこの行の何番目の折り返し行に属するかを求める。
+		// 戻り値は (折り返し行インデックス, 折り返し行内の列)。
+		// 列 == 桁数 の境界は次の折り返し行の先頭に進む。
+		// 最終折り返し行では列を切らないため、行末を超えた列は最終行に丸められる。
+		// col_len が未設定(0)の行は折り返し境界として扱われない。
+		std::pair<uint32_t, uint32_t> locate_column(uint32_t col) const
+		{
+			assert(data_);
+			uint32_t row = 0;
+			for (size_t i = 0; i + 1 < data_->size(); i++) {
+				uint32_t len = (*data_)[i].col_len;
+				if (len > 0) {
+					if (col < len) break;
+					col -= len;
+					row++;
+				}
+			}
+			return {row, col};
 		}
 	};
 	typedef uint32_t key_type;
@@ -160,6 +176,45 @@ private:
 			}
 		}
 	}
+	// count() の走査結果。前置和と、key位置のitemを同時に返すことで、
+	// logical_to_visual での二度引きを避ける。
+	struct CountResult {
+		uint64_t sum = 0;                // [0, key) の value() の合計
+		ValueItem const *item = nullptr; // key位置のitem(範囲外なら nullptr)
+	};
+	// [0, key) の値の合計と、key位置のitemを求める。
+	// Node/Leaf 全体が範囲に収まる場合は集計値を一括加算してスキップし、
+	// 境界がかかる最後のLeafだけ個別に加算する。
+	CountResult count_and_find(key_type key) const
+	{
+		CountResult result;
+		for (Node const &node : nodes_) {
+			// Node全体が範囲に収まるなら集計値を一括加算してスキップ
+			if (key >= node.num_items) {
+				result.sum += node.sum_values;
+				key -= node.num_items;
+				if (key == 0) break;
+				continue;
+			}
+			for (Leaf const &leaf : node.leaves) {
+				size_t nvalues = leaf.items.size();
+				if (key < nvalues) {
+					// 境界がかかる最後のLeafだけ個別に加算する
+					for (size_t j = 0; j < key; j++) {
+						result.sum += leaf.items[j].value();
+					}
+					result.item = &leaf.items[key];
+					break;
+				}
+				// Leaf全体が範囲に収まるなら集計値を一括加算してスキップ
+				result.sum += leaf.sum_values;
+				key -= nvalues;
+				if (key == 0) break;
+			}
+			break;
+		}
+		return result;
+	}
 public:
 	// 全不変条件を検査する(テスト用)。
 	// 集計値の一致・容量とfanoutの上限・空のLeaf/Nodeが残っていないことを確認し、
@@ -187,7 +242,7 @@ public:
 		}
 		return true;
 	}
-	// すべて消去
+	// すべて消去する(画面幅変更時の全再構築などに使う)
 	void clear()
 	{
 		nodes_.clear();
@@ -215,41 +270,9 @@ public:
 	// [0, key) の範囲の値の合計を返す。
 	// 論理行 key の先頭の表示行番号に相当する。key が総要素数を超えていたら
 	// 全体の合計(=総表示行数)を返す。
-	std::pair<uint64_t, ValueItem const *> _count(key_type key) const
-	{
-		ValueItem const *item = nullptr;
-		uint64_t sum = 0;
-		for (Node const &node : nodes_) {
-			// Node全体が範囲に収まるなら集計値を一括加算してスキップ
-			if (key >= node.num_items) {
-				sum += node.sum_values;
-				key -= node.num_items;
-				if (key == 0) break;
-				continue;
-			}
-			for (Leaf const &leaf : node.leaves) {
-				size_t nvalues = leaf.items.size();
-				if (key < nvalues) {
-					// 境界がかかる最後のLeafだけ個別に加算する
-					for (size_t j = 0; j < key; j++) {
-						sum += leaf.items[j].value();
-					}
-					item = &leaf.items[key];
-					break;
-				} else {
-					// Leaf全体が範囲に収まるなら集計値を一括加算してスキップ
-					sum += leaf.sum_values;
-					key -= nvalues;
-					if (key == 0) break;
-				}
-			}
-			break;
-		}
-		return {sum, item};
-	}
 	uint64_t count(key_type key) const
 	{
-		return _count(key).first;
+		return count_and_find(key).sum;
 	}
 	// key の位置に item を挿入する。後続のキーは1つ後ろへずれる。
 	// key が末尾より先の場合は、隙間をデフォルト値(value 0)で埋めてから配置する。
@@ -350,23 +373,15 @@ public:
 			return; // Nodeに入ったら必ずLeaf内で解決する(ここには到達しない)
 		}
 	}
-	// 論理行番号から表示行番号を求める。countの順変換。
-	uint64_t logical_to_visual(uint64_t logical_row, uint32_t logical_col) const
+	// (論理行, 論理列) から表示行番号を求める。countの順変換。
+	// 行頭の表示行(count)に、論理列が属する折り返し行のオフセット
+	// (ValueItem::locate_column)を加える。論理行が範囲外なら総表示行数を返す。
+	uint64_t logical_to_visual(key_type logical_row, uint32_t logical_col) const
 	{
-		std::pair<uint64_t, ValueItem const *> pair = _count(logical_row);
-		uint64_t vrow = pair.first;
-		if (pair.second) {
-			auto lcol = logical_col;
-			std::vector<UserData> const &vec = *pair.second->data_;
-			for (size_t i = 0; i + 1 < vec.size(); i++) {
-				if (vec[i].col_len > 0) {
-					if (lcol < vec[i].col_len) {
-						break;
-					}
-					lcol -= vec[i].col_len;
-					vrow++;
-				}
-			}
+		CountResult r = count_and_find(logical_row);
+		uint64_t vrow = r.sum;
+		if (r.item) {
+			vrow += r.item->locate_column(logical_col).first;
 		}
 		return vrow;
 	}

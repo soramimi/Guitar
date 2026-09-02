@@ -316,6 +316,7 @@ HEADERS += \
 	$$PWD/src/ProcessStatus.h \
 	$$PWD/src/TraceEventItem.h \
 	$$PWD/src/main.h \
+	$$PWD/src/texteditor/somethingmap.h \
 	$$SRC/CommitRecord.h \
 	$$SRC/IncrementalSearchHelper.h \
 	$$SRC/LoadPlugin.h \

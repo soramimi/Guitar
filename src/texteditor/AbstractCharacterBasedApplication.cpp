@@ -589,7 +589,7 @@ row_index_t AbstractCharacterBasedApplication::lrow_to_vrow(row_index_t lrow)
 		for (Document::Line const &vl : ll.sp->meta.visual_lines) {
 			cols.push_back(vl.sp->meta.logical_col_len);
 		}
-		v = {info.visual_row, cols};
+		v = cols;
 	}
 #endif
 	qDebug() << lrow << info.visual_row << v.value();
@@ -634,7 +634,7 @@ VisualRowInfo AbstractCharacterBasedApplication::queryVisualRowInfo(row_index_t 
 		for (Document::Line const &vl : ll->sp->meta.visual_lines) {
 			collens.push_back(vl.sp->meta.logical_col_len);
 		}
-		cx->something_map.update(info.logical_row, {ll->sp->meta.visual_lines.size(), collens}); // 論理行に対応する物理行数を更新
+		cx->something_map.update(info.logical_row, collens); // 論理行に対応する物理行数を更新
 		
 		for (Document::Line const &vl : ll->sp->meta.visual_lines) { // 折り返し処理済みの物理行
 			info.logical_col = vl.sp->meta.logical_col_pos; // 論理行内の開始桁位置を設定
@@ -738,7 +738,7 @@ bool AbstractCharacterBasedApplication::updateVisualLine(row_index_t lrow, bool 
 				for (Document::Line const &vl : line->sp->meta.visual_lines) {
 					collens.push_back(vl.sp->meta.logical_col_len);
 				}
-				cx()->something_map.update(lrow, {line->sp->meta.visual_lines.size(), collens}); // 論理行に対応する物理行数を更新
+				cx()->something_map.update(lrow, collens); // 論理行に対応する物理行数を更新
 			}
 			vline_count_changed = (nvlines != line->sp->meta.visual_lines.size());
 			
