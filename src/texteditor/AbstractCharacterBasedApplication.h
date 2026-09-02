@@ -692,6 +692,7 @@ protected:
 private:
 	void _updateVisualLineByLogicalLine(col_index_t lrow, Document::Line const &ll, std::mutex *mutex);
 	void _updateVisualLinesAll(bool force);
+	void wrap_and_update_line_map(row_index_t lrow, Document::Line *ll, bool force, std::mutex *mutex);
 public:
 	bool updateVisualLine(row_index_t lrow, bool force, std::mutex *mutex = nullptr);
 	void updateVisualLinesAll()

@@ -7,6 +7,7 @@
 #include <memory>
 #include <utility>
 #include <assert.h>
+#include <limits>
 
 // SomethingMap
 //
@@ -30,7 +31,7 @@ class SomethingMap {
 public:
 	// 表示行(折り返し行)1行ぶんに付随するユーザーデータ
 	struct UserData {
-		uint32_t col_len = 0; // この折り返し行が保持する桁数(0 = 未設定)
+		uint32_t vcol_len = 0; // この折り返し行が保持する桁数(0 = 未設定)
 	};
 	// 論理行1行ぶんの値。表示行ごとの UserData の配列を共有ポインタで保持し、
 	// その要素数が折り返し数(=この行が占める表示行数)を表す。
@@ -47,12 +48,12 @@ public:
 		{
 			data_ = std::make_shared<std::vector<UserData>>(value);
 		}
-		// 各折り返し行の桁数を指定して構築する(折り返し数 = collens.size())
-		ValueItem(std::vector<uint32_t> const &collens)
+		// 各折り返し行の桁数を指定して構築する(折り返し数 = col_count_list.size())
+		ValueItem(std::vector<uint32_t> const &col_count_list)
 		{
-			data_ = std::make_shared<std::vector<UserData>>(collens.size());
-			for (size_t i = 0; i < collens.size(); i++) {
-				(*data_)[i].col_len = collens[i];
+			data_ = std::make_shared<std::vector<UserData>>(col_count_list.size());
+			for (size_t i = 0; i < col_count_list.size(); i++) {
+				(*data_)[i].vcol_len = col_count_list[i];
 			}
 		}
 		// 折り返し数(この行が占める表示行数)
@@ -66,19 +67,19 @@ public:
 		// 列 == 桁数 の境界は次の折り返し行の先頭に進む。
 		// 最終折り返し行では列を切らないため、行末を超えた列は最終行に丸められる。
 		// col_len が未設定(0)の行は折り返し境界として扱われない。
-		std::pair<uint32_t, uint32_t> locate_column(uint32_t col) const
+		std::pair<uint32_t, uint32_t> locate_column(uint32_t lcol) const
 		{
 			assert(data_);
 			uint32_t row = 0;
 			for (size_t i = 0; i + 1 < data_->size(); i++) {
-				uint32_t len = (*data_)[i].col_len;
+				uint32_t len = (*data_)[i].vcol_len;
 				if (len > 0) {
-					if (col < len) break;
-					col -= len;
+					if (lcol < len) break;
+					lcol -= len;
 					row++;
 				}
 			}
-			return {row, col};
+			return {row, lcol};
 		}
 	};
 	typedef uint32_t key_type;
@@ -182,34 +183,34 @@ private:
 		uint64_t sum = 0;                // [0, key) の value() の合計
 		ValueItem const *item = nullptr; // key位置のitem(範囲外なら nullptr)
 	};
-	// [0, key) の値の合計と、key位置のitemを求める。
+	// [0, lrow) の値の合計と、key位置のitemを求める。
 	// Node/Leaf 全体が範囲に収まる場合は集計値を一括加算してスキップし、
 	// 境界がかかる最後のLeafだけ個別に加算する。
-	CountResult count_and_find(key_type key) const
+	CountResult count_and_find(key_type lrow) const
 	{
 		CountResult result;
 		for (Node const &node : nodes_) {
 			// Node全体が範囲に収まるなら集計値を一括加算してスキップ
-			if (key >= node.num_items) {
+			if (lrow >= node.num_items) {
 				result.sum += node.sum_values;
-				key -= node.num_items;
-				if (key == 0) break;
+				lrow -= node.num_items;
+				if (lrow == 0) break;
 				continue;
 			}
 			for (Leaf const &leaf : node.leaves) {
 				size_t nvalues = leaf.items.size();
-				if (key < nvalues) {
+				if (lrow < nvalues) {
 					// 境界がかかる最後のLeafだけ個別に加算する
-					for (size_t j = 0; j < key; j++) {
+					for (size_t j = 0; j < lrow; j++) {
 						result.sum += leaf.items[j].value();
 					}
-					result.item = &leaf.items[key];
+					result.item = &leaf.items[lrow];
 					break;
 				}
 				// Leaf全体が範囲に収まるなら集計値を一括加算してスキップ
 				result.sum += leaf.sum_values;
-				key -= nvalues;
-				if (key == 0) break;
+				lrow -= nvalues;
+				if (lrow == 0) break;
 			}
 			break;
 		}
@@ -247,92 +248,92 @@ public:
 	{
 		nodes_.clear();
 	}
-	// key 位置の値を返す。範囲外は nullopt。
-	std::optional<value_type> find(key_type key) const
+	// lrow 位置の値を返す。範囲外は nullopt。
+	std::optional<value_type> find(key_type lrow) const
 	{
 		for (Node const &node : nodes_) {
 			// このNodeの範囲外ならNodeごとスキップ
-			if (key >= node.num_items) {
-				key -= node.num_items;
+			if (lrow >= node.num_items) {
+				lrow -= node.num_items;
 				continue;
 			}
 			for (Leaf const &leaf : node.leaves) {
 				size_t nvalues = leaf.items.size();
-				if (key < nvalues) {
-					return leaf.items[key];
+				if (lrow < nvalues) {
+					return leaf.items[lrow];
 				}
-				key -= nvalues;
+				lrow -= nvalues;
 			}
 			break; // Nodeに入ったら必ずLeaf内で解決する(ここには到達しない)
 		}
 		return std::nullopt;
 	}
-	// [0, key) の範囲の値の合計を返す。
-	// 論理行 key の先頭の表示行番号に相当する。key が総要素数を超えていたら
+	// [0, lrow) の範囲の値の合計を返す。
+	// 論理行 lrow の先頭の表示行番号に相当する。lrow が総要素数を超えていたら
 	// 全体の合計(=総表示行数)を返す。
-	uint64_t count(key_type key) const
+	uint64_t count(key_type lrow) const
 	{
-		return count_and_find(key).sum;
+		return count_and_find(lrow).sum;
 	}
-	// key の位置に item を挿入する。後続のキーは1つ後ろへずれる。
-	// key が末尾より先の場合は、隙間をデフォルト値(value 0)で埋めてから配置する。
-	void insert(key_type key, value_type item)
+	// lrow の位置に item を挿入する。後続のキーは1つ後ろへずれる。
+	// lrow が末尾より先の場合は、隙間をデフォルト値(value 0)で埋めてから配置する。
+	void insert(key_type lrow, value_type item)
 	{
 		for (size_t ni = 0; ni < nodes_.size(); ni++) {
 			Node const &node = nodes_[ni];
-			// 挿入は末尾境界(key == num_items)もこのNodeが受け持つ
-			if (key > node.num_items) {
-				key -= node.num_items;
+			// 挿入は末尾境界(lrow == num_items)もこのNodeが受け持つ
+			if (lrow > node.num_items) {
+				lrow -= node.num_items;
 				continue;
 			}
 			for (size_t li = 0; li < node.leaves.size(); li++) {
 				size_t nvalues = node.leaves[li].items.size();
-				if (key <= nvalues) {
-					insert_into_leaf(ni, li, key, item);
+				if (lrow <= nvalues) {
+					insert_into_leaf(ni, li, lrow, item);
 					return;
 				}
-				key -= nvalues;
+				lrow -= nvalues;
 			}
 			return; // Nodeに入ったら必ずLeaf内で解決する(ここには到達しない)
 		}
 		// 末尾より先: 隙間をデフォルト値(value 0)で埋めてから追加する
-		while (key > 0) {
+		while (lrow > 0) {
 			ensure_tail();
 			Node *node = &nodes_.back();
 			std::vector<value_type> *items = &node->leaves.back().items;
-			size_t n = std::min<size_t>(key, max_leaf_capacity - items->size());
+			size_t n = std::min<size_t>(lrow, max_leaf_capacity - items->size());
 			items->insert(items->end(), n, {});
 			node->num_items += n; // value 0 なので sum_values は不変
-			key -= n;
+			lrow -= n;
 		}
 		ensure_tail();
 		insert_into_leaf(nodes_.size() - 1, nodes_.back().leaves.size() - 1, nodes_.back().leaves.back().items.size(), item);
 	}
-	// 既存の key なら値を上書きする(後続のキーはずれない)。
-	// key が最大キーを超えていたら末尾に追加する(隙間埋めはしない)。
+	// 既存の lrow なら値を上書きする(後続のキーはずれない)。
+	// lrow が最大キーを超えていたら末尾に追加する(隙間埋めはしない)。
 	// 末尾追加の性質を使って、連続appendによる一括構築にも使える。
-	void update(key_type key, value_type value)
+	void update(key_type lrow, value_type value)
 	{
 		for (Node &node : nodes_) {
 			// このNodeの範囲外ならNodeごとスキップ
-			if (key >= node.num_items) {
-				key -= node.num_items;
+			if (lrow >= node.num_items) {
+				lrow -= node.num_items;
 				continue;
 			}
 			for (Leaf &leaf : node.leaves) {
 				size_t nvalues = leaf.items.size();
-				if (key < nvalues) {
+				if (lrow < nvalues) {
 					// 古い値を差し引いてから新しい値を加算し、上書きする
-					uint64_t oldvalue = leaf.items[key].value();
+					uint64_t oldvalue = leaf.items[lrow].value();
 					uint64_t newvalue = value.value();
 					leaf.sum_values -= oldvalue;
 					leaf.sum_values += newvalue;
 					node.sum_values -= oldvalue;
 					node.sum_values += newvalue;
-					leaf.items[key] = value;
+					leaf.items[lrow] = value;
 					return;
 				}
-				key -= nvalues;
+				lrow -= nvalues;
 			}
 			return; // Nodeに入ったら必ずLeaf内で解決する(ここには到達しない)
 		}
@@ -340,26 +341,26 @@ public:
 		ensure_tail();
 		insert_into_leaf(nodes_.size() - 1, nodes_.back().leaves.size() - 1, nodes_.back().leaves.back().items.size(), value);
 	}
-	// key 位置の要素を削除する。後続のキーは1つ前へ詰まる。範囲外なら何もしない。
+	// lrow 位置の要素を削除する。後続のキーは1つ前へ詰まる。範囲外なら何もしない。
 	// 空になったLeafはNodeから、空になったNodeはrootから取り除く。
-	void erase(key_type key)
+	void erase(key_type lrow)
 	{
 		for (size_t ni = 0; ni < nodes_.size(); ni++) {
 			Node *node = &nodes_[ni];
 			// このNodeの範囲外ならNodeごとスキップ
-			if (key >= node->num_items) {
-				key -= node->num_items;
+			if (lrow >= node->num_items) {
+				lrow -= node->num_items;
 				continue;
 			}
 			for (size_t li = 0; li < node->leaves.size(); li++) {
 				Leaf *leaf = &node->leaves[li];
 				size_t nvalues = leaf->items.size();
-				if (key < nvalues) {
-					uint64_t oldvalue = leaf->items[key].value();
+				if (lrow < nvalues) {
+					uint64_t oldvalue = leaf->items[lrow].value();
 					leaf->sum_values -= oldvalue;
 					node->sum_values -= oldvalue;
 					node->num_items--;
-					leaf->items.erase(leaf->items.begin() + key);
+					leaf->items.erase(leaf->items.begin() + lrow);
 					if (leaf->items.empty()) {
 						node->leaves.erase(node->leaves.begin() + li);
 						if (node->leaves.empty()) {
@@ -368,7 +369,7 @@ public:
 					}
 					return;
 				}
-				key -= nvalues;
+				lrow -= nvalues;
 			}
 			return; // Nodeに入ったら必ずLeaf内で解決する(ここには到達しない)
 		}
@@ -376,42 +377,42 @@ public:
 	// (論理行, 論理列) から表示行番号を求める。countの順変換。
 	// 行頭の表示行(count)に、論理列が属する折り返し行のオフセット
 	// (ValueItem::locate_column)を加える。論理行が範囲外なら総表示行数を返す。
-	uint64_t logical_to_visual(key_type logical_row, uint32_t logical_col) const
+	uint64_t logical_to_visual(key_type lrow, uint32_t lcol) const
 	{
-		CountResult r = count_and_find(logical_row);
+		CountResult r = count_and_find(lrow);
 		uint64_t vrow = r.sum;
 		if (r.item) {
-			vrow += r.item->locate_column(logical_col).first;
+			vrow += r.item->locate_column(lcol).first;
 		}
 		return vrow;
 	}
 	// 表示行番号から (論理行番号, 行内の折り返し行オフセット) を求める。countの逆変換。
-	// count(i) <= visual_row < count(i+1) となる論理行 i を返す。
+	// count(i) <= vrow < count(i+1) となる論理行 i を返す。
 	// value 0 の行は表示行を持たないためスキップされる。範囲外は nullopt。
-	std::optional<std::pair<key_type, key_type>> visual_to_logical(uint64_t visual_row) const
+	std::optional<std::pair<key_type, key_type>> visual_to_logical(uint64_t vrow) const
 	{
 		key_type logical = 0;
 		for (Node const &node : nodes_) {
 			// このNodeの表示行範囲より先ならNodeごとスキップ
-			if (visual_row >= node.sum_values) {
-				visual_row -= node.sum_values;
+			if (vrow >= node.sum_values) {
+				vrow -= node.sum_values;
 				logical += node.num_items;
 				continue;
 			}
 			for (Leaf const &leaf : node.leaves) {
 				// このLeafの表示行範囲より先ならLeafごとスキップ
-				if (visual_row >= leaf.sum_values) {
-					visual_row -= leaf.sum_values;
+				if (vrow >= leaf.sum_values) {
+					vrow -= leaf.sum_values;
 					logical += leaf.items.size();
 					continue;
 				}
 				// 該当するLeafの中を個別に引いていく
 				for (value_type const &x : leaf.items) {
 					uint32_t v = x.value();
-					if (visual_row < v) {
-						return std::make_pair(logical, (key_type)visual_row);
+					if (vrow < v) {
+						return std::make_pair(logical, (key_type)vrow);
 					}
-					visual_row -= v;
+					vrow -= v;
 					logical++;
 				}
 			}

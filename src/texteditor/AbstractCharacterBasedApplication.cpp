@@ -596,6 +596,19 @@ row_index_t AbstractCharacterBasedApplication::lrow_to_vrow(row_index_t lrow)
 	return info.visual_row;
 }
 
+void AbstractCharacterBasedApplication::wrap_and_update_line_map(row_index_t lrow, Document::Line *ll, bool force, std::mutex *mutex)
+{
+	if (force || ll->sp->meta.visual_lines.empty()) { // 折り返し未処理の場合
+		ll->sp->meta.visual_lines = wrapLine(*ll, mutex); // 折り返し処理
+	}
+
+	std::vector<uint32_t> col_list;
+	for (Document::Line const &vl : ll->sp->meta.visual_lines) {
+		col_list.push_back(vl.sp->meta.logical_col_len);
+	}
+	cx()->something_map.update(lrow, col_list); // 論理行に対応する物理行数を更新
+}
+
 /**
  * @brief 物理行番号から論理行番号と論理列番号を求める。折り返し処理も行う。
  * @param vrow 物理行番号
@@ -626,15 +639,11 @@ VisualRowInfo AbstractCharacterBasedApplication::queryVisualRowInfo(row_index_t 
 	
 	while (cx->visual_row_info.size() <= vrow && info.logical_row < doc->logical_lines.size()) {
 		Document::Line *ll = &doc->logical_lines[info.logical_row];
-		
-		if (ll->sp->meta.visual_lines.empty()) { // 物理行が未構築の場合
-			ll->sp->meta.visual_lines = wrapLine(*ll, nullptr); // 折り返し処理
-		}
-		std::vector<uint32_t> collens;
-		for (Document::Line const &vl : ll->sp->meta.visual_lines) {
-			collens.push_back(vl.sp->meta.logical_col_len);
-		}
-		cx->something_map.update(info.logical_row, collens); // 論理行に対応する物理行数を更新
+		const bool force = false;
+		// if (force || ll->sp->meta.visual_lines.empty()) { // 物理行が未構築の場合
+		// 	ll->sp->meta.visual_lines = wrapLine(*ll, nullptr); // 折り返し処理
+		// }
+		wrap_and_update_line_map(info.logical_row, ll, force, nullptr);
 		
 		for (Document::Line const &vl : ll->sp->meta.visual_lines) { // 折り返し処理済みの物理行
 			info.logical_col = vl.sp->meta.logical_col_pos; // 論理行内の開始桁位置を設定
@@ -729,21 +738,16 @@ bool AbstractCharacterBasedApplication::updateVisualLine(row_index_t lrow, bool 
 		Document *doc = &cx()->engine->document;
 		std::vector<Document::Line> *llines = &doc->logical_lines;
 		if (lrow >= 0 && lrow < llines->size()) {
-			Document::Line *line = &(*llines)[lrow];
-			const size_t nvlines = line->sp->meta.visual_lines.size();
-			if (force || line->sp->meta.visual_lines.empty()) { // 折り返し未処理の場合
-				line->sp->meta.visual_lines = wrapLine(*line, mutex); // 折り返し処理
+			Document::Line *ll = &(*llines)[lrow];
 
-				std::vector<uint32_t> collens;
-				for (Document::Line const &vl : line->sp->meta.visual_lines) {
-					collens.push_back(vl.sp->meta.logical_col_len);
-				}
-				cx()->something_map.update(lrow, collens); // 論理行に対応する物理行数を更新
+			const size_t nvlines = ll->sp->meta.visual_lines.size();
+			{
+				wrap_and_update_line_map(lrow, ll, force, mutex);
 			}
-			vline_count_changed = (nvlines != line->sp->meta.visual_lines.size());
+			vline_count_changed = (nvlines != ll->sp->meta.visual_lines.size());
 			
 			if (vline_count_changed) { // 折り返し後の物理行数が変化した場合、物理行情報を無効化する
-				_updateVisualLineByLogicalLine(lrow, *line, mutex);
+				_updateVisualLineByLogicalLine(lrow, *ll, mutex);
 			}
 		}
 	}
