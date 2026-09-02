@@ -31,6 +31,7 @@ public:
 	{
 		view_->setWrappingMode(mode);
 	}
+	void test();
 };
 
 #endif // TEXTEDITORWIDGET_H

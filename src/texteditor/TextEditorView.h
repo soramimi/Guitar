@@ -91,6 +91,8 @@ private:
 	int linenumber_area_width() const;
 
 	QColor cursorColor() const;
+public:
+	void debug();
 protected:
 	void timerEvent(QTimerEvent *) override;
 	void setCursorCol(col_index_t col) override;

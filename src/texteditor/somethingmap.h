@@ -28,10 +28,12 @@ class SomethingMap {
 public:
 	// 表示行1行ぶんに付随するユーザーデータ(折り返し位置などを載せる想定)
 	struct UserData {
+		uint32_t col_len = 0;
 	};
 	// 論理行1行ぶんの値。表示行ごとの UserData の配列を共有ポインタで保持し、
 	// その要素数が折り返し数(=この行が占める表示行数)を表す。
 	class ValueItem {
+		friend class SomethingMap;
 	private:
 		std::shared_ptr<std::vector<UserData>> data_;
 	public:
@@ -43,9 +45,14 @@ public:
 		{
 			_init(0);
 		}
-		ValueItem(uint32_t value)
+		ValueItem(uint32_t value, std::vector<uint32_t> const &collens)
 		{
 			_init(value);
+
+			assert(value == collens.size());
+			for (size_t i = 0; i < collens.size(); i++) {
+				(*data_)[i].col_len = collens[i];
+			}
 		}
 		// 折り返し数(この行が占める表示行数)
 		uint32_t value() const
@@ -218,18 +225,18 @@ public:
 			}
 			for (Leaf const &leaf : node.leaves) {
 				size_t nvalues = leaf.items.size();
-				if (key >= nvalues) {
+				if (key < nvalues) {
+					// 境界がかかる最後のLeafだけ個別に加算する
+					for (size_t j = 0; j < key; j++) {
+						sum += leaf.items[j].value();
+					}
+					item = &leaf.items[key];
+					break;
+				} else {
 					// Leaf全体が範囲に収まるなら集計値を一括加算してスキップ
 					sum += leaf.sum_values;
 					key -= nvalues;
 					if (key == 0) break;
-				} else {
-					// 境界がかかる最後のLeafだけ個別に加算する
-					for (size_t j = 0; j < key; j++) {
-						item = &leaf.items[j];
-						sum += leaf.items[j].value();
-					}
-					break;
 				}
 			}
 			break;
@@ -336,9 +343,24 @@ public:
 		}
 	}
 	// 論理行番号から表示行番号を求める。countの順変換。
-	uint64_t logical_to_visual(uint64_t logical_row) const
+	uint64_t logical_to_visual(uint64_t logical_row, uint32_t logical_col) const
 	{
-		return count(logical_row).first;
+		std::pair<uint64_t, ValueItem const *> pair = count(logical_row);
+		uint64_t vrow = pair.first;
+		if (pair.second) {
+			auto lcol = logical_col;
+			std::vector<UserData> const &vec = *pair.second->data_;
+			for (size_t i = 0; i < vec.size(); i++) {
+				if (vec[i].col_len > 0) {
+					if (lcol < vec[i].col_len) {
+						break;
+					}
+					lcol -= vec[i].col_len;
+					vrow++;
+				}
+			}
+		}
+		return vrow;
 	}
 	// 表示行番号から (論理行番号, 行内の折り返し行オフセット) を求める。countの逆変換。
 	// count(i) <= visual_row < count(i+1) となる論理行 i を返す。

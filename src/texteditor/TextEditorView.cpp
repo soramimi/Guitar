@@ -461,8 +461,10 @@ std::pair<row_index_t, int> TextEditorView::currentVisualPosition() const
  */
 std::pair<row_index_t, col_index_t> TextEditorView::currentLogicalPosition()
 {
-	row_index_t lr = 0;
-	row_index_t vr = 0;
+	row_index_t lr1 = 0;
+	row_index_t vr1 = 0;
+	row_index_t lr2 = 0;
+	row_index_t vr2 = 0;
 	
 	auto [vrow, vcol] = currentVisualPosition();
 	VisualRowInfo rowinfo = queryVisualRowInfo(vrow);
@@ -472,12 +474,20 @@ std::pair<row_index_t, col_index_t> TextEditorView::currentLogicalPosition()
 	{
 		auto opt = cx()->something_map.visual_to_logical(vrow);
 		if (opt) {
-			lr = opt->first;
+			lr1 = opt->first;
+			vr1 = cx()->something_map.logical_to_visual(lr1, lcol);
 		}
-		vr = cx()->something_map.logical_to_visual(lrow);
+	}
+	{
+		vr2 = cx()->something_map.logical_to_visual(lr1, lcol);
+		auto opt = cx()->something_map.visual_to_logical(vr2);
+		if (opt) {
+			lr2 = opt->first;
+			// vr2 += opt->second;
+		}
 	}
 	
-	qDebug() << QString::asprintf("(%d, %d), (%d, %d), lr:(%d), vr:(%d)", lrow, lcol, vrow, vcol, lr, vr);
+	qDebug() << QString::asprintf("(vrow:%d, vcol:%d), (lrow:%d, lcol:%d), {lr1:(%d), vr1:(%d)}, {lr2:(%d), vr2:(%d)}", vrow, vcol, lrow, lcol, lr1, vr1, lr2, vr2);
 
 	return std::make_pair(lrow, lcol);
 }
@@ -1208,4 +1218,22 @@ void TextEditorView::contextMenuEvent(QContextMenuEvent *event)
 		}
 	}
 }
+
+void TextEditorView::debug()
+{
+	if (isAutoLayout()) {
+		// int h = height() / lineHeight() + 1;
+		// int w = width() / m->text_metrics.basisCharWidth();
+		// setScreenSize(w, h, false);
+		
+		// int content_width = width() - linenumber_area_width();
+		// setContentWidth(content_width);
+		
+		updateVisualLinesAll();
+		
+		// updateVisibility(true, false, true);
+	}
+	// AbstractTextEditorApplication::layoutEditor();
+}
+
 

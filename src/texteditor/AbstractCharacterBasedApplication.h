@@ -113,7 +113,8 @@ public:
 	struct Line {
 		struct Meta {
 			LineType type = Normal;
-			col_index_t logical_col = 0;
+			col_index_t logical_col_pos = 0;
+			col_index_t logical_col_len = 0;
 			int32_t line_number_override = -1;
 			mutable std::shared_ptr<LineProperty> detail;
 			mutable std::vector<Document::Line> visual_lines;

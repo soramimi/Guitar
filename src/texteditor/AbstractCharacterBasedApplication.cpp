@@ -523,7 +523,8 @@ std::vector<Document::Line> AbstractCharacterBasedApplication::wrapLine(Document
 				unicode_helper_::encode_utf8(c.unicode, [&](char d){v.push_back(d);});
 			}
 			Document::Line line(v);
-			line.sp->meta.logical_col = logical_col;
+			line.sp->meta.logical_col_pos = logical_col;
+			line.sp->meta.logical_col_len = w.size();
 			ret.emplace_back(line);
 			logical_col += w.size();
 		}
@@ -578,12 +579,17 @@ row_index_t AbstractCharacterBasedApplication::lrow_to_vrow(row_index_t lrow)
 		info = cx()->logical_row_info[i];
 	}
 	while (i < lrow && i < (row_index_t)llines.size()) {
-		Document::Line const &line = llines[i];
-		info.visual_row += line.sp->meta.visual_lines.size(); // 論理行に対応する物理行の数を加算
+		Document::Line const &ll = llines[i];
+		info.visual_row += ll.sp->meta.visual_lines.size(); // 論理行に対応する物理行の数を加算
 		cx()->logical_row_info.push_back(info);
 		i++;
 		// cx()->something_map.insert(i, info.visual_row);
-		v = info.visual_row;
+		
+		std::vector<uint32_t> cols;
+		for (Document::Line const &vl : ll.sp->meta.visual_lines) {
+			cols.push_back(vl.sp->meta.logical_col_len);
+		}
+		v = {info.visual_row, cols};
 	}
 #endif
 	qDebug() << lrow << info.visual_row << v.value();
@@ -623,11 +629,15 @@ VisualRowInfo AbstractCharacterBasedApplication::queryVisualRowInfo(row_index_t 
 		
 		if (ll->sp->meta.visual_lines.empty()) { // 物理行が未構築の場合
 			ll->sp->meta.visual_lines = wrapLine(*ll, nullptr); // 折り返し処理
-			cx->something_map.update(info.logical_row, ll->sp->meta.visual_lines.size()); // 論理行に対応する物理行数を更新
 		}
+		std::vector<uint32_t> collens;
+		for (Document::Line const &vl : ll->sp->meta.visual_lines) {
+			collens.push_back(vl.sp->meta.logical_col_len);
+		}
+		cx->something_map.update(info.logical_row, {ll->sp->meta.visual_lines.size(), collens}); // 論理行に対応する物理行数を更新
 		
 		for (Document::Line const &vl : ll->sp->meta.visual_lines) { // 折り返し処理済みの物理行
-			info.logical_col = vl.sp->meta.logical_col; // 論理行内の開始桁位置を設定
+			info.logical_col = vl.sp->meta.logical_col_pos; // 論理行内の開始桁位置を設定
 			cx->visual_row_info.push_back(info); // 物理行情報を追加
 		}
 		
@@ -723,7 +733,12 @@ bool AbstractCharacterBasedApplication::updateVisualLine(row_index_t lrow, bool 
 			const size_t nvlines = line->sp->meta.visual_lines.size();
 			if (force || line->sp->meta.visual_lines.empty()) { // 折り返し未処理の場合
 				line->sp->meta.visual_lines = wrapLine(*line, mutex); // 折り返し処理
-				cx()->something_map.update(lrow, line->sp->meta.visual_lines.size()); // 論理行に対応する物理行数を更新
+
+				std::vector<uint32_t> collens;
+				for (Document::Line const &vl : line->sp->meta.visual_lines) {
+					collens.push_back(vl.sp->meta.logical_col_len);
+				}
+				cx()->something_map.update(lrow, {line->sp->meta.visual_lines.size(), collens}); // 論理行に対応する物理行数を更新
 			}
 			vline_count_changed = (nvlines != line->sp->meta.visual_lines.size());
 			

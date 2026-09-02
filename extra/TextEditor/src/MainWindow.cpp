@@ -12,7 +12,6 @@
 #include <QStyle>
 #include <memory>
 
-
 struct MainWindow::Private {
 	bool need_to_layout;
 	QRect cursor_rect;
@@ -56,6 +55,8 @@ MainWindow::~MainWindow()
 	delete m;
 	delete ui;
 }
+
+
 
 TextEditorView *MainWindow::texteditor()
 {
@@ -166,4 +167,5 @@ void MainWindow::moveEvent(QMoveEvent *)
 
 void MainWindow::on_action_test_triggered()
 {
+	texteditor()->debug();
 }

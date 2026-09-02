@@ -26,3 +26,8 @@ TextEditorWidget::TextEditorWidget(QWidget *parent)
 	view_->setFocusPolicy(Qt::StrongFocus);
 }
 
+void TextEditorWidget::test()
+{
+	
+}
+
