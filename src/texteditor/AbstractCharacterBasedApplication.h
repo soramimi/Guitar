@@ -583,12 +583,14 @@ protected:
 	virtual void setCursorCol(col_index_t vcol)
 	{
 		setCursorCol_(vcol, true, false);
+		updateCurrentPixelX();
 	}
 	void setCursorPosByMouse(RowCol vpos, QPoint pt)
 	{
 		setCursorRow(vpos.row, false, true);
 		setCursorCol_(vpos.col, false, true);
 		cx()->current_visual_pixel_x = pt.x();
+		// updateCurrentPixelX();
 	}
 	void setCursorPos(int row, int col)
 	{
@@ -715,6 +717,7 @@ protected:
 	bool hasSelection() const;
 	void updateSelectionAnchor1(bool auto_scroll);
 	void updateSelectionAnchor2(bool auto_scroll);
+	virtual void updateCurrentPixelX() {}
 };
 
 class AbstractTextEditorApplication : public AbstractCharacterBasedApplication {

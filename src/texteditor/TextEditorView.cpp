@@ -336,18 +336,12 @@ void TextEditorView::setCursorRow(row_index_t row, bool auto_scroll, bool by_mou
 	updateSelectionAnchor2(auto_scroll);
 }
 
-/**
- * @brief 桁位置を変更する
- * @param col
- */
-void TextEditorView::setCursorCol(col_index_t col)
+void TextEditorView::updateCurrentPixelX()
 {
-	AbstractCharacterBasedApplication::setCursorCol(col);
-
 	// 水平ピクセル座標を更新
 	parseCurrentLine(true);
 	// auto *chars = parsedCurrentLine();
-	cx()->current_visual_pixel_x = pos_x_px(currentVisualRow(), currentVisualCol());
+	cx()->current_visual_pixel_x = pos_x_px(currentVisualRow(), currentVisualCol());	
 }
 
 void TextEditorView::bindScrollBar(QScrollBar *vsb, QScrollBar *hsb)

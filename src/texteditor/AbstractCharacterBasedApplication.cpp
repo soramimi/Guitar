@@ -2053,21 +2053,22 @@ void AbstractCharacterBasedApplication::moveCursorRight()
 		}
 	}
 
-	auto MoveColumn = [this](col_index_t vcol){
-		if (vcol != currentVisualCol()) {
-			setCursorCol(vcol);
-			clearParsedLine();
-			updateVisibility(true, true, true);
+	auto MoveToNextRow = [this](){
+		int next_vrow = currentVisualRow() + 1;
+		if (next_vrow < nlines()) {
+			// setCursorPos(next_vrow, 0); // 次の行の先頭へ移動
+			setCursorRow(next_vrow, false);
+			moveCursorHome(false); // 行頭へ移動
 			return true;
 		}
 		return false;
 	};
 	
-	auto MoveToNextRow = [this](){
-		int next_vrow = currentVisualRow() + 1;
-		if (next_vrow < nlines()) {
-			setCursorPos(next_vrow, 0); // 次の行の先頭へ移動
-			moveCursorHome(false); // 行頭へ移動
+	auto MoveColumn = [this](col_index_t vcol){
+		if (vcol != currentVisualCol()) {
+			setCursorCol(vcol);
+			clearParsedLine();
+			updateVisibility(true, true, true);
 			return true;
 		}
 		return false;
@@ -2086,9 +2087,9 @@ void AbstractCharacterBasedApplication::moveCursorRight()
 	}
 	if (c == '\r' || c == '\n' || c == (char32_t)-1) {
 		if (!isSingleLineMode()) {
-			if (MoveToNextRow()) return;
+			MoveToNextRow(); // 次の行の先頭へ移動
 		}
-		if (MoveColumn(vcol)) return;
+		return;
 	}
 	
 	vcol++;
@@ -2770,6 +2771,7 @@ void AbstractCharacterBasedApplication::internalWrite(const ushort *begin, const
 	}
 	// cx()->something_map.update(lrow, line.sp->meta.visual_lines.size());
 	setCursorPos(vrow, vcol);
+	updateCurrentPixelX();
 	
 	// setCurrentLogicalCol(lcol);
 	// setCursorCol(lcol);

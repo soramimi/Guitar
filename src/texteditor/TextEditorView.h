@@ -95,7 +95,6 @@ public:
 	void debug();
 protected:
 	void timerEvent(QTimerEvent *) override;
-	void setCursorCol(col_index_t col) override;
 	void setCursorRow(row_index_t row, bool auto_scroll, bool by_mouse) override;
 	void calc_pos_x(std::vector<Character> *chars) const;
 	
@@ -113,6 +112,7 @@ protected:
 	void contextMenuEvent(QContextMenuEvent *event) override;
 	QFont textFont() const;
 	void drawText(QPainter *painter, int px, int py, QString const &str);
+	void updateCurrentPixelX();
 public:
 	explicit TextEditorView(QWidget *parent = nullptr);
 	~TextEditorView() override;
