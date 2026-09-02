@@ -45,6 +45,10 @@ public:
 		{
 			_init(0);
 		}
+		ValueItem(uint32_t value)
+		{
+			_init(value);
+		}
 		ValueItem(uint32_t value, std::vector<uint32_t> const &collens)
 		{
 			_init(value);
@@ -211,7 +215,7 @@ public:
 	// [0, key) の範囲の値の合計を返す。
 	// 論理行 key の先頭の表示行番号に相当する。key が総要素数を超えていたら
 	// 全体の合計(=総表示行数)を返す。
-	std::pair<uint64_t, ValueItem const *> count(key_type key) const
+	std::pair<uint64_t, ValueItem const *> _count(key_type key) const
 	{
 		ValueItem const *item = nullptr;
 		uint64_t sum = 0;
@@ -242,6 +246,10 @@ public:
 			break;
 		}
 		return {sum, item};
+	}
+	uint64_t count(key_type key) const
+	{
+		return _count(key).first;
 	}
 	// key の位置に item を挿入する。後続のキーは1つ後ろへずれる。
 	// key が末尾より先の場合は、隙間をデフォルト値(value 0)で埋めてから配置する。
@@ -345,12 +353,12 @@ public:
 	// 論理行番号から表示行番号を求める。countの順変換。
 	uint64_t logical_to_visual(uint64_t logical_row, uint32_t logical_col) const
 	{
-		std::pair<uint64_t, ValueItem const *> pair = count(logical_row);
+		std::pair<uint64_t, ValueItem const *> pair = _count(logical_row);
 		uint64_t vrow = pair.first;
 		if (pair.second) {
 			auto lcol = logical_col;
 			std::vector<UserData> const &vec = *pair.second->data_;
-			for (size_t i = 0; i < vec.size(); i++) {
+			for (size_t i = 0; i + 1 < vec.size(); i++) {
 				if (vec[i].col_len > 0) {
 					if (lcol < vec[i].col_len) {
 						break;
