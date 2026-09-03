@@ -468,15 +468,15 @@ std::pair<row_index_t, col_index_t> TextEditorView::currentLogicalPosition()
 	{
 		auto opt = cx()->something_map.visual_to_logical(vrow);
 		if (opt) {
-			lr1 = opt->first;
-			vr1 = cx()->something_map.logical_to_visual(lr1, lcol);
+			auto [lr1, vr, col] = *opt;
+			vr1 = cx()->something_map.logical_to_visual(lr1, lcol).first;
 		}
 	}
 	{
-		vr2 = cx()->something_map.logical_to_visual(lr1, lcol);
+		vr2 = cx()->something_map.logical_to_visual(lr1, lcol).first;
 		auto opt = cx()->something_map.visual_to_logical(vr2);
 		if (opt) {
-			lr2 = opt->first;
+			auto [lr2, vr, col] = *opt;
 			// vr2 += opt->second;
 		}
 	}

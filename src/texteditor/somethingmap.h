@@ -377,19 +377,21 @@ public:
 	// (論理行, 論理列) から表示行番号を求める。countの順変換。
 	// 行頭の表示行(count)に、論理列が属する折り返し行のオフセット
 	// (ValueItem::locate_column)を加える。論理行が範囲外なら総表示行数を返す。
-	uint64_t logical_to_visual(key_type lrow, uint32_t lcol) const
+	std::pair<uint64_t, uint32_t> logical_to_visual(key_type lrow, uint32_t lcol) const
 	{
 		CountResult r = count_and_find(lrow);
-		uint64_t vrow = r.sum;
 		if (r.item) {
-			vrow += r.item->locate_column(lcol).first;
+			auto [row, col] = r.item->locate_column(lcol);
+			auto vrow = r.sum + row;
+			auto vcol = col;
+			return std::make_pair(vrow, vcol);
 		}
-		return vrow;
+		return {r.sum, 0};
 	}
 	// 表示行番号から (論理行番号, 行内の折り返し行オフセット) を求める。countの逆変換。
 	// count(i) <= vrow < count(i+1) となる論理行 i を返す。
 	// value 0 の行は表示行を持たないためスキップされる。範囲外は nullopt。
-	std::optional<std::pair<key_type, key_type>> visual_to_logical(uint64_t vrow) const
+	std::optional<std::tuple<key_type, key_type, key_type>> visual_to_logical(uint64_t vrow) const
 	{
 		key_type logical = 0;
 		for (Node const &node : nodes_) {
@@ -407,10 +409,16 @@ public:
 					continue;
 				}
 				// 該当するLeafの中を個別に引いていく
-				for (value_type const &x : leaf.items) {
-					uint32_t v = x.value();
+				for (value_type const &item : leaf.items) {
+					uint32_t v = item.value(); // この論理行が占める表示行数
 					if (vrow < v) {
-						return std::make_pair(logical, (key_type)vrow);
+						uint32_t c = 0;
+						if (item.data_) {
+							for (size_t i = 0; i < vrow; i++) {
+								c += (*item.data_)[i].vcol_len;
+							}
+						}
+						return std::make_tuple(logical, (key_type)vrow, c); // 論理行と行内の折り返し行オフセットを返す
 					}
 					vrow -= v;
 					logical++;
@@ -418,6 +426,24 @@ public:
 			}
 		}
 		return std::nullopt;
+	}
+	//
+	uint64_t total_logical_row_count() const
+	{
+		uint64_t total = 0;
+		for (Node const &node : nodes_) {
+			total += node.num_items;
+		}
+		return total;
+	}
+	//
+	uint64_t total_visual_row_count() const
+	{
+		uint64_t total = 0;
+		for (Node const &node : nodes_) {
+			total += node.sum_values;
+		}
+		return total;
 	}
 };
 

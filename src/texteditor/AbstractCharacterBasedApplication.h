@@ -373,8 +373,8 @@ struct TextEditorContext {
 	int tab_indent_size = 4;
 	int bottom_line_y = -1;
 	TextEditorEngine_sp engine;
-	std::vector<LogicalRowInfo> logical_row_info; // 論理行から物理行へのマッピング情報
-	std::vector<VisualRowInfo> visual_row_info; // 物理行から論理行へのマッピング情報
+	// std::vector<LogicalRowInfo> logical_row_info; // 論理行から物理行へのマッピング情報
+	// std::vector<VisualRowInfo> visual_row_info; // 物理行から論理行へのマッピング情報
 	std::vector<Document::Line> visual_lines;
 	SomethingMap something_map;
 };
@@ -540,7 +540,7 @@ protected:
 	void execDialog(QString const &dialog_title, const QString &dialog_value, const DialogHandler &handler);
 	
 	void invalidateVisualRowInfo(row_index_t vrow);
-	void _reserveVisualRowInfo(row_index_t vrow);
+
 	VisualRowInfo queryVisualRowInfo(row_index_t vrow);
 	void upadteVisualRow(row_index_t vrow);
 
