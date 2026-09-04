@@ -553,7 +553,7 @@ std::vector<Document::Line> AbstractCharacterBasedApplication::wrapLine(Document
  * @param lrow 論理行番号
  * @return 物理行番号
  */
-row_index_t AbstractCharacterBasedApplication::lrow_to_vrow(row_index_t lrow)
+row_index_t AbstractCharacterBasedApplication::lrow_to_vrow(row_index_t lrow) const
 {
 	if (wrappingMode() == WrappingMode::NoWrap) {
 		return lrow;
@@ -561,6 +561,20 @@ row_index_t AbstractCharacterBasedApplication::lrow_to_vrow(row_index_t lrow)
 	
 	auto [vrow, vcol] = cx()->line_index.logical_to_visual(lrow, 0);
 	return vrow;	
+}
+
+row_index_t AbstractCharacterBasedApplication::vrow_to_lrow(row_index_t vrow) const
+{
+	if (wrappingMode() == WrappingMode::NoWrap) {
+		return vrow;
+	}
+	
+	auto opt = cx()->line_index.visual_to_logical(vrow);
+	if (opt) {
+		auto [lrow, vrow, lcol] = *opt;
+		return lrow;
+	}
+	return 0;
 }
 
 void AbstractCharacterBasedApplication::wrap_and_update_line_map(row_index_t lrow, Document::Line *ll, bool force, std::mutex *mutex)

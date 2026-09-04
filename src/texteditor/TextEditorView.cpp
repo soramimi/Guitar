@@ -222,6 +222,7 @@ void TextEditorView::calc_pos_x(std::vector<Character> *chars) const
 Document::LineProperty const *TextEditorView::queryFormattedLine(row_index_t vrow) const
 {
 	if (vrow >= 0 && vrow < nlines()) {
+		const_cast<TextEditorView *>(this)->updateVisualLine(vrow_to_lrow(vrow), true, nullptr);
 		Document::LineProperty *detail = line(vrow)->detail();
 		if (!detail) {
 			line(vrow)->sp->meta.detail = std::make_shared<Document::LineProperty>();
