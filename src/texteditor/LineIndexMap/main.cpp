@@ -1,19 +1,19 @@
 #include <gtest/gtest.h>
 #include <vector>
 #include <random>
-#include "somethingmap.h"
+#include "LineIndexMap.h"
 
 // key位置の値(折り返し数)を取得するヘルパ
-static std::optional<uint32_t> value_at(SomethingMap const &map, uint32_t key)
+static std::optional<uint32_t> value_at(LineIndexMap const &map, uint32_t key)
 {
 	auto opt = map.find(key);
 	if (!opt) return std::nullopt;
 	return opt->value();
 }
 
-TEST(SomethingMap, EmptyMap)
+TEST(LineIndexMap, EmptyMap)
 {
-	SomethingMap map;
+	LineIndexMap map;
 	EXPECT_FALSE(map.find(0));
 	EXPECT_FALSE(map.find(100));
 	EXPECT_EQ(map.count(0), 0u);
@@ -21,19 +21,19 @@ TEST(SomethingMap, EmptyMap)
 	EXPECT_TRUE(map.validate());
 }
 
-TEST(SomethingMap, InsertAtZero)
+TEST(LineIndexMap, InsertAtZero)
 {
-	SomethingMap map;
+	LineIndexMap map;
 	map.insert(0, 5);
 	EXPECT_EQ(value_at(map, 0), 5u);
 	EXPECT_FALSE(map.find(1));
 	EXPECT_TRUE(map.validate());
 }
 
-TEST(SomethingMap, InsertWithGapFill)
+TEST(LineIndexMap, InsertWithGapFill)
 {
 	// 末尾より先へのinsertは隙間をvalue 0で埋める
-	SomethingMap map;
+	LineIndexMap map;
 	map.insert(12, 34);
 	EXPECT_EQ(value_at(map, 12), 34u);
 	for (uint32_t k = 0; k < 12; k++) {
@@ -43,9 +43,9 @@ TEST(SomethingMap, InsertWithGapFill)
 	EXPECT_TRUE(map.validate());
 }
 
-TEST(SomethingMap, InsertShiftsSubsequentKeys)
+TEST(LineIndexMap, InsertShiftsSubsequentKeys)
 {
-	SomethingMap map;
+	LineIndexMap map;
 	for (uint32_t i = 0; i < 10; i++) map.update(0xffffffffu, i + 100); // [100..109]
 	map.insert(5, 999);
 	EXPECT_EQ(value_at(map, 4), 104u);
@@ -56,9 +56,9 @@ TEST(SomethingMap, InsertShiftsSubsequentKeys)
 	EXPECT_TRUE(map.validate());
 }
 
-TEST(SomethingMap, UpdateOverwritesWithoutShift)
+TEST(LineIndexMap, UpdateOverwritesWithoutShift)
 {
-	SomethingMap map;
+	LineIndexMap map;
 	for (uint32_t i = 0; i < 10; i++) map.update(0xffffffffu, i + 100);
 	map.update(5, 999);
 	EXPECT_EQ(value_at(map, 5), 999u);
@@ -68,10 +68,10 @@ TEST(SomethingMap, UpdateOverwritesWithoutShift)
 	EXPECT_TRUE(map.validate());
 }
 
-TEST(SomethingMap, UpdateBeyondMaxAppends)
+TEST(LineIndexMap, UpdateBeyondMaxAppends)
 {
 	// 最大キーを超えたupdateは隙間を作らず末尾に追加する
-	SomethingMap map;
+	LineIndexMap map;
 	map.update(100, 1); // 空なのでkey 0に入る
 	EXPECT_EQ(value_at(map, 0), 1u);
 	EXPECT_FALSE(map.find(1));
@@ -80,9 +80,9 @@ TEST(SomethingMap, UpdateBeyondMaxAppends)
 	EXPECT_TRUE(map.validate());
 }
 
-TEST(SomethingMap, EraseShiftsSubsequentKeys)
+TEST(LineIndexMap, EraseShiftsSubsequentKeys)
 {
-	SomethingMap map;
+	LineIndexMap map;
 	for (uint32_t i = 0; i < 10; i++) map.update(0xffffffffu, i + 100);
 	map.erase(5);
 	EXPECT_EQ(value_at(map, 4), 104u);
@@ -92,18 +92,18 @@ TEST(SomethingMap, EraseShiftsSubsequentKeys)
 	EXPECT_TRUE(map.validate());
 }
 
-TEST(SomethingMap, EraseOutOfRangeIsNoop)
+TEST(LineIndexMap, EraseOutOfRangeIsNoop)
 {
-	SomethingMap map;
+	LineIndexMap map;
 	map.update(0xffffffffu, 7);
 	map.erase(100);
 	EXPECT_EQ(value_at(map, 0), 7u);
 	EXPECT_TRUE(map.validate());
 }
 
-TEST(SomethingMap, EraseAllRemovesEverything)
+TEST(LineIndexMap, EraseAllRemovesEverything)
 {
-	SomethingMap map;
+	LineIndexMap map;
 	for (uint32_t i = 0; i < 100; i++) map.update(0xffffffffu, 1);
 	for (uint32_t i = 0; i < 100; i++) map.erase(0);
 	EXPECT_FALSE(map.find(0));
@@ -111,10 +111,10 @@ TEST(SomethingMap, EraseAllRemovesEverything)
 	EXPECT_TRUE(map.validate());
 }
 
-TEST(SomethingMap, CountPrefixSums)
+TEST(LineIndexMap, CountPrefixSums)
 {
 	// 折り返し数 [1,3,1,2] → 論理行iの先頭表示行はcount(i)
-	SomethingMap map;
+	LineIndexMap map;
 	uint32_t values[] = {1, 3, 1, 2};
 	for (uint32_t v : values) map.update(0xffffffffu, v);
 	EXPECT_EQ(map.count(0), 0u);
@@ -126,9 +126,9 @@ TEST(SomethingMap, CountPrefixSums)
 	EXPECT_TRUE(map.validate());
 }
 
-TEST(SomethingMap, CountAfterUpdateInsertErase)
+TEST(LineIndexMap, CountAfterUpdateInsertErase)
 {
-	SomethingMap map;
+	LineIndexMap map;
 	for (uint32_t i = 0; i < 4; i++) map.update(0xffffffffu, 1); // [1,1,1,1]
 	map.update(1, 5); // [1,5,1,1]
 	EXPECT_EQ(map.count(4), 8u);
@@ -139,10 +139,10 @@ TEST(SomethingMap, CountAfterUpdateInsertErase)
 	EXPECT_TRUE(map.validate());
 }
 
-TEST(SomethingMap, LeafSplit)
+TEST(LineIndexMap, LeafSplit)
 {
 	// 葉の容量(256)を超える追加で分割が起き、全キーが正しく読める
-	SomethingMap map;
+	LineIndexMap map;
 	const uint32_t n = 300;
 	for (uint32_t i = 0; i < n; i++) map.update(0xffffffffu, i % 4 + 1);
 	EXPECT_TRUE(map.validate());
@@ -159,10 +159,10 @@ TEST(SomethingMap, LeafSplit)
 	EXPECT_TRUE(map.validate());
 }
 
-TEST(SomethingMap, NodeSplit)
+TEST(LineIndexMap, NodeSplit)
 {
 	// Nodeの容量(256葉 = 65536要素)を超えてNode分割が起きる規模
-	SomethingMap map;
+	LineIndexMap map;
 	const uint32_t n = 70000;
 	uint64_t total = 0;
 	for (uint32_t i = 0; i < n; i++) {
@@ -181,10 +181,10 @@ TEST(SomethingMap, NodeSplit)
 	EXPECT_FALSE(map.find(n + 1000));
 }
 
-TEST(SomethingMap, RandomOpsAgainstOracle)
+TEST(LineIndexMap, RandomOpsAgainstOracle)
 {
 	// std::vector<uint32_t> を正とするランダム操作比較
-	SomethingMap map;
+	LineIndexMap map;
 	std::vector<uint32_t> model;
 	std::mt19937 rng(12345);
 	for (int t = 0; t < 10000; t++) {
@@ -219,16 +219,16 @@ TEST(SomethingMap, RandomOpsAgainstOracle)
 
 typedef std::pair<uint32_t, uint32_t> VL; // (論理行, 行内オフセット)
 
-static inline std::pair<uint32_t, uint32_t> LP(SomethingMap::LogicalPosition const &lp)
+static inline std::pair<uint32_t, uint32_t> LP(LineIndexMap::LogicalPosition const &lp)
 {
 	std::pair<uint32_t, uint32_t> ret = {lp.lrow, lp.wrap_index};
 	return ret;
 }
 
-TEST(SomethingMap, VisualToLogicalBasics)
+TEST(LineIndexMap, VisualToLogicalBasics)
 {
 	// 折り返し数 [1,3,1,2] → 表示行は0..6の7行
-	SomethingMap map;
+	LineIndexMap map;
 	uint32_t values[] = {1, 3, 1, 2};
 	for (uint32_t v : values) map.update(0xffffffffu, v);
 	EXPECT_EQ(LP(map.visual_to_logical(0)), (VL{0, 0}));
@@ -240,23 +240,23 @@ TEST(SomethingMap, VisualToLogicalBasics)
 	EXPECT_EQ(LP(map.visual_to_logical(6)), (VL{3, 1}));
 	EXPECT_EQ(map.visual_to_logical(7).lrow, 4u); // 総表示行数以上は末尾の次(=総論理行数)
 	EXPECT_EQ(map.visual_to_logical(100).lrow, 4u);
-	EXPECT_EQ(SomethingMap().visual_to_logical(0).lrow, 0u); // 空マップ(総論理行数=0)
+	EXPECT_EQ(LineIndexMap().visual_to_logical(0).lrow, 0u); // 空マップ(総論理行数=0)
 }
 
-TEST(SomethingMap, VisualToLogicalSkipsZeroValueItems)
+TEST(LineIndexMap, VisualToLogicalSkipsZeroValueItems)
 {
 	// value 0 の行(隙間0埋め)は表示行を持たないのでスキップされる
-	SomethingMap map;
+	LineIndexMap map;
 	map.insert(2, 5); // [0,0,5]
 	EXPECT_EQ(LP(map.visual_to_logical(0)), (VL{2, 0}));
 	EXPECT_EQ(LP(map.visual_to_logical(4)), (VL{2, 4}));
 	EXPECT_EQ(map.visual_to_logical(5).lrow, 3u); // 範囲外は末尾の次
 }
 
-TEST(SomethingMap, VisualToLogicalIsInverseOfCount)
+TEST(LineIndexMap, VisualToLogicalIsInverseOfCount)
 {
 	// ランダム構築(value 0含む)後、全表示行についてcountとの整合を確認
-	SomethingMap map;
+	LineIndexMap map;
 	std::vector<uint32_t> model;
 	std::mt19937 rng(777);
 	for (int i = 0; i < 600; i++) {
@@ -282,10 +282,10 @@ TEST(SomethingMap, VisualToLogicalIsInverseOfCount)
 	}
 }
 
-TEST(SomethingMap, VisualToLogicalLargeWithNodeSplit)
+TEST(LineIndexMap, VisualToLogicalLargeWithNodeSplit)
 {
 	// Node分割が起きる規模(7万行)での往復整合
-	SomethingMap map;
+	LineIndexMap map;
 	const uint32_t n = 70000;
 	for (uint32_t i = 0; i < n; i++) map.update(0xffffffffu, i % 3 + 1);
 	ASSERT_TRUE(map.validate());
@@ -300,10 +300,10 @@ TEST(SomethingMap, VisualToLogicalLargeWithNodeSplit)
 	EXPECT_EQ(map.visual_to_logical(total).lrow, n); // 範囲外は末尾の次
 }
 
-TEST(SomethingMap, LocateColumn)
+TEST(LineIndexMap, LocateColumn)
 {
 	// 折り返し行の桁数 [5,3,2]: 列0..4→行0、列5..7→行1、列8..→行2(最終行は切らない)
-	SomethingMap::ValueItem item(std::vector<uint32_t>{5, 3, 2});
+	LineIndexMap::ValueItem item(std::vector<uint32_t>{5, 3, 2});
 	EXPECT_EQ(item.value(), 3u);
 	typedef std::pair<uint32_t, uint32_t> RC; // (折り返し行, 行内列)
 	EXPECT_EQ(item.locate_column(0), (RC{0, 0}));
@@ -313,7 +313,7 @@ TEST(SomethingMap, LocateColumn)
 	EXPECT_EQ(item.locate_column(8), (RC{2, 0}));
 	EXPECT_EQ(item.locate_column(99), (RC{2, 91})); // 行末超過は最終行に丸める
 	// col_len未設定(0)の行は折り返し境界として扱われない
-	SomethingMap::ValueItem plain(3);
+	LineIndexMap::ValueItem plain(3);
 	EXPECT_EQ(plain.locate_column(0), (RC{0, 0}));
 	EXPECT_EQ(plain.locate_column(99), (RC{0, 99}));
 	// column_of_row は locate_column の逆演算(折り返し行の先頭論理列)
@@ -322,10 +322,10 @@ TEST(SomethingMap, LocateColumn)
 	EXPECT_EQ(item.column_of_row(2), 8u);
 }
 
-TEST(SomethingMap, LogicalToVisual)
+TEST(LineIndexMap, LogicalToVisual)
 {
 	// 行0: 1表示行(4桁)、行1: 3表示行(5,3,2桁)、行2: 1表示行(4桁)
-	SomethingMap map;
+	LineIndexMap map;
 	map.update(0xffffffffu, std::vector<uint32_t>{4});
 	map.update(0xffffffffu, std::vector<uint32_t>{5, 3, 2});
 	map.update(0xffffffffu, std::vector<uint32_t>{4});
@@ -365,9 +365,9 @@ TEST(SomethingMap, LogicalToVisual)
 	ASSERT_TRUE(map.validate());
 }
 
-TEST(SomethingMap, Clear)
+TEST(LineIndexMap, Clear)
 {
-	SomethingMap map;
+	LineIndexMap map;
 	for (uint32_t i = 0; i < 1000; i++) map.update(0xffffffffu, 2);
 	map.clear();
 	EXPECT_FALSE(map.find(0));
@@ -382,9 +382,9 @@ TEST(SomethingMap, Clear)
 	EXPECT_TRUE(map.validate());
 }
 
-TEST(SomethingMap, TotalRowCounts)
+TEST(LineIndexMap, TotalRowCounts)
 {
-	SomethingMap map;
+	LineIndexMap map;
 	EXPECT_EQ(map.total_logical_row_count(), 0u);
 	EXPECT_EQ(map.total_visual_row_count(), 0u);
 	uint32_t values[] = {1, 3, 0, 2}; // value 0 の行も論理行としては数える

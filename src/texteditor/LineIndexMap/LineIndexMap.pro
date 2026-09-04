@@ -9,7 +9,7 @@ SOURCES += \
         main.cpp
 
 HEADERS += \
-        somethingmap.h
+        LineIndexMap.h
 
 DISTFILES += \
 	AGENTS.md
