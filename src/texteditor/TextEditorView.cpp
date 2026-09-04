@@ -466,15 +466,15 @@ std::pair<row_index_t, col_index_t> TextEditorView::currentLogicalPosition()
 	col_index_t lcol = rowinfo.logical_col + vcol;
 
 	{
-		auto opt = cx()->something_map.visual_to_logical(vrow);
+		auto opt = cx()->line_index.visual_to_logical(vrow);
 		if (opt) {
 			auto [lr1, vr, col] = *opt;
-			vr1 = cx()->something_map.logical_to_visual(lr1, lcol).first;
+			vr1 = cx()->line_index.logical_to_visual(lr1, lcol).first;
 		}
 	}
 	{
-		vr2 = cx()->something_map.logical_to_visual(lr1, lcol).first;
-		auto opt = cx()->something_map.visual_to_logical(vr2);
+		vr2 = cx()->line_index.logical_to_visual(lr1, lcol).first;
+		auto opt = cx()->line_index.visual_to_logical(vr2);
 		if (opt) {
 			auto [lr2, vr, col] = *opt;
 			// vr2 += opt->second;
@@ -490,9 +490,9 @@ void TextEditorView::updateVisibility(bool ensure_current_line_visible, bool cha
 {
 	internalUpdateVisibility(ensure_current_line_visible, change_col, auto_scroll);
 	
-	auto [lrow, lcol] = currentLogicalPosition();
-	setCurrentLogicalRow(lrow);
-	setCurrentLogicalCol(lcol);
+	// auto [lrow, lcol] = currentLogicalPosition();
+	// setCurrentLogicalRow(lrow);
+	// setCurrentLogicalCol(lcol);
 
 	emit moved(currentVisualRow(), currentVisualCol(), scrollposRow(), scrollposCol());
 }
@@ -1176,15 +1176,17 @@ void TextEditorView::timerEvent(QTimerEvent *)
 		}
 	}
 
-	bool f = m->cursor_animation_counter >= cursor_animation_cycle / 2;
-	if (m->cursor_animation_counter > 0) {
-		m->cursor_animation_counter--;
-	} else {
-		m->cursor_animation_counter = cursor_animation_cycle;
-	}
-	bool g = m->cursor_animation_counter >= cursor_animation_cycle / 2;
-	if (f != g) {
-		update();
+	if (0) {
+		bool f = m->cursor_animation_counter >= cursor_animation_cycle / 2;
+		if (m->cursor_animation_counter > 0) {
+			m->cursor_animation_counter--;
+		} else {
+			m->cursor_animation_counter = cursor_animation_cycle;
+		}
+		bool g = m->cursor_animation_counter >= cursor_animation_cycle / 2;
+		if (f != g) {
+			update();
+		}
 	}
 }
 

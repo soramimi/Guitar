@@ -373,10 +373,13 @@ struct TextEditorContext {
 	int tab_indent_size = 4;
 	int bottom_line_y = -1;
 	TextEditorEngine_sp engine;
-	// std::vector<LogicalRowInfo> logical_row_info; // 論理行から物理行へのマッピング情報
-	// std::vector<VisualRowInfo> visual_row_info; // 物理行から論理行へのマッピング情報
-	std::vector<Document::Line> visual_lines;
-	SomethingMap something_map;
+	SomethingMap line_index;
+	struct Cache {
+		std::vector<Document::Line> visual_lines;
+		row_index_t current_logical_row = 0;
+		col_index_t current_logical_col = 0;
+	};
+	mutable Cache cache;
 };
 
 struct RowCol {
@@ -528,7 +531,7 @@ protected:
 	virtual void updateVisibility(bool ensure_current_line_visible, bool change_col, bool auto_scroll) = 0;
 	
 	void insertLine(row_index_t lrow);
-	bool commitLine(const std::vector<Character> &vec);
+	bool commitLine(row_index_t lrow, const std::vector<Character> &vec);
 	
 	void doDelete();
 	void doBackspace();
@@ -542,7 +545,7 @@ protected:
 	void invalidateVisualRowInfo(row_index_t vrow);
 
 	VisualRowInfo queryVisualRowInfo(row_index_t vrow);
-	void upadteVisualRow(row_index_t vrow);
+	void updateVisualRow(row_index_t vrow);
 
 	virtual void calc_pos_x(std::vector<Character> *chars) const {}
 	
@@ -590,7 +593,6 @@ protected:
 		setCursorRow(vpos.row, false, true);
 		setCursorCol_(vpos.col, false, true);
 		cx()->current_visual_pixel_x = pt.x();
-		// updateCurrentPixelX();
 	}
 	void setCursorPos(int row, int col)
 	{
@@ -695,17 +697,19 @@ private:
 	void _updateVisualLineByLogicalLine(col_index_t lrow, Document::Line const &ll, std::mutex *mutex);
 	void _updateVisualLinesAll(bool force);
 	void wrap_and_update_line_map(row_index_t lrow, Document::Line *ll, bool force, std::mutex *mutex);
+	void _updateLogicalPosCache() const;
 public:
 	bool updateVisualLine(row_index_t lrow, bool force, std::mutex *mutex = nullptr);
 	void updateVisualLinesAll()
 	{
 		invalidateVisualRowInfo(0);
+		_updateVisualLinesAll(true);
 	}
 	void setWrappingMode(WrappingMode mode);
 	AbstractCharacterBasedApplication::WrappingMode wrappingMode() const;
 
-	void setCurrentLogicalRow(row_index_t row);
-	void setCurrentLogicalCol(col_index_t col);
+	// void setCurrentLogicalRow(row_index_t row);
+	// void setCurrentLogicalCol(col_index_t col);
 	row_index_t currentLogicalRow() const;
 	col_index_t currentLogicalCol() const;
 	bool isWidthFixed() const;
