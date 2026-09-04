@@ -77,7 +77,7 @@ TextEditorView::TextEditorView(QWidget *parent)
 	: QWidget(parent)
 	, m(new Private)
 {
-	size_t n = sizeof(SomethingMap::ValueItem);
+	size_t n = sizeof(LineIndexMap::ValueItem);
 	
 #ifdef Q_OS_WIN
 

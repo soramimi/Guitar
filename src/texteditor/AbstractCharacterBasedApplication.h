@@ -13,7 +13,7 @@
 #include <vector>
 #include <mutex>
 
-#include "somethingmap.h"
+#include "LineIndexMap/LineIndexMap.h"
 
 class AbstractTextMetrics {
 public:
@@ -371,7 +371,7 @@ struct TextEditorContext {
 	int tab_indent_size = 4;
 	int bottom_line_y = -1;
 	TextEditorEngine_sp engine;
-	SomethingMap line_index_map;
+	LineIndexMap line_index_map;
 	struct Cache {
 		std::optional<row_index_t> nlines;
 		std::vector<Document::Line> visual_lines;

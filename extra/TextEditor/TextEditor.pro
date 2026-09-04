@@ -46,15 +46,18 @@ HEADERS  += \
 	../../src/common/unicode_conversion.h \
 	../../src/common/wstring.h \
 	../../src/texteditor/AbstractCharacterBasedApplication.h \
+	../../src/texteditor/LineIndexMap/LineIndexMap.h \
 	../../src/texteditor/TextEditorTheme.h \
 	../../src/texteditor/TextEditorView.h \
 	../../src/texteditor/TextEditorWidget.h \
 	../../src/texteditor/UnicodeWidth.h \
-	../../src/texteditor/somethingmap.h \
 	../../src/texteditor/unicode.h \
 	src/MainWindow.h \
 	src/MySettings.h
 
 FORMS    += \
 	src/MainWindow.ui
+
+DISTFILES += \
+	../../src/texteditor/LineIndexMap/AGENTS.md
 
