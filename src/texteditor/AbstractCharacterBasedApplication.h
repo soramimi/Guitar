@@ -238,11 +238,9 @@ public:
 			return std::string_view(v->data(), v->size());
 		}
 		
-		void set_text(const std::vector<char> &new_text)
+		void set_text(std::vector<char> const &text)
 		{
-			sp->text = new_text;
-			sp->meta.detail.reset();
-			clear_visual_lines();
+			sp->text = text;
 		}
 		
 		std::vector<char> *to_vector()
@@ -373,8 +371,9 @@ struct TextEditorContext {
 	int tab_indent_size = 4;
 	int bottom_line_y = -1;
 	TextEditorEngine_sp engine;
-	SomethingMap line_index;
+	SomethingMap line_index_map;
 	struct Cache {
+		std::optional<row_index_t> nlines;
 		std::vector<Document::Line> visual_lines;
 		row_index_t current_logical_row = 0;
 		col_index_t current_logical_col = 0;
@@ -426,9 +425,9 @@ public:
 		CharAttr a;
 	};
 	
-	enum LineFlag {
-		LineChanged = 1,
-	};
+	// enum LineFlag {
+	// 	LineChanged = 1,
+	// };
 	
 	static int charWidth(uint32_t c);
 	
@@ -469,6 +468,7 @@ protected:
 	}
 	
 	row_index_t nlines() const;
+	void invalidate_nlines_cache();
 
 	Document::Line *line(row_index_t vrow);
 	
@@ -477,26 +477,28 @@ protected:
 		return const_cast<AbstractCharacterBasedApplication *>(this)->line(vrow);
 	}
 	
-	int char_screen_w() const;
-	int char_screen_h() const;
-	std::vector<Char16> *char_screen();
-	std::vector<Char16> const *char_screen() const;
-	std::vector<uint8_t> *line_flags();
+	// int char_screen_w() const;
+	// int char_screen_h() const;
+	// std::vector<Char16> *char_screen();
+	// std::vector<Char16> const *char_screen() const;
+	// std::vector<uint8_t> *line_flags();
 	
 	void initEditor();
 protected:
 	const Document::Line *currentLine() const;
 	void clearParsedLine();
 	
-	int currentVisualPixelX() const;
-	void setCurrentVisualRow(row_index_t row);
-	void setCurrentVisualCol(int col);
+	void set_current_visual_row(row_index_t row);
+	void set_current_visual_col(col_index_t col);
+	row_index_t current_visual_row() const;
+	int current_visual_col() const;
+	int current_visual_pixel_x() const;
 	
-	int scrollposRow() const;
-	int scrollposCol() const;
+	int scrollpos_row() const;
+	int scrollpos_col() const;
 
-	int cursorCol() const;
-	int cursorRow() const;
+	int cursor_col() const;
+	int cursor_row() const;
 
 	void setScrollPosRow(int row);
 	void setScrollPosCol(int col);
@@ -531,7 +533,7 @@ protected:
 	virtual void updateVisibility(bool ensure_current_line_visible, bool change_col, bool auto_scroll) = 0;
 	
 	void insertLine(row_index_t lrow);
-	bool commitLine(row_index_t lrow, const std::vector<Character> &vec);
+	bool commit_line(row_index_t lrow, const std::vector<Character> &vec);
 	
 	void doDelete();
 	void doBackspace();
@@ -551,8 +553,6 @@ protected:
 	
 private:
 	void internalWrite(const ushort *begin, const ushort *end);
-	void pressLetterWithControl(int c);
-	void invalidateAreaBelowTheCurrentLine();
 	void onQuit();
 	void onOpenFile();
 	void onSaveFile();
@@ -578,7 +578,9 @@ protected:
 	void deselect();
 	std::vector<Character> parseLogicalLine(const TextEditorContext *cx, row_index_t lrow) const;
 	const std::vector<Character> &parseCurrentLine(bool force);
+private:
 	std::vector<Character> _parseLine(const TextEditorContext *cx, const Document::Line *line, std::mutex *mutex) const;
+protected:
 	std::vector<Character> parseLine(Document::Line const *line, std::mutex *mutex = nullptr) const;
 	std::vector<Character> parseLine(row_index_t vrow) const;
 
@@ -609,7 +611,7 @@ protected:
 	
 	void writeNewLine();
 	
-	void updateCursorPos(bool auto_scroll);
+	void update_cursor_pos(bool auto_scroll);
 	
 	QString statusLine() const;
 	
@@ -619,13 +621,11 @@ protected:
 	void clearRect(int x, int y, int w, int h);
 	void paintLineNumbers(std::function<void(int, QString const &, Document::Line const *)> const &draw);
 	bool isAutoLayout() const;
-	void invalidateArea(int top_y = 0);
+	// void invalidateArea(int top_y = 0);
 	void savePos();
 	void restorePos();
 public:
 	
-	row_index_t currentVisualRow() const;
-	int currentVisualCol() const;
 	
 	virtual void layoutEditor();
 	void scrollUp();
@@ -657,8 +657,8 @@ public:
 	State state() const;
 	bool isLineNumberVisible() const;
 	void showLineNumber(bool show, int left_margin = LEFT_MARGIN);
-	void showHeader(bool f);
-	void showFooter(bool f);
+	// void showHeader(bool f);
+	// void showFooter(bool f);
 	void setAutoLayout(bool f);
 	void setDocument(const std::vector<Document::Line> *source);
 	void setSelectionAnchor(SelectionAnchor::Enabled enabled, bool update_anchor, bool auto_scroll);
@@ -699,31 +699,33 @@ private:
 	void _updateVisualLineByLogicalLine(col_index_t lrow, Document::Line const &ll, std::mutex *mutex);
 	void _updateVisualLinesAll(bool force);
 	void wrap_and_update_line_map(row_index_t lrow, Document::Line *ll, bool force, std::mutex *mutex);
-	void _updateLogicalPosCache() const;
-public:
-	bool updateVisualLine(row_index_t lrow, bool force, std::mutex *mutex = nullptr);
+
+        bool _update_visual_line(row_index_t lrow, std::optional<std::vector<char>> text, bool force, std::mutex *mutex);
+protected:
+        void update_visual_line(row_index_t lrow, bool force);
 	void updateVisualLinesAll()
 	{
 		invalidateVisualRowInfo(0);
 		_updateVisualLinesAll(true);
 	}
-	void setWrappingMode(WrappingMode mode);
-	AbstractCharacterBasedApplication::WrappingMode wrappingMode() const;
-
-	// void setCurrentLogicalRow(row_index_t row);
-	// void setCurrentLogicalCol(col_index_t col);
-	row_index_t currentLogicalRow() const;
-	col_index_t currentLogicalCol() const;
+private:
+	void _update_logical_pos_cache() const;
+protected:
+	row_index_t current_logical_row() const;
+	col_index_t current_logical_col() const;
+protected:
 	bool isWidthFixed() const;
 protected:
 	void write_(char const *ptr, bool by_keyboard);
 	void write_(QString const &text, bool by_keyboard);
 	void makeColumnPosList(std::vector<int> *out);
-	bool isValidRowIndex(row_index_t row_index) const;
 	bool hasSelection() const;
 	void updateSelectionAnchor1(bool auto_scroll);
 	void updateSelectionAnchor2(bool auto_scroll);
 	virtual void updateCurrentPixelX() {}
+public:
+	void setWrappingMode(WrappingMode mode);
+	AbstractCharacterBasedApplication::WrappingMode wrappingMode() const;
 };
 
 class AbstractTextEditorApplication : public AbstractCharacterBasedApplication {

@@ -138,13 +138,13 @@ void FileDiffWidget::setViewStyle(ViewStyle style)
  */
 void FileDiffWidget::init()
 {
-	ui->widget_diff_left->bind(this, ui->verticalScrollBar, ui->horizontalScrollBar, mainwindow()->themeForTextEditor());
-	ui->widget_diff_right->bind(this, ui->verticalScrollBar, ui->horizontalScrollBar, mainwindow()->themeForTextEditor());
+	ui->widget_diff_left->bind_controls(this, ui->verticalScrollBar, ui->horizontalScrollBar, mainwindow()->themeForTextEditor());
+	ui->widget_diff_right->bind_controls(this, ui->verticalScrollBar, ui->horizontalScrollBar, mainwindow()->themeForTextEditor());
 
 	connect(ui->verticalScrollBar, &QAbstractSlider::valueChanged, this, &FileDiffWidget::onVerticalScrollValueChanged);
 	connect(ui->horizontalScrollBar, &QAbstractSlider::valueChanged, this, &FileDiffWidget::onHorizontalScrollValueChanged);
 
-	ui->widget_diff_inline->bind(this, ui->verticalScrollBar_inline, ui->horizontalScrollBar_inline, mainwindow()->themeForTextEditor());
+	ui->widget_diff_inline->bind_controls(this, ui->verticalScrollBar_inline, ui->horizontalScrollBar_inline, mainwindow()->themeForTextEditor());
 	
 	connect(ui->verticalScrollBar_inline, &QAbstractSlider::valueChanged, this, &FileDiffWidget::onVerticalScrollValueChanged_inline);
 	connect(ui->horizontalScrollBar_inline, &QAbstractSlider::valueChanged, this, &FileDiffWidget::onHorizontalScrollValueChanged_inline);

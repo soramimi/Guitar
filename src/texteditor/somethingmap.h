@@ -11,17 +11,17 @@
 
 // SomethingMap
 //
-// 折り返し(ワードラップ)機能付きテキストエディタで、論理行番号と表示行番号を
+// 折り返し(ワードラップ)機能付きテキストエディタで、論理行番号と物理行番号を
 // 相互変換するためのデータ構造。
 //
 // - キー = 論理行番号(0ベース)。安定したIDではなく「位置」であり、
 //   insert で後続キーは1つ後ろへずれ、erase で1つ前へ詰まる
-// - 値 = その論理行が折り返しで占める表示行数。表示行1つにつき UserData を
+// - 値 = その論理行が折り返しで占める物理行数。物理行1つにつき UserData を
 //   1要素持ち、その個数(value())が折り返し数を兼ねる。UserData の col_len に
 //   各折り返し行の桁数を持たせると、論理列まで含めた座標変換ができる
-// - count(i) = 論理行 0..i-1 の表示行数の合計 = 論理行 i の先頭の表示行番号
-// - logical_to_visual(行, 列) = 順変換(論理座標 → 表示行番号)
-// - visual_to_logical(表示行) = 逆変換(表示行番号 → 論理行と行内オフセット)
+// - count(i) = 論理行 0..i-1 の物理行数の合計 = 論理行 i の先頭の物理行番号
+// - logical_to_visual(行, 列) = 順変換(論理座標 → 物理行番号)
+// - visual_to_logical(物理行) = 逆変換(物理行番号 → 論理行と行内オフセット)
 //
 // 内部は固定3階層の B+-tree: root(nodes_)→ Node → Leaf。
 // Node に「配下の総要素数」と「配下の値の合計」をキャッシュしておき、
@@ -29,12 +29,12 @@
 // 各操作の計算量は O(root内Node数 + fanout + 葉容量)。
 class SomethingMap {
 public:
-	// 表示行(折り返し行)1行ぶんに付随するユーザーデータ
+	// 物理行(折り返し行)1行ぶんに付随するユーザーデータ
 	struct UserData {
 		uint32_t vcol_len = 0; // この折り返し行が保持する桁数(0 = 未設定)
 	};
-	// 論理行1行ぶんの値。表示行ごとの UserData の配列を共有ポインタで保持し、
-	// その要素数が折り返し数(=この行が占める表示行数)を表す。
+	// 論理行1行ぶんの値。物理行ごとの UserData の配列を共有ポインタで保持し、
+	// その要素数が折り返し数(=この行が占める物理行数)を表す。
 	// コピーは shared_ptr の浅い共有なのでコピーコストは小さい。
 	// data_ は private のため外部からは変更できず、折り返し数の変更は
 	// 必ず SomethingMap::update() を通る(sum_values との整合が保たれる)。
@@ -56,7 +56,7 @@ public:
 				(*data_)[i].vcol_len = col_count_list[i];
 			}
 		}
-		// 折り返し数(この行が占める表示行数)
+		// 折り返し数(この行が占める物理行数)
 		uint32_t value() const
 		{
 			assert(data_);
@@ -269,8 +269,8 @@ public:
 		return std::nullopt;
 	}
 	// [0, lrow) の範囲の値の合計を返す。
-	// 論理行 lrow の先頭の表示行番号に相当する。lrow が総要素数を超えていたら
-	// 全体の合計(=総表示行数)を返す。
+	// 論理行 lrow の先頭の物理行番号に相当する。lrow が総要素数を超えていたら
+	// 全体の合計(=総物理行数)を返す。
 	uint64_t count(key_type lrow) const
 	{
 		return count_and_find(lrow).sum;
@@ -374,58 +374,76 @@ public:
 			return; // Nodeに入ったら必ずLeaf内で解決する(ここには到達しない)
 		}
 	}
-	// (論理行, 論理列) から表示行番号を求める。countの順変換。
-	// 行頭の表示行(count)に、論理列が属する折り返し行のオフセット
-	// (ValueItem::locate_column)を加える。論理行が範囲外なら総表示行数を返す。
-	std::pair<uint64_t, uint32_t> logical_to_visual(key_type lrow, uint32_t lcol) const
+	
+	// (論理行, 論理列) から物理行番号を求める。countの順変換。
+	// 行頭の物理行(count)に、論理列が属する折り返し行のオフセット
+	// (ValueItem::locate_column)を加える。論理行が範囲外なら総物理行数を返す。
+	struct VisualPosition {
+		uint64_t vrow = 0; // 物理行番号
+		uint32_t vcol = 0; // 行内の折り返し行オフセット
+	};
+	VisualPosition logical_to_visual(key_type lrow, uint32_t lcol) const
 	{
 		CountResult r = count_and_find(lrow);
 		if (r.item) {
 			auto [row, col] = r.item->locate_column(lcol);
 			auto vrow = r.sum + row;
 			auto vcol = col;
-			return std::make_pair(vrow, vcol);
+			if (vrow <= std::numeric_limits<uint32_t>::max()) {
+				VisualPosition ret;
+				ret.vrow = vrow;
+				ret.vcol = vcol;
+				return ret;
+			}
 		}
 		return {r.sum, 0};
 	}
-	// 表示行番号から (論理行番号, 行内の折り返し行オフセット) を求める。countの逆変換。
+	// 物理行番号から (論理行番号, 行内の折り返し行オフセット) を求める。countの逆変換。
 	// count(i) <= vrow < count(i+1) となる論理行 i を返す。
-	// value 0 の行は表示行を持たないためスキップされる。範囲外は nullopt。
-	std::optional<std::tuple<key_type, key_type, key_type>> visual_to_logical(uint64_t vrow) const
+	// value 0 の行は物理行を持たないためスキップされる。
+	struct LogicalPosition {
+		uint32_t lrow = 0; // 論理行番号
+		uint32_t lcol = 0; // 論理列番号
+		uint32_t vrow_in_the_lrow = 0; // 行内の折り返し行オフセット
+	};
+	LogicalPosition visual_to_logical(uint64_t vrow) const
 	{
-		key_type logical = 0;
+		key_type lrow = 0;
 		for (Node const &node : nodes_) {
-			// このNodeの表示行範囲より先ならNodeごとスキップ
+			// このNodeの物理行範囲より先ならNodeごとスキップ
 			if (vrow >= node.sum_values) {
 				vrow -= node.sum_values;
-				logical += node.num_items;
+				lrow += node.num_items;
 				continue;
 			}
 			for (Leaf const &leaf : node.leaves) {
-				// このLeafの表示行範囲より先ならLeafごとスキップ
+				// このLeafの物理行範囲より先ならLeafごとスキップ
 				if (vrow >= leaf.sum_values) {
 					vrow -= leaf.sum_values;
-					logical += leaf.items.size();
+					lrow += leaf.items.size();
 					continue;
 				}
 				// 該当するLeafの中を個別に引いていく
 				for (value_type const &item : leaf.items) {
-					uint32_t v = item.value(); // この論理行が占める表示行数
+					uint32_t v = item.value(); // この論理行が占める物理行数
 					if (vrow < v) {
-						uint32_t c = 0;
+						LogicalPosition ret;
+						ret.vrow_in_the_lrow = vrow;
+						ret.lrow = lrow;
+						ret.lcol = 0;
 						if (item.data_) {
 							for (size_t i = 0; i < vrow; i++) {
-								c += (*item.data_)[i].vcol_len;
+								ret.lcol += (*item.data_)[i].vcol_len;
 							}
 						}
-						return std::make_tuple(logical, (key_type)vrow, c); // 論理行と行内の折り返し行オフセットを返す
+						return ret;
 					}
 					vrow -= v;
-					logical++;
+					lrow++;
 				}
 			}
 		}
-		return std::nullopt;
+		return {};
 	}
 	//
 	uint64_t total_logical_row_count() const

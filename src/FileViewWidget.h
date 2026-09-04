@@ -69,7 +69,7 @@ public:
 
 	TextEditorView *texteditor();
 	TextEditorView const *texteditor() const;
-	void bind(FileDiffWidget *fdw, QScrollBar *vsb, QScrollBar *hsb, const TextEditorThemePtr &theme);
+	void bind_controls(FileDiffWidget *fdw, QScrollBar *vsb, QScrollBar *hsb, const TextEditorThemePtr &theme);
 
 	void clear();
 

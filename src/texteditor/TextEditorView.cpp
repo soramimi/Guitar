@@ -222,7 +222,7 @@ void TextEditorView::calc_pos_x(std::vector<Character> *chars) const
 Document::LineProperty const *TextEditorView::queryFormattedLine(row_index_t vrow) const
 {
 	if (vrow >= 0 && vrow < nlines()) {
-		const_cast<TextEditorView *>(this)->updateVisualLine(vrow_to_lrow(vrow), true, nullptr);
+		const_cast<TextEditorView *>(this)->update_visual_line(vrow_to_lrow(vrow), false);
 		Document::LineProperty *detail = line(vrow)->detail();
 		if (!detail) {
 			line(vrow)->sp->meta.detail = std::make_shared<Document::LineProperty>();
@@ -267,7 +267,7 @@ RowCol TextEditorView::mapFromPixel(QPoint const &pt)
 {
 	TextEditorContext *cx = this->cx();
 	const int y = pt.y() / lineHeight();
-	const row_index_t vrow = y + scrollposRow() - cx->viewport_org_y;
+	const row_index_t vrow = y + scrollpos_row() - cx->viewport_org_y;
 	const int max_vrow = nlines();
 	if (vrow >= max_vrow) {
 		// 最終行より下だったら、最終行の列数を返す
@@ -309,7 +309,6 @@ RowCol TextEditorView::mapFromPixel(QPoint const &pt)
 			return RowCol((int)vrow, (int)end);
 		}
 	}
-	// pos_x_px(row, -1, false, &chars);
 	return {};
 }
 
@@ -324,14 +323,14 @@ void TextEditorView::setCursorRow(row_index_t row, bool auto_scroll, bool by_mou
 	AbstractCharacterBasedApplication::setCursorRow(row, false, by_mouse);
 
 	// ピクセル座標を更新
-	cx()->current_visual_pixel_y = (cx()->viewport_org_y + cursorRow()) * lineHeight();
+	cx()->current_visual_pixel_y = (cx()->viewport_org_y + cursor_row()) * lineHeight();
 
 	// ピクセル座標から桁位置を再計算する
 	int x = cx()->current_visual_pixel_x;
 	int y = cx()->current_visual_pixel_y;
 	auto cr = mapFromPixel({x, y});
 
-	setCurrentVisualCol(cr.col); // 桁位置
+	set_current_visual_col(cr.col); // 桁位置
 	clearParsedLine();
 
 	updateSelectionAnchor2(auto_scroll);
@@ -341,8 +340,7 @@ void TextEditorView::updateCurrentPixelX()
 {
 	// 水平ピクセル座標を更新
 	parseCurrentLine(true);
-	// auto *chars = parsedCurrentLine();
-	cx()->current_visual_pixel_x = pos_x_px(currentVisualRow(), currentVisualCol());	
+	cx()->current_visual_pixel_x = pos_x_px(current_visual_row(), current_visual_col());	
 }
 
 void TextEditorView::bindScrollBar(QScrollBar *vsb, QScrollBar *hsb)
@@ -361,10 +359,10 @@ void TextEditorView::setupForLogWidget(TextEditorThemePtr const &theme)
 
 void TextEditorView::updateCursorRect(bool auto_scroll)
 {
-	updateCursorPos(auto_scroll);
+	update_cursor_pos(auto_scroll);
 
-	int x = cx()->viewport_org_x + cursorCol();
-	int y = cx()->viewport_org_y + cursorRow();
+	int x = cx()->viewport_org_x + cursor_col();
+	int y = cx()->viewport_org_y + cursor_row();
 	x *= m->text_metrics.basisCharWidth();
 	y *= lineHeight();
 	QPoint pt = QPoint(x, y);
@@ -386,7 +384,7 @@ void TextEditorView::updateScrollBarRange()
 		vsb->blockSignals(true);
 		vsb->setRange(0, nlines() - cx()->viewport_height / 2);
 		vsb->setPageStep(editorViewportHeight());
-		vsb->setValue(scrollposRow());
+		vsb->setValue(scrollpos_row());
 		vsb->blockSignals(false);
 	}
 
@@ -400,7 +398,7 @@ void TextEditorView::updateScrollBarRange()
 		} else {
 			hsb->setRange(0, w + 100);
 			hsb->setPageStep(w);
-			hsb->setValue(scrollposCol());
+			hsb->setValue(scrollpos_col());
 		}
 		hsb->setVisible(!fixedwidth);
 		hsb->blockSignals(false);
@@ -418,7 +416,7 @@ void TextEditorView::internalUpdateVisibility(bool ensure_current_line_visible, 
 	updateCursorRect(auto_scroll);
 
 	if (change_col) {
-		cx()->current_visual_col_hint = currentVisualCol();
+		cx()->current_visual_col_hint = current_visual_col();
 	}
 
 	if (isPaintingSuppressed()) {
@@ -439,63 +437,11 @@ std::pair<row_index_t, row_index_t> TextEditorView::visibleRowAndCount()
 	return std::make_pair(row_start, row_count);
 }
 
-/**
- * @brief 現在の物理位置を取得する
- * @return
- */
-std::pair<row_index_t, int> TextEditorView::currentVisualPosition() const
-{
-	row_index_t vrow = currentVisualRow();
-	int vcol = currentVisualCol();
-	return std::make_pair(vrow, vcol);
-}
-
-/**
- * @brief 現在の論理位置を取得する
- * @return
- */
-std::pair<row_index_t, col_index_t> TextEditorView::currentLogicalPosition()
-{
-	row_index_t lr1 = 0;
-	row_index_t vr1 = 0;
-	row_index_t lr2 = 0;
-	row_index_t vr2 = 0;
-	
-	auto [vrow, vcol] = currentVisualPosition();
-	VisualRowInfo rowinfo = queryVisualRowInfo(vrow);
-	row_index_t lrow = rowinfo.logical_row;
-	col_index_t lcol = rowinfo.logical_col + vcol;
-
-	{
-		auto opt = cx()->line_index.visual_to_logical(vrow);
-		if (opt) {
-			auto [lr1, vr, col] = *opt;
-			vr1 = cx()->line_index.logical_to_visual(lr1, lcol).first;
-		}
-	}
-	{
-		vr2 = cx()->line_index.logical_to_visual(lr1, lcol).first;
-		auto opt = cx()->line_index.visual_to_logical(vr2);
-		if (opt) {
-			auto [lr2, vr, col] = *opt;
-			// vr2 += opt->second;
-		}
-	}
-	
-	qDebug() << QString::asprintf("(vrow:%d, vcol:%d), (lrow:%d, lcol:%d), {lr1:(%d), vr1:(%d)}, {lr2:(%d), vr2:(%d)}", vrow, vcol, lrow, lcol, lr1, vr1, lr2, vr2);
-
-	return std::make_pair(lrow, lcol);
-}
-
 void TextEditorView::updateVisibility(bool ensure_current_line_visible, bool change_col, bool auto_scroll)
 {
 	internalUpdateVisibility(ensure_current_line_visible, change_col, auto_scroll);
 	
-	// auto [lrow, lcol] = currentLogicalPosition();
-	// setCurrentLogicalRow(lrow);
-	// setCurrentLogicalCol(lcol);
-
-	emit moved(currentVisualRow(), currentVisualCol(), scrollposRow(), scrollposCol());
+	emit moved(current_visual_row(), current_visual_col(), scrollpos_row(), scrollpos_col());
 }
 
 void TextEditorView::move(int cur_row, int cur_col, int scr_row, int scr_col, bool auto_scroll)
@@ -503,9 +449,9 @@ void TextEditorView::move(int cur_row, int cur_col, int scr_row, int scr_col, bo
 	if (isWidthFixed()) {
 		scr_col = 0;
 	}
-	if ((cur_row >= 0 && currentVisualRow() != cur_row) || (cur_col >= 0 && currentVisualCol() != cur_col) || scrollposRow() != scr_row || scrollposCol() != scr_col) {
-		if (cur_row >= 0) setCurrentVisualRow(cur_row);
-		if (cur_col >= 0) setCurrentVisualCol(cur_col);
+	if ((cur_row >= 0 && current_visual_row() != cur_row) || (cur_col >= 0 && current_visual_col() != cur_col) || scrollpos_row() != scr_row || scrollpos_col() != scr_col) {
+		if (cur_row >= 0) set_current_visual_row(cur_row);
+		if (cur_col >= 0) set_current_visual_col(cur_col);
 		if (scr_row >= 0) setScrollPosRow(scr_row);
 		if (scr_col >= 0) setScrollPosCol(scr_col);
 		internalUpdateVisibility(false, true, auto_scroll);
@@ -542,94 +488,6 @@ QColor TextEditorView::colorForIndex(CharAttr const &attr, bool foreground)
 		return foreground ? defaultBackgroundColor() : defaultForegroundColor();
 	}
 	return foreground ? defaultForegroundColor() : Qt::transparent;//defaultBackgroundColor();
-}
-
-/**
- * @brief 描画（CharacterMode用）
- * @param painter
- */
-void TextEditorView::paintScreen(QPainter *painter)
-{
-	int cols = screenWidth();
-	int rows = screenHeight();
-	for (int row = 0; row < rows; row++) {
-		int col = 0;
-		std::vector<Character> chars;
-		while (col < cols) {
-			int o = row * cols;
-			Char16 const *line = &char_screen()->at(o);
-			int n = 0;
-			while (col + n < cols) {
-				uint32_t c = line[col + n].c;
-				uint32_t d = 0;
-				if (c == 0) break;
-				if (c == 0xffff) break;
-				if ((c & 0xfc00) == 0xdc00) {
-					// surrogate 2nd
-					break;
-				}
-				uint32_t unicode = c;
-				if ((c & 0xfc00) == 0xd800) {
-					// surrogate 1st
-					if (col + n + 1 < cols) {
-						uint16_t t = line[col + n + 1].c;
-						if ((t & 0xfc00) == 0xdc00) {
-							d = t;
-							unicode = (((c & 0x03c0) + 0x0040) << 10) | ((c & 0x003f) << 10) | (d & 0x03ff);
-						} else {
-							break;
-						}
-					} else {
-						break;
-					}
-				}
-				Character ch;
-				int cw = charWidth(unicode);
-				if (cw < 1) break;
-				if (n == 0) {
-					ch.attr = line[col].a;
-				} else if (ch.attr != line[col + n].a) {
-					break;
-				}
-				ch.unicode = unicode;
-				chars.push_back(ch);
-				n += cw;
-			}
-			if (n == 0) {
-				Character ch;
-				ch.unicode = ' ';
-				chars.push_back(ch);
-				n = 1;
-			}
-			col += n;
-		}
-		
-		calc_pos_x(&chars);
-
-		int px = 0;
-		for (Character const &ch : chars) {
-			QString str;
-			uint32_t c = ch.unicode;
-			uint32_t d = 0;
-			if (c >= 0x010000 && c < 0x110000) {
-				d = ((c - 0x010000) & 0x03ff) + 0xdc00;
-				c = ((c - 0x010000) >> 10) + 0xd800;
-				str.append(QChar((ushort)c));
-				str.append(QChar((ushort)d));
-			} else {
-				str.append(QChar((ushort)c));
-			}
-			int py = row * lineHeight();
-			int w = painter->fontMetrics().boundingRect(str).width();
-			int h = lineHeight();
-			QColor fgcolor = colorForIndex(ch.attr, true);
-			QColor bgcolor = colorForIndex(ch.attr, false);
-			painter->fillRect(px, py, w, h, bgcolor);
-			painter->setPen(fgcolor);
-			drawText(painter, px, py, str);
-			px = ch.right_x;
-		}
-	}
 }
 
 void TextEditorView::drawFocusFrame(QPainter *pr)
@@ -718,7 +576,7 @@ void TextEditorView::drawCursor(int row, int col, QPainter *pr)
  */
 void TextEditorView::drawCursor(QPainter *pr)
 {
-	drawCursor(currentVisualRow(), currentVisualCol(), pr);
+	drawCursor(current_visual_row(), current_visual_col(), pr);
 }
 
 int TextEditorView::linenumber_area_width() const
@@ -1177,7 +1035,7 @@ void TextEditorView::timerEvent(QTimerEvent *)
 		}
 	}
 
-	if (0) {
+	if (1) { // カーソル点滅
 		bool f = m->cursor_animation_counter >= cursor_animation_cycle / 2;
 		if (m->cursor_animation_counter > 0) {
 			m->cursor_animation_counter--;
@@ -1218,19 +1076,6 @@ void TextEditorView::contextMenuEvent(QContextMenuEvent *event)
 
 void TextEditorView::debug()
 {
-	if (isAutoLayout()) {
-		// int h = height() / lineHeight() + 1;
-		// int w = width() / m->text_metrics.basisCharWidth();
-		// setScreenSize(w, h, false);
-		
-		// int content_width = width() - linenumber_area_width();
-		// setContentWidth(content_width);
-		
-		updateVisualLinesAll();
-		
-		// updateVisibility(true, false, true);
-	}
-	// AbstractTextEditorApplication::layoutEditor();
 }
 
 

@@ -33,8 +33,6 @@ FileViewWidget::FileViewWidget(QWidget *parent)
 	QMetaObject::connectSlotsByName(this);
 
 	texteditor()->setTheme(TextEditorTheme::Light());
-	texteditor()->showHeader(false);
-	texteditor()->showFooter(false);
 	texteditor()->setAutoLayout(true);
 	texteditor()->setReadOnly(true);
 	texteditor()->setToggleSelectionAnchorEnabled(false);
@@ -45,12 +43,7 @@ FileViewWidget::FileViewWidget(QWidget *parent)
 	setMouseTracking(true);
 }
 
-// void FileViewWidget::setTextCodec(std::shared_ptr<MyTextCodec> codec)
-// {
-// 	texteditor()->setTextCodec(codec);
-// }
-
-void FileViewWidget::bind(FileDiffWidget *fdw, QScrollBar *vsb, QScrollBar *hsb, TextEditorThemePtr const &theme)
+void FileViewWidget::bind_controls(FileDiffWidget *fdw, QScrollBar *vsb, QScrollBar *hsb, TextEditorThemePtr const &theme)
 {
 	texteditor()->bindScrollBar(vsb, hsb);
 	ui_page_image->bind(fdw, vsb, hsb);

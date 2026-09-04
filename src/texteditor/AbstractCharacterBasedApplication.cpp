@@ -77,8 +77,6 @@ struct AbstractCharacterBasedApplication::Private {
 	bool is_terminal_mode = false;
 	bool is_cursor_visible = true;
 	State state = State::Normal;
-	int header_line = 0;
-	int footer_line = 0;
 	int screen_width = 80;
 	int screen_height = 24;
 	int content_width_px = -1;
@@ -89,14 +87,12 @@ struct AbstractCharacterBasedApplication::Private {
 	QString dialog_title;
 	QString dialog_value;
 	std::vector<AbstractCharacterBasedApplication::Char16> screen;
-	std::vector<uint8_t> line_flags;
 	
 	std::optional<std::vector<Character>> parsed_current_line_chars;
 	
 	bool dialog_mode = false;
 	DialogHandler dialog_handler;
 	bool is_painting_suppressed = false;
-	int valid_line_index = -1;
 	int line_margin = 3;
 	WriteMode write_mode = WriteMode::Insert;
 	Qt::KeyboardModifiers keyboard_modifiers = Qt::KeyboardModifier::NoModifier;
@@ -147,18 +143,6 @@ void AbstractCharacterBasedApplication::setAutoLayout(bool f)
 	layoutEditor();
 }
 
-void AbstractCharacterBasedApplication::showHeader(bool f)
-{
-	m->header_line = f ? 1 : 0;
-	layoutEditor();
-}
-
-void AbstractCharacterBasedApplication::showFooter(bool f)
-{
-	m->footer_line = f ? 1 : 0;
-	layoutEditor();
-}
-
 void AbstractCharacterBasedApplication::showLineNumber(bool show, int left_margin)
 {
 	m->show_line_number = show;
@@ -200,31 +184,6 @@ QString AbstractCharacterBasedApplication::recentlyUsedPath()
 	return m->recently_used_path;
 }
 
-std::vector<AbstractCharacterBasedApplication::Char16> *AbstractCharacterBasedApplication::char_screen()
-{
-	return &m->screen;
-}
-
-int AbstractCharacterBasedApplication::char_screen_w() const
-{
-	return m->screen_width;
-}
-
-int AbstractCharacterBasedApplication::char_screen_h() const
-{
-	return m->screen_height;
-}
-
-const std::vector<AbstractCharacterBasedApplication::Char16> *AbstractCharacterBasedApplication::char_screen() const
-{
-	return &m->screen;
-}
-
-std::vector<uint8_t> *AbstractCharacterBasedApplication::line_flags()
-{
-	return &m->line_flags;
-}
-
 void AbstractCharacterBasedApplication::makeBuffer()
 {
 	int w = screenWidth();
@@ -232,83 +191,87 @@ void AbstractCharacterBasedApplication::makeBuffer()
 	int size = w * h;
 	m->screen.resize(size);
 	std::fill(m->screen.begin(), m->screen.end(), Char16());
-	m->line_flags.resize(h);
 }
 
-bool AbstractCharacterBasedApplication::isValidRowIndex(row_index_t row_index) const
+/**
+ * @brief 物理行数を返す
+ * @return
+ */
+row_index_t AbstractCharacterBasedApplication::nlines() const
 {
-	return row_index >= 0 && row_index < nlines();
-}
-
-void AbstractCharacterBasedApplication::_updateLogicalPosCache() const
-{
-	row_index_t vrow = currentVisualRow();
-	col_index_t vcol = currentVisualCol();
-	auto opt = cx()->line_index.visual_to_logical(vrow);
-	if (opt) {
-		auto [lrow, vrow, lcol] = *opt;
-		(void)vrow;
-		cx()->cache.current_logical_row = lrow;
-		cx()->cache.current_logical_col = lcol + vcol;
+	if (m->wrapping_mode == WrappingMode::NoWrap) {
+		return logicalLines();
 	} else {
-		cx()->cache.current_logical_row = 0;
-		cx()->cache.current_logical_col = 0;
+		if (cx()->cache.nlines == std::nullopt) { // キャッシュが無効化されている場合は再計算する
+			cx()->cache.nlines = cx()->line_index_map.total_visual_row_count();
+		}
+		return *cx()->cache.nlines;
 	}
 }
 
-row_index_t AbstractCharacterBasedApplication::currentLogicalRow() const
+/**
+ * @brief 物理行数キャッシュを無効化する
+ */
+void AbstractCharacterBasedApplication::invalidate_nlines_cache()
 {
-	_updateLogicalPosCache();
+	cx()->cache.nlines = std::nullopt;
+}
+
+void AbstractCharacterBasedApplication::_update_logical_pos_cache() const
+{
+	TextEditorContext::Cache *cache = &cx()->cache; // mutable
+
+	row_index_t vrow = current_visual_row();
+	col_index_t vcol = current_visual_col();
+	
+	auto logical = cx()->line_index_map.visual_to_logical(vrow);
+	cache->current_logical_row = logical.lrow;
+	cache->current_logical_col = logical.lcol + vcol;
+}
+
+row_index_t AbstractCharacterBasedApplication::current_logical_row() const
+{
+	_update_logical_pos_cache();
 	return cx()->cache.current_logical_row;
 }
 
-col_index_t AbstractCharacterBasedApplication::currentLogicalCol() const
+col_index_t AbstractCharacterBasedApplication::current_logical_col() const
 {
-	_updateLogicalPosCache();
+	_update_logical_pos_cache();
 	return cx()->cache.current_logical_col;
 }
 
-// void AbstractCharacterBasedApplication::setCurrentLogicalRow(row_index_t row)
-// {
-// 	// cx()->cache.current_logical_row = row;
-// }
-
-// void AbstractCharacterBasedApplication::setCurrentLogicalCol(col_index_t col)
-// {
-// 	// cx()->cache.current_logical_col = col;
-// }
-
-row_index_t AbstractCharacterBasedApplication::currentVisualRow() const
-{
-	return cx()->current_visual_row;
-}
-
-int AbstractCharacterBasedApplication::currentVisualCol() const
-{
-	return cx()->current_visual_col;
-}
-
-int AbstractCharacterBasedApplication::currentVisualPixelX() const
-{
-	return cx()->current_visual_pixel_x;
-}
-
-void AbstractCharacterBasedApplication::setCurrentVisualRow(row_index_t row)
+void AbstractCharacterBasedApplication::set_current_visual_row(row_index_t row)
 {
 	cx()->current_visual_row = row;
 }
 
-void AbstractCharacterBasedApplication::setCurrentVisualCol(int col)
+void AbstractCharacterBasedApplication::set_current_visual_col(col_index_t col)
 {
 	cx()->current_visual_col = col;
 }
 
-int AbstractCharacterBasedApplication::scrollposRow() const
+row_index_t AbstractCharacterBasedApplication::current_visual_row() const
+{
+	return cx()->current_visual_row;
+}
+
+int AbstractCharacterBasedApplication::current_visual_col() const
+{
+	return cx()->current_visual_col;
+}
+
+int AbstractCharacterBasedApplication::current_visual_pixel_x() const
+{
+	return cx()->current_visual_pixel_x;
+}
+
+int AbstractCharacterBasedApplication::scrollpos_row() const
 {
 	return cx()->scroll_pos_row;
 }
 
-int AbstractCharacterBasedApplication::scrollposCol() const
+int AbstractCharacterBasedApplication::scrollpos_col() const
 {
 	return cx()->scroll_pos_col;
 }
@@ -323,19 +286,19 @@ void AbstractCharacterBasedApplication::setScrollPosCol(int col)
 	cx()->scroll_pos_col = col;
 }
 
-int AbstractCharacterBasedApplication::cursorCol() const
+int AbstractCharacterBasedApplication::cursor_col() const
 {
-	return currentVisualCol() - scrollposCol();
+	return current_visual_col() - scrollpos_col();
 }
 
-int AbstractCharacterBasedApplication::cursorRow() const
+int AbstractCharacterBasedApplication::cursor_row() const
 {
-	return currentVisualRow() - scrollposRow();
+	return current_visual_row() - scrollpos_row();
 }
 
 Document::Line const *AbstractCharacterBasedApplication::currentLine() const
 {
-	row_index_t vrow = currentVisualRow();
+	row_index_t vrow = current_visual_row();
 	return (vrow >= 0 && vrow < nlines()) ? line(vrow) : nullptr;
 }
 
@@ -406,7 +369,7 @@ void AbstractCharacterBasedApplication::clearParsedLine()
 std::vector<Character> const &AbstractCharacterBasedApplication::parseCurrentLine(bool force)
 {
 	if (force || !m->parsed_current_line_chars) {
-		m->parsed_current_line_chars = parseLine(currentVisualRow());
+		m->parsed_current_line_chars = parseLine(current_visual_row());
 	}
 	return *m->parsed_current_line_chars;
 }
@@ -559,7 +522,7 @@ row_index_t AbstractCharacterBasedApplication::lrow_to_vrow(row_index_t lrow) co
 		return lrow;
 	}
 	
-	auto [vrow, vcol] = cx()->line_index.logical_to_visual(lrow, 0);
+	auto [vrow, vcol] = cx()->line_index_map.logical_to_visual(lrow, 0);
 	return vrow;	
 }
 
@@ -569,12 +532,8 @@ row_index_t AbstractCharacterBasedApplication::vrow_to_lrow(row_index_t vrow) co
 		return vrow;
 	}
 	
-	auto opt = cx()->line_index.visual_to_logical(vrow);
-	if (opt) {
-		auto [lrow, vrow, lcol] = *opt;
-		return lrow;
-	}
-	return 0;
+	auto logical = cx()->line_index_map.visual_to_logical(vrow);
+	return logical.lrow;
 }
 
 void AbstractCharacterBasedApplication::wrap_and_update_line_map(row_index_t lrow, Document::Line *ll, bool force, std::mutex *mutex)
@@ -587,7 +546,10 @@ void AbstractCharacterBasedApplication::wrap_and_update_line_map(row_index_t lro
 	for (Document::Line const &vl : ll->sp->meta.visual_lines) {
 		col_list.push_back(vl.sp->meta.logical_col_len);
 	}
-	cx()->line_index.update(lrow, col_list); // 論理行に対応する物理行数を更新
+	
+	if (mutex) mutex->lock();
+	cx()->line_index_map.update(lrow, col_list); // 論理行に対応する物理行数を更新
+	if (mutex) mutex->unlock();
 }
 
 /**
@@ -607,16 +569,10 @@ VisualRowInfo AbstractCharacterBasedApplication::queryVisualRowInfo(row_index_t 
 	}
 	
 	VisualRowInfo info;
-	auto opt = cx()->line_index.visual_to_logical(vrow);
-	if (opt) {
-		auto [lrow, vrow, lcol] = *opt;
-		(void)vrow;
-		info.logical_row = lrow;
-		info.logical_col = lcol;
-		return info;
-	}
-
-	return {};
+	auto logical = cx()->line_index_map.visual_to_logical(vrow);
+	info.logical_row = logical.lrow;
+	info.logical_col = logical.lcol;
+	return info;
 }
 
 /**
@@ -646,26 +602,26 @@ void AbstractCharacterBasedApplication::_updateVisualLineByLogicalLine(col_index
 	
 	TextEditorContext *cx = this->cx();
 	
-	auto [lower_pos, lower_vcol] = cx->line_index.logical_to_visual(lrow, 0); // 論理行に対応する物理行の開始位置
-	auto [upper_pos, upper_vcol] = cx->line_index.logical_to_visual(lrow + 1, 0); // 論理行に対応する物理行の終了位置
+	auto [lower_pos, lower_vcol] = cx->line_index_map.logical_to_visual(lrow, 0); // 論理行に対応する物理行の開始位置
+	auto [upper_pos, upper_vcol] = cx->line_index_map.logical_to_visual(lrow + 1, 0); // 論理行に対応する物理行の終了位置
 	(void)lower_vcol;
 	(void)upper_vcol;
 	
 	const size_t dstlen = upper_pos - lower_pos; // 論理行に対応する物理行の数
 	const size_t srclen = src.size(); // 折り返し処理後の物理行の数
 
-	const size_t nlines = cx->cache.visual_lines.size(); // 現在の物理行数
+	const size_t nvlines = cx->cache.visual_lines.size(); // 現在の物理行数
 	
 	if (dstlen > srclen) { // 書き込み先の方が長い場合、余分な物理行を削除する
-		size_t erase_begin = std::min(lower_pos + srclen, nlines);
-		size_t erase_end = std::min(upper_pos, nlines);
+		size_t erase_begin = std::min(lower_pos + srclen, nvlines);
+		size_t erase_end = std::min(upper_pos, nvlines);
 		if (erase_begin < erase_end) {
 			cx->cache.visual_lines.erase(cx->cache.visual_lines.begin() + erase_begin, cx->cache.visual_lines.begin() + erase_end);
 		}
 	} else {
-		size_t insert_begin = std::min(lower_pos + dstlen, nlines);
-		size_t insert_end = upper_pos;
-		if (insert_begin > nlines) { // 書き込み先の方が短い場合、足りない分を追加する
+		size_t insert_begin = std::min(lower_pos + dstlen, nvlines);
+		size_t insert_end = lower_pos + srclen;
+		if (insert_begin > nvlines) { // 書き込み先の方が短い場合、足りない分を追加する
 			cx->cache.visual_lines.resize(insert_begin);
 		}
 		size_t n = insert_end - insert_begin; // 追加する物理行数
@@ -681,14 +637,7 @@ void AbstractCharacterBasedApplication::_updateVisualLineByLogicalLine(col_index
 	}
 }
 
-/**
- * @brief 論理行番号に対応する物理行情報を更新する。折り返し処理も行う。
- * @param lrow 論理行番号
- * @param force 強制的に折り返し処理を行う場合はtrue
- * @param mutex 排他制御用のmutex（nullptrの場合は排他制御なし）
- * @return 折り返し後の物理行数が変化したかどうか
- */
-bool AbstractCharacterBasedApplication::updateVisualLine(row_index_t lrow, bool force, std::mutex *mutex)
+bool AbstractCharacterBasedApplication::_update_visual_line(row_index_t lrow, std::optional<std::vector<char>> text, bool force, std::mutex *mutex)
 {
 	bool vline_count_changed = false;
 	if (m->wrapping_mode != WrappingMode::NoWrap) {
@@ -697,21 +646,36 @@ bool AbstractCharacterBasedApplication::updateVisualLine(row_index_t lrow, bool 
 		if (lrow >= 0 && lrow < llines->size()) {
 			Document::Line *ll = &(*llines)[lrow];
 
-			const size_t nvlines = ll->sp->meta.visual_lines.size();
-			{
-				wrap_and_update_line_map(lrow, ll, force, mutex);
-			}
-			vline_count_changed = (nvlines != ll->sp->meta.visual_lines.size());
+			const size_t nvlines = ll->sp->meta.visual_lines.size(); // 折り返し前の物理行数
 			
-			if (force || vline_count_changed) { // 折り返し後の物理行数が変化した場合、物理行情報を無効化する
-				_updateVisualLineByLogicalLine(lrow, *ll, mutex);
+			if (text) { // テキストが指定されている場合、論理行のテキストを更新する
+				ll->set_text(*text);
+				ll->clear_visual_lines();
+				ll->sp->meta.detail.reset();
 			}
+			
+			wrap_and_update_line_map(lrow, ll, force, mutex); // 折り返し処理と物理行情報の更新
+			
+			vline_count_changed = (nvlines != ll->sp->meta.visual_lines.size()); // 折り返し後の物理行数が変化したかどうか
 		}
 	}
-	return vline_count_changed; // 折り返し後の物理行数が変化したかどうか
+	return vline_count_changed;
 }
 
+void AbstractCharacterBasedApplication::update_visual_line(row_index_t lrow, bool force)
+{
+	bool vline_count_changed = _update_visual_line(lrow, std::nullopt, force, nullptr);
 
+	std::vector<Document::Line> *llines = &document()->logical_lines;
+	if (lrow >= 0 && lrow < llines->size()) {
+		Document::Line *ll = &(*llines)[lrow];
+		_updateVisualLineByLogicalLine(lrow, *ll, nullptr);
+	}
+	
+	if (vline_count_changed) {
+		invalidate_nlines_cache();
+	}
+}
 
 void AbstractCharacterBasedApplication::_updateVisualLinesAll(bool force)
 {
@@ -724,7 +688,7 @@ void AbstractCharacterBasedApplication::_updateVisualLinesAll(bool force)
 	
 	
 	if (force) {
-		cx->line_index.clear();
+		cx->line_index_map.clear();
 	}
 	
 	{
@@ -732,7 +696,7 @@ void AbstractCharacterBasedApplication::_updateVisualLinesAll(bool force)
 		
 		if (1) {
 			for (row_index_t lrow = 0; lrow < (row_index_t)llines->size(); lrow++) {
-				updateVisualLine(lrow, force, nullptr);
+				update_visual_line(lrow, force);
 			}
 		} else {
 			constexpr int nthreads = 8;
@@ -745,20 +709,22 @@ void AbstractCharacterBasedApplication::_updateVisualLinesAll(bool force)
 					while (1) {
 						row_index_t lrow = index++;
 						if (lrow >= nlines) break;
-						updateVisualLine(lrow, force, &mutex);
+						_update_visual_line(lrow, std::nullopt, force, &mutex);
 					}
 				});
 			}
 			for (int i = 0; i < nthreads; i++) {
 				thread[i].join();
 			}
+			for (row_index_t lrow = 0; lrow < (row_index_t)llines->size(); lrow++) {
+				std::vector<Document::Line> *llines = &document()->logical_lines;
+				Document::Line *ll = &(*llines)[lrow];
+				_updateVisualLineByLogicalLine(lrow, *ll, nullptr);
+			}
 		}
 	}
 	
 	//
-	
-#if 1
-	const size_t nreserve = cx->cache.visual_lines.size() + 100;
 	
 	std::vector<Document::Line> const &llines = cx->engine->document.logical_lines;
 	
@@ -770,22 +736,55 @@ void AbstractCharacterBasedApplication::_updateVisualLinesAll(bool force)
 	}
 	updateVisualRow(vrow);
 	
-#endif
 	updateScrollBarRange();
 }
 
 void AbstractCharacterBasedApplication::invalidateVisualRowInfo(row_index_t vrow)
 {
-	// qDebug() << Q_FUNC_INFO << vrow;
 	TextEditorContext *cx = this->cx();
 	if (vrow < 0) {
 		cx->cache.visual_lines.clear();
-		cx->line_index.clear();
+		cx->line_index_map.clear();
 	} else {
 		cx->cache.visual_lines.resize(vrow);
 	}
+}
+
+bool AbstractCharacterBasedApplication::commit_line(row_index_t lrow, std::vector<Character> const &vec)
+{
+	std::vector<Document::Line> *llines = documentLinesForWrite();
+	if (!llines) return false;
 	
-	// _updateVisualLinesAll(vrow == 0);
+	std::vector<char> ba;
+	if (!vec.empty()){
+		std::vector<char32_t> v;
+		v.reserve(vec.size());
+		for (Character const &c : vec) {
+			v.push_back(c.unicode);
+		}
+		utf32 u32(&v[0], v.size());
+		u32.to_utf8([&](char c, int pos){
+			(void)pos;
+			ba.push_back(c);
+			return true;
+		});
+	}
+
+	if (lrow == llines->size()) {
+		Document::Line newline;
+		newline.sp->meta.type = Document::LineType::Normal;
+		llines->push_back(newline);
+	}
+	
+	clearParsedLine();
+	
+	bool vline_count_changed  = _update_visual_line(lrow, ba, false, nullptr);
+	
+	if (vline_count_changed) {
+		invalidate_nlines_cache();
+	}
+	
+	return vline_count_changed;
 }
 
 void AbstractCharacterBasedApplication::closeDialog(bool result)
@@ -809,9 +808,9 @@ void AbstractCharacterBasedApplication::layoutEditor()
 {
 	makeBuffer();
 	editor_cx->viewport_org_x = leftMargin_();
-	editor_cx->viewport_org_y = m->header_line;
+	editor_cx->viewport_org_y = 0;
 	editor_cx->viewport_width = screenWidth() - cx()->viewport_org_x;
-	editor_cx->viewport_height = screenHeight() - (m->header_line + m->footer_line);
+	editor_cx->viewport_height = screenHeight();
 }
 
 void AbstractCharacterBasedApplication::initEditor()
@@ -933,16 +932,6 @@ std::vector<Document::Line> *AbstractCharacterBasedApplication::_lines()
 	}
 }
 
-row_index_t AbstractCharacterBasedApplication::nlines() const
-{
-	if (m->wrapping_mode == WrappingMode::NoWrap) {
-		return logicalLines();
-	} else {
-		// return cx()->cache.visual_lines.size();
-		return cx()->line_index.total_visual_row_count();
-	}
-}
-
 Document::Line *AbstractCharacterBasedApplication::line(row_index_t vrow)
 {
 	std::vector<Document::Line> *lines = nullptr;
@@ -952,7 +941,7 @@ Document::Line *AbstractCharacterBasedApplication::line(row_index_t vrow)
 		size_t end = std::min(vrow + 1, nlines());
 		for (size_t r = cx()->cache.visual_lines.size(); r < end; r++) {
 			cx()->cache.visual_lines.push_back({});
-			updateVisualLine(r, true, nullptr);
+			update_visual_line(r, true);
 		}
 		lines = &cx()->cache.visual_lines;
 	}
@@ -996,8 +985,6 @@ void AbstractCharacterBasedApplication::setPaintingSuppressed(bool f)
 	m->is_painting_suppressed = f;
 }
 
-
-
 std::vector<Document::Line> *AbstractCharacterBasedApplication::documentLinesForWrite(bool check_readonly)
 {
 	if (check_readonly && isReadOnly()) return nullptr;
@@ -1022,58 +1009,9 @@ void AbstractCharacterBasedApplication::insertLine(row_index_t lrow)
 	if (!llines) return;
 
 	llines->insert(llines->begin() + lrow, Document::Line::NormalEmptyLine());
-	cx()->line_index.insert(lrow, {});
-}
+	cx()->line_index_map.insert(lrow, {});
 
-/**
- * @brief 論理行に文字列をコミットする
- * @param vec 文字列（Characterの配列）
- * @return 折り返し後の物理行数が変化したかどうか
- */
-bool AbstractCharacterBasedApplication::commitLine(row_index_t lrow, std::vector<Character> const &vec)
-{
-	// row_index_t lrow = currentLogicalRow();
-	
-	std::vector<Document::Line> *llines = documentLinesForWrite();
-	if (!llines) return false;
-	
-	std::vector<char> ba;
-	if (!vec.empty()){
-		std::vector<char32_t> v;
-		v.reserve(vec.size());
-		for (Character const &c : vec) {
-			v.push_back(c.unicode);
-		}
-		utf32 u32(&v[0], v.size());
-		u32.to_utf8([&](char c, int pos){
-			(void)pos;
-			ba.push_back(c);
-			return true;
-		});
-	}
-
-
-	if (lrow == llines->size()) {
-		Document::Line newline;
-		newline.sp->meta.type = Document::LineType::Normal;
-		llines->push_back(newline);
-	}
-	Document::Line *lline = &(*llines)[lrow];
-	
-	lline->set_text(std::vector<char>(ba.data(), ba.data() + ba.size()));
-
-	if (m->valid_line_index > lrow) {
-		m->valid_line_index = lrow;
-	}
-	
-	int y = lrow - scrollposRow() + cx()->viewport_org_y;
-	if (y >= 0 && y < (int)m->line_flags.size()) {
-		m->line_flags[y] |= LineChanged;
-	}
-
-	clearParsedLine();
-
-	return updateVisualLine(lrow, true);
+	invalidate_nlines_cache();
 }
 
 std::vector<Character> AbstractCharacterBasedApplication::parseLogicalLine(TextEditorContext const *cx, row_index_t lrow) const
@@ -1090,7 +1028,7 @@ bool AbstractCharacterBasedApplication::isCurrentLineWritable() const
 {
 	if (isReadOnly()) return false;
 
-	row_index_t vrow = currentVisualRow();
+	row_index_t vrow = current_visual_row();
 	if (vrow >= 0 && vrow < nlines()) {
 		if (line(vrow)->sp->meta.type != Document::LineType::Invalid) {
 			return true;
@@ -1164,9 +1102,7 @@ int AbstractCharacterBasedApplication::print(int x, int y, QString const &text, 
 				}
 			}
 		}
-		if (changed) {
-			m->line_flags[y] |= LineChanged;
-		}
+
 		x = x2;
 	}
 	return x;
@@ -1217,11 +1153,9 @@ void AbstractCharacterBasedApplication::writeNewLine()
 	if (isReadOnly()) return;
 	if (isSingleLineMode()) return;
 
-	invalidateAreaBelowTheCurrentLine();
-	
-	row_index_t vrow = currentVisualRow();
-	row_index_t lrow = currentLogicalRow();
-	col_index_t lcol = currentLogicalCol();
+	row_index_t vrow = current_visual_row();
+	row_index_t lrow = current_logical_row();
+	col_index_t lcol = current_logical_col();
 	
 	invalidateVisualRowInfo(vrow);
 	
@@ -1236,20 +1170,15 @@ void AbstractCharacterBasedApplication::writeNewLine()
 	curr_line.emplace_back('\n');
 	
 	// 現在の行を確定
-	commitLine(lrow, curr_line);
-	// {
-	// 	std::vector<Document::Line> *llines = &document()->logical_lines;
-	// 	Document::Line const &line = (*llines)[lrow];
-	// 	cx()->something_map.update(lrow, line.sp->meta.visual_lines.size());
-	// }
+	commit_line(lrow, curr_line);
 
 	// 次の行を挿入
 	lrow++;
 	insertLine(lrow);
-	commitLine(lrow, next_line);
+	commit_line(lrow, next_line);
 	
 	vrow++;
-	setCurrentVisualRow(vrow);
+	set_current_visual_row(vrow);
 
 	setCursorCol(0);
 	clearParsedLine();
@@ -1290,7 +1219,6 @@ void AbstractCharacterBasedApplication::openFile(QString const &path)
 			document()->logical_lines.push_back(line);
 		}
 		document()->raw_lines = std::move(lines);
-		m->valid_line_index = (int)document()->logical_lines.size();
 		setRecentlyUsedPath(path);
 	}
 
@@ -1375,15 +1303,14 @@ void AbstractCharacterBasedApplication::setLineMargin(int n)
 void AbstractCharacterBasedApplication::ensureCurrentLineVisible()
 {
 	int margin = (cx()->viewport_height >= 6 && !isSingleLineMode()) ? m->line_margin : 0;
-	int pos = scrollposRow();
-	int top = currentVisualRow() - margin;
-	int bottom = currentVisualRow() + 1 - editorViewportHeight() + margin;
+	int pos = scrollpos_row();
+	int top = current_visual_row() - margin;
+	int bottom = current_visual_row() + 1 - editorViewportHeight() + margin;
 	if (pos > top)    pos = top;
 	if (pos < bottom) pos = bottom;
 	if (pos < 0) pos = 0;
-	if (scrollposRow() != pos) {
+	if (scrollpos_row() != pos) {
 		setScrollPosRow(pos);
-		invalidateArea();
 	}
 }
 
@@ -1396,10 +1323,10 @@ int AbstractCharacterBasedApplication::decideColumnScrollPos() const
 {//@
 	if (isWidthFixed()) return 0;
 
-	int x = currentVisualCol();
+	int x = current_visual_col();
 	int w = editorViewportWidth() - RIGHT_MARGIN;
 	if (w < 0) w = 0;
-	return x > w ? (currentVisualCol() - w) : 0;
+	return x > w ? (current_visual_col() - w) : 0;
 }
 
 int AbstractCharacterBasedApplication::calcVisualWidth(const Document::Line &line) const
@@ -1451,8 +1378,8 @@ void AbstractCharacterBasedApplication::savePos()
 {
 	TextEditorContext *p = editor_cx.get();
 	if (p) {
-		p->saved_row = currentVisualRow();
-		p->saved_col = currentVisualCol();
+		p->saved_row = current_visual_row();
+		p->saved_col = current_visual_col();
 		p->saved_col_hint = p->current_visual_col_hint;
 	}
 }
@@ -1461,8 +1388,8 @@ void AbstractCharacterBasedApplication::restorePos()
 {
 	TextEditorContext *p = editor_cx.get();
 	if (p) {
-		setCurrentVisualRow(p->saved_row);
-		setCurrentVisualCol(p->saved_col);
+		set_current_visual_row(p->saved_row);
+		set_current_visual_col(p->saved_col);
 		p->current_visual_col_hint = p->saved_col_hint;
 	}
 }
@@ -1501,11 +1428,11 @@ void AbstractCharacterBasedApplication::updateSelectionAnchor2(bool auto_scroll)
 
 void AbstractCharacterBasedApplication::setCursorRow(row_index_t vrow, bool auto_scroll, bool by_mouse)
 {
-	if (currentVisualRow() == vrow) return;
+	if (current_visual_row() == vrow) return;
 
 	updateSelectionAnchor1(false);
 
-	setCurrentVisualRow(vrow);
+	set_current_visual_row(vrow);
 
 	updateSelectionAnchor2(auto_scroll);
 
@@ -1514,14 +1441,14 @@ void AbstractCharacterBasedApplication::setCursorRow(row_index_t vrow, bool auto
 
 void AbstractCharacterBasedApplication::setCursorCol_(col_index_t vcol, bool auto_scroll, bool by_mouse)
 {
-	if (currentVisualCol() == vcol) {
+	if (current_visual_col() == vcol) {
 		cx()->current_visual_col_hint = vcol;
 		return;
 	}
 
 	updateSelectionAnchor1(false);
 
-	setCurrentVisualCol(vcol);
+	set_current_visual_col(vcol);
 	cx()->current_visual_col_hint = vcol;
 
 	updateSelectionAnchor2(auto_scroll);
@@ -1565,11 +1492,11 @@ void AbstractCharacterBasedApplication::editSelected(EditOperation op, std::vect
 		}
 	}
 
-	int curr_row = currentVisualRow();
-	int curr_col = currentVisualCol();
+	int curr_row = current_visual_row();
+	int curr_col = current_visual_col();
 
-	setCurrentVisualRow(b.row);
-	setCurrentVisualCol(b.col);
+	set_current_visual_row(b.row);
+	set_current_visual_col(b.col);
 
 	if (a.row == b.row) {
 		std::vector<Character> chars = parseCurrentLine(true);
@@ -1582,7 +1509,7 @@ void AbstractCharacterBasedApplication::editSelected(EditOperation op, std::vect
 		}
 		if (op == EditOperation::Cut) {
 			chars.erase(begin, end);
-			commitLine(currentLogicalRow(), chars);
+			commit_line(current_logical_row(), chars);
 			UpdateVisibility();
 		}
 	} else {
@@ -1597,15 +1524,15 @@ void AbstractCharacterBasedApplication::editSelected(EditOperation op, std::vect
 			}
 			if (op == EditOperation::Cut) {
 				chars.erase(begin, end);
-				commitLine(currentLogicalRow(), chars);
+				commit_line(current_logical_row(), chars);
 				UpdateVisibility();
 			}
 		}
 		int n = b.row - a.row;
 		for (int i = 0; i < n; i++) {
 			if (cutbuffer && i > 0) {
-				setCurrentVisualRow(b.row - i);
-				setCurrentVisualCol(0);
+				set_current_visual_row(b.row - i);
+				set_current_visual_col(0);
 				std::vector<Character> const &chars = parseCurrentLine(true);
 				cutlist.push_back(chars);
 			}
@@ -1614,8 +1541,8 @@ void AbstractCharacterBasedApplication::editSelected(EditOperation op, std::vect
 			}
 		}
 
-		setCurrentVisualRow(a.row);
-		setCurrentVisualCol(a.col);
+		set_current_visual_row(a.row);
+		set_current_visual_col(a.col);
 		int index = calcColumnToIndex(a.col);
 		std::vector<Character> chars2 = parseCurrentLine(true);
 		if (cutbuffer) {
@@ -1627,7 +1554,7 @@ void AbstractCharacterBasedApplication::editSelected(EditOperation op, std::vect
 		if (op == EditOperation::Cut) {
 			chars2.resize(index);
 			chars2.insert(chars2.end(), chars.begin(), chars.end());
-			commitLine(currentLogicalRow(), chars2);
+			commit_line(current_logical_row(), chars2);
 			UpdateVisibility();
 		}
 	}
@@ -1647,11 +1574,9 @@ void AbstractCharacterBasedApplication::editSelected(EditOperation op, std::vect
 	if (op == EditOperation::Cut) {
 		deselect();
 		setCursorPos(a.row, a.col);
-		invalidateArea(a.row - scrollposRow());
 	} else {
-		setCurrentVisualRow(curr_row);
-		setCurrentVisualCol(curr_col);
-		invalidateArea(curr_row - scrollposRow());
+		set_current_visual_row(curr_row);
+		set_current_visual_col(curr_col);
 	}
 
 	clearParsedLine();
@@ -1704,8 +1629,8 @@ void AbstractCharacterBasedApplication::doDelete()
 	
 	Document *doc = document();
 	
-	col_index_t lrow = currentLogicalRow();
-	col_index_t lcol = currentLogicalCol();
+	col_index_t lrow = current_logical_row();
+	col_index_t lcol = current_logical_col();
 	std::vector<Character> vec = parseLogicalLine(cx(), lrow);
 	bool delete_nl = false; // 削除した文字が改行コードであるかどうか
 	char32_t c = -1;
@@ -1713,7 +1638,6 @@ void AbstractCharacterBasedApplication::doDelete()
 		c = (vec)[lcol].unicode;
 	}
 	if (c == '\n' || c == '\r' || c == -1) {
-		invalidateAreaBelowTheCurrentLine();
 		if (isSingleLineMode()) return;
 		if (c != -1) {
 			vec.erase(vec.begin() + lcol);
@@ -1728,7 +1652,8 @@ void AbstractCharacterBasedApplication::doDelete()
 			vec.insert(vec.end(), next.begin(), next.end());
 			if (next_lrow < logicalLines()) {
 				doc->logical_lines.erase(doc->logical_lines.begin() + next_lrow);
-				cx()->line_index.erase(next_lrow);
+				cx()->line_index_map.erase(next_lrow);
+				invalidate_nlines_cache();
 			}
 		}
 	} else {
@@ -1736,10 +1661,15 @@ void AbstractCharacterBasedApplication::doDelete()
 	}
 
 	row_index_t vrow = lrow_to_vrow(lrow);
-	col_index_t vcol = currentVisualCol();
+	col_index_t vcol = current_visual_col();
 	
-	if (commitLine(lrow, vec) || delete_nl) { // 折り返し後の物理行数が変化した場合は、これ以降の物理行情報を無効化する
-		invalidateVisualRowInfo(vrow);
+	if (commit_line(lrow, vec)) {
+		// 折り返し後の物理行数が変化した場合は、これ以降の物理行情報を無効化する
+		if (delete_nl) {
+			invalidateVisualRowInfo(vrow);
+		} else {
+			invalidateVisualRowInfo(vrow + 1);
+		}
 	}
 	
 	vcol = lcol; // 論理行から物理行を再計算
@@ -1756,7 +1686,6 @@ void AbstractCharacterBasedApplication::doDelete()
 	}
 	setCursorPos(vrow, vcol);
 
-	// setCursorCol(vcol);
 	updateVisibility(true, true, true);
 }
 
@@ -1769,7 +1698,7 @@ void AbstractCharacterBasedApplication::doBackspace()
 		return ;
 	}
 
-	if (currentVisualRow() > 0 || currentVisualCol() > 0) {
+	if (current_visual_row() > 0 || current_visual_col() > 0) {
 		setPaintingSuppressed(true);
 		moveCursorLeft();
 		doDelete();
@@ -1804,7 +1733,7 @@ void AbstractCharacterBasedApplication::setDialogMode(bool f)
 			dialog_cx->viewport_height = 1;
 		}
 		dialog_cx->engine->document.logical_lines.push_back(Document::Line(m->dialog_value.toUtf8()));
-		editor_cx->viewport_height = screenHeight() - m->header_line - 2;
+		editor_cx->viewport_height = screenHeight() /* - m->header_line*/ - 2;
 		m->dialog_mode = true;
 		clearParsedLine();
 		moveCursorEnd();
@@ -1858,33 +1787,6 @@ int AbstractCharacterBasedApplication::calcColumnToIndex(int column)
 	return index;
 }
 
-void AbstractCharacterBasedApplication::invalidateArea(int top_y)
-{
-	int y0 = cx()->viewport_org_y;
-	int y1 = cx()->viewport_height + y0;
-	top_y += y0;
-	if (y0 < top_y) y0 = top_y;
-	int n = (int)m->line_flags.size();
-	if (y0 < 0) y0 = 0;
-	if (y1 > n) y1 = n;
-	for (int y = y0; y < y1; y++) {
-		m->line_flags[y] |= LineChanged;
-	}
-}
-
-void AbstractCharacterBasedApplication::invalidateAreaBelowTheCurrentLine()
-{
-	int y;
-
-	y = currentLogicalRow();
-	if (m->valid_line_index > y) {
-		m->valid_line_index = y;
-	}
-
-	y = currentLogicalRow() - scrollposRow();
-	invalidateArea(y);
-}
-
 int AbstractCharacterBasedApplication::scrollBottomLimit() const
 {
 	return logicalLines() - editorViewportHeight() / 2;
@@ -1905,9 +1807,9 @@ void AbstractCharacterBasedApplication::moveCursorHome(bool consider_indent)
 	col_index_t vcol = 0;
 
 	if (consider_indent) { // 行頭の空白を飛ばす
-		row_index_t vrow = currentVisualRow();
+		row_index_t vrow = current_visual_row();
 		VisualRowInfo info = queryVisualRowInfo(vrow);
-		if (vrow == lrow_to_vrow(currentLogicalRow())) { // 論理行の先頭なら
+		if (vrow == lrow_to_vrow(current_logical_row())) { // 論理行の先頭なら
 			std::vector<Character> const &vline = parseCurrentLine(false);
 			const col_index_t ncols = vline.size();
 			col_index_t indent_vcol = 0;
@@ -1919,7 +1821,7 @@ void AbstractCharacterBasedApplication::moveCursorHome(bool consider_indent)
 					break;
 				}
 			}
-			col_index_t curr_vcol = currentVisualCol();
+			col_index_t curr_vcol = current_visual_col();
 			vcol = (curr_vcol > 0 && curr_vcol <= indent_vcol) ? 0 : indent_vcol; // カーソルがインデントの範囲内なら行頭へ、そうでなければインデントの先頭へ
 		}
 	}
@@ -1950,9 +1852,8 @@ void AbstractCharacterBasedApplication::moveCursorEnd()
 
 void AbstractCharacterBasedApplication::scrollUp()
 {
-	if (scrollposRow() > 0) {
-		setScrollPosRow(scrollposRow() - 1);
-		invalidateArea();
+	if (scrollpos_row() > 0) {
+		setScrollPosRow(scrollpos_row() - 1);
 		clearParsedLine();
 		updateVisibility(false, false, true);
 	}
@@ -1961,9 +1862,8 @@ void AbstractCharacterBasedApplication::scrollUp()
 void AbstractCharacterBasedApplication::scrollDown()
 {
 	int limit = scrollBottomLimit();
-	if (scrollposRow() < limit) {
-		setScrollPosRow(scrollposRow() + 1);
-		invalidateArea();
+	if (scrollpos_row() < limit) {
+		setScrollPosRow(scrollpos_row() + 1);
 		clearParsedLine();
 		updateVisibility(false, false, true);
 	}
@@ -1973,8 +1873,8 @@ void AbstractCharacterBasedApplication::moveCursorUp()
 {
 	if (isSingleLineMode()) {
 		// nop
-	} else if (currentVisualRow() > 0) {
-		setCursorRow(currentVisualRow() - 1); // カーソルを1行上へ
+	} else if (current_visual_row() > 0) {
+		setCursorRow(current_visual_row() - 1); // カーソルを1行上へ
 		clearParsedLine();
 		updateVisibility(true, false, true);
 	}
@@ -1984,8 +1884,8 @@ void AbstractCharacterBasedApplication::moveCursorDown()
 {
 	if (isSingleLineMode()) {
 		// nop
-	} else if (currentVisualRow() + 1 < (int)nlines()) {
-		setCursorRow(currentVisualRow() + 1); // カーソルを1行下へ
+	} else if (current_visual_row() + 1 < (int)nlines()) {
+		setCursorRow(current_visual_row() + 1); // カーソルを1行下へ
 		clearParsedLine();
 		updateVisibility(true, false, true);
 	}
@@ -1998,7 +1898,6 @@ void AbstractCharacterBasedApplication::scrollToTop()
 	setCursorRow(0);
 	setCursorCol(0);
 	setScrollPosRow(0);
-	invalidateArea();
 	clearParsedLine();
 	updateVisibility(true, false, true);
 }
@@ -2016,12 +1915,12 @@ void AbstractCharacterBasedApplication::moveCursorLeft()
 		}
 	}
 	
-	col_index_t vcol = currentVisualCol();
+	col_index_t vcol = current_visual_col();
 	if (vcol == 0) { // 行頭なら
 		if (isSingleLineMode()) {
 			// nop
 		} else {
-			row_index_t vrow = currentVisualRow();
+			row_index_t vrow = current_visual_row();
 			if (vrow > 0) {
 				const VisualRowInfo prev_vrow_info = queryVisualRowInfo(vrow - 1);
 				const VisualRowInfo curr_vrow_info = queryVisualRowInfo(vrow);
@@ -2035,7 +1934,7 @@ void AbstractCharacterBasedApplication::moveCursorLeft()
 		return;
 	}
 
-	setCursorCol(currentVisualCol() - 1);
+	setCursorCol(current_visual_col() - 1);
 	updateVisibility(true, true, true);
 }
 
@@ -2053,9 +1952,8 @@ void AbstractCharacterBasedApplication::moveCursorRight()
 	}
 
 	auto MoveToNextRow = [this](){
-		int next_vrow = currentVisualRow() + 1;
+		int next_vrow = current_visual_row() + 1;
 		if (next_vrow < nlines()) {
-			// setCursorPos(next_vrow, 0); // 次の行の先頭へ移動
 			setCursorRow(next_vrow, false);
 			moveCursorHome(false); // 行頭へ移動
 			return true;
@@ -2064,7 +1962,7 @@ void AbstractCharacterBasedApplication::moveCursorRight()
 	};
 	
 	auto MoveColumn = [this](col_index_t vcol){
-		if (vcol != currentVisualCol()) {
+		if (vcol != current_visual_col()) {
 			setCursorCol(vcol);
 			clearParsedLine();
 			updateVisibility(true, true, true);
@@ -2073,12 +1971,12 @@ void AbstractCharacterBasedApplication::moveCursorRight()
 		return false;
 	};
 	
-	const VisualRowInfo curr_vrow_info = queryVisualRowInfo(currentVisualRow());
-	const VisualRowInfo next_vrow_info = queryVisualRowInfo(currentVisualRow() + 1);
+	const VisualRowInfo curr_vrow_info = queryVisualRowInfo(current_visual_row());
+	const VisualRowInfo next_vrow_info = queryVisualRowInfo(current_visual_row() + 1);
 	
 	std::vector<Character> const &vline = parseCurrentLine(false);
 	
-	col_index_t vcol = currentVisualCol();
+	col_index_t vcol = current_visual_col();
 	
 	char32_t c = -1;
 	if (vcol < vline.size()) {
@@ -2092,7 +1990,7 @@ void AbstractCharacterBasedApplication::moveCursorRight()
 	}
 	
 	vcol++;
-	if (vcol > currentVisualCol()) {
+	if (vcol > current_visual_col()) {
 		if (curr_vrow_info.logical_row == next_vrow_info.logical_row) { // 同じ論理行の続きなら
 			const size_t len = next_vrow_info.logical_col - curr_vrow_info.logical_col; // 物理行の長さ
 			if (vcol >= len) { // 行末
@@ -2107,15 +2005,14 @@ void AbstractCharacterBasedApplication::movePageUp()
 {
 	if (!isSingleLineMode()) {
 		int step = editorViewportHeight();
-		setCursorRow(currentVisualRow() - step);
-		setScrollPosRow(scrollposRow() - step);
-		if (currentVisualRow() < 0) {
-			setCurrentVisualRow(0);
+		setCursorRow(current_visual_row() - step);
+		setScrollPosRow(scrollpos_row() - step);
+		if (current_visual_row() < 0) {
+			set_current_visual_row(0);
 		}
-		if (scrollposRow() < 0) {
+		if (scrollpos_row() < 0) {
 			setScrollPosRow(0);
 		}
-		invalidateArea();
 		clearParsedLine();
 		updateVisibility(true, false, true);
 	}
@@ -2128,9 +2025,9 @@ void AbstractCharacterBasedApplication::movePageDown()
 		if (vrow_limit > 0) {
 			vrow_limit--;
 			int step = editorViewportHeight();
-			row_index_t curr_vrow = currentVisualRow();
+			row_index_t curr_vrow = current_visual_row();
 			row_index_t next_vrow = std::min(curr_vrow + step, vrow_limit);
-			int scroll_pos = scrollposRow() + (next_vrow - curr_vrow);
+			int scroll_pos = scrollpos_row() + (next_vrow - curr_vrow);
 			scroll_pos = std::min(scroll_pos, scrollBottomLimit());
 			setCursorRow(next_vrow);
 			setScrollPosRow(scroll_pos);
@@ -2138,7 +2035,6 @@ void AbstractCharacterBasedApplication::movePageDown()
 			setCursorRow(0);
 			setScrollPosRow(0);
 		}
-		invalidateArea();
 		clearParsedLine();
 		updateVisibility(true, false, true);
 	}
@@ -2169,7 +2065,7 @@ void AbstractCharacterBasedApplication::makeColumnPosList(std::vector<int> *out)
 	}
 }
 
-void AbstractCharacterBasedApplication::updateCursorPos(bool auto_scroll)
+void AbstractCharacterBasedApplication::update_cursor_pos(bool auto_scroll)
 {
 	if (!cx()->engine) {
 		return;
@@ -2196,8 +2092,6 @@ void AbstractCharacterBasedApplication::updateCursorPos(bool auto_scroll)
 		}
 	}
 
-	// setCurrentLogicalCol(index);
-
 	if (char_span < 1) {
 		char_span = 1;
 	}
@@ -2205,9 +2099,8 @@ void AbstractCharacterBasedApplication::updateCursorPos(bool auto_scroll)
 
 	if (auto_scroll && wrappingMode() == WrappingMode::NoWrap) {
 		int pos = decideColumnScrollPos();
-		if (scrollposCol() != pos) {
+		if (scrollpos_col() != pos) {
 			setScrollPosCol(pos);
-			invalidateArea();
 		}
 	}
 }
@@ -2235,7 +2128,7 @@ void AbstractCharacterBasedApplication::printInvertedBar(int x, int y, char cons
 QString AbstractCharacterBasedApplication::statusLine() const
 {
 	QString text = "[%1:%2]";
-	text = text.arg(currentVisualRow() + 1).arg(currentVisualCol() + 1);
+	text = text.arg(current_visual_row() + 1).arg(current_visual_col() + 1);
 	return text;
 }
 
@@ -2245,7 +2138,7 @@ int AbstractCharacterBasedApplication::printArea(TextEditorContext const *cx, co
 	if (cx) {
 		int height = cx->viewport_height;
 		QRect clip(cx->viewport_org_x, cx->viewport_org_y, cx->viewport_width, height);
-		int row = scrollposRow();
+		int row = scrollpos_row();
 		for (int i = 0; i < height; i++) {
 			if (row < 0) continue;
 			int y = cx->viewport_org_y + i;
@@ -2303,9 +2196,6 @@ int AbstractCharacterBasedApplication::printArea(TextEditorContext const *cx, co
 					end_of_line_y = i;
 				}
 				clearRect(cx->viewport_org_x, y, cx->viewport_width, 1);
-				if (y >= 0 && y < (int)m->line_flags.size()) {
-					m->line_flags[y] |= LineChanged;
-				}
 			}
 			row++;
 		}
@@ -2321,7 +2211,6 @@ void AbstractCharacterBasedApplication::paintLineNumbers(std::function<void(int,
 
 	int rightpadding = 2;
 	int left_margin = editor_cx->viewport_org_x;
-	int num = 1;
 
 	for (int i = 0; i <= editor_cx->viewport_height; i++) {
 		row_index_t vrow = editor_cx->scroll_pos_row + i;
@@ -2334,25 +2223,13 @@ void AbstractCharacterBasedApplication::paintLineNumbers(std::function<void(int,
 		QString text;
 		Document::Line const *line = nullptr;
 		if (vrow < (int)nlines()) {
-			if (m->valid_line_index < 0) {
-				m->valid_line_index = 0;
-			}
-			if (vrow >= m->valid_line_index) {
-				while (m->valid_line_index <= vrow) {
-					Document::Line const &line = Line(m->valid_line_index);
-					if (line.sp->meta.type != Document::LineType::Invalid) {
-						num++;
-					}
-					m->valid_line_index++;
-				}
-			}
 			if (left_margin > 1) {
 				line = &Line(vrow);
 				unsigned int linenum = 0;
 				if (line->sp->meta.line_number_override >= 0) {
 					linenum = line->sp->meta.line_number_override;
 				} else {
-					VisualRowInfo rowinfo = queryVisualRowInfo(vrow); // 表示行から論理行番号を取得する
+					VisualRowInfo rowinfo = queryVisualRowInfo(vrow); // 物理行から論理行番号を取得する
 					if (rowinfo.logical_col == 0) {
 						linenum = rowinfo.logical_row + 1;
 					}
@@ -2376,10 +2253,12 @@ bool AbstractCharacterBasedApplication::isAutoLayout() const
 
 void AbstractCharacterBasedApplication::preparePaintScreen()
 {
+#if 0
 	if (m->header_line > 0) {
 		char const *line = "Hello, world\xe3\x81\x82\xe3\x81\x84\xe3\x81\x86";
 		printInvertedBar(0, 0, line, ' ');
 	}
+#endif
 
 	if (m->show_line_number) {
 		Option opt_normal;
@@ -2420,12 +2299,6 @@ void AbstractCharacterBasedApplication::preparePaintScreen()
 	} else {
 		MakeSelectionAnchor();
 		cx->bottom_line_y = printArea(cx, &anchor_a, &anchor_b);
-
-		if (m->footer_line > 0) {
-			QString line = statusLine();
-			int y = screenHeight() - 1;
-			printInvertedBar(0, y, line.toStdString().c_str(), ' ');
-		}
 	}
 }
 
@@ -2476,8 +2349,8 @@ void AbstractCharacterBasedApplication::setNormalTextEditorMode(bool f)
 SelectionAnchor AbstractCharacterBasedApplication::currentAnchor(SelectionAnchor::Enabled enabled)
 {
 	SelectionAnchor a;
-	a.row = currentVisualRow();
-	a.col = currentVisualCol();
+	a.row = current_visual_row();
+	a.col = current_visual_col();
 	a.enabled = enabled;
 	return a;
 }
@@ -2556,8 +2429,6 @@ void AbstractCharacterBasedApplication::setTerminalMode(bool f)
 {
 	m->is_terminal_mode = f;
 	if (isTerminalMode()) {
-		showHeader(false);
-		showFooter(false);
 		showLineNumber(false, 0);
 		setLineMargin(0);
 		setWriteMode(WriteMode::Overwrite);
@@ -2577,12 +2448,11 @@ void AbstractCharacterBasedApplication::moveToTop()
 
 	deselect();
 
-	setCurrentVisualRow(0);
-	setCurrentVisualCol(0);
+	set_current_visual_row(0);
+	set_current_visual_col(0);
 	cx()->current_visual_col_hint = 0;
 	setScrollPosRow(0);
 	scrollToTop();
-	invalidateArea();
 	clearParsedLine();
 	updateVisibility(true, false, true);
 }
@@ -2591,14 +2461,14 @@ void AbstractCharacterBasedApplication::logicalMoveToBottom()
 {
 	deselect();
 
-	setCurrentVisualRow(logicalLines());
-	setCurrentVisualCol(0);
-	if (currentVisualRow() > 0) {
-		setCurrentVisualRow(currentVisualRow() - 1);
+	set_current_visual_row(logicalLines());
+	set_current_visual_col(0);
+	if (current_visual_row() > 0) {
+		set_current_visual_row(current_visual_row() - 1);
 		clearParsedLine();
 		if (Document::Line const *line = currentLine()) {
 			int col = calcVisualWidth(Document::Line::View(line->text()));
-			setCurrentVisualCol(col);
+			set_current_visual_col(col);
 			cx()->current_visual_col_hint = col;
 		}
 	}
@@ -2609,14 +2479,14 @@ void AbstractCharacterBasedApplication::logicalMoveToBottom2()
 {
 	deselect();
 
-	setCurrentVisualRow(logicalLines());
-	setCurrentVisualCol(0);
-	if (currentVisualRow() > 0) {
-		setCurrentVisualRow(currentVisualRow() - 1);
+	set_current_visual_row(logicalLines());
+	set_current_visual_col(0);
+	if (current_visual_row() > 0) {
+		set_current_visual_row(current_visual_row() - 1);
 		clearParsedLine();
 		if (Document::Line const *line = currentLine()) {
 			int col = calcVisualWidth(Document::Line::View(line->text()));
-			setCurrentVisualCol(col);
+			set_current_visual_col(col);
 			cx()->current_visual_col_hint = col;
 		}
 	}
@@ -2629,7 +2499,6 @@ void AbstractCharacterBasedApplication::moveToBottom()
 
 	logicalMoveToBottom2();
 
-	invalidateArea();
 	clearParsedLine();
 	updateVisibility(true, false, true);
 }
@@ -2648,9 +2517,9 @@ void AbstractCharacterBasedApplication::internalWrite(const ushort *begin, const
 
 	if (!isCurrentLineWritable()) return;
 
-	row_index_t vrow = currentVisualRow();
-	row_index_t lrow = currentLogicalRow();
-	col_index_t lcol = currentLogicalCol();
+	row_index_t vrow = current_visual_row();
+	row_index_t lrow = current_logical_row();
+	col_index_t lcol = current_logical_col();
 
 	std::vector<Character> vec = parseLogicalLine(cx(), lrow);
 
@@ -2692,45 +2561,15 @@ void AbstractCharacterBasedApplication::internalWrite(const ushort *begin, const
 		}
 	}
 
-	invalidateVisualRowInfo(vrow);
-	commitLine(lrow, vec);
+	if (commit_line(lrow, vec)) {
+		invalidateVisualRowInfo(vrow + 1);
+	}
 
-	auto [vr, vc] = cx()->line_index.logical_to_visual(lrow, lcol);
+	auto [vr, vc] = cx()->line_index_map.logical_to_visual(lrow, lcol);
 	setCursorPos(vr, vc);
 	updateCurrentPixelX();
 	
 	updateVisibility(true, true, true);
-}
-
-void AbstractCharacterBasedApplication::pressLetterWithControl(int c)
-{
-	if (c < 0 || c > 0x7f) {
-		return;
-	}
-	if (c < 0x40) {
-		c += 0x40;
-	}
-	c = toupper(c);
-	switch (c) {
-	case 'Q':
-		onQuit();
-		break;
-	case 'O':
-		onOpenFile();
-		break;
-	case 'S':
-		onSaveFile();
-		break;
-	case 'X':
-		editCut();
-		break;
-	case 'C':
-		editCopy();
-		break;
-	case 'V':
-		editPaste();
-		break;
-	}
 }
 
 void AbstractCharacterBasedApplication::writeCR()
@@ -2780,8 +2619,8 @@ void AbstractCharacterBasedApplication::write(uint32_t c, bool by_keyboard)
 			}
 		} else if (c == 0x1b) {
 			pressEscape();
-		} else if (c >= 1 && c <= 26) {
-			pressLetterWithControl(c);
+		// } else if (c >= 1 && c <= 26) {
+		// 	pressLetterWithControl(c);
 		}
 	} else if (c == 0x7f) {
 		if (ok) {

@@ -69,7 +69,6 @@ private:
 	struct Private;
 	Private *m;
 	
-	void paintScreen(QPainter *painter);
 	void drawCursor(int row, int col, QPainter *pr);
 	void drawCursor(QPainter *pr);
 	void drawFocusFrame(QPainter *pr);
@@ -155,9 +154,6 @@ public:
 	PointInView pointInView(int row, int col) const;
 	
 	int scrollTopRow() const;
-	
-	std::pair<row_index_t, int> currentVisualPosition() const;
-	std::pair<row_index_t, col_index_t> currentLogicalPosition();
 signals:
 	void moved(int cur_row, int cur_col, int scr_row, int scr_col);
 	void updateScrollBar();
