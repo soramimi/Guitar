@@ -614,7 +614,7 @@ void AbstractCharacterBasedApplication::_updateVisualLineByLogicalLine(col_index
 	
 	if (dstlen > srclen) { // 書き込み先の方が長い場合、余分な物理行を削除する
 		size_t erase_begin = std::min(lower_pos + srclen, nvlines);
-		size_t erase_end = std::min(upper_pos, nvlines);
+		size_t erase_end = std::min((size_t)upper_pos, nvlines);
 		if (erase_begin < erase_end) {
 			cx->cache.visual_lines.erase(cx->cache.visual_lines.begin() + erase_begin, cx->cache.visual_lines.begin() + erase_end);
 		}

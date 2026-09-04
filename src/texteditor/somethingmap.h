@@ -376,11 +376,9 @@ public:
 	}
 	
 	// (論理行, 論理列) から物理行番号を求める。countの順変換。
-	// 行頭の物理行(count)に、論理列が属する折り返し行のオフセット
-	// (ValueItem::locate_column)を加える。論理行が範囲外なら総物理行数を返す。
 	struct VisualPosition {
-		uint64_t vrow = 0; // 物理行番号
-		uint32_t vcol = 0; // 行内の折り返し行オフセット
+		uint32_t vrow = 0; // 物理行番号
+		uint32_t vcol = 0; // 物理列番号
 	};
 	VisualPosition logical_to_visual(key_type lrow, uint32_t lcol) const
 	{
@@ -399,12 +397,10 @@ public:
 		return {r.sum, 0};
 	}
 	// 物理行番号から (論理行番号, 行内の折り返し行オフセット) を求める。countの逆変換。
-	// count(i) <= vrow < count(i+1) となる論理行 i を返す。
-	// value 0 の行は物理行を持たないためスキップされる。
 	struct LogicalPosition {
 		uint32_t lrow = 0; // 論理行番号
 		uint32_t lcol = 0; // 論理列番号
-		uint32_t vrow_in_the_lrow = 0; // 行内の折り返し行オフセット
+		uint32_t vrow_in_the_lrow = 0; // 論理行の中で何番目の折り返し行に属するか
 	};
 	LogicalPosition visual_to_logical(uint64_t vrow) const
 	{
