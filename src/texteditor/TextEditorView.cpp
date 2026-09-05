@@ -684,21 +684,25 @@ void TextEditorView::paintEvent(QPaintEvent *)
 						if (!chars.empty()) {
 							right_x = chars.back().right_x;
 						}
-						if (selection_lower.vrow > vrow) {
+						LineIndexMap::VisualPosition vlower = cx->line_index_map.logical_to_visual(selection_lower.lrow, selection_lower.lcol);
+						LineIndexMap::VisualPosition vupper = cx->line_index_map.logical_to_visual(selection_upper.lrow, selection_upper.lcol);
+						if (vlower.vrow > vrow) {
 							right_x = 0;
-						} else if (selection_upper.vrow < vrow) {
+						} else if (vupper.vrow < vrow) {
 							right_x = 0;
 						} else {
-							if (selection_lower.vrow == vrow) {
-								left_x = (selection_lower.vcol > 0 && selection_lower.vcol - 1 < (int)chars.size())
-										? chars[selection_lower.vcol - 1].right_x
-										: 0;
-							}
-							if (selection_upper.vrow == vrow) {
-								right_x = (selection_upper.vcol > 0 && selection_upper.vcol - 1 < (int)chars.size())
-										? chars[selection_upper.vcol - 1].right_x
-										: 0;
-							}
+							auto Do = [&](int xpos, LineIndexMap::VisualPosition vpos, row_index_t vrow){
+								if (vpos.vrow == vrow) {
+									if (vpos.vcol > 0 && vpos.vcol - 1 < chars.size()) {
+										xpos = chars[vpos.vcol - 1].right_x;
+									} else {
+										xpos = 0;
+									}
+								}
+								return xpos;
+							};
+							left_x = Do(left_x, vlower, vrow);
+							right_x = Do(right_x, vupper, vrow);
 						}
 						if (left_x < right_x) {
 							int x = text_origin_x + left_x;
