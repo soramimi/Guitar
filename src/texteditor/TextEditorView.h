@@ -85,8 +85,8 @@ private:
 	static void _calc_pos_x(std::vector<Character> *chars, const TextEditorContext *cx, const TextMetrics &tm);
 	int pos_x_px(row_index_t vrow, col_index_t vcol) const;
 	
-	int scrollPosX() const;
-	int view_y_from_row(int row) const;
+	int scrollpos_x() const;
+	int view_y_from_vrow(row_index_t vrow) const;
 	int linenumber_area_width() const;
 
 	QColor cursorColor() const;

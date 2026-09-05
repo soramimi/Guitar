@@ -253,7 +253,7 @@ int TextEditorView::pos_x_px(row_index_t vrow, col_index_t vcol) const
 	}
 
 	// 原点とスクロール位置に応じてずらす
-	x += cx()->viewport_org_x * m->text_metrics.basisCharWidth() - scrollPosX();
+	x += cx()->viewport_org_x * m->text_metrics.basisCharWidth() - scrollpos_x();
 	
 	return x;
 }
@@ -510,7 +510,7 @@ int TextEditorView::scrollUnit() const
  * @brief 水平スクロール位置のピクセル値を取得
  * @return
  */
-int TextEditorView::scrollPosX() const
+int TextEditorView::scrollpos_x() const
 {
 	int u = scrollUnit();
 	int n = editor_cx->scroll_pos_col;
@@ -527,9 +527,9 @@ int TextEditorView::scrollTopRow() const
 	return editor_cx->scroll_pos_row;
 }
 
-int TextEditorView::view_y_from_row(int row) const
+int TextEditorView::view_y_from_vrow(row_index_t vrow) const
 {
-	return (editor_cx->viewport_org_y + row - scrollTopRow()) * lineHeight();
+	return (editor_cx->viewport_org_y + vrow - scrollTopRow()) * lineHeight();
 }
 
 /**
@@ -542,7 +542,7 @@ TextEditorView::PointInView TextEditorView::pointInView(int row, int col) const
 {
 	PointInView pt;
 	pt.height = lineHeight();
-	pt.y = view_y_from_row(row);
+	pt.y = view_y_from_vrow(row);
 	pt.x = pos_x_px(row, col); // 行と桁位置から水平座標を求める
 	return pt;
 }
@@ -595,7 +595,7 @@ void TextEditorView::paintEvent(QPaintEvent *)
 	pr.fillRect(0, 0, width(), height(), defaultBackgroundColor());
 	
 	const int linenum_width = linenumber_area_width(); // 行番号表示領域幅（ピクセル単位）
-	const int text_origin_x = linenum_width - scrollPosX(); // 水平方向原点（ピクセル単位） = 行番号表示領域幅からスクロール量を引く
+	const int text_origin_x = linenum_width - scrollpos_x(); // 水平方向原点（ピクセル単位） = 行番号表示領域幅からスクロール量を引く
 	
 	int vsplit_x = linenum_width - 2;
 	int text_area_w = width() - vsplit_x;
@@ -620,15 +620,16 @@ void TextEditorView::paintEvent(QPaintEvent *)
 		QTextOption opt;
 		opt.setWrapMode(QTextOption::NoWrap);
 
-		auto selmin = selection_end;
-		auto selmax = selection_start;
-		if (selmin.enabled == SelectionAnchor::True && selmax.enabled == SelectionAnchor::True) {
-			if (selmin.row > selmax.row || (selmin.row == selmax.row && selmin.col > selmax.col)) {
-				std::swap(selmin, selmax);
+		// 選択範囲
+		SelectionAnchor selection_lower = selection_start;
+		SelectionAnchor selection_upper = selection_end;
+		if (selection_lower && selection_upper) {
+			if (selection_lower > selection_upper) {
+				std::swap(selection_lower, selection_upper);
 			}
 		} else {
-			selmin = {};
-			selmax = {};
+			selection_lower = {};
+			selection_upper = {};
 		}
 		
 		for (int pass = 0; pass < 3; pass++) {
@@ -637,8 +638,8 @@ void TextEditorView::paintEvent(QPaintEvent *)
 			for (int i = 0; i < (int)editor_cx->viewport_height && vrow < nlines(); i++) {
 				Document::LineProperty const *formatted_line = queryFormattedLine(vrow);
 				if (formatted_line) {
-					const QRect rect_line(vsplit_x, view_y_from_row(vrow), text_area_w, lineHeight()); // 行全体の矩形
-					const QRect rect_text(0, view_y_from_row(vrow), width(), lineHeight()); // テキスト領域矩形
+					const QRect rect_line(vsplit_x, view_y_from_vrow(vrow), text_area_w, lineHeight()); // 行全体の矩形
+					const QRect rect_text(0, view_y_from_vrow(vrow), width(), lineHeight()); // テキスト領域矩形
 					
 					const bool iscurrentline = has_focus && vrow == editor_cx->current_visual_row; // 現在の行？
 					const int text_origin_y = view_row * line_height; // テキスト原点座標Y（ピクセル単位）
@@ -663,7 +664,7 @@ void TextEditorView::paintEvent(QPaintEvent *)
 	
 					// 現在行の背景
 					auto DrawCurrentLineBackground = [&](){
-						pr.fillRect(rect_line, QColor(0, 0, 0, 32)); // 薄い黒
+						pr.fillRect(rect_line, QColor(0, 0, 0));
 					};
 	
 					// 現在行の前景
@@ -676,23 +677,27 @@ void TextEditorView::paintEvent(QPaintEvent *)
 						pr.fillRect(x, y, w, h, theme()->fg_cursor); // アンダーライン
 					};
 	
-					// 選択領域の網掛け描画
+					// 選択範囲
 					auto DrawSelectionArea = [&](){
 						int left_x = 0;
 						int right_x = 0;
 						if (!chars.empty()) {
 							right_x = chars.back().right_x;
 						}
-						if (selmin.row > vrow) {
+						if (selection_lower.vrow > vrow) {
 							right_x = 0;
-						} else if (selmax.row < vrow) {
+						} else if (selection_upper.vrow < vrow) {
 							right_x = 0;
 						} else {
-							if (selmin.row == vrow) {
-								left_x = (selmin.col > 0 && selmin.col - 1 < (int)chars.size()) ? chars[selmin.col - 1].right_x : 0;
+							if (selection_lower.vrow == vrow) {
+								left_x = (selection_lower.vcol > 0 && selection_lower.vcol - 1 < (int)chars.size())
+										? chars[selection_lower.vcol - 1].right_x
+										: 0;
 							}
-							if (selmax.row == vrow) {
-								right_x = (selmax.col > 0 && selmax.col - 1 < (int)chars.size()) ? chars[selmax.col - 1].right_x : 0;
+							if (selection_upper.vrow == vrow) {
+								right_x = (selection_upper.vcol > 0 && selection_upper.vcol - 1 < (int)chars.size())
+										? chars[selection_upper.vcol - 1].right_x
+										: 0;
 							}
 						}
 						if (left_x < right_x) {
@@ -700,7 +705,7 @@ void TextEditorView::paintEvent(QPaintEvent *)
 							int y = text_origin_y;
 							int w = right_x - left_x;
 							int h = line_height;
-							pr.fillRect(x, y, w, h, QBrush(QColor(64, 192, 192), Qt::Dense5Pattern));
+							pr.fillRect(x, y, w, h, QBrush(QColor(64, 128, 128)));
 						}
 					};
 	
@@ -782,7 +787,7 @@ void TextEditorView::paintEvent(QPaintEvent *)
 					switch (pass) {
 					case 0:
 						DrawBackground();
-						if (iscurrentline) {
+						if (vrow_to_lrow(vrow) == current_logical_row()) {
 							DrawCurrentLineBackground();
 						}
 						break;
@@ -884,18 +889,18 @@ void TextEditorView::mousePressEvent(QMouseEvent *event)
 	bool shift = (event->modifiers() & Qt::ShiftModifier);
 	if (shift) {
 		if (hasSelection()) {
-			setSelectionAnchor(SelectionAnchor::True, false, false);
+			setSelectionAnchor(true, false, false);
 		} else {
-			setSelectionAnchor(SelectionAnchor::True, true, false);
+			setSelectionAnchor(true, true, false);
 		}
 	}
 
 	moveCursorByMouse();
 
 	if (shift) {
-		setSelectionAnchor(SelectionAnchor::True, false, false);
+		setSelectionAnchor(true, false, false);
 	} else {
-		setSelectionAnchor(SelectionAnchor::True, true, false);
+		setSelectionAnchor(true, true, false);
 	}
 	selection_start = selection_end;
 
@@ -907,9 +912,9 @@ void TextEditorView::mousePressEvent(QMouseEvent *event)
 
 void TextEditorView::mouseReleaseEvent(QMouseEvent * /*event*/)
 {
-	if (selection_end.enabled == SelectionAnchor::False || selection_start.enabled == SelectionAnchor::False) {
+	if (!selection_end || !selection_start) {
 		// thru
-	} else if (selection_end.row == selection_start.row && selection_end.col == selection_start.col) {
+	} else if (selection_end.vrow == selection_start.vrow && selection_end.vcol == selection_start.vcol) {
 		// thru
 	} else {
 		return;
@@ -924,7 +929,7 @@ void TextEditorView::mouseMoveEvent(QMouseEvent * /*event*/)
 
 	moveCursorByMouse();
 
-	setSelectionAnchor(SelectionAnchor::True, true, false);
+	setSelectionAnchor(true, true, false);
 
 	if (isTerminalMode()) {
 		clearParsedLine();

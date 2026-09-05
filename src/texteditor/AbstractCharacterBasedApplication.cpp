@@ -1402,27 +1402,27 @@ void AbstractCharacterBasedApplication::deselect()
 
 bool AbstractCharacterBasedApplication::hasSelection() const
 {
-	return selection_end.enabled == SelectionAnchor::False;
+	return !selection_end;
 }
 
 void AbstractCharacterBasedApplication::updateSelectionAnchor1(bool auto_scroll)
 {
 	if (isShiftModifierPressed()) {
-		if (selection_end.enabled == SelectionAnchor::False) {
-			setSelectionAnchor(SelectionAnchor::True, true, auto_scroll);
+		if (!selection_end) {
+			setSelectionAnchor(true, true, auto_scroll);
 			selection_start = selection_end;
 		}
-	} else if (selection_end.enabled == SelectionAnchor::True) {
+	} else if (selection_end) {
 		// 選択中でShiftが押されていなければ選択解除
-		setSelectionAnchor(SelectionAnchor::False, false, auto_scroll);
+		setSelectionAnchor(false, false, auto_scroll);
 	}
 }
 
 void AbstractCharacterBasedApplication::updateSelectionAnchor2(bool auto_scroll)
 {
-	if (selection_end.enabled == SelectionAnchor::True) {
+	if (selection_end) {
 		// 選択中なら、現在位置で更新
-		setSelectionAnchor(selection_end.enabled, true, auto_scroll);
+		setSelectionAnchor(true, true, auto_scroll);
 	}
 }
 
@@ -1471,8 +1471,8 @@ void AbstractCharacterBasedApplication::editSelected(EditOperation op, std::vect
 
 	SelectionAnchor a = selection_end;
 	SelectionAnchor b = selection_start;
-	if (!a.enabled) return;
-	if (!b.enabled) return;
+	if (!a) return;
+	if (!b) return;
 	if (a == b) return;
 
 	auto UpdateVisibility = [&](){
@@ -1484,10 +1484,10 @@ void AbstractCharacterBasedApplication::editSelected(EditOperation op, std::vect
 	}
 	std::list<std::vector<Character>> cutlist;
 
-	if (a.row > b.row) {
+	if (a.vrow > b.vrow) {
 		std::swap(a, b);
-	} else if (a.row == b.row) {
-		if (a.col > b.col) {
+	} else if (a.vrow == b.vrow) {
+		if (a.vcol > b.vcol) {
 			std::swap(a, b);
 		}
 	}
@@ -1495,13 +1495,13 @@ void AbstractCharacterBasedApplication::editSelected(EditOperation op, std::vect
 	int curr_row = current_visual_row();
 	int curr_col = current_visual_col();
 
-	set_current_visual_row(b.row);
-	set_current_visual_col(b.col);
+	set_current_visual_row(b.vrow);
+	set_current_visual_col(b.vcol);
 
-	if (a.row == b.row) {
+	if (a.vrow == b.vrow) {
 		std::vector<Character> chars = parseCurrentLine(true);
-		auto begin = chars.begin() + calcColumnToIndex(a.col);
-		auto end = chars.begin() + calcColumnToIndex(b.col);
+		auto begin = chars.begin() + calcColumnToIndex(a.vcol);
+		auto end = chars.begin() + calcColumnToIndex(b.vcol);
 		if (cutbuffer) {
 			std::vector<Character> cut;
 			cut.insert(cut.end(), begin, end);
@@ -1516,7 +1516,7 @@ void AbstractCharacterBasedApplication::editSelected(EditOperation op, std::vect
 		std::vector<Character> chars = parseCurrentLine(true);
 		{
 			auto begin = chars.begin();
-			auto end = chars.begin() + calcColumnToIndex(b.col);
+			auto end = chars.begin() + calcColumnToIndex(b.vcol);
 			if (cutbuffer) {
 				std::vector<Character> cut;
 				cut.insert(cut.end(), begin, end);
@@ -1528,22 +1528,22 @@ void AbstractCharacterBasedApplication::editSelected(EditOperation op, std::vect
 				UpdateVisibility();
 			}
 		}
-		int n = b.row - a.row;
+		int n = b.vrow - a.vrow;
 		for (int i = 0; i < n; i++) {
 			if (cutbuffer && i > 0) {
-				set_current_visual_row(b.row - i);
+				set_current_visual_row(b.vrow - i);
 				set_current_visual_col(0);
 				std::vector<Character> const &chars = parseCurrentLine(true);
 				cutlist.push_back(chars);
 			}
 			if (op == EditOperation::Cut) {
-				_lines()->erase(_lines()->begin() + b.row - i);
+				_lines()->erase(_lines()->begin() + b.vrow - i);
 			}
 		}
 
-		set_current_visual_row(a.row);
-		set_current_visual_col(a.col);
-		int index = calcColumnToIndex(a.col);
+		set_current_visual_row(a.vrow);
+		set_current_visual_col(a.vcol);
+		int index = calcColumnToIndex(a.vcol);
 		std::vector<Character> chars2 = parseCurrentLine(true);
 		if (cutbuffer) {
 			std::vector<Character> cut;
@@ -1573,7 +1573,7 @@ void AbstractCharacterBasedApplication::editSelected(EditOperation op, std::vect
 
 	if (op == EditOperation::Cut) {
 		deselect();
-		setCursorPos(a.row, a.col);
+		setCursorPos(a.vrow, a.vcol);
 	} else {
 		set_current_visual_row(curr_row);
 		set_current_visual_col(curr_col);
@@ -1609,7 +1609,7 @@ void AbstractCharacterBasedApplication::edit_(EditOperation op)
 
 bool AbstractCharacterBasedApplication::deleteIfSelected()
 {
-	if (selection_end.enabled && selection_start.enabled) {
+	if (selection_end && selection_start) {
 		if (selection_end != selection_start) {
 			editSelected(EditOperation::Cut, nullptr);
 			return true;
@@ -1904,12 +1904,12 @@ void AbstractCharacterBasedApplication::scrollToTop()
 
 void AbstractCharacterBasedApplication::moveCursorLeft()
 {
-	if (!isShiftModifierPressed() && selection_end.enabled && selection_start.enabled) { // 選択領域があったら
+	if (!isShiftModifierPressed() && selection_end && selection_start) { // 選択領域があったら
 		if (selection_end != selection_start) {
 			SelectionAnchor a = std::min(selection_end, selection_start);
 			deselect();
-			setCursorRow(a.row);
-			setCursorCol(a.col);
+			setCursorRow(a.vrow);
+			setCursorCol(a.vcol);
 			updateVisibility(true, true, true);
 			return;
 		}
@@ -1940,12 +1940,12 @@ void AbstractCharacterBasedApplication::moveCursorLeft()
 
 void AbstractCharacterBasedApplication::moveCursorRight()
 {
-	if (!isShiftModifierPressed() && selection_end.enabled && selection_start.enabled) { // 選択領域があったら
+	if (!isShiftModifierPressed() && selection_end && selection_start) { // 選択領域があったら
 		if (selection_end != selection_start) {
 			SelectionAnchor a = std::max(selection_end, selection_start);
 			deselect();
-			setCursorRow(a.row);
-			setCursorCol(a.col);
+			setCursorRow(a.vrow);
+			setCursorCol(a.vcol);
 			updateVisibility(true, true, true);
 			return;
 		}
@@ -2148,24 +2148,25 @@ int AbstractCharacterBasedApplication::printArea(TextEditorContext const *cx, co
 					Document::Line const *line = this->line(row);
 					int anchor_a = -1;
 					int anchor_b = -1;
-					if (sel_a && sel_a->enabled && sel_b && sel_b->enabled) {
+					auto Enabled = [](SelectionAnchor const    *p){ return p && *p; };
+					if (Enabled(sel_a) && Enabled(sel_b)) {
 						SelectionAnchor a = *sel_a;
 						SelectionAnchor b = *sel_b;
-						if (a.row > b.row) {
+						if (a.vrow > b.vrow) {
 							std::swap(a, b);
-						} else if (a.row == b.row) {
-							if (a.col > b.col) {
+						} else if (a.vrow == b.vrow) {
+							if (a.vcol > b.vcol) {
 								std::swap(a, b);
 							}
 						}
-						if (row > a.row && row < b.row) {
+						if (row > a.vrow && row < b.vrow) {
 							anchor_a = 0;
 						} else {
-							if (row == a.row) {
-								anchor_a = a.col;
+							if (row == a.vrow) {
+								anchor_a = a.vcol;
 							}
-							if (row == b.row) {
-								anchor_b = b.col;
+							if (row == b.vrow) {
+								anchor_b = b.vcol;
 							}
 						}
 					}
@@ -2272,7 +2273,7 @@ void AbstractCharacterBasedApplication::preparePaintScreen()
 	SelectionAnchor anchor_b;
 
 	auto MakeSelectionAnchor = [&](){
-		if (selection_end.enabled != SelectionAnchor::False) {
+		if (selection_end) {
 			anchor_a = selection_end;
 #if 0
 			anchor_b.row = cx()->current_row;
@@ -2346,11 +2347,13 @@ void AbstractCharacterBasedApplication::setNormalTextEditorMode(bool f)
 	setTerminalMode(!f);
 }
 
-SelectionAnchor AbstractCharacterBasedApplication::currentAnchor(SelectionAnchor::Enabled enabled)
+SelectionAnchor AbstractCharacterBasedApplication::currentAnchor(bool enabled) const
 {
 	SelectionAnchor a;
-	a.row = current_visual_row();
-	a.col = current_visual_col();
+	a.vrow = current_visual_row();
+	a.vcol = current_visual_col();
+	a.lrow = current_logical_row();
+	a.lcol = current_logical_col();
 	a.enabled = enabled;
 	return a;
 }
@@ -2370,7 +2373,7 @@ bool AbstractCharacterBasedApplication::isReadOnly() const
 	return m->is_read_only && !m->is_terminal_mode;
 }
 
-void AbstractCharacterBasedApplication::setSelectionAnchor(SelectionAnchor::Enabled enabled, bool update_anchor, bool auto_scroll)
+void AbstractCharacterBasedApplication::setSelectionAnchor(bool enabled, bool update_anchor, bool auto_scroll)
 {
 	if (update_anchor) {
 		selection_end = currentAnchor(enabled);

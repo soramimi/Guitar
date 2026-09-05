@@ -301,21 +301,29 @@ struct VisualRowInfo {
 };
 
 struct SelectionAnchor {
-	enum Enabled {
-		False,
-		True,
-	};
-	
-	Enabled enabled = False;
-	row_index_t row = 0;
-	col_index_t col = 0;
+	bool enabled = false;
+	row_index_t vrow = 0;
+	col_index_t vcol = 0;
+	row_index_t lrow = 0;
+	col_index_t lcol = 0;
+	explicit operator bool () const
+	{
+		return enabled;
+	}
 	int compare(SelectionAnchor const &a) const
 	{
 		if (enabled && a.enabled) {
-			if (row < a.row) return -1;
-			if (row > a.row) return 1;
-			if (col < a.col) return -1;
-			if (col > a.col) return 1;
+#if 0
+			if (vrow < a.vrow) return -1;
+			if (vrow > a.vrow) return 1;
+			if (vcol < a.vcol) return -1;
+			if (vcol > a.vcol) return 1;
+#else
+			if (lrow < a.lrow) return -1;
+			if (lrow > a.lrow) return 1;
+			if (lcol < a.lcol) return -1;
+			if (lcol > a.lcol) return 1;
+#endif
 		} else {
 			if (a.enabled) return -1;
 			if (enabled) return 1;
@@ -425,10 +433,6 @@ public:
 		CharAttr a;
 	};
 	
-	// enum LineFlag {
-	// 	LineChanged = 1,
-	// };
-	
 	static int charWidth(uint32_t c);
 	
 	class FormattedLine {
@@ -476,12 +480,6 @@ protected:
 	{
 		return const_cast<AbstractCharacterBasedApplication *>(this)->line(vrow);
 	}
-	
-	// int char_screen_w() const;
-	// int char_screen_h() const;
-	// std::vector<Char16> *char_screen();
-	// std::vector<Char16> const *char_screen() const;
-	// std::vector<uint8_t> *line_flags();
 	
 	void initEditor();
 protected:
@@ -557,7 +555,7 @@ private:
 	void onOpenFile();
 	void onSaveFile();
 	void printInvertedBar(int x, int y, char const *text, int padchar);
-	SelectionAnchor currentAnchor(SelectionAnchor::Enabled enabled);
+	SelectionAnchor currentAnchor(bool enabled) const;
 	enum class EditOperation {
 		Cut,
 		Copy,
@@ -661,7 +659,7 @@ public:
 	// void showFooter(bool f);
 	void setAutoLayout(bool f);
 	void setDocument(const std::vector<Document::Line> *source);
-	void setSelectionAnchor(SelectionAnchor::Enabled enabled, bool update_anchor, bool auto_scroll);
+	void setSelectionAnchor(bool enabled, bool update_anchor, bool auto_scroll);
 	void setNormalTextEditorMode(bool f);
 	void setToggleSelectionAnchorEnabled(bool f);
 	void setReadOnly(bool f);
