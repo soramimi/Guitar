@@ -377,6 +377,12 @@ struct AiChatResponseParser : public GenerativeAI::AbstractVisitor<AiResult> {
 		return parse_openai_chat_completions_format();
 	}
 
+	/// OrcaRouter：OrcaAI Chat Completions 互換形式
+	AiResult case_OrcaRouter()
+	{
+		return parse_openai_chat_completions_format();
+	}
+
 	/**
 	 * @brief Ollama のレスポンスを解析する。
 	 *
@@ -630,6 +636,12 @@ struct _PromptJsonGenerator : public GenerativeAI::AbstractVisitor<std::string> 
 
 	/// OpenRouter：OpenAI Chat Completions 互換形式
 	std::string case_OpenRouter()
+	{
+		return case_OpenAI_chat_completions();
+	}
+
+	/// OrcaRouter：OrcaAI Chat Completions 互換形式
+	std::string case_OrcaRouter()
 	{
 		return case_OpenAI_chat_completions();
 	}
