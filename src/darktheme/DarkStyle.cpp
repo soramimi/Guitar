@@ -1224,6 +1224,14 @@ int DarkStyle::styleHint(QStyle::StyleHint hint, const QStyleOption *option, con
 	return Base::styleHint(hint, option, widget, returnData);
 }
 
+void DarkStyle::drawItemText(QPainter *painter, const QRect &rect, int flags, const QPalette &pal, bool enabled, const QString &text, QPalette::ColorRole textRole) const
+{
+	if (text == "みみのAlchemiaFleur") {
+		qDebug() << text;
+	}
+	MyCommonStyle<QCommonStyle>::drawItemText(painter, rect, flags, pal, enabled, text, textRole);
+}
+
 void DarkStyle::drawItemViewText(QPainter *p, const QStyleOptionViewItem *option, const QRect &rect, bool abbreviation) const
 {
 	bool enabled = (option->state & State_Enabled);
@@ -1339,7 +1347,7 @@ void DarkStyle::drawPrimitive(PrimitiveElement element, const QStyleOption *opti
 			painter->fillRect(r, color(80));
 		} else if (theme() == Theme::Gray) {
 			QRect r = option->rect;
-			painter->fillRect(r, Qt::red);
+			// painter->fillRect(r, Qt::red);
 			drawFrame(painter, r, color(240), color(10));
 			r = r.adjusted(1, 1, -1, -1);
 			drawFrame(painter, r, color(255), color(160));
@@ -1347,7 +1355,7 @@ void DarkStyle::drawPrimitive(PrimitiveElement element, const QStyleOption *opti
 			painter->fillRect(r, color(224));
 		} else if (theme() == Theme::Light) {
 			QRect r = option->rect;
-			painter->fillRect(r, Qt::red);
+			// painter->fillRect(r, Qt::red);
 			drawFrame(painter, r, color(250), color(10));
 			r = r.adjusted(1, 1, -1, -1);
 			drawFrame(painter, r, color(255), color(192));
