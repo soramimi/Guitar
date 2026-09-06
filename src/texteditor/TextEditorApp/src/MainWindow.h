@@ -2,7 +2,7 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
-#include "texteditor/AbstractCharacterBasedApplication.h"
+#include "texteditor/AbstractTextEditorApplication.h"
 
 class TextEditorView;
 

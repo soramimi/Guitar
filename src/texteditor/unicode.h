@@ -12,18 +12,15 @@ namespace unicode_helper_ {
 
 void encode_utf8(uint32_t code, std::function<void (char)> put);
 
-struct utf8_reader_state_t {
-	int a;
-	uint32_t b;
-};
-
+// RFC 3629 / WHATWG Encoding Standard に準拠したUTF-8デコーダ。
+// 不正なバイト列(冗長エンコーディング・サロゲート・範囲外・途中終端など)は
+// U+FFFD (REPLACEMENT CHARACTER) に置き換えて読み進める。
 class utf8decoder {
 private:
 	char const *begin;
 	char const *end;
 	size_t pos;
 
-	utf8_reader_state_t s;
 public:
 	utf8decoder(char const *begin, char const *end);
 	uint32_t next();

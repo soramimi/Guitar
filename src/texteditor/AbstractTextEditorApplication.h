@@ -1,5 +1,5 @@
-#ifndef ABSTRACTCHARACTERBASEDAPPLICATION_H
-#define ABSTRACTCHARACTERBASEDAPPLICATION_H
+#ifndef ABSTRACTTEXTEDITORAPPLICATION_H
+#define ABSTRACTTEXTEDITORAPPLICATION_H
 
 #include <QByteArray>
 #include <QColor>
@@ -426,8 +426,6 @@ public:
 		}
 	};
 	
-	std::vector<FormattedLine> formatLine_(const Document::Line &line, int tab_indent_size, int anchor_a = -1, int anchor_b = -1) const;
-	
 private:
 	struct Private;
 	Private *m;
@@ -442,13 +440,6 @@ protected:
 	void clear_selection();
 protected:
 
-	std::vector<Document::Line> *_lines();
-	
-	std::vector<Document::Line> const *_lines() const
-	{
-		return const_cast<AbstractTextEditorApplication *>(this)->_lines();
-	}
-	
 	row_index_t nlines() const;
 	void invalidate_nlines_cache();
 
@@ -495,7 +486,7 @@ protected:
 	
 	void ensureCurrentLineVisible();
 	
-	int calcVisualWidth(Document::Line const &line) const;
+	// int calcVisualWidth(Document::Line const &line) const;
 	
 	int leftMargin_() const;
 	
@@ -673,4 +664,4 @@ public:
 	AbstractTextEditorApplication::WrappingMode wrappingMode() const;
 };
 
-#endif // ABSTRACTCHARACTERBASEDAPPLICATION_H
+#endif // ABSTRACTTEXTEDITORAPPLICATION_H

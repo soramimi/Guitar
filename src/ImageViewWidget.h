@@ -4,7 +4,7 @@
 #include <QMainWindow>
 #include <QScrollBar>
 #include <QWidget>
-#include "AbstractCharacterBasedApplication.h"
+#include "AbstractTextEditorApplication.h"
 
 class FileDiffWidget;
 

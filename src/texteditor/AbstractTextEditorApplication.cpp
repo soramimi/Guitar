@@ -1,4 +1,4 @@
-#include "AbstractCharacterBasedApplication.h"
+#include "AbstractTextEditorApplication.h"
 #include "UnicodeWidth.h"
 #include "unicode.h"
 #include <QApplication>
@@ -901,109 +901,6 @@ int AbstractTextEditorApplication::charWidth(uint32_t c)
 	return UnicodeWidth::width(UnicodeWidth::type(c));
 }
 
-std::vector<FormattedLine> AbstractTextEditorApplication::formatLine_(Document::Line const &line, int tab_indent_size, int anchor_a, int anchor_b) const
-{
-	std::vector<FormattedLine> ret;
-	
-	std::vector<char16_t> c16vec;
-	size_t len = line.text().size();
-	c16vec.reserve(len + 100);
-	
-	int col = 0;
-	int col_start = col;
-	
-	// bool flag_a = false;
-	// bool flag_b = false;
-	
-	auto Flush = [&](size_t offset, size_t *next_offset){
-		if (!c16vec.empty()) {
-			int atts = 0;
-			if (anchor_a >= 0 || anchor_b >= 0) {
-				if ((anchor_a < 0 || col_start >= anchor_a) && (anchor_b == -1 || col_start < anchor_b)) {
-					atts |= FormattedLine::Selected;
-				}
-			}
-			char16_t const *left = &c16vec[0];
-			char16_t const *right = left + c16vec.size();
-			while (left < right && (right[-1] == '\r' || right[-1] == '\n')) right--;
-			if (left < right) {
-				ret.push_back(FormattedLine(QString::fromUtf16(left, int(right - left)), atts));
-			}
-			c16vec.clear();
-		} else {
-			*next_offset = (size_t)-1;
-		}
-		col_start = col;
-	};
-	
-	// size_t offset = 0;
-	// size_t next_offset = (size_t)-1;
-	if (len > 0) {
-		utf8 u8(line.text().data(), len);
-		u8.to_utf32([&](uint32_t c){
-			// if (line.byte_offset + u8.offset() == next_offset) {
-			// 	Flush(line.byte_offset + offset, &next_offset);
-			// 	offset += u8.offset();
-			// }
-			if (c == '\t') {
-				do {
-					c16vec.push_back(' ');
-					col++;
-				} while (col % tab_indent_size != 0);
-			} else if (c < ' ') {
-				// nop
-			} else {
-				int cw = charWidth(c);
-				if (c < 0xffff) {
-					c16vec.push_back((ushort)c);
-				} else {
-					unsigned int a = c >> 16;
-					if (a > 0 && a <= 0x20) {
-						a--;
-						unsigned int b = c & 0x03ff;
-						a = (a << 6) | ((c >> 10) & 0x003f);
-						a |= 0xd800;
-						b |= 0xdc00;
-						c16vec.push_back((ushort)a);
-						c16vec.push_back((ushort)b);
-					}
-				}
-				col += cw;
-			}
-			// if ((anchor_a >= 0 || anchor_b >= 0) && anchor_a != anchor_b) {
-			// 	if (!flag_a && col >= anchor_a) {
-			// 		Flush(line.byte_offset + offset, &next_offset);
-			// 		flag_a = true;
-			// 	}
-			// 	if (!flag_b && col >= anchor_b) {
-			// 		Flush(line.byte_offset + offset, &next_offset);
-			// 		flag_b = true;
-			// 	}
-			// }
-			return true;
-		});
-	}
-	// Flush(line.byte_offset + offset, &next_offset);
-	{
-		
-		int atts = 0;
-
-		ret.push_back(FormattedLine(QString::fromUtf16((ushort const *)c16vec.data(), c16vec.size()), atts));
-	}
-	return ret;
-}
-
-std::vector<Document::Line> *AbstractTextEditorApplication::_lines()
-{
-	assert(0); // TODO:
-	
-	if (m->wrapping_mode == WrappingMode::NoWrap) {
-		return &cx()->engine->document.logical_lines;
-	} else {
-		return &cx()->cache.visual_lines;
-	}
-}
-
 /**
  * @brief 物理行を取得する
  * @param vrow 物理行番号
@@ -1371,28 +1268,28 @@ bool AbstractTextEditorApplication::isWidthFixed() const
 	return (wrappingMode() != WrappingMode::NoWrap);
 }
 
-int AbstractTextEditorApplication::calcVisualWidth(const Document::Line &line) const
-{
-	std::vector<FormattedLine> lines = formatLine_(line, cx()->tab_indent_size);
-	int x = 0;
-	for (FormattedLine const &line : lines) {
-		if (line.text.isEmpty()) continue;
-		ushort const *ptr = line.text.utf16();
-		ushort const *end = ptr + line.text.size();
-		while (1) {
-			int c = -1;
-			if (ptr < end) {
-				c = *ptr;
-				ptr++;
-			}
-			if (c == -1 || c == '\r' || c == '\n') {
-				break;
-			}
-			x++;
-		}
-	}
-	return x;
-}
+// int AbstractTextEditorApplication::calcVisualWidth(const Document::Line &line) const
+// {
+// 	std::vector<FormattedLine> lines = formatLine_(line, cx()->tab_indent_size);
+// 	int x = 0;
+// 	for (FormattedLine const &line : lines) {
+// 		if (line.text.isEmpty()) continue;
+// 		ushort const *ptr = line.text.utf16();
+// 		ushort const *end = ptr + line.text.size();
+// 		while (1) {
+// 			int c = -1;
+// 			if (ptr < end) {
+// 				c = *ptr;
+// 				ptr++;
+// 			}
+// 			if (c == -1 || c == '\r' || c == '\n') {
+// 				break;
+// 			}
+// 			x++;
+// 		}
+// 	}
+// 	return x;
+// }
 
 void AbstractTextEditorApplication::clearRect(int x, int y, int w, int h)
 {

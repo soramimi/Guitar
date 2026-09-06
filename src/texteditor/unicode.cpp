@@ -21,79 +21,98 @@ public:
 	virtual void put(int c) = 0;
 };
 
-void clear_state(utf8_reader_state_t *s)
+namespace {
+
+constexpr uint32_t REPLACEMENT_CHARACTER = 0xFFFD;
+constexpr uint32_t MAX_CODE_POINT = 0x10FFFF;
+
+bool is_surrogate(uint32_t code)
 {
-	s->a = 0;
-	s->b = 0;
+	return code >= 0xD800 && code <= 0xDFFF;
 }
 
-int decode_utf8(utf8_reader_state_t *state, uint8_t c)
+// codeがUnicodeのスカラー値として妥当か(サロゲート・範囲外を除外)
+bool is_valid_scalar_value(uint32_t code)
 {
-	if (c & 0x80) {
-		if (c & 0x40) {
-			state->a = c;
-			if (c & 0x20) {
-				if (c & 0x10) {
-					if (c & 0x08) {
-						if (c & 0x04) {
-							state->b = c & 0x01;
-						} else {
-							state->b = c & 0x03;
-						}
-					} else {
-						state->b = c & 0x07;
-					}
-				} else {
-					state->b = c & 0x0f;
-				}
-			} else {
-				state->b = c & 0x1f;
-			}
-			return -1;
-		} else {
-			state->a <<= 1;
-			state->b = (state->b << 6) | (c & 0x3f);
-			if ((state->a & 0x40) == 0) {
-				return state->b;
-			}
-			return -1;
-		}
-	} else {
-		state->a = 0;
-		state->b = 0;
-		return c;
+	return code <= MAX_CODE_POINT && !is_surrogate(code);
+}
+
+} // namespace
+
+// RFC 3629 / WHATWG Encoding Standard に準拠したUTF-8デコード。
+// 不正な先頭バイト、途中で終端したシーケンス、継続バイトの不足・不正、
+// 冗長エンコーディング(overlong)、サロゲート、U+10FFFF超過は
+// すべて置換文字 U+FFFD として扱い、先頭バイト1つ分だけ読み飛ばして再同期する。
+// 戻り値の 0 は「(誤り検出ではなく)バッファの終端に達した」ことのみを意味する。
+uint32_t decode_utf8(char const *begin, char const *end, size_t *pos)
+{
+	size_t avail = (size_t)(end - begin) - *pos;
+	if (avail == 0) return 0; // 正真のバッファ終端
+
+	uint8_t c0 = (uint8_t)begin[*pos];
+
+	if (c0 < 0x80) { // ASCII (U+0000 も含む)
+		(*pos)++;
+		return c0;
 	}
+
+	int len;
+	uint32_t min_code;
+	uint32_t code;
+	if ((c0 & 0xE0) == 0xC0) {
+		len = 2; min_code = 0x80; code = c0 & 0x1F;
+	} else if ((c0 & 0xF0) == 0xE0) {
+		len = 3; min_code = 0x800; code = c0 & 0x0F;
+	} else if ((c0 & 0xF8) == 0xF0) {
+		len = 4; min_code = 0x10000; code = c0 & 0x07;
+	} else {
+		// 継続バイト単独(0x80-0xBF)や、RFC 3629 で廃止された5/6バイト形式(0xF8-0xFF)
+		(*pos)++;
+		return REPLACEMENT_CHARACTER;
+	}
+
+	if (avail < (size_t)len) {
+		// バッファ終端でシーケンスが途切れている
+		*pos += avail;
+		return REPLACEMENT_CHARACTER;
+	}
+
+	for (int i = 1; i < len; i++) {
+		uint8_t cc = (uint8_t)begin[*pos + i];
+		if ((cc & 0xC0) != 0x80) {
+			// 継続バイトが不正。先頭バイト1つだけ読み飛ばして再同期する
+			(*pos)++;
+			return REPLACEMENT_CHARACTER;
+		}
+		code = (code << 6) | (cc & 0x3F);
+	}
+	*pos += (size_t)len;
+
+	if (code < min_code) return REPLACEMENT_CHARACTER; // 冗長エンコーディング(overlong)
+	if (!is_valid_scalar_value(code)) return REPLACEMENT_CHARACTER; // サロゲート or 範囲外
+
+	return code;
 }
 
 void encode_utf8(uint32_t code, std::function<void (char)> put)
 {
+	if (!is_valid_scalar_value(code)) {
+		code = REPLACEMENT_CHARACTER; // サロゲートやU+10FFFF超過はそのまま出力せず置換文字にする
+	}
 	if (code < 0x80) {
-		put(code);
+		put((char)code);
 	} else if (code < 0x800) {
-		put((code >> 6) | 0xc0);
-		put((code & 0x3f) | 0x80);
+		put((char)((code >> 6) | 0xc0));
+		put((char)((code & 0x3f) | 0x80));
 	} else if (code < 0x10000) {
-		put((code >> 12) | 0xe0);
-		put(((code >> 6) & 0x3f) | 0x80);
-		put((code & 0x3f) | 0x80);
-	} else if (code < 0x200000) {
-		put((code >> 18) | 0xf0);
-		put(((code >> 12) & 0x3f) | 0x80);
-		put(((code >> 6) & 0x3f) | 0x80);
-		put((code & 0x3f) | 0x80);
-	} else if (code < 0x4000000) {
-		put((code >> 24) | 0xf8);
-		put(((code >> 18) & 0x3f) | 0x80);
-		put(((code >> 12) & 0x3f) | 0x80);
-		put(((code >> 6) & 0x3f) | 0x80);
-		put((code & 0x3f) | 0x80);
-	} else {
-		put((code >> 30) | 0xfc);
-		put(((code >> 24) & 0x3f) | 0x80);
-		put(((code >> 18) & 0x3f) | 0x80);
-		put(((code >> 12) & 0x3f) | 0x80);
-		put(((code >> 6) & 0x3f) | 0x80);
-		put((code & 0x3f) | 0x80);
+		put((char)((code >> 12) | 0xe0));
+		put((char)(((code >> 6) & 0x3f) | 0x80));
+		put((char)((code & 0x3f) | 0x80));
+	} else { // <= 0x10FFFF (is_valid_scalar_valueで保証済み)。RFC 3629によりUTF-8は最大4バイト
+		put((char)((code >> 18) | 0xf0));
+		put((char)(((code >> 12) & 0x3f) | 0x80));
+		put((char)(((code >> 6) & 0x3f) | 0x80));
+		put((char)((code & 0x3f) | 0x80));
 	}
 }
 
@@ -104,14 +123,17 @@ void encode_utf8(writer8 *writer, uint32_t code)
 
 void encode_utf16(writer16 *writer, uint32_t code)
 {
-	if (code >= 0x010000 && code <= 0x10ffff) {
-		uint16_t hi = (code - 0x10000) / 0x400 + 0xD800;
-		uint16_t lo = (code - 0x10000) % 0x400 + 0xDC00;
+	if (!is_valid_scalar_value(code)) {
+		code = REPLACEMENT_CHARACTER; // サロゲートやU+10FFFF超過はそのまま出力せず置換文字にする
+	}
+	if (code >= 0x010000) {
+		uint16_t hi = (uint16_t)((code - 0x10000) / 0x400 + 0xD800);
+		uint16_t lo = (uint16_t)((code - 0x10000) % 0x400 + 0xDC00);
 		writer->put(hi);
 		writer->put(lo);
 		return;
 	}
-	writer->put(code);
+	writer->put((uint16_t)code);
 }
 
 //
@@ -121,17 +143,11 @@ utf8decoder::utf8decoder(char const *begin, char const *end)
 	, end(end)
 	, pos(0)
 {
-	clear_state(&s);
 }
 
 uint32_t utf8decoder::next()
 {
-	while (begin + pos < end) {
-		int c = decode_utf8(&s, (uint8_t)begin[pos]);
-		pos++;
-		if (c >= 0) return c;
-	}
-	return 0;
+	return decode_utf8(begin, end, &pos);
 }
 
 } // namespace
@@ -189,14 +205,19 @@ char32_t utf16::next()
 {
 	if (data.ptr && data.ptr < data.end) {
 		uint32_t code = *data.ptr++;
-		if (code >= 0xd800 && code < 0xdc00) {
+		if (code >= 0xd800 && code < 0xdc00) { // 上位サロゲート
 			if (data.ptr < data.end) {
 				uint32_t low = *data.ptr;
 				if (low >= 0xdc00 && low < 0xe000) {
 					code = 0x10000 + (code - 0xd800) * 0x0400 + (low - 0xdc00);
 					data.ptr++;
+					return code;
 				}
 			}
+			return 0xFFFD; // 対になる下位サロゲートが無い(バッファ終端 or 不正な並び)
+		}
+		if (code >= 0xdc00 && code < 0xe000) {
+			return 0xFFFD; // 単独の下位サロゲート(不正な並び)
 		}
 		return code;
 	}

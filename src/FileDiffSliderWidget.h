@@ -1,7 +1,7 @@
 #ifndef FILEDIFFSLIDERWIDGET_H
 #define FILEDIFFSLIDERWIDGET_H
 
-#include "AbstractCharacterBasedApplication.h"
+#include "AbstractTextEditorApplication.h"
 #include "Theme.h"
 #include <QPixmap>
 #include <QWidget>

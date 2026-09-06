@@ -1,7 +1,7 @@
 #ifndef TEXTEDITORVIEW_H
 #define TEXTEDITORVIEW_H
 
-#include "AbstractCharacterBasedApplication.h"
+#include "AbstractTextEditorApplication.h"
 #include "TextEditorTheme.h"
 #include <QTextFormat>
 #include <QWidget>

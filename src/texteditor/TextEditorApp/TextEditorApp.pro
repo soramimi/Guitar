@@ -25,12 +25,12 @@ SOURCES += \
 	../../common/realpath.cpp \
 	../../common/unicode_conversion.cpp \
 	../../common/wstring.cpp \
-	../../texteditor/AbstractCharacterBasedApplication.cpp \
-	../../texteditor/TextEditorTheme.cpp \
-	../../texteditor/TextEditorView.cpp \
-	../../texteditor/TextEditorWidget.cpp \
-	../../texteditor/UnicodeWidth.cpp \
-	../../texteditor/unicode.cpp \
+	../TextEditorTheme.cpp \
+	../TextEditorView.cpp \
+	../TextEditorWidget.cpp \
+	../UnicodeWidth.cpp \
+	../unicode.cpp \
+	../AbstractTextEditorApplication.cpp \
 	src/MainWindow.cpp \
 	src/MySettings.cpp \
 	src/main.cpp
@@ -44,13 +44,13 @@ HEADERS  += \
 	../../common/realpath.h \
 	../../common/unicode_conversion.h \
 	../../common/wstring.h \
-	../../texteditor/AbstractCharacterBasedApplication.h \
-	../../texteditor/LineIndexMap/LineIndexMap.h \
-	../../texteditor/TextEditorTheme.h \
-	../../texteditor/TextEditorView.h \
-	../../texteditor/TextEditorWidget.h \
-	../../texteditor/UnicodeWidth.h \
-	../../texteditor/unicode.h \
+	../LineIndexMap/LineIndexMap.h \
+	../TextEditorTheme.h \
+	../TextEditorView.h \
+	../TextEditorWidget.h \
+	../UnicodeWidth.h \
+	../unicode.h \
+	../AbstractTextEditorApplication.h \
 	src/MainWindow.h \
 	src/MySettings.h
 
@@ -58,5 +58,6 @@ FORMS    += \
 	src/MainWindow.ui
 
 DISTFILES += \
-	../../texteditor/LineIndexMap/AGENTS.md
+	../LineIndexMap/AGENTS.md \
+	../AGENTS.md
 

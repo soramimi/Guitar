@@ -290,7 +290,7 @@ SOURCES += \
 	$$SRC/inet/webclient.cpp \
 	$$SRC/main.cpp\
 	$$SRC/platform.cpp \
-	$$SRC/texteditor/AbstractCharacterBasedApplication.cpp \
+	$$SRC/texteditor/AbstractTextEditorApplication.cpp \
 	$$SRC/texteditor/InputMethodPopup.cpp \
 	$$SRC/texteditor/TextEditorTheme.cpp \
 	$$SRC/texteditor/TextEditorView.cpp \
@@ -506,7 +506,7 @@ HEADERS += \
 	$$SRC/inet/inetresolver.h \
 	$$SRC/inet/webclient.h \
 	$$SRC/platform.h \
-	$$SRC/texteditor/AbstractCharacterBasedApplication.h \
+	$$SRC/texteditor/AbstractTextEditorApplication.h \
 	$$SRC/texteditor/InputMethodPopup.h \
 	$$SRC/texteditor/TextEditorTheme.h \
 	$$SRC/texteditor/TextEditorView.h \
