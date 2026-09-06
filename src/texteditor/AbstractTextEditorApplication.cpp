@@ -103,6 +103,9 @@ struct AbstractTextEditorApplication::Private {
 	FontMetrics fixed_font_metrics;
 	FontMetrics text_font_metrics;
 	
+	int top_margin_px = 0;
+	int bottom_margin_px = 1;
+	
 	struct Cache {
 		std::optional<std::vector<Character>> parsed_current_line_chars;
 	};
@@ -270,39 +273,39 @@ int AbstractTextEditorApplication::current_visual_col() const
 	return cx()->current_visual_col;
 }
 
-int AbstractTextEditorApplication::current_visual_pixel_x() const
+int AbstractTextEditorApplication::current_visual_x_px() const
 {
-	return cx()->current_visual_pixel_x;
+	return cx()->current_visual_x_px;
 }
 
-int AbstractTextEditorApplication::scroll_vert_pos() const
+int AbstractTextEditorApplication::scroll_vert_pos_px() const
 {
-	return cx()->scroll_vert_pos;
+	return cx()->scroll_vert_pos_px;
 }
 
-int AbstractTextEditorApplication::scroll_horz_pos() const
+int AbstractTextEditorApplication::scroll_horz_pos_px() const
 {
-	return cx()->scroll_horz_pos;
+	return cx()->scroll_horz_pos_px;
 }
 
-void AbstractTextEditorApplication::set_scroll_vert_pos(int row)
+void AbstractTextEditorApplication::set_scroll_vert_pos_px(int row)
 {
-	cx()->scroll_vert_pos = row;
+	cx()->scroll_vert_pos_px = row;
 }
 
-void AbstractTextEditorApplication::set_scroll_horz_pos(int col)
+void AbstractTextEditorApplication::set_scroll_horz_pos_px(int col)
 {
-	cx()->scroll_horz_pos = col;
+	cx()->scroll_horz_pos_px = col;
 }
 
-int AbstractTextEditorApplication::cursor_col() const
+int AbstractTextEditorApplication::cursor_col_px() const
 {
-	return current_visual_col() - scroll_horz_pos();
+	return current_visual_col() * fixedFontMetrics().basisCharWidth() - scroll_horz_pos_px();
 }
 
-int AbstractTextEditorApplication::cursor_row() const
+int AbstractTextEditorApplication::cursor_row_px() const
 {
-	return current_visual_row() - scroll_vert_pos();
+	return current_visual_row() - scroll_vert_pos_px();
 }
 
 Document::Line const *AbstractTextEditorApplication::currentLine() const
@@ -882,10 +885,10 @@ bool AbstractTextEditorApplication::commit_line(row_index_t lrow, std::vector<Ch
 void AbstractTextEditorApplication::layoutEditor()
 {
 	// makeBuffer();
-	editor_cx->viewport_org_x = leftMargin_();
-	editor_cx->viewport_org_y = 0;
-	editor_cx->viewport_width = screen_width_px() - cx()->viewport_org_x;
-	editor_cx->viewport_height = screen_height_px();
+	editor_cx->viewport_org_x_cols = leftMargin_();
+	editor_cx->viewport_org_y_rows = 0;
+	editor_cx->viewport_width_px = screen_width_px() - cx()->viewport_org_x_cols * textFontMetrics().basisCharWidth();
+	editor_cx->viewport_height_rows = screen_height_px() / line_height_px();
 }
 
 void AbstractTextEditorApplication::initEditor()
@@ -1017,14 +1020,15 @@ bool AbstractTextEditorApplication::isCurrentLineWritable() const
 	return false;
 }
 
-int AbstractTextEditorApplication::editor_viewport_width() const
+int AbstractTextEditorApplication::editor_viewport_width_px() const
 {
-	return cx()->viewport_width;
+	// return cx()->viewport_width_px;
+	return screen_width_px() - editor_cx->viewport_org_x_cols;
 }
 
 int AbstractTextEditorApplication::editor_viewport_height() const
 {
-	return cx()->viewport_height;
+	return cx()->viewport_height_rows;
 }
 
 void AbstractTextEditorApplication::initEngine(std::shared_ptr<TextEditorContext> const &cx)
@@ -1193,15 +1197,15 @@ void AbstractTextEditorApplication::setLineMargin(int n)
 
 void AbstractTextEditorApplication::ensureCurrentLineVisible()
 {
-	int margin = (cx()->viewport_height >= m->line_margin * 2) ? m->line_margin : 0;
-	int pos = scroll_vert_pos();
+	int margin = (cx()->viewport_height_rows >= m->line_margin * 2) ? m->line_margin : 0;
+	int pos = scroll_vert_pos_px();
 	int top = current_visual_row() - margin;
 	int bottom = current_visual_row() + 1 - editor_viewport_height() + margin;
 	pos = std::min(pos, top);
 	pos = std::max(pos, bottom);
 	pos = std::max(pos, 0);
-	if (scroll_vert_pos() != pos) {
-		set_scroll_vert_pos(pos);
+	if (scroll_vert_pos_px() != pos) {
+		set_scroll_vert_pos_px(pos);
 	}
 }
 
@@ -1319,6 +1323,24 @@ FontMetrics const &AbstractTextEditorApplication::textFontMetrics() const
 	return m->text_font_metrics;
 }
 
+void AbstractTextEditorApplication::set_line_margin_px(int top, int bottom)
+{
+	m->top_margin_px = top;
+	m->bottom_margin_px = bottom;
+}
+
+int AbstractTextEditorApplication::line_height_px() const
+{
+	int h = fixedFontMetrics().basisCharHeight() + m->top_margin_px + m->bottom_margin_px;
+	return h > 0 ? h : 16;
+}
+
+int AbstractTextEditorApplication::line_baseline_px() const
+{
+	int h = line_height_px() - m->bottom_margin_px - fixedFontMetrics().descent_;
+	return h > 0 ? h : 16;
+}
+
 void AbstractTextEditorApplication::setCursorRow(row_index_t vrow, bool auto_scroll, bool by_mouse)
 {
 	if (vrow < 0) {
@@ -1361,7 +1383,7 @@ void AbstractTextEditorApplication::_set_cursor_col(col_index_t vcol, bool auto_
 void AbstractTextEditorApplication::setCursorCol(col_index_t vcol)
 {
 	_set_cursor_col(vcol, true, false);
-	cx()->current_visual_pixel_x = currentPixelX(); // カーソルのピクセル位置を更新する
+	cx()->current_visual_x_px = currentPixelX(); // カーソルのピクセル位置を更新する
 }
 
 void AbstractTextEditorApplication::setCursorPos(const RowCol &vpos)
@@ -1374,7 +1396,7 @@ void AbstractTextEditorApplication::setCursorPosByMouse(RowCol vpos, QPoint pt)
 {
 	setCursorRow(vpos.row, false, true);
 	_set_cursor_col(vpos.col, false, true);
-	cx()->current_visual_pixel_x = pt.x(); // マウスでクリックした位置にカーソルを移動した場合は、現在のピクセル位置をマウスの位置に合わせる
+	cx()->current_visual_x_px = pt.x(); // マウスでクリックした位置にカーソルを移動した場合は、現在のピクセル位置をマウスの位置に合わせる
 }
 
 int AbstractTextEditorApplication::nextTabStop(const TextEditorContext *cx, int x)
@@ -1721,8 +1743,8 @@ void AbstractTextEditorApplication::moveCursorEnd()
 
 void AbstractTextEditorApplication::scrollUp()
 {
-	if (scroll_vert_pos() > 0) {
-		set_scroll_vert_pos(scroll_vert_pos() - 1);
+	if (scroll_vert_pos_px() > 0) {
+		set_scroll_vert_pos_px(scroll_vert_pos_px() - 1);
 		clearParsedLine();
 		updateVisibility({false, false, true});
 	}
@@ -1731,8 +1753,8 @@ void AbstractTextEditorApplication::scrollUp()
 void AbstractTextEditorApplication::scrollDown()
 {
 	int limit = scrollBottomLimit();
-	if (scroll_vert_pos() < limit) {
-		set_scroll_vert_pos(scroll_vert_pos() + 1);
+	if (scroll_vert_pos_px() < limit) {
+		set_scroll_vert_pos_px(scroll_vert_pos_px() + 1);
 		clearParsedLine();
 		updateVisibility({false, false, true});
 	}
@@ -1764,7 +1786,7 @@ void AbstractTextEditorApplication::scrollToTop()
 {
 	setCursorRow(0);
 	setCursorCol(0);
-	set_scroll_vert_pos(0);
+	set_scroll_vert_pos_px(0);
 	clearParsedLine();
 	updateVisibility({true, false, true});
 }
@@ -1864,12 +1886,12 @@ void AbstractTextEditorApplication::movePageUp()
 {
 	int step = editor_viewport_height();
 	setCursorRow(current_visual_row() - step);
-	set_scroll_vert_pos(scroll_vert_pos() - step);
+	set_scroll_vert_pos_px(scroll_vert_pos_px() - step);
 	if (current_visual_row() < 0) {
 		set_current_visual_row(0);
 	}
-	if (scroll_vert_pos() < 0) {
-		set_scroll_vert_pos(0);
+	if (scroll_vert_pos_px() < 0) {
+		set_scroll_vert_pos_px(0);
 	}
 	clearParsedLine();
 	updateVisibility({true, false, true});
@@ -1883,13 +1905,13 @@ void AbstractTextEditorApplication::movePageDown()
 		int step = editor_viewport_height();
 		row_index_t curr_vrow = current_visual_row();
 		row_index_t next_vrow = std::min(curr_vrow + step, vrow_limit);
-		int scroll_pos = scroll_vert_pos() + (next_vrow - curr_vrow);
+		int scroll_pos = scroll_vert_pos_px() + (next_vrow - curr_vrow);
 		scroll_pos = std::min(scroll_pos, scrollBottomLimit());
 		setCursorRow(next_vrow);
-		set_scroll_vert_pos(scroll_pos);
+		set_scroll_vert_pos_px(scroll_pos);
 	} else {
 		setCursorRow(0);
-		set_scroll_vert_pos(0);
+		set_scroll_vert_pos_px(0);
 	}
 	clearParsedLine();
 	updateVisibility({true, false, true});
@@ -1898,15 +1920,15 @@ void AbstractTextEditorApplication::movePageDown()
 void AbstractTextEditorApplication::update_horz_scroll()
 {
 	int vcol = 0;
-	if (0 && !isWidthFixed()) { // TODO:
-		int x = current_visual_pixel_x();
-		int w = editor_viewport_width() - RIGHT_MARGIN;
+	if (!isWidthFixed()) { // TODO:
+		int x = current_visual_x_px();
+		int w = editor_viewport_width_px() - RIGHT_MARGIN * fixedFontMetrics().basisCharWidth();
 		if (w < 0) w = 0;
 		if (x > w) {
 			vcol = current_visual_col() - w;
 		}
 	}
-	set_scroll_horz_pos(vcol);
+	set_scroll_horz_pos_px(vcol * textFontMetrics().basisCharWidth());
 }
 
 // void AbstractTextEditorApplication::printInvertedBar(int x, int y, char const *text, int padchar)
@@ -1943,10 +1965,10 @@ void AbstractTextEditorApplication::paintLineNumbers(std::function<void(int, QSt
 	};
 
 	int rightpadding = 2;
-	int left_margin = editor_cx->viewport_org_x;
+	int left_margin = editor_cx->viewport_org_x_cols;
 
-	for (int i = 0; i <= editor_cx->viewport_height; i++) {
-		row_index_t vrow = editor_cx->scroll_vert_pos + i;
+	for (int i = 0; i <= editor_cx->viewport_height_rows; i++) {
+		row_index_t vrow = editor_cx->scroll_vert_pos_px + i;
 		auto LineNumberText = [&](int linenum){
 			if (linenum > 0) {
 				return QString::asprintf("%*u ", left_margin - rightpadding, linenum);
@@ -1974,7 +1996,7 @@ void AbstractTextEditorApplication::paintLineNumbers(std::function<void(int, QSt
 		} else if (vrow == 0 && nlines() == 0) {
 			text = LineNumberText(1);
 		}
-		int y = editor_cx->viewport_org_y + i;
+		int y = editor_cx->viewport_org_y_rows + i;
 		draw(y, text, line);
 	}
 }
@@ -2087,7 +2109,7 @@ void AbstractTextEditorApplication::moveToTop()
 	set_current_visual_row(0);
 	set_current_visual_col(0);
 	cx()->current_visual_col_hint = 0;
-	set_scroll_vert_pos(0);
+	set_scroll_vert_pos_px(0);
 	scrollToTop();
 	clearParsedLine();
 	updateVisibility({true, false, true});

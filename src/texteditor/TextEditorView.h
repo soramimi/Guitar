@@ -101,8 +101,6 @@ public:
 	void setTheme(const TextEditorThemePtr &theme);
 	TextEditorTheme const *theme() const;
 	
-	int lineHeight() const;
-	
 	void updateVisibility(UpdateVisibilityOption const &arg) override;
 	
 	bool event(QEvent *event) override;
@@ -116,7 +114,7 @@ public:
 	void inputMethodEvent(QInputMethodEvent *e) override;
 	void reflectScrollBar();
 	
-	void move(int cur_row, int cur_col, int scr_row, int scr_col, bool auto_scroll);
+	void move(int cur_row, int cur_col, int scr_y_px, int scr_x_px, bool auto_scroll);
 	void layoutEditor() override;
 	void setFocusFrameVisible(bool f);
 	enum ScrollUnit {

@@ -388,18 +388,18 @@ struct TextEditorContext {
 	row_index_t current_visual_row = 0; // 表示行（物理行）
 	col_index_t current_visual_col = 0; // 表示列（物理列）
 	int current_visual_col_hint = 0;
-	int current_visual_pixel_x = 0; // 桁ピクセル座標
+	int current_visual_x_px = 0; // 桁ピクセル座標
 	int current_visual_pixel_y = 0; // 行ピクセル座標
 	row_index_t saved_row = 0;
 	col_index_t saved_col = 0;
 	int saved_col_hint = 0;
 	int current_char_span = 1;
-	col_index_t scroll_horz_pos = 0;
-	row_index_t scroll_vert_pos = 0;
-	col_index_t viewport_org_x = 0; // テキスト領域の原点（桁位置）（行番号表示領域の幅の文字数）
-	row_index_t viewport_org_y = 0;
-	int viewport_width = 80;
-	int viewport_height = 23;
+	int scroll_horz_pos_px = 0;
+	int scroll_vert_pos_px = 0;
+	col_index_t viewport_org_x_cols = 0; // テキスト領域の原点（桁位置）（行番号表示領域の幅の文字数）
+	row_index_t viewport_org_y_rows = 0;
+	int viewport_width_px = 640;
+	int viewport_height_rows = 25;
 	int tab_indent_size = 4;
 	int bottom_line_y = -1;
 	TextEditorEngine_sp engine;
@@ -509,18 +509,18 @@ protected:
 	void set_current_visual_col(col_index_t col);
 	row_index_t current_visual_row() const;
 	int current_visual_col() const;
-	int current_visual_pixel_x() const;
+	int current_visual_x_px() const;
 	
-	int scroll_vert_pos() const;
-	int scroll_horz_pos() const;
+	int scroll_vert_pos_px() const;
+	int scroll_horz_pos_px() const;
 
-	int cursor_col() const;
-	int cursor_row() const;
+	int cursor_col_px() const;
+	int cursor_row_px() const;
 
-	void set_scroll_vert_pos(int row);
-	void set_scroll_horz_pos(int col);
+	void set_scroll_vert_pos_px(int row);
+	void set_scroll_horz_pos_px(int col);
 	
-	int editor_viewport_width() const;
+	int editor_viewport_width_px() const;
 	int editor_viewport_height() const;
 	
 	std::shared_ptr<TextEditorContext> editor_cx;
@@ -709,6 +709,9 @@ protected:
 	void setTextFont(const QFont &font);
 	FontMetrics const &fixedFontMetrics() const;
 	FontMetrics const &textFontMetrics() const;
+	void set_line_margin_px(int top, int bottom);	
+	int line_height_px() const;
+	int line_baseline_px() const;
 public:
 	void setWrappingMode(WrappingMode mode);
 	AbstractTextEditorApplication::WrappingMode wrappingMode() const;
