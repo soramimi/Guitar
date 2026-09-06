@@ -19,7 +19,7 @@ private:
 		if (filter) {
 			incrementalsearch::drawText_filtered(painter, opt, rect, filter);
 		} else {
-			int w = painter->fontMetrics().size(Qt::TextSingleLine, text).width();
+			int w = painter->fontMetrics().horizontalAdvance(text);
 			QRect r = rect;
 			r.setWidth(w);
 			if (text.startsWith('[')) {
@@ -36,7 +36,7 @@ private:
 				painter->setOpacity(0.75);
 				incrementalsearch::drawText(painter, opt, r, s);
 				painter->restore();
-				int w = painter->fontMetrics().size(Qt::TextSingleLine, s).width();
+				int w = painter->fontMetrics().horizontalAdvance(s);
 				r.translate(w, 0);
 				painter->setFont(font);
 				painter->setPen(opt.palette.color(QPalette::Text));

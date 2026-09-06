@@ -66,6 +66,8 @@ public:
 	ThemePtr theme;
 #endif
 
+	QFont textFont();
+
 #ifdef UNSAFE_ENABLED
 	bool unsafe_enabled = false;
 #endif

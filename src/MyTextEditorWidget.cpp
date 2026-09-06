@@ -9,8 +9,7 @@
 MyTextEditorWidget::MyTextEditorWidget(QWidget *parent)
 	: TextEditorView(parent)
 {
-	QFont font = QFontDatabase::systemFont(QFontDatabase::FixedFont);
-	view()->setTextFont(font);
+	view()->setFont(global->textFont());
 }
 
 TextEditorView *MyTextEditorWidget::view()
@@ -52,7 +51,7 @@ void MyTextEditorWidget::contextMenuEvent(QContextMenuEvent *event)
 				return;
 			}
 			if (a == a_copy) {
-				view()->editCopy();
+				view()->edit_copy();
 				return;
 			}
 		}

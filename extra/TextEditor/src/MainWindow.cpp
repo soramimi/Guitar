@@ -12,7 +12,6 @@
 #include <QStyle>
 #include <memory>
 
-
 struct MainWindow::Private {
 	bool need_to_layout;
 	QRect cursor_rect;
@@ -40,7 +39,11 @@ MainWindow::MainWindow(QWidget *parent)
 		texteditor()->setTerminalMode(true);
 	}
 
-	texteditor()->setWriteMode(AbstractCharacterBasedApplication::WriteMode::Insert);
+	texteditor()->setWriteMode(AbstractTextEditorApplication::WriteMode::Insert);
+
+	texteditor()->set_auto_layout(true);
+	texteditor()->setWrappingMode(TextEditorView::WrappingMode::WordWrap);
+	// texteditor()->setWrappingMode(TextEditorView::WrappingMode::CharWrap);
 
 	texteditor()->loadExampleFile();
 
@@ -52,6 +55,8 @@ MainWindow::~MainWindow()
 	delete m;
 	delete ui;
 }
+
+
 
 TextEditorView *MainWindow::texteditor()
 {
@@ -162,4 +167,5 @@ void MainWindow::moveEvent(QMoveEvent *)
 
 void MainWindow::on_action_test_triggered()
 {
+	texteditor()->debug();
 }

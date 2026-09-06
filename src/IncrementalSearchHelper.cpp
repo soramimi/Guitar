@@ -54,7 +54,7 @@ void incrementalsearch::drawText_filtered(QPainter *painter, const QStyleOptionV
 		int x = rect.x();
 		for (incrementalsearch::Result::Part const &part : match.parts) {
 			QString s = QString::fromStdString(part.text);
-			int w = painter->fontMetrics().size(Qt::TextSingleLine, s).width();
+			int w = painter->fontMetrics().horizontalAdvance(s);
 			QRect r = rect;
 			r.setLeft(x);
 			r.setWidth(w);

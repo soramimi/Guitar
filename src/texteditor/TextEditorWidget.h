@@ -19,11 +19,19 @@ public:
 	{
 		return view_;
 	}
-	void updateLayoutAndMoveToBottom()
+	void moveToBottom()
 	{
-		view_->updateLayout();
 		view_->moveToBottom();
 	}
+	void setAutoLauout(bool f)
+	{
+		view_->set_auto_layout(f);
+	}
+	void setWrappingMode(TextEditorView::WrappingMode mode)
+	{
+		view_->setWrappingMode(mode);
+	}
+	void test();
 };
 
 #endif // TEXTEDITORWIDGET_H

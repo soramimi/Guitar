@@ -16,8 +16,7 @@ INCLUDEPATH += $$PWD/src
 INCLUDEPATH += $$PWD/src/texteditor
 INCLUDEPATH += ../../src
 
-linux:LIBS += -lncursesw
-macx:LIBS += -lncurses
+win32:LIBS += -lole32
 
 SOURCES += \
 	../../src/common/misc.cpp \
@@ -26,6 +25,7 @@ SOURCES += \
 	../../src/common/qmisc.cpp \
 	../../src/common/realpath.cpp \
 	../../src/common/unicode_conversion.cpp \
+	../../src/common/wstring.cpp \
 	../../src/texteditor/AbstractCharacterBasedApplication.cpp \
 	../../src/texteditor/TextEditorTheme.cpp \
 	../../src/texteditor/TextEditorView.cpp \
@@ -34,8 +34,7 @@ SOURCES += \
 	../../src/texteditor/unicode.cpp \
 	src/MainWindow.cpp \
 	src/MySettings.cpp \
-	src/main.cpp\
-	src/cmain.cpp
+	src/main.cpp
 
 HEADERS  += \
 	../../src/common/joinpath.h \
@@ -45,16 +44,20 @@ HEADERS  += \
 	../../src/common/qmisc.h \
 	../../src/common/realpath.h \
 	../../src/common/unicode_conversion.h \
+	../../src/common/wstring.h \
 	../../src/texteditor/AbstractCharacterBasedApplication.h \
+	../../src/texteditor/LineIndexMap/LineIndexMap.h \
 	../../src/texteditor/TextEditorTheme.h \
 	../../src/texteditor/TextEditorView.h \
 	../../src/texteditor/TextEditorWidget.h \
 	../../src/texteditor/UnicodeWidth.h \
 	../../src/texteditor/unicode.h \
 	src/MainWindow.h \
-	src/MySettings.h \
-	src/cmain.h
+	src/MySettings.h
 
 FORMS    += \
 	src/MainWindow.ui
+
+DISTFILES += \
+	../../src/texteditor/LineIndexMap/AGENTS.md
 

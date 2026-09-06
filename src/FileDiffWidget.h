@@ -5,7 +5,6 @@
 #include "FileViewWidget.h"
 #include "FileDiffSliderWidget.h"
 #include "GitRunner.h"
-#include "texteditor/AbstractCharacterBasedApplication.h"
 #include <QDialog>
 #include <memory>
 
@@ -74,7 +73,7 @@ public:
 	};
 
 	struct LineFragment {
-		Document::LineType type = Document::LineType::Unknown;
+		Document::LineType type = Document::LineType::Invalid;
 		int line_index;
 		int line_count;
 		LineFragment() = default;

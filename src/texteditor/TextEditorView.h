@@ -29,20 +29,28 @@ struct PreEditText {
 	std::vector<Format> format;
 };
 
+class TextMetrics : public AbstractTextMetrics {
+public:	
+	struct TextWidthCache {
+		std::unordered_map<QString, int> map;
+	};
+	QFont text_font_;
+	std::unique_ptr<QFontMetrics> fm_;
+	int ascent_ = 0;
+	int descent_ = 0;
+	QSize basic_character_size_;
+	mutable TextWidthCache text_width_cache_;
+
+	void setTextFont(QFont const &font);
+
+	int basisCharWidth() const override;
+	int textWidth(QString const &text) const override;
+};
+
+
 class TextEditorView : public QWidget, public AbstractTextEditorApplication {
 	Q_OBJECT
 public:
-	class FormattedLine {
-	public:
-		std::shared_ptr<std::vector<Char>> chars;
-		std::shared_ptr<std::vector<CharAttr>> atts2;
-		bool has_diff_flags = false;
-		FormattedLine()
-			: chars(std::make_shared<std::vector<Char>>())
-			, atts2(std::make_shared<std::vector<CharAttr>>())
-		{
-		}
-	};
 	class FormattedLines {
 	public:
 		int row_start = 0;
@@ -61,27 +69,37 @@ private:
 	struct Private;
 	Private *m;
 	
-	void paintScreen(QPainter *painter);
-	void drawCursor(int row, int col, QPainter *pr, QColor const &color);
+	void drawCursor(int row, int col, QPainter *pr);
 	void drawCursor(QPainter *pr);
 	void drawFocusFrame(QPainter *pr);
 	void updateCursorRect(bool auto_scroll);
 	QColor defaultForegroundColor();
 	QColor defaultBackgroundColor();
 	QColor colorForIndex(CharAttr const &attr, bool foreground);
-	void internalUpdateVisibility(bool ensure_current_line_visible, bool change_col, bool auto_scroll);
-public://@
-	void internalUpdateScrollBar();
+	void internalUpdateVisibility(const UpdateVisibilityOption &arg);
+public:
+	void updateScrollBarRange() override;
 private:
 	void moveCursorByMouse();
-	void calcPixelPosX(std::vector<Char> *chars, const QFontMetrics &fm) const;
-	int posX_px(int row, int col, bool adjust_scroll, std::vector<Char> *chars, std::vector<CharAttr> *attrs = nullptr) const;
-	int scrollPosX() const;
-	int view_y_from_row(int row) const;
-	FormattedLines _fetchLines(int row, int count) const;
+	
+	static void _calc_pos_x(std::vector<Character> *chars, const TextEditorContext *cx, const TextMetrics &fixed_tm, const TextMetrics &text_tm);
+	int pos_x_px(row_index_t vrow, col_index_t vcol) const;
+	
+	int scrollpos_x() const;
+	int view_y_from_vrow(row_index_t vrow) const;
+	int linenumber_area_width() const;
+
+	QColor cursorColor() const;
 public:
-	std::unordered_map<int, TextEditorView::FormattedLine> fetchLines() const;
-	FormattedLines *fetchLines2(bool all);
+	void debug();
+protected:
+	void timerEvent(QTimerEvent *) override;
+	void setCursorRow(row_index_t row, bool auto_scroll, bool by_mouse) override;
+	void calc_pos_x(std::vector<Character> *chars) const;
+	
+public:
+	const Document::LineProperty *queryFormattedLine(row_index_t vrow) const;
+	std::pair<row_index_t, row_index_t> visibleRowAndCount();
 	int basisCharWidth() const;
 protected:
 	void paintEvent(QPaintEvent *) override;
@@ -91,13 +109,10 @@ protected:
 	void wheelEvent(QWheelEvent *event) override;
 	void resizeEvent(QResizeEvent *event) override;
 	void contextMenuEvent(QContextMenuEvent *event) override;
+	QFont fixedFont() const;
 	QFont textFont() const;
 	void drawText(QPainter *painter, int px, int py, QString const &str);
-protected:
-	void timerEvent(QTimerEvent *) override;
-	void setCursorCol(int col) override;
-	void setCursorRow(int row, bool auto_scroll, bool by_mouse) override;
-	void invalidateLineFormat(int row) override;
+	int currentPixelX() const;
 public:
 	explicit TextEditorView(QWidget *parent = nullptr);
 	~TextEditorView() override;
@@ -107,7 +122,7 @@ public:
 	
 	int lineHeight() const;
 	
-	void updateVisibility(bool ensure_current_line_visible, bool change_col, bool auto_scroll) override;
+	void updateVisibility(UpdateVisibilityOption const &arg) override;
 	
 	bool event(QEvent *event) override;
 	
@@ -130,8 +145,14 @@ public:
 	void setScrollUnit(int n);
 	int scrollUnit() const;
 	
+	void setFixedFont(const QFont &font);
 	void setTextFont(const QFont &font);
-	void updateLayout();
+	void setFont(const QFont &font)
+	{
+		setFixedFont(font);
+		setTextFont(font);
+	}
+	
 	
 	struct PointInView {
 		int x = 0;
@@ -141,14 +162,11 @@ public:
 	PointInView pointInView(int row, int col) const;
 	
 	int scrollTopRow() const;
-	
 signals:
 	void moved(int cur_row, int cur_col, int scr_row, int scr_col);
 	void updateScrollBar();
 	void idle();
+	
 };
-
-
-
 
 #endif // TEXTEDITORVIEW_H

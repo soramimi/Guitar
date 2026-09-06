@@ -4,6 +4,7 @@
 #include <common/qmisc.h>
 #include "unicode.h"
 #include <QApplication>
+#include <QClipboard>
 #include <QDebug>
 #include <QFile>
 #include <QFontDatabase>
@@ -15,24 +16,47 @@
 #include <functional>
 #include "../Profile.h"
 
-#define PROPORTIONAL_FONT_SUPPORT 0
+void TextMetrics::setTextFont(const QFont &font)
+{
+	text_font_ = font;
+	
+	QPixmap pm(1, 1);
+	QPainter pr(&pm);
+	pr.setFont(text_font_);
+	fm_ = std::make_unique<QFontMetrics>(pr.fontMetrics());
+	ascent_ = fm_->ascent();
+	descent_ = fm_->descent();
+	basic_character_size_ = QSize(fm_->horizontalAdvance("0"), fm_->height());
+}
 
-struct ParsedLineItem {
-	std::vector<AbstractTextEditorApplication::Char> chars;
-	std::vector<CharAttr> attrs;
-};
+int TextMetrics::basisCharWidth() const
+{
+	int w = basic_character_size_.width();
+	return w > 0 ? w : 1;
+}
+
+int TextMetrics::textWidth(const QString &text) const
+{
+	int ret = 0;
+	auto it = text_width_cache_.map.find(text);
+	if (it != text_width_cache_.map.end()) {
+		ret = it->second;
+	} else {
+		ret = fm_->horizontalAdvance(text);
+		text_width_cache_.map[text] = ret;
+	}
+	return ret;
+}
+
+constexpr int cursor_animation_cycle = 10;
 
 struct TextEditorView::Private {
-	QPixmap reference_pixmap;
-
+	TextMetrics fixed_font_metrics;
+	TextMetrics text_font_metrics;
 	PreEditText preedit;
-	QFont text_font;
 	InputMethodPopup *ime_popup = nullptr;
 	int top_margin = 0;
 	int bottom_margin = 0;
-	QSize basic_character_size;
-	int ascent = 0;
-	int descent = 0;
 
 	QString status_line;
 	QScrollBar *scroll_bar_v = nullptr;
@@ -46,34 +70,35 @@ struct TextEditorView::Private {
 
 	unsigned int idle_count = 0;
 
-	std::function<void(void)> custom_context_menu_requested;
+	int cursor_animation_counter = 0;
 
-	TextEditorView::FormattedLines formatted_lines;
-	
-	std::unordered_map<int, ParsedLineItem> parsed_line_cache;	
+	std::function<void(void)> custom_context_menu_requested;
 };
 
 TextEditorView::TextEditorView(QWidget *parent)
 	: QWidget(parent)
 	, m(new Private)
 {
-	m->reference_pixmap = QPixmap(1, 1);
-
+	size_t n = sizeof(LineIndexMap::ValueItem);
+	
 #ifdef Q_OS_WIN
 
 
-#if PROPORTIONAL_FONT_SUPPORT
-	setTextFont(QFont("MS PGothic", 30));
-#else
-	setTextFont(QFont("MS Gothic", 20));
-#endif
+	setTextFont(QFont("MS PGothic", 16));
+	// setTextFont(QFont("MS Gothic", 16));
 
 #else
 
-	// QFont font = QFontDatabase::systemFont(QFontDatabase::FixedFont);
-	QFont font = QFontDatabase::systemFont(QFontDatabase::GeneralFont);
-	font.setPointSize(16);
-	setTextFont(font);
+	{
+		QFont font = QFontDatabase::systemFont(QFontDatabase::FixedFont);
+		font.setPointSize(16);
+		setFont(font);
+	}
+	{
+		QFont font = QFontDatabase::systemFont(QFontDatabase::GeneralFont);
+		font.setPointSize(16);
+		setTextFont(font);
+	}
 
 #endif
 
@@ -97,6 +122,7 @@ TextEditorView::TextEditorView(QWidget *parent)
 
 	setScrollUnit(ScrollByCharacter);
 
+	m->cursor_animation_counter = cursor_animation_cycle;
 	startTimer(100);
 }
 
@@ -104,6 +130,12 @@ TextEditorView::~TextEditorView()
 {
 	delete m;
 }
+
+
+
+
+
+
 
 void TextEditorView::setTheme(TextEditorThemePtr const &theme)
 {
@@ -118,70 +150,17 @@ TextEditorTheme const *TextEditorView::theme() const
 	return m->theme.get();
 }
 
+void TextEditorView::setFixedFont(QFont const &font)
+{
+	m->fixed_font_metrics.setTextFont(font);
+}
+
 void TextEditorView::setTextFont(QFont const &font)
 {
-	m->text_font = font;
-
-	QPainter pr(&m->reference_pixmap);
-	pr.setFont(m->text_font);
-	QFontMetrics fm = pr.fontMetrics();
-	m->ascent = fm.ascent();
-	m->descent = fm.descent();
-	m->basic_character_size = fm.size(0, "0");
+	m->text_font_metrics.setTextFont(font);
 }
 
-void TextEditorView::updateLayout()
-{
-	auto SplitLines = [](std::string_view ba){
-		std::vector<std::string_view> ret;
-		char const *begin = ba.data();
-		char const *end = begin + ba.size();
-		char const *ptr = begin;
-		char const *left = ptr;
-		while (1) {
-			int c = -1;
-			if (ptr < end) {
-				c = (unsigned char)*ptr;
-			}
-			if (c == '\n' || c == '\r' || c < 0) {
-				if (c == '\r') {
-					if (ptr + 1 < end && *ptr == '\n') {
-						ptr += 2;
-					} else {
-						ptr++;
-					}
-				} else if (c == '\n') {
-					ptr++;
-				}
-				if (ptr > left) {
-					ret.emplace_back(left, ptr - left);
-				}
-				if (c < 0) break;
-				left = ptr;
-			} else {
-				ptr++;
-			}
-		}
-		return ret;
-	};
-
-	Document *doc = &cx()->engine->document;
-	if (!doc->lines.empty()) {
-		std::vector<Document::Line> *doclines = &doc->lines;
-		auto index = doclines->size() - 1;
-		Document::Line line = doclines->at(index);
-		doclines->erase(doclines->begin() + index);
-		std::vector<std::string_view> newlines = SplitLines({line.text().data(), line.text().size()});
-		for (std::string_view ba : newlines) {
-			if (ba.empty()) continue;
-			std::vector<char> v(ba.data(), ba.data() + ba.size());
-			doclines->insert(doclines->begin() + index, Document::Line(v));
-			index++;
-		}
-	}
-}
-
-void AbstractCharacterBasedApplication::loadExampleFile()
+void AbstractTextEditorApplication::loadExampleFile()
 {
 #ifdef Q_OS_WIN
 	QString path = "C:/develop/ore/example.txt";
@@ -197,7 +176,7 @@ bool TextEditorView::event(QEvent *event)
 {
 	if (event->type() == QEvent::Polish) {
 		clearParsedLine();
-		updateVisibility(true, true, true);
+		updateVisibility({});
 	}
 	return QWidget::event(event);
 }
@@ -208,18 +187,8 @@ bool TextEditorView::event(QEvent *event)
  */
 int TextEditorView::lineHeight() const
 {
-	int h = m->basic_character_size.height() + m->top_margin + m->bottom_margin;
-	return h > 0 ? h : 1;
-}
-
-/**
- * @brief 基準文字幅
- * @return
- */
-int TextEditorView::basisCharWidth() const
-{
-	int w = m->basic_character_size.width();
-	return w > 0 ? w : 1;
+	int h = m->fixed_font_metrics.basic_character_size_.height() + m->top_margin + m->bottom_margin;
+	return h > 0 ? h : 16;
 }
 
 static inline QString appendUnicode(QString const &s, char32_t u)
@@ -227,87 +196,71 @@ static inline QString appendUnicode(QString const &s, char32_t u)
 	return s + QString::fromUcs4(&u, 1);
 }
 
-void TextEditorView::invalidateLineFormat(int row)
-{
-	if (row == -1) {
-		m->parsed_line_cache.clear(); //@ TODO
-	} else {
-		auto it = m->parsed_line_cache.find(row);
-		if (it != m->parsed_line_cache.end()) {
-			m->parsed_line_cache.erase(it);
-		}
-	}
-	
-}
-
 /**
  * @brief 全文字のX座標を計算する
  * @param chars
  * @param fm
  */
-void TextEditorView::calcPixelPosX(std::vector<Char> *chars, QFontMetrics const &fm) const
+void TextEditorView::_calc_pos_x(std::vector<Character> *chars, TextEditorContext const *cx, TextMetrics const &fixed_tm, TextMetrics const &text_tm)
 {
 	int base_x = 0;
 	int left_x = 0;
 	QString text;
 	for (size_t i = 0; i < chars->size(); i++) {
-		chars->at(i).left_x = left_x;
-		char32_t u = chars->at(i).unicode;
+		(*chars)[i].left_x = left_x;
+		char32_t u = (*chars)[i].unicode;
 		if (u == '\t') {
 			int right_x = left_x;
-			int tab_indent = basisCharWidth() * editor_cx->tab_indent_size;
+			int tab_indent = fixed_tm.basisCharWidth() * cx->tab_indent_size;
 			if (tab_indent > 0) {
 				right_x = (right_x / tab_indent + 1) * tab_indent;
 			}
-			chars->at(i).right_x = right_x;
+			(*chars)[i].right_x = right_x;
 			base_x = left_x = right_x;
 			text.clear();
 		} else {
 			text = appendUnicode(text, u);
-			int right_x = base_x + fm.size(0, text).width();
-			chars->at(i).right_x = right_x;
+			int right_x = base_x + text_tm.textWidth(text);
+			(*chars)[i].right_x = right_x;
 			left_x = right_x;
 		}
 	}
 }
 
-/**
- * @brief 行と桁位置からピクセルX座標を求める
- * @param row
- * @param col
- * @param adjust_scroll
- * @param chars（nullptr可）
- * @return
- */
-int TextEditorView::posX_px(int row, int col, bool adjust_scroll, std::vector<Char> *chars, std::vector<CharAttr> *attrs) const
+void TextEditorView::calc_pos_x(std::vector<Character> *chars) const
 {
-	if (row < 0) return 0;
+	_calc_pos_x(chars, cx(), m->fixed_font_metrics, m->text_font_metrics);
+}
 
-	auto it = m->parsed_line_cache.find(row);
-	if (it == m->parsed_line_cache.end()) {
-		it = m->parsed_line_cache.insert(m->parsed_line_cache.end(), std::make_pair(row, ParsedLineItem()));
-		const_cast<TextEditorView *>(this)->parseLine(row, &it->second.chars, &it->second.attrs);
-		
-		// 文字のX座標を計算
-		{
-			QPainter pr(&m->reference_pixmap);
-			pr.setFont(m->text_font);
-			calcPixelPosX(&it->second.chars, pr.fontMetrics());
+Document::LineProperty const *TextEditorView::queryFormattedLine(row_index_t vrow) const
+{
+	if (vrow >= 0 && vrow < nlines()) {
+		const_cast<TextEditorView *>(this)->update_visual_line(vrow_to_lrow(vrow), false);
+		Document::LineProperty *detail = visual_line(vrow)->detail();
+		if (!detail) {
+			visual_line(vrow)->sp->meta.detail = std::make_shared<Document::LineProperty>();
+			detail = visual_line(vrow)->detail();
 		}
+		detail->chars = parseLine(vrow);
+		detail->flags.resize(detail->chars.size());
+		calc_pos_x(&detail->chars);
+		return detail;
 	}
-	
-	ParsedLineItem *line = &it->second;
-	if (chars) *chars = line->chars;
-	if (attrs) *attrs = line->attrs;
+	return nullptr;
+}
+
+int TextEditorView::pos_x_px(row_index_t vrow, col_index_t vcol) const
+{
+	Document::LineProperty const *line = queryFormattedLine(vrow);
+	if (!line) return 0;
 
 	int x = 0;
-	if (col > 0 && col - 1 < (int)line->chars.size()) {
-		x = (int)line->chars[col - 1].right_x;
+	if (vcol > 0 && vcol - 1 < (col_index_t)line->chars.size()) {
+		x = (int)line->chars[vcol - 1].right_x;
 	}
 
-	if (adjust_scroll) { // 原点とスクロール位置に応じてずらす
-		x += cx()->viewport_org_x * basisCharWidth() - scrollPosX();
-	}
+	// 原点とスクロール位置に応じてずらす
+	x += cx()->viewport_org_x * m->fixed_font_metrics.basisCharWidth() - scrollpos_x();
 	
 	return x;
 }
@@ -319,47 +272,51 @@ int TextEditorView::posX_px(int row, int col, bool adjust_scroll, std::vector<Ch
  */
 RowCol TextEditorView::mapFromPixel(QPoint const &pt)
 {
+	TextEditorContext *cx = this->cx();
 	const int y = pt.y() / lineHeight();
-	const int row = y + cx()->scroll_row_pos - cx()->viewport_org_y;
-	const int maxrow = documentLines();
-	if (row >= maxrow) {
+	const row_index_t vrow = y + scroll_vert_pos() - cx->viewport_org_y;
+	const int max_vrow = nlines();
+	if (vrow >= max_vrow) {
 		// 最終行より下だったら、最終行の列数を返す
 		RowCol t;
-		t.row = maxrow - 1;
-		if (maxrow > 0) {
-			std::vector<Char> chars;
-			parseLine(t.row, &chars, nullptr);
+		t.row = max_vrow - 1;
+		if (max_vrow > 0) {
+			std::vector<Character> chars = parseLine(t.row);
 			if (!chars.empty()) {
 				t.col = (int)chars.size();
 			}
 		}
 		return t;
 	}
-	const int w = basisCharWidth(); // 基準文字幅
-	const int x = pt.x() + (cx()->scroll_col_pos - cx()->viewport_org_x) * w;
-	std::vector<Char> chars;
-	posX_px(row, -1, false, &chars);
-
-	size_t end = chars.size();
-	while (end > 0) {
-		if (charWidth(chars[end - 1].unicode) != 0) break;
-		end--;
-	}
-	int left = 0;
-	for (size_t col = 0; col < end; col++) {
-		int right = chars[col].right_x;
-		if (x < right) {
-			int l = left - x;
-			int r = right - x;
-			if (l * l < r * r) {
-				return RowCol(row, (int)col);
-			} else {
-				return RowCol(row, (int)col + 1);
+	const int char_width = m->fixed_font_metrics.basisCharWidth(); // 基準文字幅
+	const int x = pt.x() + (cx->scroll_horz_pos - cx->viewport_org_x) * char_width;
+	std::vector<Character> const *chars = nullptr;
+	Document::LineProperty const *line = queryFormattedLine(vrow);
+	if (line) {
+		chars = &line->chars;
+		if (chars) {
+			size_t end = chars->size();
+			int left = 0;
+			for (size_t col = 0; col < end; col++) {
+				int right = (*chars)[col].right_x;
+				if (x < right) {
+					int l = left - x;
+					int r = right - x;
+					if (l * l < r * r) {
+						return RowCol(vrow, (int)col);
+					} else {
+						return RowCol(vrow, (int)col + 1);
+					}
+				}
+				left = right;
 			}
+			while (end > 0 && ((*chars)[end - 1] == '\r' || (*chars)[end - 1] == '\n')) {
+				end--;
+			}
+			return RowCol((int)vrow, (int)end);
 		}
-		left = right;
 	}
-	return RowCol((int)row, (int)end);
+	return {};
 }
 
 /**
@@ -368,35 +325,28 @@ RowCol TextEditorView::mapFromPixel(QPoint const &pt)
  * @param auto_scroll
  * @param by_mouse
  */
-void TextEditorView::setCursorRow(int row, bool auto_scroll, bool by_mouse)
+void TextEditorView::setCursorRow(row_index_t row, bool auto_scroll, bool by_mouse)
 {
-	AbstractCharacterBasedApplication::setCursorRow(row, false, by_mouse);
+	AbstractTextEditorApplication::setCursorRow(row, false, by_mouse);
 
 	// ピクセル座標を更新
-	cx()->current_row_pixel_y = (cx()->viewport_org_y + cursorRow()) * lineHeight();
+	cx()->current_visual_pixel_y = (cx()->viewport_org_y + cursor_row()) * lineHeight();
 
 	// ピクセル座標から桁位置を再計算する
-	int x = cx()->current_col_pixel_x;
-	int y = cx()->current_row_pixel_y;
+	int x = cx()->current_visual_pixel_x;
+	int y = cx()->current_visual_pixel_y;
 	auto cr = mapFromPixel({x, y});
 
-	setCurrentCol(cr.col); // 桁位置
+	set_current_visual_col(cr.col); // 桁位置
+	clearParsedLine();
 
 	updateSelectionAnchor2(auto_scroll);
 }
 
-/**
- * @brief 桁位置を変更する
- * @param col
- */
-void TextEditorView::setCursorCol(int col)
+int TextEditorView::currentPixelX() const
 {
-	AbstractCharacterBasedApplication::setCursorCol(col);
-
-	// 水平ピクセル座標を更新
-	parseCurrentLine(nullptr, nullptr, true);
-	auto *chars = parsedCurrentLine();
-	cx()->current_col_pixel_x = posX_px(currentRow(), currentCol(), true, chars);
+	// 水平ピクセル座標
+	return pos_x_px(current_visual_row(), current_visual_col());
 }
 
 void TextEditorView::bindScrollBar(QScrollBar *vsb, QScrollBar *hsb)
@@ -408,101 +358,127 @@ void TextEditorView::bindScrollBar(QScrollBar *vsb, QScrollBar *hsb)
 void TextEditorView::setupForLogWidget(TextEditorThemePtr const &theme)
 {
 	setTheme(theme);
-	setAutoLayout(true);
+	set_auto_layout(true);
 	setTerminalMode(true);
 	layoutEditor();
 }
 
 void TextEditorView::updateCursorRect(bool auto_scroll)
 {
-	updateCursorPos(auto_scroll);
+	if (auto_scroll) {
+		update_horz_scroll();
+	}
 
-	int x = cx()->viewport_org_x + cursorCol();
-	int y = cx()->viewport_org_y + cursorRow();
-	x *= basisCharWidth();
+	int x = cx()->viewport_org_x + cursor_col();
+	int y = cx()->viewport_org_y + cursor_row();
+	x *= m->fixed_font_metrics.basisCharWidth();
 	y *= lineHeight();
 	QPoint pt = QPoint(x, y);
-	int w = cx()->current_char_span * basisCharWidth();
+	int w = 1;//m->text_metrics.basisCharWidth();
 	int h = lineHeight();
 	cx()->cursor_rect = QRect(pt.x(), pt.y(), w, h);
 
 	QApplication::inputMethod()->update(Qt::ImCursorRectangle);
 }
 
-void TextEditorView::internalUpdateScrollBar()
+void TextEditorView::updateScrollBarRange()
 {
-	QScrollBar *sb;
-
-	sb = m->scroll_bar_v;
-	if (sb) {
-		sb->blockSignals(true);
-		sb->setRange(0, document()->lines.size() - cx()->viewport_height / 2);
-		sb->setPageStep(editorViewportHeight());
-		sb->setValue(cx()->scroll_row_pos);
-		sb->blockSignals(false);
+	bool fixedwidth = (wrappingMode() != TextEditorView::WrappingMode::NoWrap);
+	
+	QScrollBar *vsb = m->scroll_bar_v;
+	QScrollBar *hsb = m->scroll_bar_h;
+	
+	if (vsb) {
+		vsb->blockSignals(true);
+		vsb->setRange(0, nlines() - cx()->viewport_height / 2);
+		vsb->setPageStep(editor_viewport_height());
+		vsb->setValue(scroll_vert_pos());
+		vsb->blockSignals(false);
 	}
 
-	sb = m->scroll_bar_h;
-	if (sb) {
-		int w = editorViewportWidth();
-		sb->blockSignals(true);
-		sb->setRange(0, (w + 100) * reference_char_width_);
-		sb->setPageStep(w * reference_char_width_);
-		sb->setValue(cx()->scroll_col_pos);
-		sb->blockSignals(false);
+	if (hsb) {
+		int w = editor_viewport_width();
+		hsb->blockSignals(true);
+		if (fixedwidth) {
+			hsb->setRange(0, 0);
+			hsb->setPageStep(0);
+			hsb->setValue(0);
+		} else {
+			hsb->setRange(0, w + 100);
+			hsb->setPageStep(w);
+			hsb->setValue(scroll_horz_pos());
+		}
+		hsb->setVisible(!fixedwidth);
+		hsb->blockSignals(false);
 	}
 
 	emit updateScrollBar();
 }
 
-void TextEditorView::internalUpdateVisibility(bool ensure_current_line_visible, bool change_col, bool auto_scroll)
+void TextEditorView::internalUpdateVisibility(UpdateVisibilityOption const &arg)
 {
-	if (ensure_current_line_visible) {
+	if (arg.ensure_current_line_visible) {
 		ensureCurrentLineVisible();
 	}
 
-	updateCursorRect(auto_scroll);
+	updateCursorRect(arg.auto_scroll);
 
-	if (change_col) {
-		cx()->current_col_hint = currentCol();
+	if (arg.change_col) {
+		cx()->current_visual_col_hint = current_visual_col();
 	}
 
 	if (isPaintingSuppressed()) {
 		return;
 	}
 
-	internalUpdateScrollBar();
+	updateScrollBarRange();
 
+	m->cursor_animation_counter = cursor_animation_cycle;
 	update();
 }
 
-void TextEditorView::updateVisibility(bool ensure_current_line_visible, bool change_col, bool auto_scroll)
+std::pair<row_index_t, row_index_t> TextEditorView::visibleRowAndCount()
 {
-	fetchLines2(false);
+	row_index_t row_start = scrollTopRow();
+	row_index_t row_count = std::min(editor_cx->viewport_height, nlines() - row_start);
 
-	internalUpdateVisibility(ensure_current_line_visible, change_col, auto_scroll);
-	emit moved(currentRow(), currentCol(), cx()->scroll_row_pos, cx()->scroll_col_pos);
+	return std::make_pair(row_start, row_count);
+}
+
+void TextEditorView::updateVisibility(const UpdateVisibilityOption &arg)
+{
+	internalUpdateVisibility(arg);
+	
+	emit moved(current_visual_row(), current_visual_col(), scroll_vert_pos(), scroll_horz_pos());
 }
 
 void TextEditorView::move(int cur_row, int cur_col, int scr_row, int scr_col, bool auto_scroll)
 {
-	if ((cur_row >= 0 && currentRow() != cur_row) || (cur_col >= 0 && currentCol() != cur_col) || cx()->scroll_row_pos != scr_row || cx()->scroll_col_pos != scr_col) {
-		if (cur_row >= 0) setCurrentRow(cur_row);
-		if (cur_col >= 0) setCurrentCol(cur_col);
-		if (scr_row >= 0) cx()->scroll_row_pos = scr_row;
-		if (scr_col >= 0) cx()->scroll_col_pos = scr_col;
-		internalUpdateVisibility(false, true, auto_scroll);
+	if (isWidthFixed()) {
+		scr_col = 0;
 	}
+	if ((cur_row >= 0 && current_visual_row() != cur_row) || (cur_col >= 0 && current_visual_col() != cur_col) || scroll_vert_pos() != scr_row || scroll_horz_pos() != scr_col) {
+		if (cur_row >= 0) set_current_visual_row(cur_row);
+		if (cur_col >= 0) set_current_visual_col(cur_col);
+		if (scr_row >= 0) set_scroll_vert_pos(scr_row);
+		if (scr_col >= 0) set_scroll_horz_pos(scr_col);
+		internalUpdateVisibility({false, true, auto_scroll});
+	}
+}
+
+QFont TextEditorView::fixedFont() const
+{
+	return m->fixed_font_metrics.text_font_;
 }
 
 QFont TextEditorView::textFont() const
 {
-	return m->text_font;
+	return m->text_font_metrics.text_font_;
 }
 
 void TextEditorView::drawText(QPainter *painter, int px, int py, QString const &str)
 {
-	painter->drawText(px, py + lineHeight() - m->bottom_margin - m->descent, str);
+	painter->drawText(px, py + lineHeight() - m->bottom_margin - m->fixed_font_metrics.descent_, str);
 }
 
 QColor TextEditorView::defaultForegroundColor()
@@ -527,94 +503,6 @@ QColor TextEditorView::colorForIndex(CharAttr const &attr, bool foreground)
 	return foreground ? defaultForegroundColor() : Qt::transparent;//defaultBackgroundColor();
 }
 
-/**
- * @brief 描画（CharacterMode用）
- * @param painter
- */
-void TextEditorView::paintScreen(QPainter *painter)
-{
-	int cols = screenWidth();
-	int rows = screenHeight();
-	for (int row = 0; row < rows; row++) {
-		int col = 0;
-		std::vector<Char> chars;
-		while (col < cols) {
-			int o = row * cols;
-			Character const *line = &char_screen()->at(o);
-			int n = 0;
-			while (col + n < cols) {
-				uint32_t c = line[col + n].c;
-				uint32_t d = 0;
-				if (c == 0) break;
-				if (c == 0xffff) break;
-				if ((c & 0xfc00) == 0xdc00) {
-					// surrogate 2nd
-					break;
-				}
-				uint32_t unicode = c;
-				if ((c & 0xfc00) == 0xd800) {
-					// surrogate 1st
-					if (col + n + 1 < cols) {
-						uint16_t t = line[col + n + 1].c;
-						if ((t & 0xfc00) == 0xdc00) {
-							d = t;
-							unicode = (((c & 0x03c0) + 0x0040) << 10) | ((c & 0x003f) << 10) | (d & 0x03ff);
-						} else {
-							break;
-						}
-					} else {
-						break;
-					}
-				}
-				Char ch;
-				int cw = charWidth(unicode);
-				if (cw < 1) break;
-				if (n == 0) {
-					ch.attr = line[col].a;
-				} else if (ch.attr != line[col + n].a) {
-					break;
-				}
-				ch.unicode = unicode;
-				chars.push_back(ch);
-				n += cw;
-			}
-			if (n == 0) {
-				Char ch;
-				ch.unicode = ' ';
-				chars.push_back(ch);
-				n = 1;
-			}
-			col += n;
-		}
-		
-		calcPixelPosX(&chars, painter->fontMetrics());
-
-		int px = 0;
-		for (Char const &ch : chars) {
-			QString str;
-			uint32_t c = ch.unicode;
-			uint32_t d = 0;
-			if (c >= 0x010000 && c < 0x110000) {
-				d = ((c - 0x010000) & 0x03ff) + 0xdc00;
-				c = ((c - 0x010000) >> 10) + 0xd800;
-				str.append(QChar((ushort)c));
-				str.append(QChar((ushort)d));
-			} else {
-				str.append(QChar((ushort)c));
-			}
-			int py = row * lineHeight();
-			int w = painter->fontMetrics().boundingRect(str).width();
-			int h = lineHeight();
-			QColor fgcolor = colorForIndex(ch.attr, true);
-			QColor bgcolor = colorForIndex(ch.attr, false);
-			painter->fillRect(px, py, w, h, bgcolor);
-			painter->setPen(fgcolor);
-			drawText(painter, px, py, str);
-			px = ch.right_x;
-		}
-	}
-}
-
 void TextEditorView::drawFocusFrame(QPainter *pr)
 {
 	misc::drawFrame(pr, 0, 0, width(), height(), QColor(0, 128, 255, 128));
@@ -635,11 +523,11 @@ int TextEditorView::scrollUnit() const
  * @brief 水平スクロール位置のピクセル値を取得
  * @return
  */
-int TextEditorView::scrollPosX() const
+int TextEditorView::scrollpos_x() const
 {
 	int u = scrollUnit();
-	int n = editor_cx->scroll_col_pos;
-	n *= (u == ScrollByCharacter) ? basisCharWidth() : u;
+	int n = editor_cx->scroll_horz_pos;
+	n *= (u == ScrollByCharacter) ? m->fixed_font_metrics.basisCharWidth() : u;
 	return n;
 }
 
@@ -649,12 +537,12 @@ int TextEditorView::scrollPosX() const
  */
 int TextEditorView::scrollTopRow() const
 {
-	return editor_cx->scroll_row_pos;
+	return editor_cx->scroll_vert_pos;
 }
 
-int TextEditorView::view_y_from_row(int row) const
+int TextEditorView::view_y_from_vrow(row_index_t vrow) const
 {
-	return (editor_cx->viewport_org_y + row - scrollTopRow()) * lineHeight();
+	return (editor_cx->viewport_org_y + vrow - scrollTopRow()) * lineHeight();
 }
 
 /**
@@ -667,9 +555,15 @@ TextEditorView::PointInView TextEditorView::pointInView(int row, int col) const
 {
 	PointInView pt;
 	pt.height = lineHeight();
-	pt.y = view_y_from_row(row);
-	pt.x = posX_px(row, col, true, nullptr); // 行と桁位置から水平座標を求める
+	pt.y = view_y_from_vrow(row);
+	pt.x = pos_x_px(row, col); // 行と桁位置から水平座標を求める
 	return pt;
+}
+
+QColor TextEditorView::cursorColor() const
+{
+	bool blink_on = m->cursor_animation_counter >= cursor_animation_cycle / 2;
+	return blink_on ? Qt::white : Qt::transparent;
 }
 
 /**
@@ -679,8 +573,9 @@ TextEditorView::PointInView TextEditorView::pointInView(int row, int col) const
  * @param pr
  * @param color
  */
-void TextEditorView::drawCursor(int row, int col, QPainter *pr, QColor const &color)
+void TextEditorView::drawCursor(int row, int col, QPainter *pr)
 {
+	QColor color = cursorColor();
 	PointInView pt = pointInView(row, col);
 	pr->fillRect(pt.x -1, pt.y, 2, pt.height, color);
 	pr->fillRect(pt.x - 2, pt.y, 4, 2, color);
@@ -694,72 +589,33 @@ void TextEditorView::drawCursor(int row, int col, QPainter *pr, QColor const &co
  */
 void TextEditorView::drawCursor(QPainter *pr)
 {
-	drawCursor(currentRow(), currentCol(), pr, theme()->fg_cursor);
+	drawCursor(current_visual_row(), current_visual_col(), pr);
 }
 
-/**
- * @brief ビューに表示されている範囲のテキストを取得
- * @return
- */
-TextEditorView::FormattedLines TextEditorView::_fetchLines(int row, int count) const
+int TextEditorView::linenumber_area_width() const
 {
-	TextEditorView::FormattedLines ret;
-	ret.row_start = row;
-	ret.row_count = count;
-	for (int i = 0; i < count; i++) { // 見えている行数だけループ
-		if (row >= 0) {
-			TextEditorView::FormattedLine line;
-			posX_px(row, 0, false, line.chars.get());
-			ret.lines[row] = line;
-		}
-		row++;
-	}
-	return ret;
-}
-std::unordered_map<int, TextEditorView::FormattedLine> TextEditorView::fetchLines() const
-{
-	return _fetchLines(0, editor_cx->viewport_height).lines;
+	return editor_cx->viewport_org_x * m->fixed_font_metrics.basisCharWidth();
 }
 
-TextEditorView::FormattedLines *TextEditorView::fetchLines2(bool all)
-{
-	int row_start = 0, row_count = 0;
-	if (all) {
-		row_start = 0;
-		row_count = documentLines();
-	} else if (scrollTopRow() < documentLines()) {
-		row_start = scrollTopRow();
-		auto bottom = row_start + editor_cx->viewport_height;
-		row_count = std::min(bottom, documentLines()) - row_start;
-	}
-	
-	m->formatted_lines = _fetchLines(row_start, row_count);
-	return &m->formatted_lines;
-}
-
-/**
- * @brief 描画
- *
- * 	テキストの描画前に fetchLines() を呼ぶこと
- */
 void TextEditorView::paintEvent(QPaintEvent *)
 {
 	bool has_focus = hasFocus();
 
-	preparePaintScreen();
+	// preparePaintScreen();
 
 	QPainter pr(this);
-	pr.setFont(m->text_font);
+	pr.setFont(textFont());
 	pr.fillRect(0, 0, width(), height(), defaultBackgroundColor());
 	
-	Document const &doc = editor_cx->engine->document;
+	const int linenum_width = linenumber_area_width(); // 行番号表示領域幅（ピクセル単位）
+	const int text_origin_x = linenum_width - scrollpos_x(); // 水平方向原点（ピクセル単位） = 行番号表示領域幅からスクロール量を引く
 	
-	const int linenum_width = editor_cx->viewport_org_x * basisCharWidth(); // 行番号表示領域幅（ピクセル単位）
-	const int text_origin_x = linenum_width - scrollPosX(); // 水平方向原点（ピクセル単位） = 行番号表示領域幅からスクロール量を引く
+	TextEditorContext *cx = editor_cx.get();
 	
 	int vsplit_x = linenum_width - 2;
 	int text_area_w = width() - vsplit_x;
-	int bottom_y = editor_cx->bottom_line_y < 0 ? height() : ((editor_cx->viewport_org_y + editor_cx->bottom_line_y) * lineHeight() + 1);
+	int bottom_y = (cx->line_index_map.total_visual_row_count() - cx->scroll_vert_pos) * lineHeight() + 1;
+	bottom_y = std::min(bottom_y, height());
 	
 	if (bottom_y > 0) {
 		// テキスト領域の背景
@@ -779,202 +635,194 @@ void TextEditorView::paintEvent(QPaintEvent *)
 		QTextOption opt;
 		opt.setWrapMode(QTextOption::NoWrap);
 
-		auto selmin = selection_end;
-		auto selmax = selection_start;
-		if (selmin.enabled == SelectionAnchor::True && selmax.enabled == SelectionAnchor::True) {
-			if (selmin.row > selmax.row || (selmin.row == selmax.row && selmin.col > selmax.col)) {
-				std::swap(selmin, selmax);
+		// 選択範囲
+		SelectionAnchor selection_lower = selection_start();
+		SelectionAnchor selection_upper = selection_end();
+		if (selection_lower && selection_upper) {
+			if (selection_lower > selection_upper) {
+				std::swap(selection_lower, selection_upper);
 			}
 		} else {
-			selmin = {};
-			selmax = {};
+			selection_lower = {};
+			selection_upper = {};
 		}
-
-		std::unordered_map<int, TextEditorView::FormattedLine> const &map = m->formatted_lines.lines;
-
+		
 		for (int pass = 0; pass < 3; pass++) {
 			int view_row = 0; // 描画行番号（ビューポートの左上隅を0とした行位置）
-			int line_row = scrollTopRow(); // 行インデックス（view_row位置に描画すべき論理行インデックス）
-			for (int i = 0; i < (int)editor_cx->viewport_height && line_row < (int)doc.lines.size(); i++) {
-				auto it = map.find(line_row);
-				if (it == map.end()) continue;
-				
-				const QRect rect_line(vsplit_x, view_y_from_row(line_row), text_area_w, lineHeight()); // 行全体の矩形
-				const QRect rect_text(0, view_y_from_row(line_row), width(), lineHeight()); // テキスト領域矩形
-				
-				const bool iscurrentline = has_focus && line_row == editor_cx->current_row; // 現在の行？
-				const int text_origin_y = view_row * line_height; // テキスト原点座標Y（ピクセル単位）
-				
-				
-				TextEditorView::FormattedLine const &line = it->second;
-				std::vector<Char> const &chars = *line.chars;
-				// std::vector<CharAttr> const &atts2 = *line.atts2;
-				
-				// 背景の描画
-				auto DrawBackground = [&](){
+			row_index_t vrow = scrollTopRow(); // 行インデックス（view_row位置に描画すべき論理行インデックス）
+			for (int i = 0; i < (int)editor_cx->viewport_height && vrow < nlines(); i++) {
+				Document::LineProperty const *formatted_line = queryFormattedLine(vrow);
+				if (formatted_line) {
+					const QRect rect_line(vsplit_x, view_y_from_vrow(vrow), text_area_w, lineHeight()); // 行全体の矩形
+					const QRect rect_text(0, view_y_from_vrow(vrow), width(), lineHeight()); // テキスト領域矩形
 					
-					{ // diff差分背景
-						Document::LineType type = doc.lines[line_row].type;
-						auto FillBG = [&](QColor color){
-							pr.fillRect(rect_text, color);
-						};
-						switch (type) {
-						case Document::LineType::Add:     FillBG(theme()->bg_diff_line_add); break; // 追加された行の背景
-						case Document::LineType::Del:     FillBG(theme()->bg_diff_line_del); break; // 削除された行の背景
-						case Document::LineType::Unknown: FillBG(theme()->bg_diff_unknown);  break;
-						}
-					}
-					if (0) {
-						if (line_row >= 0 && line_row < (int)doc.lines.size()) {
-							int x0 = 0;
-							for (auto const &chr : chars) {
-								int x1 = chr.right_x;
-								int x = text_origin_x + x0;
-								int w = text_origin_x + x1 - x;
-								(void)x;
-								(void)w;
-								x0 = x1;
+					const bool iscurrentline = has_focus && vrow == editor_cx->current_visual_row; // 現在の行？
+					const int text_origin_y = view_row * line_height; // テキスト原点座標Y（ピクセル単位）
+					
+					std::vector<Character> const &chars = formatted_line->chars;
+					std::vector<CharFlags> const &flags = formatted_line->flags;
+					
+					// 背景の描画
+					auto DrawBackground = [&](){
+						{ // diff差分背景
+							Document::LineType type = visual_line(vrow)->sp->meta.type;
+							auto FillBG = [&](QColor color){
+								pr.fillRect(rect_text, color);
+							};
+							switch (type) {
+							case Document::LineType::Add:     FillBG(theme()->bg_diff_line_add); break; // 追加された行の背景
+							case Document::LineType::Del:     FillBG(theme()->bg_diff_line_del); break; // 削除された行の背景
+							case Document::LineType::Invalid: FillBG(theme()->bg_diff_unknown);  break;
 							}
 						}
-					}
-				};
-
-				// 現在行の背景
-				auto DrawCurrentLineBackground = [&](){
-					pr.fillRect(rect_line, QColor(0, 0, 0, 32)); // 薄い黒
-				};
-
-				// 現在行の前景
-				auto DrawCurrentLineForeground = [&](){
-					int N = 1;
-					int x = rect_line.x();
-					int y = rect_line.y() + rect_line.height() - N;
-					int w = rect_line.width();
-					int h = N;
-					pr.fillRect(x, y, w, h, theme()->fg_cursor); // アンダーライン
-				};
-
-				// 選択領域の網掛け描画
-				auto DrawSelectionArea = [&](){
-					int left_x = 0;
-					int right_x = 0;
-					if (!chars.empty()) {
-						right_x = chars.back().right_x;
-					}
-					if (selmin.row > line_row) {
-						right_x = 0;
-					} else if (selmax.row < line_row) {
-						right_x = 0;
-					} else {
-						if (selmin.row == line_row) {
-							left_x = (selmin.col > 0 && selmin.col - 1 < (int)chars.size()) ? chars[selmin.col - 1].right_x : 0;
+					};
+	
+					// 現在行の背景
+					auto DrawCurrentLineBackground = [&](){
+						pr.fillRect(rect_line, QColor(0, 0, 0));
+					};
+	
+					// 現在行の前景
+					auto DrawCurrentLineForeground = [&](){
+						int N = 1;
+						int x = rect_line.x();
+						int y = rect_line.y() + rect_line.height() - N;
+						int w = rect_line.width();
+						int h = N;
+						pr.fillRect(x, y, w, h, theme()->fg_cursor); // アンダーライン
+					};
+	
+					// 選択範囲
+					auto DrawSelectionArea = [&](){
+						int left_x = 0;
+						int right_x = 0;
+						if (!chars.empty()) {
+							right_x = chars.back().right_x;
 						}
-						if (selmax.row == line_row) {
-							right_x = (selmax.col > 0 && selmax.col - 1 < (int)chars.size()) ? chars[selmax.col - 1].right_x : 0;
-						}
-					}
-					if (left_x < right_x) {
-						int x = text_origin_x + left_x;
-						int y = text_origin_y;
-						int w = right_x - left_x;
-						int h = line_height;
-						pr.fillRect(x, y, w, h, QBrush(QColor(64, 192, 192), Qt::Dense5Pattern));
-					}
-				};
-
-				// テキスト描画
-				auto DrawText = [&](){
-					int left_x = 0;
-					int right_x = 0;
-					std::size_t j = 0;
-					pr.save();
-					pr.setClipRect(linenum_width, 0, width() - linenum_width, height());
-					while (j < chars.size()) {
-						int n = 0;
-						QString text;
-						while (j + n < chars.size()) {
-							if (n == 0) {
-								left_x = chars[j].left_x;
-								right_x = chars[j].right_x;
-							} else { // 2文字目以降
-								if (right_x != chars[j + n].left_x) { // x座標がつながっていないなら抜ける
-									break;
-								}
-								if (chars[j].attr.flags != chars[j + n].attr.flags) { // 属性が異なっていたら抜ける
-									break;
-								}
-							}
-							auto u = chars[j + n].unicode;
-							if (u == '\t') {
-								CharAttr const &attr = chars[j].attr;
-								if ((attr.flags & CharAttr::Underline1) || (attr.flags & CharAttr::Underline2)) {
-									// 文字差分フラグがあるとき背景を描く
-									int x = text_origin_x + left_x;
-									int w = right_x - left_x;
-									int h = line_height;
-									auto DrawDiffMarker = [&](QColor const &color){
-										const int N = 6;
-										pr.fillRect(x, text_origin_y + h - N, w, N, color);
-									};
-									if (attr.flags & CharAttr::Underline1) {
-										DrawDiffMarker(theme()->bg_diff_char_del);
-									}
-									if (attr.flags & CharAttr::Underline2) {
-										DrawDiffMarker(theme()->bg_diff_char_add);
+						LineIndexMap::VisualPosition vlower = cx->line_index_map.logical_to_visual(selection_lower.lrow, selection_lower.lcol);
+						LineIndexMap::VisualPosition vupper = cx->line_index_map.logical_to_visual(selection_upper.lrow, selection_upper.lcol);
+						if (vlower.vrow > vrow) {
+							right_x = 0;
+						} else if (vupper.vrow < vrow) {
+							right_x = 0;
+						} else {
+							auto Do = [&](int xpos, LineIndexMap::VisualPosition vpos, row_index_t vrow){
+								if (vpos.vrow == vrow) {
+									if (vpos.vcol > 0 && vpos.vcol - 1 < chars.size()) {
+										xpos = chars[vpos.vcol - 1].right_x;
+									} else {
+										xpos = 0;
 									}
 								}
-								break; // タブなら抜ける
-							}
-							text = appendUnicode(text, u); // 文字を追加
-							right_x = chars[j + n].right_x;
-							n++;
+								return xpos;
+							};
+							left_x = Do(left_x, vlower, vrow);
+							right_x = Do(right_x, vupper, vrow);
 						}
-						if (!text.isEmpty() && left_x < right_x) {
-							CharAttr const &attr = chars[j].attr;
-							pr.setPen(defaultForegroundColor()); // 文字色
+						if (left_x < right_x) {
 							int x = text_origin_x + left_x;
+							int y = text_origin_y;
 							int w = right_x - left_x;
 							int h = line_height;
-							auto DrawDiffMarker = [&](QColor const &color){
-								const int N = 6;
-								pr.fillRect(x, text_origin_y + h - N, w, N, color);
-							};
-							if (attr.flags & CharAttr::Underline1) {
-								DrawDiffMarker(theme()->bg_diff_char_del); // 削除された文字の下線
-							}
-							if (attr.flags & CharAttr::Underline2) {
-								DrawDiffMarker(theme()->bg_diff_char_add); // 追加された文字の下線
-							}
-							pr.drawText(QRect(x, text_origin_y, w, h), text, opt); // テキスト描画
+							pr.fillRect(x, y, w, h, QBrush(QColor(64, 128, 128)));
 						}
-						if (n == 0) {
-							n = 1;
+					};
+	
+					// テキスト描画
+					auto DrawText = [&](){
+						int left_x = 0;
+						int right_x = 0;
+						std::size_t j = 0;
+						pr.save();
+						pr.setFont(textFont());
+						pr.setClipRect(linenum_width, 0, width() - linenum_width, height());
+						while (j < chars.size()) {
+							int n = 0;
+							QString text;
+							while (j + n < chars.size()) {
+								if (n == 0) {
+									left_x = chars[j].left_x;
+									right_x = chars[j].right_x;
+								} else { // 2文字目以降
+									if (right_x != chars[j + n].left_x) break; // x座標がつながっていないなら抜ける
+									if (chars[j].attr != chars[j + n].attr) break; // 属性が異なっていたら抜ける
+									if (flags[j].all != flags[j + n].all) break; // フラグが異なっていたら抜ける
+								}
+								auto u = chars[j + n].unicode;
+								if (u == '\t') {
+									auto IsDiffMarker = [&](int value) {
+										return flags[j].diff_marker == value;
+									};
+									if (IsDiffMarker(CharFlags::Del) || IsDiffMarker(CharFlags::Add)) {
+										// 文字差分フラグがあるとき背景を描く
+										int x = text_origin_x + left_x;
+										int w = right_x - left_x;
+										int h = line_height;
+										auto DrawDiffMarker = [&](QColor const &color){
+											const int N = 6;
+											pr.fillRect(x, text_origin_y + h - N, w, N, color);
+										};
+										if (IsDiffMarker(CharFlags::Del)) {
+											DrawDiffMarker(theme()->bg_diff_char_del);
+										}
+										if (IsDiffMarker(CharFlags::Add)) {
+											DrawDiffMarker(theme()->bg_diff_char_add);
+										}
+									}
+									break; // タブなら抜ける
+								}
+								text = appendUnicode(text, u); // 文字を追加
+								right_x = chars[j + n].right_x;
+								n++;
+							}
+							if (!text.isEmpty() && left_x < right_x) {
+								auto IsDiffMarker = [&](int value) {
+									return flags[j].diff_marker == value;
+								};
+								pr.setPen(defaultForegroundColor()); // 文字色
+								int x = text_origin_x + left_x;
+								int w = right_x - left_x;
+								int h = line_height;
+								auto DrawDiffMarker = [&](QColor const &color){
+									const int N = 6;
+									pr.fillRect(x, text_origin_y + h - N, w, N, color);
+								};
+								if (IsDiffMarker(CharFlags::Del)) {
+									DrawDiffMarker(theme()->bg_diff_char_del); // 削除された文字の下線
+								}
+								if (IsDiffMarker(CharFlags::Add)) {
+									DrawDiffMarker(theme()->bg_diff_char_add); // 追加された文字の下線
+								}
+								pr.drawText(QRect(x, text_origin_y, w, h), text, opt); // テキスト描画
+							}
+							if (n == 0) {
+								n = 1;
+							}
+							j += n;
 						}
-						j += n;
+						pr.restore();
+					};
+	
+					switch (pass) {
+					case 0:
+						DrawBackground();
+						if (vrow_to_lrow(vrow) == current_logical_row()) {
+							DrawCurrentLineBackground();
+						}
+						break;
+					case 1:
+						DrawSelectionArea();
+						break;
+					case 2:
+						DrawText();
+						if (iscurrentline) {
+							DrawCurrentLineForeground();
+						}
+						break;
 					}
-					pr.restore();
-				};
-
-				switch (pass) {
-				case 0:
-					DrawBackground();
-					if (iscurrentline) {
-						DrawCurrentLineBackground();
-					}
-					break;
-				case 1:
-					DrawSelectionArea();
-					break;
-				case 2:
-					DrawText();
-					if (iscurrentline) {
-						DrawCurrentLineForeground();
-					}
-					break;
 				}
-
 				view_row++;
-				line_row++;
+				vrow++;
 			}
 		}
 	}
@@ -986,29 +834,25 @@ void TextEditorView::paintEvent(QPaintEvent *)
 
 	// 行番号描画
 	{
-		int bottom = editor_cx->bottom_line_y;
+		const int bottom = -1;
 
-		// int view_y = editor_cx->viewport_org_y;
-		// int view_h = editor_cx->viewport_height + 1;
-		// view_y *= lineHeight();
-		// view_h *= lineHeight();
-
-		paintLineNumbers([&](int y, QString const &text, Document::Line const *line){
+		paintLineNumbers([&](int y, QString const &text, Document::Line const *vline){
 			if (bottom >= 0 && y > bottom) return;
 
 			pr.setBackground(Qt::transparent);
 			pr.setPen(theme()->fg_line_number);
+			pr.setFont(fixedFont());
 			drawText(&pr, 0, y * lineHeight(), text);
-			if (line) {
+			if (vline) {
 				char const *mark = nullptr;
-				if (line->type == Document::LineType::Add) {
+				if (vline->sp->meta.type == Document::LineType::Add) {
 					mark = "+";
-				} else if (line->type == Document::LineType::Del) {
+				} else if (vline->sp->meta.type == Document::LineType::Del) {
 					mark = "-";
 				}
 				if (mark) {
 					pr.setPen(theme()->fg_default);
-					drawText(&pr, linenum_width - basisCharWidth() * 3 / 2, y * lineHeight(), mark);
+					drawText(&pr, linenum_width - m->fixed_font_metrics.basisCharWidth() * 3 / 2, y * lineHeight(), mark);
 				}
 			}
 		});
@@ -1040,21 +884,17 @@ void TextEditorView::moveCursorByMouse()
 	RowCol pos = mapFromPixel(mousepos); // ローカルマウス座標からカーソル座標へ変換
 
 	// row
-	if (!isSingleLineMode()) {
-		if (pos.row < 0) {
-			pos.row = 0;
-		} else {
-			int maxrow = cx()->engine->document.lines.size();
-			maxrow = maxrow > 0 ? (maxrow - 1) : 0;
-			if (pos.row > maxrow) {
-				pos.row = maxrow;
-			}
-		}
+	if (pos.row < 0) {
+		pos.row = 0;
+	} else {
+		row_index_t max_vrow = nlines();
+		max_vrow = max_vrow > 0 ? (max_vrow - 1) : 0;
+		pos.row = std::min(pos.row, max_vrow);
 	}
 	setCursorPosByMouse(pos, mousepos);
 
 	clearParsedLine();
-	updateVisibility(false, true, false);
+	updateVisibility({false, true, false});
 }
 
 void TextEditorView::mousePressEvent(QMouseEvent *event)
@@ -1066,20 +906,20 @@ void TextEditorView::mousePressEvent(QMouseEvent *event)
 	bool shift = (event->modifiers() & Qt::ShiftModifier);
 	if (shift) {
 		if (hasSelection()) {
-			setSelectionAnchor(SelectionAnchor::True, false, false);
+			setSelectionAnchor(true, false, false);
 		} else {
-			setSelectionAnchor(SelectionAnchor::True, true, false);
+			setSelectionAnchor(true, true, false);
 		}
 	}
 
 	moveCursorByMouse();
 
 	if (shift) {
-		setSelectionAnchor(SelectionAnchor::True, false, false);
+		setSelectionAnchor(true, false, false);
 	} else {
-		setSelectionAnchor(SelectionAnchor::True, true, false);
+		setSelectionAnchor(true, true, false);
 	}
-	selection_start = selection_end;
+	sync_selection();
 
 	if (isTerminalMode()) {
 		clearParsedLine();
@@ -1089,15 +929,11 @@ void TextEditorView::mousePressEvent(QMouseEvent *event)
 
 void TextEditorView::mouseReleaseEvent(QMouseEvent * /*event*/)
 {
-	if (selection_end.enabled == SelectionAnchor::False || selection_start.enabled == SelectionAnchor::False) {
-		// thru
-	} else if (selection_end.row == selection_start.row && selection_end.col == selection_start.col) {
-		// thru
-	} else {
-		return;
+	// マウスボタンを離したときに選択範囲が空だったら選択を解除する
+	if (!selection_end() || !selection_start() || selection_start() == selection_end()) {
+		clear_selection();
+		update();
 	}
-	deselect();
-	update();
 }
 
 void TextEditorView::mouseMoveEvent(QMouseEvent * /*event*/)
@@ -1106,7 +942,7 @@ void TextEditorView::mouseMoveEvent(QMouseEvent * /*event*/)
 
 	moveCursorByMouse();
 
-	setSelectionAnchor(SelectionAnchor::True, true, false);
+	setSelectionAnchor(true, true, false);
 
 	if (isTerminalMode()) {
 		clearParsedLine();
@@ -1164,8 +1000,15 @@ void TextEditorView::layoutEditor()
 {
 	if (isAutoLayout()) {
 		int h = height() / lineHeight() + 1;
-		int w = width() / basisCharWidth();
+		int w = width() / m->fixed_font_metrics.basisCharWidth();
 		setScreenSize(w, h, false);
+		
+		int content_width = width() - linenumber_area_width();
+		setContentWidth(content_width);
+		
+		update_visual_lines_all();
+		
+		updateVisibility({true, false, true});
 	}
 	AbstractTextEditorApplication::layoutEditor();
 }
@@ -1175,7 +1018,7 @@ void TextEditorView::resizeEvent(QResizeEvent * /*event*/)
 	if (isAutoLayout()) {
 		layoutEditor();
 	}
-	internalUpdateScrollBar();
+	updateScrollBarRange();
 }
 
 void TextEditorView::wheelEvent(QWheelEvent *event)
@@ -1209,24 +1052,37 @@ void TextEditorView::timerEvent(QTimerEvent *)
 			emit idle();
 		}
 	}
+
+	if (0) { // カーソル点滅
+		bool f = m->cursor_animation_counter >= cursor_animation_cycle / 2;
+		if (m->cursor_animation_counter > 0) {
+			m->cursor_animation_counter--;
+		} else {
+			m->cursor_animation_counter = cursor_animation_cycle;
+		}
+		bool g = m->cursor_animation_counter >= cursor_animation_cycle / 2;
+		if (f != g) {
+			update();
+		}
+	}
 }
 
 void TextEditorView::contextMenuEvent(QContextMenuEvent *event)
 {
 	QMenu menu;
 	QAction *a_cut = nullptr;
-	if (!isReadOnly() && !isTerminalMode()) a_cut = menu.addAction("Cut");
+	if (!is_read_only() && !isTerminalMode()) a_cut = menu.addAction("Cut");
 	QAction *a_copy = menu.addAction("Copy");
 	QAction *a_paste = nullptr;
-	if (!isReadOnly() && !isTerminalMode()) a_paste = menu.addAction("Paste");
+	if (!is_read_only() && !isTerminalMode()) a_paste = menu.addAction("Paste");
 	QAction *a = menu.exec(misc::contextMenuPos(this, event));
 	if (a) {
 		if (a == a_cut) {
-			editCut();
+			edit_cut();
 			return;
 		}
 		if (a == a_copy) {
-			editCopy();
+			edit_copy();
 			return;
 		}
 		if (a == a_paste) {
@@ -1236,6 +1092,12 @@ void TextEditorView::contextMenuEvent(QContextMenuEvent *event)
 	}
 }
 
-
+void TextEditorView::debug()
+{
+	std::vector<Character> buf;
+	edit_cut();
+	QString text = qApp->clipboard()->text();
+	qDebug() << text;
+}
 
 

@@ -5,11 +5,13 @@
 #include <QClipboard>
 #include <QDebug>
 #include <QFile>
-#include <memory>
+#include <atomic>
 #include <common/misc.h>
+#include <memory>
+#include <thread>
 
-using WriteMode = AbstractCharacterBasedApplication::WriteMode;
-using FormattedLine = AbstractCharacterBasedApplication::FormattedLine;
+using WriteMode = AbstractTextEditorApplication::WriteMode;
+using FormattedLine = AbstractTextEditorApplication::FormattedLine;
 
 class EsccapeSequence {
 private:
@@ -65,39 +67,22 @@ public:
 	}
 };
 
-struct AbstractCharacterBasedApplication::Private {
+struct AbstractTextEditorApplication::Private {
 	bool is_changed = false;
-	bool is_quit_enabled = false;
-	bool is_open_enabled = false;
-	bool is_save_enabled = false;
-	bool is_toggle_selection_anchor_enabled = true;
 	bool is_read_only = false;
 	bool is_terminal_mode = false;
 	bool is_cursor_visible = true;
 	State state = State::Normal;
-	int header_line = 0;
-	int footer_line = 0;
 	int screen_width = 80;
 	int screen_height = 24;
+	int content_width_px = -1;
 	bool auto_layout = false;
 	QString recently_used_path;
 	bool show_line_number = true;
-	int left_margin = AbstractCharacterBasedApplication::LEFT_MARGIN;
-	QString dialog_title;
-	QString dialog_value;
-	std::vector<Character> screen;
-	std::vector<uint8_t> line_flags;
-	int parsed_row_index = -1; //@
-	int parsed_col_index = -1; //@
-	bool parsed_for_edit = false;
-	Document::Line *current_line_data = nullptr;
-	
-	std::vector<AbstractCharacterBasedApplication::Char> parsed_current_line_chars;
-	
-	bool dialog_mode = false;
-	DialogHandler dialog_handler;
+	int left_margin = AbstractTextEditorApplication::LEFT_MARGIN;
+	std::vector<AbstractTextEditorApplication::Char16> screen;
+
 	bool is_painting_suppressed = false;
-	int valid_line_index = -1;
 	int line_margin = 3;
 	WriteMode write_mode = WriteMode::Insert;
 	Qt::KeyboardModifiers keyboard_modifiers = Qt::KeyboardModifier::NoModifier;
@@ -106,160 +91,817 @@ struct AbstractCharacterBasedApplication::Private {
 	EsccapeSequence escape_sequence;
 
 	bool cursor_moved_by_mouse = false;
+
+	AbstractTextEditorApplication::WrappingMode wrapping_mode = AbstractTextEditorApplication::WrappingMode::NoWrap;
+
+	struct Selection {
+		SelectionAnchor start;
+		SelectionAnchor end;
+	};
+	Selection selection;
+
+	struct Cache {
+		std::optional<std::vector<Character>> parsed_current_line_chars;
+	};
+	mutable Cache cache;
 };
 
-AbstractCharacterBasedApplication::AbstractCharacterBasedApplication()
+AbstractTextEditorApplication::AbstractTextEditorApplication()
 	: m(new Private)
 {
 }
 
-AbstractCharacterBasedApplication::~AbstractCharacterBasedApplication()
+AbstractTextEditorApplication::~AbstractTextEditorApplication()
 {
 	delete m;
 }
 
-void AbstractCharacterBasedApplication::setModifierKeys(Qt::KeyboardModifiers const &keymod)
+void AbstractTextEditorApplication::setModifierKeys(Qt::KeyboardModifiers const &keymod)
 {
 	m->keyboard_modifiers = keymod;
 	m->ctrl_modifier = m->keyboard_modifiers & Qt::ControlModifier;
 	m->shift_modifier = m->keyboard_modifiers & Qt::ShiftModifier;
 }
 
-void AbstractCharacterBasedApplication::clearShiftModifier()
+void AbstractTextEditorApplication::clearShiftModifier()
 {
 	m->shift_modifier = false;
 }
 
-bool AbstractCharacterBasedApplication::isControlModifierPressed() const
+bool AbstractTextEditorApplication::isControlModifierPressed() const
 {
 	return m->ctrl_modifier;
 }
 
-bool AbstractCharacterBasedApplication::isShiftModifierPressed() const
+bool AbstractTextEditorApplication::isShiftModifierPressed() const
 {
 	return m->shift_modifier;
 }
 
-void AbstractCharacterBasedApplication::setAutoLayout(bool f)
+void AbstractTextEditorApplication::set_auto_layout(bool f)
 {
 	m->auto_layout = f;
 	layoutEditor();
 }
 
-void AbstractCharacterBasedApplication::showHeader(bool f)
-{
-	m->header_line = f ? 1 : 0;
-	layoutEditor();
-}
-
-void AbstractCharacterBasedApplication::showFooter(bool f)
-{
-	m->footer_line = f ? 1 : 0;
-	layoutEditor();
-}
-
-void AbstractCharacterBasedApplication::showLineNumber(bool show, int left_margin)
+void AbstractTextEditorApplication::showLineNumber(bool show, int left_margin)
 {
 	m->show_line_number = show;
 	m->left_margin = left_margin;
 }
 
-void AbstractCharacterBasedApplication::setCursorVisible(bool show)
+void AbstractTextEditorApplication::setCursorVisible(bool show)
 {
 	m->is_cursor_visible = show;
 }
 
-bool AbstractCharacterBasedApplication::isCursorVisible()
+bool AbstractTextEditorApplication::isCursorVisible()
 {
 	return m->is_cursor_visible;
 }
 
-bool AbstractCharacterBasedApplication::isChanged() const
+bool AbstractTextEditorApplication::isChanged() const
 {
 	return m->is_changed;
 }
 
-void AbstractCharacterBasedApplication::setChanged(bool f)
+void AbstractTextEditorApplication::setChanged(bool f)
 {
 	m->is_changed = f;
 }
 
-int AbstractCharacterBasedApplication::leftMargin_() const
+int AbstractTextEditorApplication::leftMargin_() const
 {
 	return m->left_margin;
 }
 
-void AbstractCharacterBasedApplication::setRecentlyUsedPath(QString const &path)
+void AbstractTextEditorApplication::setRecentlyUsedPath(QString const &path)
 {
 	m->recently_used_path = path;
 }
 
-QString AbstractCharacterBasedApplication::recentlyUsedPath()
+QString AbstractTextEditorApplication::recentlyUsedPath()
 {
 	return m->recently_used_path;
 }
 
-std::vector<AbstractCharacterBasedApplication::Character> *AbstractCharacterBasedApplication::char_screen()
-{
-	return &m->screen;
-}
-
-int AbstractCharacterBasedApplication::char_screen_w() const
-{
-	return m->screen_width;
-}
-
-int AbstractCharacterBasedApplication::char_screen_h() const
-{
-	return m->screen_height;
-}
-
-const std::vector<AbstractCharacterBasedApplication::Character> *AbstractCharacterBasedApplication::char_screen() const
-{
-	return &m->screen;
-}
-
-std::vector<uint8_t> *AbstractCharacterBasedApplication::line_flags()
-{
-	return &m->line_flags;
-}
-
-void AbstractCharacterBasedApplication::makeBuffer()
+void AbstractTextEditorApplication::makeBuffer()
 {
 	int w = screenWidth();
 	int h = screenHeight();
 	int size = w * h;
 	m->screen.resize(size);
-	std::fill(m->screen.begin(), m->screen.end(), Character());
-	m->line_flags.resize(h);
+	std::fill(m->screen.begin(), m->screen.end(), Char16());
 }
 
-void AbstractCharacterBasedApplication::layoutEditor()
+int AbstractTextEditorApplication::logicalLines() const
+{
+	return document()->logical_lines.size();
+}
+
+/**
+ * @brief 物理行数を返す
+ * @return
+ */
+row_index_t AbstractTextEditorApplication::nlines() const
+{
+	if (m->wrapping_mode == WrappingMode::NoWrap) {
+		return logicalLines();
+	} else {
+		if (cx()->cache.nlines == std::nullopt) { // キャッシュが無効化されている場合は再計算する
+			cx()->cache.nlines = cx()->line_index_map.total_visual_row_count();
+		}
+		return *cx()->cache.nlines;
+	}
+}
+
+/**
+ * @brief 物理行数キャッシュを無効化する
+ */
+void AbstractTextEditorApplication::invalidate_nlines_cache()
+{
+	cx()->cache.nlines = std::nullopt;
+}
+
+void AbstractTextEditorApplication::_update_logical_pos_cache() const
+{
+	TextEditorContext::Cache *cache = &cx()->cache; // mutable
+
+	row_index_t vrow = current_visual_row();
+	col_index_t vcol = current_visual_col();
+	
+	auto logical = cx()->line_index_map.visual_to_logical(vrow);
+	cache->current_logical_row = logical.lrow;
+	cache->current_logical_col = logical.lcol + vcol;
+}
+
+row_index_t AbstractTextEditorApplication::current_logical_row() const
+{
+	_update_logical_pos_cache();
+	return cx()->cache.current_logical_row;
+}
+
+col_index_t AbstractTextEditorApplication::current_logical_col() const
+{
+	_update_logical_pos_cache();
+	return cx()->cache.current_logical_col;
+}
+
+void AbstractTextEditorApplication::set_current_visual_row(row_index_t row)
+{
+	cx()->current_visual_row = row;
+}
+
+void AbstractTextEditorApplication::set_current_visual_col(col_index_t col)
+{
+	cx()->current_visual_col = col;
+}
+
+row_index_t AbstractTextEditorApplication::current_visual_row() const
+{
+	return cx()->current_visual_row;
+}
+
+int AbstractTextEditorApplication::current_visual_col() const
+{
+	return cx()->current_visual_col;
+}
+
+int AbstractTextEditorApplication::current_visual_pixel_x() const
+{
+	return cx()->current_visual_pixel_x;
+}
+
+int AbstractTextEditorApplication::scroll_vert_pos() const
+{
+	return cx()->scroll_vert_pos;
+}
+
+int AbstractTextEditorApplication::scroll_horz_pos() const
+{
+	return cx()->scroll_horz_pos;
+}
+
+void AbstractTextEditorApplication::set_scroll_vert_pos(int row)
+{
+	cx()->scroll_vert_pos = row;
+}
+
+void AbstractTextEditorApplication::set_scroll_horz_pos(int col)
+{
+	cx()->scroll_horz_pos = col;
+}
+
+int AbstractTextEditorApplication::cursor_col() const
+{
+	return current_visual_col() - scroll_horz_pos();
+}
+
+int AbstractTextEditorApplication::cursor_row() const
+{
+	return current_visual_row() - scroll_vert_pos();
+}
+
+Document::Line const *AbstractTextEditorApplication::currentLine() const
+{
+	row_index_t vrow = current_visual_row();
+	return (vrow >= 0 && vrow < nlines()) ? visual_line(vrow) : nullptr;
+}
+
+//
+
+const SelectionAnchor &AbstractTextEditorApplication::selection_start() const
+{
+	return m->selection.start;
+}
+
+const SelectionAnchor &AbstractTextEditorApplication::selection_end() const
+{
+	return m->selection.end;
+}
+
+void AbstractTextEditorApplication::set_selection_start(const SelectionAnchor &anchor)
+{
+	m->selection.start = anchor;
+}
+
+void AbstractTextEditorApplication::set_selection_end(const SelectionAnchor &anchor)
+{
+	m->selection.end = anchor;
+}
+
+void AbstractTextEditorApplication::set_selection_start_enabled(bool enabled)
+{
+	m->selection.start.enabled = enabled;
+}
+
+void AbstractTextEditorApplication::set_selection_end_enabled(bool enabled)
+{
+	m->selection.end.enabled = enabled;
+}
+
+void AbstractTextEditorApplication::sync_selection()
+{
+	m->selection.start = m->selection.end;
+}
+
+void AbstractTextEditorApplication::clear_selection()
+{
+	m->selection.start = {};
+	m->selection.end = {};
+}
+
+
+/**
+ * @brief 桁位置を求める（全文字のX座標を計算する）
+ * @param cx
+ * @param line
+ * @return
+ */
+std::vector<Character> AbstractTextEditorApplication::_parseLine(TextEditorContext const *cx, Document::Line const *line, std::mutex *mutex) const
+{
+	if (!line) return {};
+	
+	std::vector<Character> ret;
+	
+	std::string_view text = line->text();
+	
+	int col = 0;
+	int len = text.size();
+	if (len > 0) {
+		ret.reserve(len);
+		char const *src = text.data();
+		utf8 u8(src, len);
+		while (1) {
+			int n = 0;
+			char32_t c = u8.next();
+			if (c == 0) {
+				n = 1;
+			} else {
+				if (c == '\t') {
+					int z = nextTabStop(cx, col);
+					n = z - col;
+				} else {
+					n = charWidth(c);
+				}
+			}
+			if (c == 0) break;
+			col += n;
+			ret.emplace_back(c);
+		}
+	}
+	
+	if (mutex) mutex->lock();
+	calc_pos_x(&ret); // 内部でキャッシュを更新するのでmutexで保護する必要がある
+	if (mutex) mutex->unlock();
+
+	return ret;
+}
+
+/**
+ * @brief 行を解析してCharacterの配列を返す（全文字のX座標を計算する）
+ * @param line
+ * @param mutex
+ * @return
+ */
+std::vector<Character> AbstractTextEditorApplication::parseLine(Document::Line const *line, std::mutex *mutex) const
+{
+	return _parseLine(cx(), line, mutex);
+}
+
+/**
+ * @brief 行を解析してCharacterの配列を返す（全文字のX座標を計算する）
+ * @param vrow
+ * @return
+ */
+std::vector<Character> AbstractTextEditorApplication::parseLine(row_index_t vrow) const
+{
+	if (vrow >= 0 && vrow < nlines()) {
+		return parseLine(visual_line(vrow));
+	}
+	return {};
+}
+
+void AbstractTextEditorApplication::clearParsedLine()
+{
+	m->cache.parsed_current_line_chars = std::nullopt;
+}
+
+std::vector<Character> const &AbstractTextEditorApplication::parseCurrentLine() const
+{
+	if (!m->cache.parsed_current_line_chars) {
+		m->cache.parsed_current_line_chars = parseLine(current_visual_row());
+	}
+	return *m->cache.parsed_current_line_chars;
+}
+
+void AbstractTextEditorApplication::setWrappingMode(WrappingMode mode)
+{
+	m->wrapping_mode = mode;
+}
+
+AbstractTextEditorApplication::WrappingMode AbstractTextEditorApplication::wrappingMode() const
+{
+	return m->wrapping_mode;
+}
+
+std::vector<Document::Line> AbstractTextEditorApplication::wrap_line(Document::Line line, std::mutex *mutex) const
+{
+	if (wrappingMode() == WrappingMode::NoWrap) return {};
+	
+	const int width_px = m->content_width_px;
+	
+	std::vector<std::vector<Character>> chrs_out;
+	std::vector<Character> chrs_in = parseLine(&line, mutex);
+	
+	if (chrs_in.empty()) {
+		chrs_out.push_back({});
+	} else {
+		int left_px = 0;
+		int right_px = 0;
+
+		auto Out = [&](size_t i, size_t n){
+			std::vector<Character> chrs;
+			for (size_t j = 0; j < n; j++) {
+				Character c = chrs_in[i + j];
+				c.left_x = right_px - left_px;
+				chrs.push_back(c);
+			}
+			chrs_out.push_back(chrs);
+		};
+		
+		auto IsBreakable = [](char32_t b, char32_t c){ // 分割可能テスト
+			if (b < 0x80 && c < 0x80) {
+				if (isspace(b) && isspace(c)) return false; // 連続する空白では折り返し不可
+				if (isupper(b) && isalnum(c)) return false; // 大文字と英数字の間は折り返し不可
+				if (isalnum(b)) {
+					if (isupper(c)) return true;  // 小文字と大文字の間は折り返し可
+					if (isalnum(c)) return false; // 英数字の間は折り返し不可
+					if (isspace(c)) return false; // 英数字に後続する空白では折り返さない
+				}
+			}
+			return true;
+		};
+
+		size_t last = 0;
+		size_t curr = 0;
+		const size_t N = chrs_in.size();
+		char32_t b = '\n'; // before
+		char32_t c = '\n'; // current
+		
+		WrappingMode wrapping_mode;
+		auto Reset = [&](){
+			wrapping_mode = WrappingMode::CharWrap; // 初期状態は文字単位での折り返し
+			c = '\n';
+		};
+		Reset();
+		
+		while (curr < N) {
+			Character const *ch = &chrs_in[curr];
+			right_px = ch->right_x;
+			b = c;
+			c = ch->unicode;
+			if (c == '\r') {
+				c = '\n';
+			}
+			size_t next = curr + 1;
+			if (wrapping_mode == WrappingMode::CharWrap) {
+				// 分割可能な位置に来たら、折り返しモードを単語単位に切り替えます。
+				// （最初の分割可能位置までは、常に文字単位での折り返し）
+				if (last < curr && IsBreakable(b, c)) {
+					wrapping_mode = wrappingMode();
+					// WordWrapの場合、そのまま下のifに入る
+				}
+			}
+			if (wrapping_mode == WrappingMode::WordWrap) {
+				// 次の分割可能位置を探す
+				char32_t d = c;
+				while (next <= N) { // next == N means end of line
+					b = d;
+					d = -1;
+					if (next < N) { // next < N means not end of line
+						d = chrs_in[next].unicode; // next character
+						if (d == '\r') {
+							d = '\n';
+						}
+					}
+					if (IsBreakable(b, d)) break;
+					right_px = chrs_in[next].right_x;
+					next++;
+				}
+			}
+
+			// 幅が制限を超えた場合、lastからcurr（またはnext）までの行を出力し、lastとcurrを適切に更新します。
+			if (right_px - left_px > width_px) {
+				if (last < curr) {
+					Out(last, curr - last);
+					left_px = ch->left_x;
+					last = curr;
+				} else { // 現在の文字自体が幅の制限を超えている場合、それを出力し、次の文字に移動します。
+					Out(last, next - last);
+					if (c == '\n') break;
+					last = curr = next;
+				}
+				// 折り返しモードを文字単位に戻します。
+				Reset();
+			} else { // それ以外の場合、currをnextに移動します。
+				if (next == N || c == '\n') { // 次の文字が行末の場合、残りの文字を出力します。
+					Out(last, next - last);
+					break;
+				}
+				curr = next;
+			}
+		}
+	}
+	
+	std::vector<Document::Line> ret;
+	{
+		int logical_col = 0;
+		for (std::vector<Character> const &w : chrs_out) {
+			std::vector<char> v;
+			for (Character const &c : w) {
+				unicode_helper_::encode_utf8(c.unicode, [&](char d){v.push_back(d);});
+			}
+			Document::Line line(v);
+			line.sp->meta.logical_col_pos = logical_col;
+			line.sp->meta.logical_col_len = w.size();
+			ret.emplace_back(line);
+			logical_col += w.size();
+		}
+	}
+	return ret;
+}
+
+/**
+ * @brief 論理行番号から物理行番号を求める。
+ * @param lrow 論理行番号
+ * @return 物理行番号
+ */
+row_index_t AbstractTextEditorApplication::lrow_to_vrow(row_index_t lrow) const
+{
+	if (wrappingMode() == WrappingMode::NoWrap) {
+		return std::min(lrow, nlines());
+	}
+	
+	auto pos = cx()->line_index_map.logical_to_visual(lrow, 0);
+	return pos.vrow;
+}
+
+row_index_t AbstractTextEditorApplication::vrow_to_lrow(row_index_t vrow) const
+{
+	if (wrappingMode() == WrappingMode::NoWrap) {
+		return std::min(vrow, nlines());
+	}
+	
+	auto pos = cx()->line_index_map.visual_to_logical(vrow);
+	return pos.lrow;
+}
+
+RowCol AbstractTextEditorApplication::visual_position(SelectionAnchor const &a) const
+{
+	if (wrappingMode() == WrappingMode::NoWrap) {
+		return {a.lrow, a.lcol};
+	} else {
+		auto pos = cx()->line_index_map.logical_to_visual(a.lrow, a.lcol);
+		return {pos.vrow, pos.vcol};
+	}
+}
+
+void AbstractTextEditorApplication::_wrap_line(Document::Line *ll, bool force, std::mutex *mutex)
+{
+	if (force || ll->sp->meta.visual_lines.empty()) { // 折り返し未処理の場合
+		if (wrappingMode() == WrappingMode::NoWrap) {
+			ll->sp->meta.visual_lines.resize(1);
+		} else {
+			ll->sp->meta.visual_lines = wrap_line(*ll, mutex); // 折り返し処理
+		}
+	}
+}
+
+/**
+ * @brief 論理行に対応する物理行数を更新する（line_index_map）
+ * @param lrow 論理行インデックス
+ * @param ll 論理行情報
+ * @param mutex 排他制御用のmutex（nullptrの場合は排他制御なし）
+ */
+void AbstractTextEditorApplication::_update_line_index_map(row_index_t lrow, Document::Line *ll, std::mutex *mutex)
+{
+	std::vector<uint32_t> col_list;
+	for (Document::Line const &vl : ll->sp->meta.visual_lines) {
+		col_list.push_back(vl.sp->meta.logical_col_len);
+	}
+
+	if (mutex) mutex->lock();
+	cx()->line_index_map.update(lrow, col_list); // 論理行に対応する物理行数を更新
+	if (mutex) mutex->unlock();	
+}
+
+/**
+ * @brief 物理行番号から論理行番号と論理列番号を求める。
+ * @param vrow 物理行番号
+ * @return 論理行番号と論理列番号を含むVisualRowInfo構造体
+ */
+LineIndexMap::LogicalPosition AbstractTextEditorApplication::query_logical_for_visual_row(row_index_t vrow)
+{
+	if (vrow < 0) return {};
+	
+	LineIndexMap::LogicalPosition ret;
+	
+	if (wrappingMode() == WrappingMode::NoWrap) {
+		ret.lrow = std::min(vrow, nlines()); // NoWrapの場合、論理行と物理行は同じ
+		ret.lcol = 0;
+	} else {
+		ret = cx()->line_index_map.visual_to_logical(vrow);
+		
+	}
+	return ret;
+}
+
+/**
+ * @brief 物理行番号以降の物理行情報を無効化する
+ * @param vrow 物理行番号
+ */
+void AbstractTextEditorApplication::invalidate_visual_row_info(row_index_t vrow)
+{
+	TextEditorContext *cx = this->cx();
+	if (vrow >= 0 && vrow < cx->cache.visual_lines.size()) {
+		cx->cache.visual_lines.resize(vrow);
+	}
+}
+
+/**
+ * @brief 論理行に対応する物理行情報を更新する（cache.visual_lines）
+ * @param lrow 論理行インデックス
+ * @param ll 論理行情報
+ * @param mutex 排他制御用のmutex（nullptrの場合は排他制御なし）
+ */
+void AbstractTextEditorApplication::_update_visual_line_by_logical_line(col_index_t lrow, Document::Line const &ll, std::mutex *mutex)
+{
+	if (mutex) {
+		std::lock_guard lock(*mutex);
+		_update_visual_line_by_logical_line(lrow, ll, nullptr);
+		return;
+	}
+	
+	std::vector<Document::Line> const &src = ll.sp->meta.visual_lines;
+	
+	TextEditorContext *cx = this->cx();
+	
+	auto [lower_pos, lower_vcol] = cx->line_index_map.logical_to_visual(lrow, 0); // 論理行に対応する物理行の開始位置
+	auto [upper_pos, upper_vcol] = cx->line_index_map.logical_to_visual(lrow + 1, 0); // 論理行に対応する物理行の終了位置
+	(void)lower_vcol;
+	(void)upper_vcol;
+	
+	const size_t dstlen = upper_pos - lower_pos; // 論理行に対応する物理行の数
+	const size_t srclen = src.size(); // 折り返し処理後の物理行の数
+
+	const size_t nvlines = cx->cache.visual_lines.size(); // 現在の物理行数
+	
+	if (dstlen > srclen) { // 書き込み先の方が長い場合、余分な物理行を削除する
+		size_t erase_begin = std::min(lower_pos + srclen, nvlines);
+		size_t erase_end = std::min((size_t)upper_pos, nvlines);
+		if (erase_begin < erase_end) {
+			cx->cache.visual_lines.erase(cx->cache.visual_lines.begin() + erase_begin, cx->cache.visual_lines.begin() + erase_end);
+		}
+	} else {
+		size_t insert_begin = std::min(lower_pos + dstlen, nvlines);
+		size_t insert_end = lower_pos + srclen;
+		if (insert_begin > nvlines) { // 書き込み先の方が短い場合、足りない分を追加する
+			cx->cache.visual_lines.resize(insert_begin);
+		}
+		size_t n = insert_end - insert_begin; // 追加する物理行数
+		if (n > 0) {
+			cx->cache.visual_lines.insert(cx->cache.visual_lines.begin() + insert_begin, n, {});
+		}
+	}
+
+	if (!src.empty()) {
+		// 物理行情報を更新する
+		auto dst = cx->cache.visual_lines.begin() + lower_pos;
+		std::copy(src.begin(), src.end(), dst);
+	}
+}
+
+/**
+ * @brief 論理行を更新する
+ * @param lrow 論理行番号
+ * @param text 更新するテキスト（nulloptの場合はテキストを更新しない）
+ * @param force 強制的に折り返し処理を行うかどうか
+ * @param mutex 排他制御用のmutex（nullptrの場合は排他制御なし）
+ * @return 物理行数が変化したかどうか
+ */
+bool AbstractTextEditorApplication::_update_line(row_index_t lrow, std::optional<std::vector<char>> text, bool force, std::mutex *mutex)
+{
+	bool vline_count_changed = false;
+	
+	Document *doc = &cx()->engine->document;
+	std::vector<Document::Line> *llines = &doc->logical_lines;
+	if (lrow >= 0 && lrow < llines->size()) {
+		Document::Line *ll = &(*llines)[lrow];
+		
+		const size_t nvlines = ll->sp->meta.visual_lines.size(); // 折り返し前の物理行数
+		
+		if (text) { // テキストが指定されている場合、論理行のテキストを更新する
+			ll->set_text(*text);
+			ll->clear_visual_lines();
+			ll->sp->meta.detail.reset();
+		}
+		
+		_wrap_line(ll, force, mutex); // 折り返し処理を行う
+		_update_line_index_map(lrow, ll, mutex); // 論理行に対応する物理行数を更新
+		
+		vline_count_changed = (nvlines != ll->sp->meta.visual_lines.size()); // 折り返し後の物理行数が変化したかどうか
+	}
+	
+	if (vline_count_changed) { // 物理行数が変化した場合、物理行数キャッシュを無効化する
+		invalidate_nlines_cache();
+	}
+	return vline_count_changed;
+}
+
+/**
+ * @brief 論理行番号に対応する物理行情報を更新する
+ * @param lrow 論理行番号
+ * @param force 強制的に折り返し処理を行うかどうか
+ * @return 物理行数が変化したかどうか
+ */
+bool AbstractTextEditorApplication::update_visual_line(row_index_t lrow, bool force)
+{
+	std::vector<Document::Line> *llines = &document()->logical_lines;
+	if (lrow >= 0 && lrow < llines->size()) {
+		_update_line(lrow, std::nullopt, force, nullptr);
+
+		Document::Line *ll = &(*llines)[lrow];
+		_update_visual_line_by_logical_line(lrow, *ll, nullptr);
+		
+		return true;
+	}
+	return false;
+}
+
+void AbstractTextEditorApplication::update_visual_lines_all()
+{
+	invalidate_visual_row_info(0);
+	
+	TextEditorContext *cx = this->cx();
+	
+	cx->line_index_map.clear();
+	
+	if (m->wrapping_mode == WrappingMode::NoWrap) {
+		cx->cache.visual_lines = {};
+		return;
+	}
+	
+	{
+		std::vector<Document::Line> *llines = &cx->engine->document.logical_lines;
+		
+		if (0) { // シングルスレッド
+			for (row_index_t lrow = 0; lrow < (row_index_t)llines->size(); lrow++) {
+				update_visual_line(lrow, true);
+			}
+		} else {
+			{ // 並列処理で折り返し処理を行う
+				constexpr int nthreads = 8;
+				std::mutex mutex;
+				std::vector<std::thread> thread(nthreads);
+				std::atomic<row_index_t> index = 0;
+				const row_index_t nlines = (row_index_t)llines->size();
+				for (int i = 0; i < nthreads; i++) {
+					thread[i] = std::thread([&](){
+						while (1) {
+							row_index_t lrow = index++;
+							if (lrow >= nlines) break;
+							Document::Line *ll = &(*llines)[lrow];
+							_wrap_line(ll, true, &mutex);
+						}
+					});
+				}
+				for (int i = 0; i < nthreads; i++) {
+					thread[i].join();
+				}
+			}
+			// 物理行情報を更新する
+			for (size_t lrow = 0; lrow < llines->size(); lrow++) {
+				std::vector<Document::Line> *llines = &document()->logical_lines;
+				Document::Line *ll = &(*llines)[lrow];
+				// 論理行に対応する物理行数を更新
+				_update_line_index_map(lrow, ll, nullptr);
+				_update_visual_line_by_logical_line(lrow, *ll, nullptr);
+			}
+			// 物理行数キャッシュを無効化する
+			invalidate_nlines_cache();
+		}
+	}
+	
+	updateScrollBarRange();
+}
+
+/**
+ * @brief 論理行を更新する（テキストを指定して更新する）
+ * @param lrow 論理行番号
+ * @param vec 更新する文字列（Characterの配列）
+ * @return 物理行数が変化したかどうか
+ */
+bool AbstractTextEditorApplication::commit_line(row_index_t lrow, std::vector<Character> const &vec)
+{
+	std::vector<Document::Line> *llines = documentLinesForWrite();
+	if (!llines) return false;
+
+	// Characterの配列をUTF-8に変換する
+	std::vector<char> ba;
+	if (!vec.empty()){
+		std::vector<char32_t> v;
+		v.reserve(vec.size());
+		for (Character const &c : vec) {
+			v.push_back(c.unicode);
+		}
+		utf32 u32(&v[0], v.size());
+		u32.to_utf8([&](char c, int pos){
+			(void)pos;
+			ba.push_back(c);
+			return true;
+		});
+	}
+
+	// 論理行番号が範囲外の場合は、新しい論理行を追加する
+	if (lrow == llines->size()) {
+		Document::Line newline;
+		newline.sp->meta.type = Document::LineType::Normal;
+		llines->push_back(newline);
+	}
+	
+	clearParsedLine();
+	
+	bool vline_count_changed  = _update_line(lrow, ba, false, nullptr);
+	return vline_count_changed;
+}
+
+void AbstractTextEditorApplication::layoutEditor()
 {
 	makeBuffer();
 	editor_cx->viewport_org_x = leftMargin_();
-	editor_cx->viewport_org_y = m->header_line;
+	editor_cx->viewport_org_y = 0;
 	editor_cx->viewport_width = screenWidth() - cx()->viewport_org_x;
-	editor_cx->viewport_height = screenHeight() - (m->header_line + m->footer_line);
+	editor_cx->viewport_height = screenHeight();
 }
 
-void AbstractCharacterBasedApplication::initEditor()
+void AbstractTextEditorApplication::initEditor()
 {
 	editor_cx = std::make_shared<TextEditorContext>();
 	layoutEditor();
 }
 
-bool AbstractCharacterBasedApplication::isLineNumberVisible() const
+bool AbstractTextEditorApplication::isLineNumberVisible() const
 {
 	return m->show_line_number;
 }
 
-int AbstractCharacterBasedApplication::charWidth(uint32_t c)
+int AbstractTextEditorApplication::charWidth(uint32_t c)
 {
 	return UnicodeWidth::width(UnicodeWidth::type(c));
 }
 
-std::vector<FormattedLine> AbstractCharacterBasedApplication::formatLine_(Document::Line const &line, int tab_indent_size, int anchor_a, int anchor_b) const
+std::vector<FormattedLine> AbstractTextEditorApplication::formatLine_(Document::Line const &line, int tab_indent_size, int anchor_a, int anchor_b) const
 {
 	std::vector<FormattedLine> ret;
 	
@@ -270,8 +912,8 @@ std::vector<FormattedLine> AbstractCharacterBasedApplication::formatLine_(Docume
 	int col = 0;
 	int col_start = col;
 	
-	bool flag_a = false;
-	bool flag_b = false;
+	// bool flag_a = false;
+	// bool flag_b = false;
 	
 	auto Flush = [&](size_t offset, size_t *next_offset){
 		if (!c16vec.empty()) {
@@ -294,15 +936,15 @@ std::vector<FormattedLine> AbstractCharacterBasedApplication::formatLine_(Docume
 		col_start = col;
 	};
 	
-	size_t offset = 0;
-	size_t next_offset = (size_t)-1;
+	// size_t offset = 0;
+	// size_t next_offset = (size_t)-1;
 	if (len > 0) {
 		utf8 u8(line.text().data(), len);
 		u8.to_utf32([&](uint32_t c){
-			if (line.byte_offset + u8.offset() == next_offset) {
-				Flush(line.byte_offset + offset, &next_offset);
-				offset += u8.offset();
-			}
+			// if (line.byte_offset + u8.offset() == next_offset) {
+			// 	Flush(line.byte_offset + offset, &next_offset);
+			// 	offset += u8.offset();
+			// }
 			if (c == '\t') {
 				do {
 					c16vec.push_back(' ');
@@ -328,103 +970,78 @@ std::vector<FormattedLine> AbstractCharacterBasedApplication::formatLine_(Docume
 				}
 				col += cw;
 			}
-			if ((anchor_a >= 0 || anchor_b >= 0) && anchor_a != anchor_b) {
-				if (!flag_a && col >= anchor_a) {
-					Flush(line.byte_offset + offset, &next_offset);
-					flag_a = true;
-				}
-				if (!flag_b && col >= anchor_b) {
-					Flush(line.byte_offset + offset, &next_offset);
-					flag_b = true;
-				}
-			}
+			// if ((anchor_a >= 0 || anchor_b >= 0) && anchor_a != anchor_b) {
+			// 	if (!flag_a && col >= anchor_a) {
+			// 		Flush(line.byte_offset + offset, &next_offset);
+			// 		flag_a = true;
+			// 	}
+			// 	if (!flag_b && col >= anchor_b) {
+			// 		Flush(line.byte_offset + offset, &next_offset);
+			// 		flag_b = true;
+			// 	}
+			// }
 			return true;
 		});
 	}
-	Flush(line.byte_offset + offset, &next_offset);
+	// Flush(line.byte_offset + offset, &next_offset);
+	{
+		
+		int atts = 0;
+
+		ret.push_back(FormattedLine(QString::fromUtf16((ushort const *)c16vec.data(), c16vec.size()), atts));
+	}
 	return ret;
 }
 
-bool AbstractCharacterBasedApplication::isValidRowIndex(int row_index) const
+std::vector<Document::Line> *AbstractTextEditorApplication::_lines()
 {
-	return row_index >= 0 && row_index < (int)engine()->document.lines.size();
+	assert(0); // TODO:
+	
+	if (m->wrapping_mode == WrappingMode::NoWrap) {
+		return &cx()->engine->document.logical_lines;
+	} else {
+		return &cx()->cache.visual_lines;
+	}
 }
 
 /**
- * @brief 現在行を取得
- * @param row
- * @return
+ * @brief 物理行を取得する
+ * @param vrow 物理行番号
+ * @return 物理行（存在しない場合はnullptrを返す）
  */
-Document::Line *AbstractCharacterBasedApplication::fetchLine(int row)
+Document::Line *AbstractTextEditorApplication::visual_line(row_index_t vrow)
 {
-	int lines = documentLines();
-	if (row >= 0 && row < lines) {
-		Document *doc = &engine()->document;
-		return &doc->lines[row];
+	std::vector<Document::Line> *vlines = nullptr;
+	if (m->wrapping_mode == WrappingMode::NoWrap) {
+		vlines = &document()->logical_lines; // NoWrapの場合、物理行は論理行と同じ
+	} else {
+		vlines = &cx()->cache.visual_lines;
+		row_index_t lrow = 0;
+		if (vrow < nlines()) {
+			lrow = vrow_to_lrow(vrow); // 物理行番号から論理行番号を求める
+			while (vlines->size() <= vrow) { // 物理行情報が不足している場合は追加する
+				if (!update_visual_line(lrow, true)) break;
+				lrow++;
+			}
+		}
+	}
+	if (vrow >= 0 && vrow < (row_index_t)vlines->size()) {
+		return &(*vlines)[vrow];
 	}
 	return nullptr;
 }
 
-void AbstractCharacterBasedApplication::fetchCurrentLine()
-{
-	int row = currentRow();
-	m->current_line_data = fetchLine(row);
-	m->parsed_row_index = row;
-}
-
-int AbstractCharacterBasedApplication::currentRow() const
-{
-	return cx()->current_row;
-}
-
-int AbstractCharacterBasedApplication::currentCol() const
-{
-	return cx()->current_col;
-}
-
-int AbstractCharacterBasedApplication::currentColX() const
-{
-	return cx()->current_col_pixel_x;
-}
-
-void AbstractCharacterBasedApplication::setCurrentRow(int row)
-{
-	cx()->current_row = row;
-}
-
-void AbstractCharacterBasedApplication::setCurrentCol(int col)
-{
-	cx()->current_col = col;
-}
-
-void AbstractCharacterBasedApplication::clearParsedLine()
-{
-	m->parsed_row_index = -1;
-	m->parsed_for_edit = false;
-	m->current_line_data = {};
-}
-
-int AbstractCharacterBasedApplication::cursorCol() const
-{
-	return currentCol() - cx()->scroll_col_pos;
-}
-
-int AbstractCharacterBasedApplication::cursorRow() const
-{
-	return currentRow() - cx()->scroll_row_pos;
-}
-
-int AbstractCharacterBasedApplication::screenWidth() const
+int AbstractTextEditorApplication::screenWidth() const
 {
 	return m->screen_width;
 }
 
-int AbstractCharacterBasedApplication::screenHeight() const
+int AbstractTextEditorApplication::screenHeight() const
 {
 	return m->screen_height;
 }
 
-void AbstractCharacterBasedApplication::setScreenSize(int w, int h, bool update_layout)
+void AbstractTextEditorApplication::setScreenSize(int w, int h, bool update_layout)
 {
 	m->screen_width = w;
 	m->screen_height = h;
@@ -433,204 +1050,90 @@ void AbstractCharacterBasedApplication::setScreenSize(int w, int h, bool update_
 	}
 }
 
-bool AbstractCharacterBasedApplication::isPaintingSuppressed() const
+void AbstractTextEditorApplication::setContentWidth(int w)
+{
+	m->content_width_px = w;
+}
+
+bool AbstractTextEditorApplication::isPaintingSuppressed() const
 {
 	return m->is_painting_suppressed;
 }
 
-void AbstractCharacterBasedApplication::setPaintingSuppressed(bool f)
+void AbstractTextEditorApplication::setPaintingSuppressed(bool f)
 {
 	m->is_painting_suppressed = f;
 }
 
-void AbstractCharacterBasedApplication::invalidateLineFormat(int row)
+std::vector<Document::Line> *AbstractTextEditorApplication::documentLinesForWrite(bool check_readonly)
 {
+	if (check_readonly && is_read_only()) return nullptr;
+	return &document()->logical_lines;
 }
 
-void AbstractCharacterBasedApplication::setDocument(std::vector<Document::Line> const *source)
+void AbstractTextEditorApplication::setDocument(std::vector<Document::Line> const *source)
 {
+	std::vector<Document::Line> *lines = documentLinesForWrite(false);
+	if (!lines) return;
+	
 	if (source) {
-		document()->lines = *source;
+		*lines = *source;
 	} else {
-		document()->lines.clear();
-	}
-	invalidateLineFormat();
-}
-
-void AbstractCharacterBasedApplication::commitLine(std::vector<Char> const &vec)
-{
-	if (isReadOnly()) return;
-	
-	Document *doc = &engine()->document;
-	
-	std::vector<char> ba;
-	if (!vec.empty()){
-		std::vector<char32_t> v;
-		v.reserve(vec.size());
-		for (Char const &c : vec) {
-			v.push_back(c.unicode);
-		}
-		utf32 u32(&v[0], v.size());
-		u32.to_utf8([&](char c, int pos){
-			(void)pos;
-			ba.push_back(c);
-			return true;
-		});
-	}
-	if (m->parsed_row_index == 0 && doc->lines.empty()) {
-		Document::Line newline;
-		newline.type = Document::LineType::Normal;
-		doc->lines.push_back(newline);
-	}
-	Document::Line *line = &doc->lines[m->parsed_row_index];
-		if (m->parsed_row_index == 0) {
-		line->byte_offset = 0;
-		line->line_number = (line->type == Document::LineType::Unknown) ? 0 : 1;
-	}
-	line->set_text(std::vector<char>(ba.data(), ba.data() + ba.size()));
-
-	if (m->valid_line_index > m->parsed_row_index) {
-		m->valid_line_index = m->parsed_row_index;
-	}
-
-	int y = m->parsed_row_index - cx()->scroll_row_pos + cx()->viewport_org_y;
-	if (y >= 0 && y < (int)m->line_flags.size()) {
-		m->line_flags[y] |= LineChanged;
+		lines->clear();
 	}
 }
 
-std::vector<AbstractCharacterBasedApplication::Char> *AbstractCharacterBasedApplication::parsedCurrentLine()
+void AbstractTextEditorApplication::insertLine(row_index_t lrow)
 {
-	return &m->parsed_current_line_chars;
+	std::vector<Document::Line> *llines = documentLinesForWrite();
+	if (!llines) return;
+
+	llines->insert(llines->begin() + lrow, Document::Line::NormalEmptyLine());
+	cx()->line_index_map.insert(lrow, {});
+
+	invalidate_nlines_cache();
 }
 
-/**
- * @brief 桁位置を求める
- * @param line
- * @param current_col
- * @param out
- * @param increase_hint
- * @return
- */
-int AbstractCharacterBasedApplication::internalParseLine(Document::Line *line, int current_col, std::vector<Char> *out, std::vector<CharAttr> *out2)
+std::vector<Character> AbstractTextEditorApplication::parseLogicalLine(TextEditorContext const *cx, row_index_t lrow) const
 {
-	out->clear();
-	
-	if (out2) {
-		out2->clear();
+	std::vector<Document::Line> const &lines = cx->engine->document.logical_lines;
+	if (lrow >= 0 && lrow < lines.size()) {
+		Document::Line const *line = &lines[lrow];
+		return parseLine(line);
 	}
-	
-	int index = -1;
-	
-	if (line) {
-		std::string_view text = line->text();
-		line->attr_ = std::vector<CharAttr>();
-		line->attr_->resize(text.size());
-		
-		int col = 0;
-		int len = text.size();
-		if (len > 0) {
-			out->reserve(len);
-			char const *src = text.data();
-			utf8 u8(src, len);
-			while (1) {
-				int n = 0;
-				char32_t c = u8.next();
-				if (c == 0) {
-					n = 1;
-				} else {
-					if (c == '\t') {
-						int z = nextTabStop(col);
-						n = z - col;
-					} else {
-						n = charWidth(c);
-					}
-				}
-				if (col <= current_col && col + n > current_col) {
-					index = (int)out->size();
-				}
-				if (c == 0) break;
-				col += n;
-				out->emplace_back(c);
-			}
-		}
-	}
-	
-	if (out2) {
-		out2->resize(out->size());
-	}
-	
-	return index;
+	return {};
 }
 
-/**
- * @brief 行のレイアウトを解析
- * @param chars
- * @param increase_hint
- * @param force
- */
-void AbstractCharacterBasedApplication::parseCurrentLine(std::vector<Char> *chars, std::vector<CharAttr> *attrs, bool force)
+bool AbstractTextEditorApplication::isCurrentLineWritable() const
 {
-	if (force) {
-		clearParsedLine();
-	}
+	if (is_read_only()) return false;
 
-	if (!chars) {
-		chars = &m->parsed_current_line_chars;
-	}
-
-	if (force || !m->parsed_for_edit) {
-		fetchCurrentLine();
-		m->parsed_col_index = internalParseLine(m->current_line_data, currentCol(), chars, attrs);
-		m->parsed_for_edit = true;
-	} else {
-		if (chars) {
-			*chars = m->parsed_current_line_chars;
-		}
-	}
-}
-
-/**
- * @brief 行の桁位置を求める
- * @param row
- * @param chars
- */
-void AbstractCharacterBasedApplication::parseLine(int row, std::vector<Char> *chars, std::vector<CharAttr> *attrs)
-{
-	auto *line = fetchLine(row);
-	internalParseLine(line, -1, chars, attrs);
-}
-
-bool AbstractCharacterBasedApplication::isCurrentLineWritable() const
-{
-	if (isReadOnly()) return false;
-
-	int row = currentRow();
-	if (row >= 0 && row < (int)cx()->engine->document.lines.size()) {
-		if (cx()->engine->document.lines[row].type != Document::LineType::Unknown) {
+	row_index_t vrow = current_visual_row();
+	if (vrow >= 0 && vrow < nlines()) {
+		if (visual_line(vrow)->sp->meta.type != Document::LineType::Invalid) {
 			return true;
 		}
 	}
 	return false;
 }
 
-int AbstractCharacterBasedApplication::editorViewportWidth() const
+int AbstractTextEditorApplication::editor_viewport_width() const
 {
 	return cx()->viewport_width;
 }
 
-int AbstractCharacterBasedApplication::editorViewportHeight() const
+int AbstractTextEditorApplication::editor_viewport_height() const
 {
 	return cx()->viewport_height;
 }
 
-int AbstractCharacterBasedApplication::print(int x, int y, QString const &text, const AbstractCharacterBasedApplication::Option &opt)
+int AbstractTextEditorApplication::print(int x, int y, QString const &text, const AbstractTextEditorApplication::Option &opt)
 {
 	CharAttr attr = opt.char_attr;
-	if (opt.char_attr.flags & CharAttr::Selected) {
+	if (opt.char_flag.selected) {
 		attr.index = CharAttr::Invert;
 	}
-	if (opt.char_attr.flags & CharAttr::CurrentLine) {
+	if (opt.char_flag.current_line) {
 		attr.index = CharAttr::Hilite;
 	}
 
@@ -679,57 +1182,85 @@ int AbstractCharacterBasedApplication::print(int x, int y, QString const &text, 
 				}
 			}
 		}
-		if (changed) {
-			m->line_flags[y] |= LineChanged;
-		}
+
 		x = x2;
 	}
 	return x;
 }
 
-void AbstractCharacterBasedApplication::initEngine(std::shared_ptr<TextEditorContext> const &cx)
+void AbstractTextEditorApplication::initEngine(std::shared_ptr<TextEditorContext> const &cx)
 {
 	cx->engine = std::make_shared<TextEditorEngine>();
 }
 
-TextEditorContext *AbstractCharacterBasedApplication::cx()
+TextEditorContext *AbstractTextEditorApplication::cx()
 {
-	if (dialog_cx) {
-		if (!dialog_cx->engine) {
-			initEngine(dialog_cx);
-		}
-		return dialog_cx.get();
-	}
 	if (!editor_cx->engine) {
 		initEngine(editor_cx);
 	}
 	return editor_cx.get();
 }
 
-const TextEditorContext *AbstractCharacterBasedApplication::cx() const
+const TextEditorContext *AbstractTextEditorApplication::cx() const
 {
-	return const_cast<AbstractCharacterBasedApplication *>(this)->cx();
+	return const_cast<AbstractTextEditorApplication *>(this)->cx();
 }
 
-TextEditorEngine_sp AbstractCharacterBasedApplication::engine() const
+TextEditorEngine_sp AbstractTextEditorApplication::engine() const
 {
 	Q_ASSERT(cx()->engine);
 	return cx()->engine;
 }
 
-void AbstractCharacterBasedApplication::setTextEditorEngine(TextEditorEngine_sp const &e)
+void AbstractTextEditorApplication::setTextEditorEngine(TextEditorEngine_sp const &e)
 {
 	cx()->engine = e;
 }
 
-void AbstractCharacterBasedApplication::clear()
+void AbstractTextEditorApplication::clear()
 {
 	setDocument(nullptr);
 }
 
-void AbstractCharacterBasedApplication::openFile(QString const &path)
+void AbstractTextEditorApplication::writeNewLine()
 {
-	document()->lines.clear();
+	if (is_read_only()) return;
+
+	row_index_t vrow = current_visual_row();
+	row_index_t lrow = current_logical_row();
+	col_index_t lcol = current_logical_col();
+	
+	invalidate_visual_row_info(vrow);
+	
+	std::vector<Character> curr_line;
+	std::vector<Character> next_line;
+	
+	curr_line = parseLogicalLine(cx(), lrow);
+	
+	// 行を分割
+	next_line.insert(next_line.end(), curr_line.begin() + lcol, curr_line.end());
+	curr_line.resize(lcol);
+	curr_line.emplace_back('\n');
+	
+	// 現在の行を確定
+	commit_line(lrow, curr_line);
+
+	// 次の行を挿入
+	lrow++;
+	insertLine(lrow);
+	commit_line(lrow, next_line);
+
+	vrow++;
+	set_current_visual_row(vrow);
+
+	setCursorCol(0);
+	clearParsedLine();
+	updateVisibility({});
+}
+
+void AbstractTextEditorApplication::openFile(QString const &path)
+{
+	document()->logical_lines.clear();
 	QFile file(path);
 	if (file.open(QFile::ReadOnly)) {
 		document()->all = file.readAll();
@@ -757,119 +1288,90 @@ void AbstractCharacterBasedApplication::openFile(QString const &path)
 			assert(std::holds_alternative<std::string_view>(lines[i]));
 			std::string_view sv = std::get<std::string_view>(lines[i]);
 			auto line = Document::Line::View(sv);
-			line.byte_offset = sv.data() - begin;
-			line.type = Document::LineType::Normal;
-			line.line_number = (int)(i + 1);
-			document()->lines.push_back(line);
+			line.sp->meta.type = Document::LineType::Normal;
+			document()->logical_lines.push_back(line);
 		}
 		document()->raw_lines = std::move(lines);
-		m->valid_line_index = (int)document()->lines.size();
 		setRecentlyUsedPath(path);
 	}
 
-	if (document()->lines.empty()) {
+	if (document()->logical_lines.empty()) {
 		Document::Line line;
-		line.type = Document::LineType::Normal;
-		line.line_number = 1;
-		document()->lines.push_back(line);
+		line.sp->meta.type = Document::LineType::Normal;
+		document()->logical_lines.push_back(line);
 	}
-	
-	invalidateLineFormat();
+
+	update_visual_lines_all();
 	
 	scrollToTop();
 }
 
-void AbstractCharacterBasedApplication::saveFile(QString const &path)
+void AbstractTextEditorApplication::saveFile(QString const &path)
 {
 	QFile file(path);
 	if (file.open(QFile::WriteOnly)) {
-		for (Document::Line const &line : document()->lines) {
+		for (Document::Line const &line : document()->logical_lines) {
 			file.write(line.text().data(), line.text().size());
 		}
 	}
 }
 
-void AbstractCharacterBasedApplication::pressEnter()
+void AbstractTextEditorApplication::pressEnter()
 {
 	deleteIfSelected();
-
-	if (isDialogMode()) {
-		closeDialog(true);
-	} else {
-		writeNewLine();
-	}
+	writeNewLine();
 }
 
-void AbstractCharacterBasedApplication::pressEscape()
+void AbstractTextEditorApplication::pressEscape()
 {
 	if (isTerminalMode()) {
 		m->escape_sequence.write(0x1b);
 		return;
 	}
 
-	if (isDialogMode()) {
-		closeDialog(false);
-		return;
-	}
-
-	deselect();
-	updateVisibility(false, false, false);
+	updateVisibility({false, false, false});
 }
 
-AbstractCharacterBasedApplication::State AbstractCharacterBasedApplication::state() const
+AbstractTextEditorApplication::State AbstractTextEditorApplication::state() const
 {
 	return m->state;
 }
 
-Document *AbstractCharacterBasedApplication::document()
+Document *AbstractTextEditorApplication::document()
 {
 	return &engine()->document;
 }
 
-Document const *AbstractCharacterBasedApplication::document() const
+Document const *AbstractTextEditorApplication::document() const
 {
 	return &engine()->document;
 }
 
-int AbstractCharacterBasedApplication::documentLines() const
-{
-	return document()->lines.size();
-}
-
-bool AbstractCharacterBasedApplication::isSingleLineMode() const
-{
-	return cx()->single_line;
-}
-
-void AbstractCharacterBasedApplication::setLineMargin(int n)
+void AbstractTextEditorApplication::setLineMargin(int n)
 {
 	m->line_margin = n;
 }
 
-void AbstractCharacterBasedApplication::ensureCurrentLineVisible()
+void AbstractTextEditorApplication::ensureCurrentLineVisible()
 {
-	int margin = (cx()->viewport_height >= 6 && !isSingleLineMode()) ? m->line_margin : 0;
-	int pos = cx()->scroll_row_pos;
-	int top = currentRow() - margin;
-	int bottom = currentRow() + 1 - editorViewportHeight() + margin;
-	if (pos > top)    pos = top;
-	if (pos < bottom) pos = bottom;
-	if (pos < 0) pos = 0;
-	if (cx()->scroll_row_pos != pos) {
-		cx()->scroll_row_pos = pos;
-		invalidateArea();
+	int margin = (cx()->viewport_height >= m->line_margin * 2) ? m->line_margin : 0;
+	int pos = scroll_vert_pos();
+	int top = current_visual_row() - margin;
+	int bottom = current_visual_row() + 1 - editor_viewport_height() + margin;
+	pos = std::min(pos, top);
+	pos = std::max(pos, bottom);
+	pos = std::max(pos, 0);
+	if (scroll_vert_pos() != pos) {
+		set_scroll_vert_pos(pos);
 	}
 }
 
-int AbstractCharacterBasedApplication::decideColumnScrollPos() const
-{//@
-	int x = currentCol();
-	int w = editorViewportWidth() - RIGHT_MARGIN;
-	if (w < 0) w = 0;
-	return x > w ? (currentCol() - w) : 0;
+bool AbstractTextEditorApplication::isWidthFixed() const
+{
+	return (wrappingMode() != WrappingMode::NoWrap);
 }
 
-int AbstractCharacterBasedApplication::calcVisualWidth(const Document::Line &line) const
+int AbstractTextEditorApplication::calcVisualWidth(const Document::Line &line) const
 {
 	std::vector<FormattedLine> lines = formatLine_(line, cx()->tab_indent_size);
 	int x = 0;
@@ -892,9 +1394,7 @@ int AbstractCharacterBasedApplication::calcVisualWidth(const Document::Line &lin
 	return x;
 }
 
-
-
-void AbstractCharacterBasedApplication::clearRect(int x, int y, int w, int h)
+void AbstractTextEditorApplication::clearRect(int x, int y, int w, int h)
 {
 	int scr_w = screenWidth();
 	int scr_h = screenHeight();
@@ -909,236 +1409,238 @@ void AbstractCharacterBasedApplication::clearRect(int x, int y, int w, int h)
 	for (int y = y0; y < y1; y++) {
 		for (int x = x0; x < x1; x++) {
 			int o = y * scr_w + x;
-			m->screen[o] = Character();
+			m->screen[o] = Char16();
 		}
 	}
 }
 
-void AbstractCharacterBasedApplication::savePos()
+void AbstractTextEditorApplication::savePos()
 {
 	TextEditorContext *p = editor_cx.get();
 	if (p) {
-		p->saved_row = p->current_row;
-		p->saved_col = p->current_col;
-		p->saved_col_hint = p->current_col_hint;
+		p->saved_row = current_visual_row();
+		p->saved_col = current_visual_col();
+		p->saved_col_hint = p->current_visual_col_hint;
 	}
 }
 
-void AbstractCharacterBasedApplication::restorePos()
+void AbstractTextEditorApplication::restorePos()
 {
 	TextEditorContext *p = editor_cx.get();
 	if (p) {
-		p->current_row = p->saved_row;
-		p->current_col = p->saved_col;
-		p->current_col_hint = p->saved_col_hint;
+		set_current_visual_row(p->saved_row);
+		set_current_visual_col(p->saved_col);
+		p->current_visual_col_hint = p->saved_col_hint;
 	}
 }
 
-void AbstractCharacterBasedApplication::deselect()
+bool AbstractTextEditorApplication::hasSelection() const
 {
-	selection_end = {};
-	selection_start = {};
+	return !selection_end();
 }
 
-bool AbstractCharacterBasedApplication::hasSelection() const
-{
-	return selection_end.enabled == SelectionAnchor::False;
-}
-
-void AbstractCharacterBasedApplication::updateSelectionAnchor1(bool auto_scroll)
+void AbstractTextEditorApplication::updateSelectionAnchor1(bool auto_scroll)
 {
 	if (isShiftModifierPressed()) {
-		if (selection_end.enabled == SelectionAnchor::False) {
-			setSelectionAnchor(SelectionAnchor::True, true, auto_scroll);
-			selection_start = selection_end;
+		if (!selection_end()) {
+			setSelectionAnchor(true, true, auto_scroll);
+			sync_selection();
 		}
-	} else if (selection_end.enabled == SelectionAnchor::True) {
+	} else if (selection_end()) {
 		// 選択中でShiftが押されていなければ選択解除
-		setSelectionAnchor(SelectionAnchor::False, false, auto_scroll);
+		setSelectionAnchor(false, false, auto_scroll);
 	}
 }
 
-void AbstractCharacterBasedApplication::updateSelectionAnchor2(bool auto_scroll)
+void AbstractTextEditorApplication::updateSelectionAnchor2(bool auto_scroll)
 {
-	if (selection_end.enabled == SelectionAnchor::True) {
+	if (selection_end()) {
 		// 選択中なら、現在位置で更新
-		setSelectionAnchor(selection_end.enabled, true, auto_scroll);
+		setSelectionAnchor(true, true, auto_scroll);
 	}
 }
 
-void AbstractCharacterBasedApplication::setCursorRow(int row, bool auto_scroll, bool by_mouse)
+void AbstractTextEditorApplication::setCursorRow(row_index_t vrow, bool auto_scroll, bool by_mouse)
 {
-	if (currentRow() == row) return;
+	if (vrow < 0) {
+		vrow = 0;
+	} else {
+		const row_index_t n = nlines();
+		if (vrow >= n) {
+			vrow = (n > 0) ? (n - 1) : 0;
+		}
+	}
+	
+	if (current_visual_row() == vrow) return;
 
 	updateSelectionAnchor1(false);
 
-	setCurrentRow(row);
+	set_current_visual_row(vrow);
 
 	updateSelectionAnchor2(auto_scroll);
 
 	m->cursor_moved_by_mouse = by_mouse;
 }
 
-void AbstractCharacterBasedApplication::setCursorCol_(int col, bool auto_scroll, bool by_mouse)
+void AbstractTextEditorApplication::_set_cursor_col(col_index_t vcol, bool auto_scroll, bool by_mouse)
 {
-	if (currentCol() == col) {
-		cx()->current_col_hint = col;
+	if (current_visual_col() == vcol) {
+		cx()->current_visual_col_hint = vcol;
 		return;
 	}
 
 	updateSelectionAnchor1(false);
 
-	setCurrentCol(col);
-	cx()->current_col_hint = col;
+	set_current_visual_col(vcol);
+	cx()->current_visual_col_hint = vcol;
 
 	updateSelectionAnchor2(auto_scroll);
 
 	m->cursor_moved_by_mouse = by_mouse;
 }
 
-int AbstractCharacterBasedApplication::nextTabStop(int x) const
+void AbstractTextEditorApplication::setCursorCol(col_index_t vcol)
 {
-	x += cx()->tab_indent_size;
-	x -= x % cx()->tab_indent_size;
+	_set_cursor_col(vcol, true, false);
+	cx()->current_visual_pixel_x = currentPixelX(); // カーソルのピクセル位置を更新する
+}
+
+void AbstractTextEditorApplication::setCursorPos(const RowCol &vpos)
+{
+	setCursorRow(vpos.row, false);
+	setCursorCol(vpos.col);
+}
+
+void AbstractTextEditorApplication::setCursorPosByMouse(RowCol vpos, QPoint pt)
+{
+	setCursorRow(vpos.row, false, true);
+	_set_cursor_col(vpos.col, false, true);
+	cx()->current_visual_pixel_x = pt.x(); // マウスでクリックした位置にカーソルを移動した場合は、現在のピクセル位置をマウスの位置に合わせる
+}
+
+int AbstractTextEditorApplication::nextTabStop(const TextEditorContext *cx, int x)
+{
+	x += cx->tab_indent_size;
+	x -= x % cx->tab_indent_size;
 	return x;
 }
 
-void AbstractCharacterBasedApplication::editSelected(EditOperation op, std::vector<Char> *cutbuffer)
+void AbstractTextEditorApplication::edit_selection(EditOperation op, std::vector<Character> *clip_text_out)
 {
-	if (isReadOnly() && op == EditOperation::Cut) {
+	if (clip_text_out) {
+		clip_text_out->clear();
+	}
+
+	auto AppendClipText = [&clip_text_out](Character const *p, size_t n){
+		if (clip_text_out) {
+			clip_text_out->insert(clip_text_out->end(), p, p + n);
+		}
+	};
+	
+	if (is_read_only() && op == EditOperation::Cut) { // 読み取り専用モードでは切り取りはできないのでコピーに変更
 		op = EditOperation::Copy;
 	}
 
-	SelectionAnchor a = selection_end;
-	SelectionAnchor b = selection_start;
-	if (!a.enabled) return;
-	if (!b.enabled) return;
+	SelectionAnchor a = selection_start();
+	SelectionAnchor b = selection_end();
+	// 選択範囲がない場合は何もしない
+	if (!a) return;
+	if (!b) return;
 	if (a == b) return;
+	// 選択範囲の開始位置と終了位置を入れ替える
+	if (a > b) {
+		std::swap(a, b);
+	}
 
 	auto UpdateVisibility = [&](){
-		updateVisibility(false, false, false);
+		updateVisibility({false, false, false});
 	};
 
-	if (cutbuffer) {
-		cutbuffer->clear();
-	}
-	std::list<std::vector<Char>> cutlist;
+	std::vector<Character> cliptext;
 
-	if (a.row > b.row) {
-		std::swap(a, b);
-	} else if (a.row == b.row) {
-		if (a.col > b.col) {
-			std::swap(a, b);
-		}
-	}
-
-	int curr_row = currentRow();
-	int curr_col = currentCol();
-
-	setCurrentRow(b.row);
-	setCurrentCol(b.col);
-
-	if (a.row == b.row) {
-		std::vector<Char> chars;
-		parseCurrentLine(&chars, nullptr, true);
-		auto begin = chars.begin() + calcColumnToIndex(a.col);
-		auto end = chars.begin() + calcColumnToIndex(b.col);
-		if (cutbuffer) {
-			std::vector<Char> cut;
-			cut.insert(cut.end(), begin, end);
-			cutlist.push_back(std::move(cut));
-		}
-		if (op == EditOperation::Cut) {
-			chars.erase(begin, end);
-			commitLine(chars);
-			UpdateVisibility();
-		}
-	} else {
-		std::vector<Char> chars;
-		parseCurrentLine(&chars, nullptr, true);
-		{
-			auto begin = chars.begin();
-			auto end = chars.begin() + calcColumnToIndex(b.col);
-			if (cutbuffer) {
-				std::vector<Char> cut;
-				cut.insert(cut.end(), begin, end);
-				cutlist.push_back(std::move(cut));
-			}
-			if (op == EditOperation::Cut) {
-				chars.erase(begin, end);
-				commitLine(chars);
-				UpdateVisibility();
-			}
-		}
-		int n = b.row - a.row;
-		for (int i = 0; i < n; i++) {
-			std::vector<Document::Line> *lines = &cx()->engine->document.lines;
-			if (cutbuffer && i > 0) {
-				setCurrentRow(b.row - i);
-				setCurrentCol(0);
-				std::vector<Char> chars;
-				parseCurrentLine(&chars, nullptr, true);
-				cutlist.push_back(std::move(chars));
-			}
-			if (op == EditOperation::Cut) {
-				lines->erase(lines->begin() + b.row - i);
-			}
-		}
-
-		setCurrentRow(a.row);
-		setCurrentCol(a.col);
-		int index = calcColumnToIndex(a.col);
-		std::vector<Char> chars2;
-		parseCurrentLine(&chars2, nullptr, true);
-		if (cutbuffer) {
-			std::vector<Char> cut;
-			cut.insert(cut.end(), chars2.begin() + index, chars2.end());
-			cutlist.push_back(std::move(cut));
-		}
-
-		if (op == EditOperation::Cut) {
-			chars2.resize(index);
-			chars2.insert(chars2.end(), chars.begin(), chars.end());
-			commitLine(chars2);
-			UpdateVisibility();
-		}
-	}
-
-	if (cutbuffer) {
-		size_t size = 0;
-		for (std::vector<Char> const &v : cutlist) {
-			size += v.size();
-		}
-		cutbuffer->reserve(size);
-		for (auto it = cutlist.rbegin(); it != cutlist.rend(); it++) {
-			std::vector<Char> const &v = *it;
-			cutbuffer->insert(cutbuffer->end(), v.begin(), v.end());
-		}
-	}
-
+	bool cut = false;
 	if (op == EditOperation::Cut) {
-		deselect();
-		setCursorPos(a.row, a.col);
-		invalidateArea(a.row - cx()->scroll_row_pos);
+		invalidate_visual_row_info(lrow_to_vrow(a.lcol));
+		cut = true;
+	}
+
+	std::vector<Document::Line> const *llines = &document()->logical_lines;
+	row_index_t end_lrow = std::min(b.lrow + 1, (row_index_t)llines->size());
+	if (a.lrow == b.lrow) { // 選択範囲が1行のみの場合
+		if (a.lcol < b.lcol) {
+			std::vector<Character> chars = parseLogicalLine(cx(), a.lrow);
+			AppendClipText(&chars[a.lcol], b.lcol - a.lcol);
+			if (cut) { // 切り取りの場合は、選択範囲の文字を削除して行を更新
+				chars.erase(chars.begin() + a.lcol, chars.begin() + b.lcol);
+				commit_line(a.lrow, chars);
+			}
+		}
 	} else {
-		setCurrentRow(curr_row);
-		setCurrentCol(curr_col);
-		invalidateArea(curr_row - cx()->scroll_row_pos);
+		std::vector<row_index_t> delete_list;
+		SelectionAnchor curr = a;
+		// 選択範囲の論理行を順に処理
+		while (curr.lrow < end_lrow) {
+			std::vector<Character> chars = parseLogicalLine(cx(), curr.lrow);
+			size_t begin = 0;
+			size_t end = chars.size();
+			bool entire = false;
+			if (curr.lrow == a.lrow) {
+				begin = std::min((size_t)a.lcol, end);
+			} else if (curr.lrow == b.lrow) {
+				end = std::min((size_t)b.lcol, end);
+			} else {
+				entire = true;
+			}
+			AppendClipText(&chars[begin], end - begin);
+			if (cut) { // 切り取りの場合は、選択範囲の文字を削除して行を更新
+				if (entire) { // 論理行全体が選択されている場合は、行を削除する
+					delete_list.push_back(curr.lrow); // 後ろから削除するため削除リストに登録
+				} else { // 論理行の一部が選択されている場合は、選択範囲の文字を削除して行を更新する
+					chars.erase(chars.begin() + begin, chars.begin() + end);
+					commit_line(curr.lrow, chars);
+				}
+			}
+			curr.lrow++;
+		}
+		if (cut) { // 切り取りの場合
+			// 削除リストにある論理行を削除する
+			for (auto it = delete_list.rbegin(); it != delete_list.rend(); it++) {
+				delete_line(*it);
+			}
+			std::vector<Character> chars = parseLogicalLine(cx(), a.lrow);
+			if (!chars.empty()) {
+				char32_t c = chars.back().unicode;
+				if (c != '\n' && c != '\n') { // 最後の文字が改行でない場合は、次の行を結合する
+					std::vector<Character> next = parseLogicalLine(cx(), a.lrow + 1);
+					if (!next.empty()) {
+						// 次の行の文字を現在の行の末尾に追加して、現在の行を更新
+						chars.insert(chars.end(), next.begin(), next.end());
+						commit_line(a.lrow, chars);
+						// 次の行を削除する
+						delete_line(a.lrow + 1);
+					}
+				}
+			}
+		}
+	}
+	if (cut) { // 切り取りの場合
+		clear_selection(); // 選択範囲をクリア
+		setCursorPos(visual_position(a)); // カーソルを選択範囲の開始位置に移動
 	}
 
 	clearParsedLine();
 	UpdateVisibility();
 }
 
-void AbstractCharacterBasedApplication::edit_(EditOperation op)
+void AbstractTextEditorApplication::_edit_op(EditOperation op)
 {
-	std::vector<Char> cutbuf;
-	editSelected(op, &cutbuf);
+	std::vector<Character> cutbuf;
+	edit_selection(op, &cutbuf);
 	if (cutbuf.empty()) return;
 
 	std::vector<char32_t > c32buf;
 	c32buf.reserve(cutbuf.size());
-	for (Char const &c : cutbuf) {
+	for (Character const &c : cutbuf) {
 		c32buf.push_back(c.unicode);
 	}
 
@@ -1154,167 +1656,118 @@ void AbstractCharacterBasedApplication::edit_(EditOperation op)
 	}
 }
 
-bool AbstractCharacterBasedApplication::deleteIfSelected()
+bool AbstractTextEditorApplication::deleteIfSelected()
 {
-	if (selection_end.enabled && selection_start.enabled) {
-		if (selection_end != selection_start) {
-			editSelected(EditOperation::Cut, nullptr);
+	if (selection_end() && selection_start()) {
+		if (selection_end() != selection_start()) {
+			edit_selection(EditOperation::Cut, nullptr);
 			return true;
 		}
 	}
 	return false;
 }
 
-void AbstractCharacterBasedApplication::doDelete()
+void AbstractTextEditorApplication::delete_line(row_index_t lrow)
 {
-	if (isReadOnly()) return;
+	std::vector<Document::Line> *llines = &document()->logical_lines;
+	if (lrow < llines->size()) {
+		llines->erase(llines->begin() + lrow);
+	}
+	cx()->line_index_map.erase(lrow);
+	invalidate_nlines_cache();
+}
+
+void AbstractTextEditorApplication::doDelete()
+{
+	if (is_read_only()) return;
 	if (isTerminalMode()) return;
 
 	if (deleteIfSelected()) {
 		return;
 	}
 	
-	Document *doc = &cx()->engine->document;
+	Document *doc = document();
 	
-	parseCurrentLine(nullptr, nullptr, false);
-	std::vector<Char> *vec = &m->parsed_current_line_chars;
-	int index = m->parsed_col_index;
-	int c = -1;
-	if (index >= 0 && index < (int)vec->size()) {
-		c = (*vec)[index].unicode;
+	col_index_t lrow = current_logical_row();
+	col_index_t lcol = current_logical_col();
+	std::vector<Character> chars = parseLogicalLine(cx(), lrow);
+	bool delete_nl = false; // 削除した文字が改行コードであるかどうか
+	char32_t c = -1;
+	if (lcol >= 0 && lcol < (int)chars.size()) {
+		c = (chars)[lcol].unicode;
 	}
 	if (c == '\n' || c == '\r' || c == -1) {
-		if (index == 0) {
-			m->parsed_row_index--;
+		if (c != -1) {
+			chars.erase(chars.begin() + lcol);
+			if (c == '\r' && lcol < (int)chars.size() && (chars)[lcol].unicode == '\n') {
+				chars.erase(chars.begin() + lcol);
+			}
 		}
-		invalidateAreaBelowTheCurrentLine();
-		if (isSingleLineMode()) {
-			// nop
-		} else {
-			if (c != -1) {
-				vec->erase(vec->begin() + index);
-				if (c == '\r' && index < (int)vec->size() && (*vec)[index].unicode == '\n') {
-					vec->erase(vec->begin() + index);
-				}
+		delete_nl = true;
+		if (lcol == (int)chars.size()) { // カーソルが行末にある場合は、次の行を結合する
+			row_index_t next_lrow = lrow + 1;
+			std::vector<Character> next = parseLogicalLine(cx(), next_lrow);
+			chars.insert(chars.end(), next.begin(), next.end());
+			if (next_lrow < logicalLines()) {
+				delete_line(next_lrow);
 			}
-			if (vec->empty()) {
-				clearParsedLine();
-				if (currentRow() + 1 < (int)doc->lines.size()) {
-					doc->lines.erase(doc->lines.begin() + currentRow());
-					
-				}
-			} else {
-				commitLine(*vec);
-				setCursorCol(index);
-				if (index == (int)vec->size()) {
-					int nextrow = currentRow() + 1;
-					int lines = documentLines();
-					if (nextrow < lines) {
-						Document::Line *ba1 = &doc->lines[currentRow()];
-						Document::Line const &ba2 = doc->lines[nextrow];
-						ba1->append_text(ba2.text());
-						doc->lines.erase(doc->lines.begin() + nextrow);
-					}
-				}
-			}
-			clearParsedLine();
-			updateVisibility(true, true, true);
 		}
 	} else {
-		vec->erase(vec->begin() + index);
-		commitLine(*vec);
-		setCursorCol(index);
-		updateVisibility(true, true, true);
+		chars.erase(chars.begin() + lcol);
 	}
+
+	row_index_t vrow = lrow_to_vrow(lrow);
+	col_index_t vcol = current_visual_col();
+	
+	if (commit_line(lrow, chars)) {
+		// 折り返し後の物理行数が変化した場合は、これ以降の物理行情報を無効化する
+		if (delete_nl) {
+			invalidate_visual_row_info(vrow);
+		} else {
+			invalidate_visual_row_info(vrow + 1);
+		}
+	}
+	
+	vcol = lcol; // 論理行から物理行を再計算
+	std::vector<Document::Line> *llines = &doc->logical_lines;
+	Document::Line const &line = (*llines)[lrow];
+	for (size_t i = 0; i < line.sp->meta.visual_lines.size(); i++) {
+		std::vector<Character> chars = parseLine(&line.sp->meta.visual_lines[i]);
+		if (vcol <= chars.size()) break;
+		vcol -= chars.size();
+		vrow++;
+	}
+	if (nlines() > 0 && vrow >= nlines()) {
+		vrow = nlines() - 1;
+	}
+	setCursorPos({vrow, vcol});
+
+	updateVisibility({});
 }
 
-void AbstractCharacterBasedApplication::doBackspace()
+void AbstractTextEditorApplication::doBackspace()
 {
-	if (isReadOnly()) return;
+	if (is_read_only()) return;
 	if (isTerminalMode()) return;
 
 	if (deleteIfSelected()) {
 		return ;
 	}
 
-	if (currentRow() > 0 || currentCol() > 0) {
+	if (current_visual_row() > 0 || current_visual_col() > 0) {
 		setPaintingSuppressed(true);
 		moveCursorLeft();
 		doDelete();
 		setPaintingSuppressed(false);
-		updateVisibility(true, true, true);
+		updateVisibility({});
 	}
 }
 
-bool AbstractCharacterBasedApplication::isDialogMode()
-{
-	return m->dialog_mode;
-}
-
-void AbstractCharacterBasedApplication::setDialogOption(QString const &title, QString const &value, DialogHandler const &handler)
-{
-	m->dialog_title = title;
-	m->dialog_value = value;
-	m->dialog_handler = handler;
-}
-
-void AbstractCharacterBasedApplication::setDialogMode(bool f)
-{
-	if (f) {
-		if (!dialog_cx) {
-			int y = screenHeight() - 2;
-			dialog_cx = std::make_shared<TextEditorContext>();
-			dialog_cx->engine = std::make_shared<TextEditorEngine>();
-			dialog_cx->single_line = true;
-			dialog_cx->viewport_org_x = 0;
-			dialog_cx->viewport_org_y = y + 1;
-			dialog_cx->viewport_width = screenWidth();
-			dialog_cx->viewport_height = 1;
-		}
-		dialog_cx->engine->document.lines.push_back(Document::Line(m->dialog_value.toUtf8()));
-		editor_cx->viewport_height = screenHeight() - m->header_line - 2;
-		m->dialog_mode = true;
-		clearParsedLine();
-		moveCursorEnd();
-	} else {
-		dialog_cx.reset();
-		m->dialog_mode = false;
-		layoutEditor();
-		clearParsedLine();
-		updateVisibility(true, true, true);
-	}
-}
-
-void AbstractCharacterBasedApplication::execDialog(QString const &dialog_title, QString const &dialog_value, DialogHandler const &handler)
-{
-	setDialogOption(dialog_title, dialog_value, handler);
-	setDialogMode(true);
-}
-
-void AbstractCharacterBasedApplication::closeDialog(bool result)
-{
-	if (isDialogMode()) {
-		deselect();
-		QString line;
-		if (!dialog_cx->engine->document.lines.empty()) {
-			Document::Line const &l = dialog_cx->engine->document.lines.front();
-			line = QString::fromUtf8(l.text().data(), (int)l.text().size());
-		}
-		setDialogMode(false);
-		if (m->dialog_handler) {
-			m->dialog_handler(result, line);
-		}
-		return;
-	}
-}
-
-int AbstractCharacterBasedApplication::calcColumnToIndex(int column)
+int AbstractTextEditorApplication::calcColumnToIndex(int column)
 {
 	int index = 0;
-	auto *line = m->current_line_data;
-	if (line) {
-		if (column > 0) {
-			fetchCurrentLine();
+	if (column > 0) {
+		if (Document::Line const *line = currentLine()) {
 			std::string_view text = line->text();
 			int col = 0;
 			int len = text.size();
@@ -1328,7 +1781,7 @@ int AbstractCharacterBasedApplication::calcColumnToIndex(int column)
 						break;
 					}
 					if (c == '\t') {
-						int z = nextTabStop(col);
+						int z = nextTabStop(cx(), col);
 						n = z - col;
 					} else {
 						n = charWidth(c);
@@ -1345,398 +1798,259 @@ int AbstractCharacterBasedApplication::calcColumnToIndex(int column)
 	return index;
 }
 
-void AbstractCharacterBasedApplication::invalidateArea(int top_y)
+int AbstractTextEditorApplication::scrollBottomLimit() const
 {
-	int y0 = cx()->viewport_org_y;
-	int y1 = cx()->viewport_height + y0;
-	top_y += y0;
-	if (y0 < top_y) y0 = top_y;
-	int n = (int)m->line_flags.size();
-	if (y0 < 0) y0 = 0;
-	if (y1 > n) y1 = n;
-	for (int y = y0; y < y1; y++) {
-		m->line_flags[y] |= LineChanged;
-	}
+	return logicalLines() - editor_viewport_height() / 2;
 }
 
-void AbstractCharacterBasedApplication::invalidateAreaBelowTheCurrentLine()
+int AbstractTextEditorApplication::scrollBottomLimit2() const
 {
-	int y;
-
-	y = m->parsed_row_index;
-	if (m->valid_line_index > y) {
-		m->valid_line_index = y;
-	}
-
-	y = m->parsed_row_index - cx()->scroll_row_pos;
-	invalidateArea(y);
+	return logicalLines() - editor_viewport_height();
 }
 
-int AbstractCharacterBasedApplication::scrollBottomLimit() const
-{
-	return documentLines() - editorViewportHeight() / 2;
-}
-
-int AbstractCharacterBasedApplication::scrollBottomLimit2() const
-{
-	return documentLines() - editorViewportHeight();
-}
-
-void AbstractCharacterBasedApplication::writeCR()
-{
-	deleteIfSelected();
-
-	setCursorCol(0);
-	clearParsedLine();
-	updateVisibility(true, true, true);
-}
-
-void AbstractCharacterBasedApplication::moveCursorOut()
+void AbstractTextEditorApplication::moveCursorOut()
 {
 	setCursorRow(-1);
 }
 
-void AbstractCharacterBasedApplication::moveCursorHome()
+void AbstractTextEditorApplication::moveCursorHome(bool consider_indent)
 {
-	fetchCurrentLine();
-	if (m->current_line_data) {
-		std::string_view line = m->current_line_data->text();
-		char const *ptr = line.data();
-		char const *end = ptr + line.size();
-		int x = 0;
-		while (1) {
-			int c = -1;
-			if (ptr < end) {
-				c = *ptr;
-				ptr++;
-			}
-			if (c == ' ') {
-				x++;
-			} else if (c == '\t') {
-				x = nextTabStop(x);
-			} else {
-				break;
-			}
-		}
-		if (x == currentCol()) {
-			x = 0;
-		}
-		setCursorCol(x);
-		clearParsedLine();
-		updateVisibility(true, true, true);
-	}
-}
+	col_index_t vcol = 0;
 
-void AbstractCharacterBasedApplication::moveCursorEnd()
-{
-	fetchCurrentLine();
-	if (m->current_line_data) {
-		std::string_view line = m->current_line_data->text();
-		int col = calcVisualWidth(Document::Line::View(line));
-		setCursorCol(col);
-		clearParsedLine();
-		updateVisibility(true, true, true);
-	}
-}
-
-void AbstractCharacterBasedApplication::scrollUp()
-{
-	if (cx()->scroll_row_pos > 0) {
-		cx()->scroll_row_pos--;
-		invalidateArea();
-		clearParsedLine();
-		updateVisibility(false, false, true);
-	}
-}
-
-void AbstractCharacterBasedApplication::scrollDown()
-{
-	int limit = scrollBottomLimit();
-	if (cx()->scroll_row_pos < limit) {
-		cx()->scroll_row_pos++;
-		invalidateArea();
-		clearParsedLine();
-		updateVisibility(false, false, true);
-	}
-}
-
-void AbstractCharacterBasedApplication::moveCursorUp()
-{
-	if (isSingleLineMode()) {
-		// nop
-	} else if (currentRow() > 0) {
-		setCursorRow(currentRow() - 1); // カーソルを1行上へ
-		clearParsedLine();
-		updateVisibility(true, false, true);
-	}
-}
-
-void AbstractCharacterBasedApplication::moveCursorDown()
-{
-	if (isSingleLineMode()) {
-		// nop
-	} else if (currentRow() + 1 < (int)document()->lines.size()) {
-		setCursorRow(currentRow() + 1); // カーソルを1行下へ
-		clearParsedLine();
-		updateVisibility(true, false, true);
-	}
-}
-
-void AbstractCharacterBasedApplication::scrollToTop()
-{
-	if (isSingleLineMode()) return;
-
-	setCursorRow(0);
-	setCursorCol(0);
-	cx()->scroll_row_pos = 0;
-	invalidateArea();
-	clearParsedLine();
-	updateVisibility(true, false, true);
-}
-
-void AbstractCharacterBasedApplication::moveCursorLeft()
-{
-	if (!isShiftModifierPressed() && selection_end.enabled && selection_start.enabled) { // 選択領域があったら
-		if (selection_end != selection_start) {
-			SelectionAnchor a = std::min(selection_end, selection_start);
-			deselect();
-			setCursorRow(a.row);
-			setCursorCol(a.col);
-			updateVisibility(true, true, true);
-			return;
-		}
-	}
-
-	if (currentCol() == 0) { // 行頭なら
-		if (isSingleLineMode()) {
-			// nop
-		} else {
-			if (currentRow() > 0) {
-				setCursorRow(currentRow() - 1); // 上へ移動
-				clearParsedLine();
-				moveCursorEnd(); // 行末へ移動
-			}
-		}
-		return;
-	}
-
-	setCursorCol(currentCol() - 1);
-	updateVisibility(true, true, true);
-}
-
-void AbstractCharacterBasedApplication::moveCursorRight()
-{
-	if (!isShiftModifierPressed() && selection_end.enabled && selection_start.enabled) { // 選択領域があったら
-		if (selection_end != selection_start) {
-			SelectionAnchor a = std::max(selection_end, selection_start);
-			deselect();
-			setCursorRow(a.row);
-			setCursorCol(a.col);
-			updateVisibility(true, true, true);
-			return;
-		}
-	}
-
-	int col = 0;
-	int i = 0;
-	while (1) {
-		char32_t c = -1;
-		if (i < (int)m->parsed_current_line_chars.size()) {
-			c = m->parsed_current_line_chars[i].unicode;
-		}
-		if (c == '\r' || c == '\n' || c == (char32_t)-1) {
-			if (!isSingleLineMode()) {
-				int nextrow = currentRow() + 1;
-				int lines = document()->lines.size();
-				if (nextrow < lines) {
-					setCursorPos(nextrow, 0);
-					clearParsedLine();
-					updateVisibility(true, true, true);
-					return;
-				}
-			}
-			break;
-		}
-		col++;
-		if (col > currentCol()) {
-			break;
-		}
-		i++;
-	}
-	if (col != currentCol()) {
-		setCursorCol(col);
-		clearParsedLine();
-		updateVisibility(true, true, true);
-	}
-}
-
-void AbstractCharacterBasedApplication::movePageUp()
-{
-	if (!isSingleLineMode()) {
-		int step = editorViewportHeight();
-		setCursorRow(currentRow() - step);
-		cx()->scroll_row_pos -= step;
-		if (currentRow() < 0) {
-			setCurrentRow(0);
-		}
-		if (cx()->scroll_row_pos < 0) {
-			cx()->scroll_row_pos = 0;
-		}
-		invalidateArea();
-		clearParsedLine();
-		updateVisibility(true, false, true);
-	}
-}
-
-void AbstractCharacterBasedApplication::movePageDown()
-{
-	if (!isSingleLineMode()) {
-		int limit = documentLines();
-		if (limit > 0) {
-			limit--;
-			int step = editorViewportHeight();
-			setCursorRow(currentRow() + step);
-			cx()->scroll_row_pos += step;
-			if (currentRow() > limit) {
-				setCurrentRow(limit);
-			}
-			limit = scrollBottomLimit();
-			if (cx()->scroll_row_pos > limit) {
-				cx()->scroll_row_pos = limit;
-			}
-		} else {
-			setCursorRow(0);
-			cx()->scroll_row_pos = 0;
-		}
-		invalidateArea();
-		clearParsedLine();
-		updateVisibility(true, false, true);
-	}
-}
-
-void AbstractCharacterBasedApplication::addNewLineToBottom()
-{
-	int row = cx()->engine->document.lines.size();
-	if (currentRow() >= row) {
-		setCursorPos(row, 0);
-		cx()->engine->document.lines.push_back(Document::Line(QByteArray()));
-	}
-}
-
-void AbstractCharacterBasedApplication::appendNewLine(std::vector<Char> *vec)
-{
-	if (isSingleLineMode()) return;
-
-//	vec->emplace_back('\r');
-	vec->emplace_back('\n');
-}
-
-void AbstractCharacterBasedApplication::writeNewLine()
-{
-	if (isReadOnly()) return;
-	if (isSingleLineMode()) return;
-
-	invalidateAreaBelowTheCurrentLine();
-
-	std::vector<Char> curr_line_chars;
-	parseCurrentLine(&curr_line_chars, nullptr, false);
-	int index = m->parsed_col_index;
-	if (index < 0) {
-		addNewLineToBottom();
-		index = 0;
-	}
-	std::vector<Char> next_line;
-	// split line
-	next_line.insert(next_line.end(), curr_line_chars.begin() + index, curr_line_chars.end());
-	// shrink current line
-	curr_line_chars.resize(index);
-	// append new line code
-	appendNewLine(&curr_line_chars);
-	// next line index
-	setCurrentRow(m->parsed_row_index + 1);
-	// commit current line
-	commitLine(curr_line_chars);
-	// insert next line
-	m->parsed_row_index = currentRow();
-	engine()->document.lines.insert(engine()->document.lines.begin() + m->parsed_row_index, Document::Line(QByteArray()));
-	// commit next line
-	commitLine(next_line);
-
-	setCursorCol(0);
-
-	clearParsedLine();
-	updateVisibility(true, true, true);
-}
-
-/**
- * @brief 現在行の桁座標リストを作成する
- * @param out
- */
-void AbstractCharacterBasedApplication::makeColumnPosList(std::vector<int> *out)
-{
-	out->clear();
-	std::vector<Char> const line = m->parsed_current_line_chars;
-	int x = 0;
-	while (1) {
-		size_t index = out->size();
-		out->push_back(x);
-		char32_t c = -1;
-		if (index < line.size()) {
-			c = line.at(index).unicode;
-		}
-		if (c == '\r' || c == '\n' || c == (uint32_t)-1) {
-			break;
-		}
-		x++;
-	}
-}
-
-void AbstractCharacterBasedApplication::updateCursorPos(bool auto_scroll)
-{
-	if (!cx()->engine) {
-		return;
-	}
-
-	parseCurrentLine(nullptr, nullptr, false);
-
-	int index = 0;
-	int char_span = 0;
-	int col = cx()->current_col_hint;
-
-	{
-		std::vector<int> pts;
-		makeColumnPosList(&pts);
-		if (pts.size() > 1) {
-			int newindex = (int)pts.size() - 1;
-			for (int i = 0; i + 1 < (int)pts.size(); i++) {
-				int x = pts[i];
-				if (x <= col && col < pts[i + 1]) {
-					char_span = pts[i + 1] - pts[i];
-					newindex = i;
+	if (consider_indent) { // 行頭の空白を飛ばす
+		row_index_t vrow = current_visual_row();
+		if (vrow == lrow_to_vrow(current_logical_row())) { // 論理行の先頭なら
+			std::vector<Character> const &vline = parseCurrentLine();
+			const col_index_t ncols = vline.size();
+			col_index_t indent_vcol = 0;
+			while (indent_vcol < ncols) {
+				char32_t c = vline[indent_vcol].unicode;
+				if (c == ' ' || c == '\t') {
+					indent_vcol++;
+				} else {
 					break;
 				}
 			}
-			index = newindex;
+			col_index_t curr_vcol = current_visual_col();
+			vcol = (curr_vcol > 0 && curr_vcol <= indent_vcol) ? 0 : indent_vcol; // カーソルがインデントの範囲内なら行頭へ、そうでなければインデントの先頭へ
 		}
 	}
 
-	m->parsed_col_index = index;
+	setCursorCol(vcol);
+	clearParsedLine();
+	updateVisibility({});
+}
 
-	if (char_span < 1) {
-		char_span = 1;
-	}
-	cx()->current_char_span = char_span;
-
-	if (auto_scroll) {
-		int pos = decideColumnScrollPos();
-		if (cx()->scroll_col_pos != pos) {
-			cx()->scroll_col_pos = pos;
-			invalidateArea();
+void AbstractTextEditorApplication::moveCursorEnd()
+{
+	std::vector<Character> const &vline = parseCurrentLine();
+	col_index_t col = vline.size();
+	
+	while (col > 0) { // 行末の改行コードを飛ばす
+		char32_t c = vline[col - 1].unicode;
+		if (c == '\r' || c == '\n') {
+			col--;
+		} else {
+			break;
 		}
+	}
+	
+	setCursorCol(col);
+	clearParsedLine();
+	updateVisibility({});
+}
+
+void AbstractTextEditorApplication::scrollUp()
+{
+	if (scroll_vert_pos() > 0) {
+		set_scroll_vert_pos(scroll_vert_pos() - 1);
+		clearParsedLine();
+		updateVisibility({false, false, true});
 	}
 }
 
-void AbstractCharacterBasedApplication::printInvertedBar(int x, int y, char const *text, int padchar)
+void AbstractTextEditorApplication::scrollDown()
+{
+	int limit = scrollBottomLimit();
+	if (scroll_vert_pos() < limit) {
+		set_scroll_vert_pos(scroll_vert_pos() + 1);
+		clearParsedLine();
+		updateVisibility({false, false, true});
+	}
+}
+
+void AbstractTextEditorApplication::moveCursorUp()
+{
+	row_index_t vrow = current_visual_row();
+	if (vrow > 0) {
+		vrow--;
+	}
+	setCursorRow(vrow); // カーソルを1行上へ
+	clearParsedLine();
+	updateVisibility({true, false, true});
+}
+
+void AbstractTextEditorApplication::moveCursorDown()
+{
+	row_index_t vrow = current_visual_row();
+	if (vrow + 1 < nlines()) {
+		vrow++;
+	}
+	setCursorRow(vrow); // カーソルを1行下へ
+	clearParsedLine();
+	updateVisibility({true, false, true});
+}
+
+void AbstractTextEditorApplication::scrollToTop()
+{
+	setCursorRow(0);
+	setCursorCol(0);
+	set_scroll_vert_pos(0);
+	clearParsedLine();
+	updateVisibility({true, false, true});
+}
+
+void AbstractTextEditorApplication::moveCursorLeft()
+{
+	if (!isShiftModifierPressed() && selection_end() && selection_start()) { // 選択領域があったら
+		if (selection_end() != selection_start()) {
+			SelectionAnchor a = std::min(selection_end(), selection_start()); // 選択範囲の先頭位置
+			clear_selection();
+			setCursorPos(visual_position(a)); // 選択範囲の先頭位置にカーソルを移動
+			updateVisibility({});
+			return;
+		}
+	}
+	
+	col_index_t vcol = current_visual_col();
+	if (vcol == 0) { // 行頭なら
+		row_index_t vrow = current_visual_row();
+		if (vrow > 0) {
+			const auto prev_pos = query_logical_for_visual_row(vrow - 1);
+			const auto curr_pos = query_logical_for_visual_row(vrow);
+			setCursorRow(vrow - 1); // 上へ移動
+			moveCursorEnd(); // 行末へ移動
+			if (prev_pos.lrow == curr_pos.lrow) { // 同じ論理行の続きなら
+				moveCursorLeft(); // 左へ移動
+			}
+		}
+		return;
+	}
+
+	setCursorCol(current_visual_col() - 1);
+	updateVisibility({});
+}
+
+void AbstractTextEditorApplication::moveCursorRight()
+{
+	if (!isShiftModifierPressed() && selection_end() && selection_start()) { // 選択領域があったら
+		if (selection_end() != selection_start()) {
+			SelectionAnchor a = std::max(selection_end(), selection_start()); // 選択範囲の末尾位置
+			clear_selection();
+			setCursorPos(visual_position(a)); // 選択範囲の先頭位置にカーソルを移動
+			updateVisibility({});
+			return;
+		}
+	}
+
+	auto MoveToNextRow = [this](){
+		int next_vrow = current_visual_row() + 1;
+		if (next_vrow < nlines()) {
+			setCursorRow(next_vrow, false);
+			moveCursorHome(false); // 行頭へ移動
+			return true;
+		}
+		return false;
+	};
+	
+	auto MoveColumn = [this](col_index_t vcol){
+		if (vcol != current_visual_col()) {
+			setCursorCol(vcol);
+			clearParsedLine();
+			updateVisibility({});
+			return true;
+		}
+		return false;
+	};
+	
+	const auto curr_pos = query_logical_for_visual_row(current_visual_row());
+	const auto next_pos = query_logical_for_visual_row(current_visual_row() + 1);
+	
+	std::vector<Character> const &vline = parseCurrentLine();
+	
+	col_index_t vcol = current_visual_col();
+	
+	char32_t c = -1;
+	if (vcol < vline.size()) {
+		c = vline[vcol].unicode;
+	}
+	if (c == '\r' || c == '\n' || c == (char32_t)-1) {
+		MoveToNextRow(); // 次の行の先頭へ移動
+		return;
+	}
+	
+	vcol++;
+	if (vcol > current_visual_col()) {
+		if (curr_pos.lrow == next_pos.lrow) { // 同じ論理行の続きなら
+			const size_t len = next_pos.lcol - curr_pos.lcol; // 物理行の長さ
+			if (vcol >= len) { // 行末
+				if (MoveToNextRow()) return;
+			}
+		}
+		if (MoveColumn(vcol)) return;
+	}
+}
+
+void AbstractTextEditorApplication::movePageUp()
+{
+	int step = editor_viewport_height();
+	setCursorRow(current_visual_row() - step);
+	set_scroll_vert_pos(scroll_vert_pos() - step);
+	if (current_visual_row() < 0) {
+		set_current_visual_row(0);
+	}
+	if (scroll_vert_pos() < 0) {
+		set_scroll_vert_pos(0);
+	}
+	clearParsedLine();
+	updateVisibility({true, false, true});
+}
+
+void AbstractTextEditorApplication::movePageDown()
+{
+	row_index_t vrow_limit = nlines();
+	if (vrow_limit > 0) {
+		vrow_limit--;
+		int step = editor_viewport_height();
+		row_index_t curr_vrow = current_visual_row();
+		row_index_t next_vrow = std::min(curr_vrow + step, vrow_limit);
+		int scroll_pos = scroll_vert_pos() + (next_vrow - curr_vrow);
+		scroll_pos = std::min(scroll_pos, scrollBottomLimit());
+		setCursorRow(next_vrow);
+		set_scroll_vert_pos(scroll_pos);
+	} else {
+		setCursorRow(0);
+		set_scroll_vert_pos(0);
+	}
+	clearParsedLine();
+	updateVisibility({true, false, true});
+}
+
+void AbstractTextEditorApplication::update_horz_scroll()
+{
+	int vcol = 0;
+	if (0 && !isWidthFixed()) { // TODO:
+		int x = current_visual_pixel_x();
+		int w = editor_viewport_width() - RIGHT_MARGIN;
+		if (w < 0) w = 0;
+		if (x > w) {
+			vcol = current_visual_col() - w;
+		}
+	}
+	set_scroll_horz_pos(vcol);
+}
+
+void AbstractTextEditorApplication::printInvertedBar(int x, int y, char const *text, int padchar)
 {
 	int w = screenWidth();
 	int o = w * y;
@@ -1744,7 +2058,7 @@ void AbstractCharacterBasedApplication::printInvertedBar(int x, int y, char cons
 		m->screen[o + i].c = 0;
 	}
 
-	AbstractCharacterBasedApplication::Option opt;
+	AbstractTextEditorApplication::Option opt;
 	opt.char_attr = CharAttr::Invert;
 	print(x, y, text, opt);
 
@@ -1756,282 +2070,99 @@ void AbstractCharacterBasedApplication::printInvertedBar(int x, int y, char cons
 	}
 }
 
-QString AbstractCharacterBasedApplication::statusLine() const
+QString AbstractTextEditorApplication::statusLine() const
 {
 	QString text = "[%1:%2]";
-	text = text.arg(currentRow() + 1).arg(currentCol() + 1);
+	text = text.arg(current_visual_row() + 1).arg(current_visual_col() + 1);
 	return text;
 }
 
-int AbstractCharacterBasedApplication::printArea(TextEditorContext const *cx, const SelectionAnchor *sel_a, const SelectionAnchor *sel_b)
+void AbstractTextEditorApplication::paintLineNumbers(std::function<void(int, QString const &, Document::Line const *)> const &draw)
 {
-	int end_of_line_y = -1;
-	if (cx) {
-		int height = cx->viewport_height;
-		QRect clip(cx->viewport_org_x, cx->viewport_org_y, cx->viewport_width, height);
-		int row = cx->scroll_row_pos;
-		for (int i = 0; i < height; i++) {
-			if (row < 0) continue;
-			int y = cx->viewport_org_y + i;
-			if (row < (int)cx->engine->document.lines.size()) {
-				if (i < height) {
-					int x = cx->viewport_org_x - cx->scroll_col_pos;
-					Document::Line const &line = cx->engine->document.lines[row];
-					int anchor_a = -1;
-					int anchor_b = -1;
-					if (sel_a && sel_a->enabled && sel_b && sel_b->enabled) {
-						SelectionAnchor a = *sel_a;
-						SelectionAnchor b = *sel_b;
-						if (a.row > b.row) {
-							std::swap(a, b);
-						} else if (a.row == b.row) {
-							if (a.col > b.col) {
-								std::swap(a, b);
-							}
-						}
-						if (row > a.row && row < b.row) {
-							anchor_a = 0;
-						} else {
-							if (row == a.row) {
-								anchor_a = a.col;
-							}
-							if (row == b.row) {
-								anchor_b = b.col;
-							}
-						}
-					}
-					std::vector<FormattedLine> lines = formatLine_(line, cx->tab_indent_size, anchor_a, anchor_b);
-					for (FormattedLine const &line : lines) {
-						AbstractCharacterBasedApplication::Option opt;
-						if (line.atts & FormattedLine::StyleID) {
-							opt.char_attr.color = QColor(line.atts & 0xff, (line.atts >> 8) & 0xff, (line.atts >> 16) & 0xff);
-						}
-						opt.clip = clip;
-						if (line.isSelected()) {
-							opt.char_attr.flags |= CharAttr::Selected;
-						}
-						x = print(x, y, line.text, opt);
-					}
-					int end_x = clip.x() + clip.width();
-					if (x < end_x) {
-						if (x < clip.left()) {
-							x = clip.left();
-						}
-						if (x < end_x) {
-							clearRect(x, y, end_x - x, 1);
-						}
-					}
-				}
-			} else {
-				if (end_of_line_y < 0) {
-					end_of_line_y = i;
-				}
-				clearRect(cx->viewport_org_x, y, cx->viewport_width, 1);
-				if (y >= 0 && y < (int)m->line_flags.size()) {
-					m->line_flags[y] |= LineChanged;
-				}
-			}
-			row++;
-		}
-	}
-	return end_of_line_y;
-}
-
-void AbstractCharacterBasedApplication::paintLineNumbers(std::function<void(int, QString const &, Document::Line const *)> const &draw)
-{
-	auto Line = [&](int index)->Document::Line const &{
-		Document *doc = &editor_cx->engine->document;
-		return doc->lines[index];
+	auto Line = [&](row_index_t row)-> Document::Line const & {
+		return *visual_line(row);
 	};
+
 	int rightpadding = 2;
 	int left_margin = editor_cx->viewport_org_x;
-	int num = 1;
-	size_t offset = 0;
+
 	for (int i = 0; i <= editor_cx->viewport_height; i++) {
-		QString tmp;
-		int row = editor_cx->scroll_row_pos + i;
+		row_index_t vrow = editor_cx->scroll_vert_pos + i;
 		auto LineNumberText = [&](int linenum){
-			if (linenum < 1) return QString();
-			return QString::asprintf("%*u ", left_margin - rightpadding, linenum);
+			if (linenum > 0) {
+				return QString::asprintf("%*u ", left_margin - rightpadding, linenum);
+			}
+			return QString();
 		};
+		QString text;
 		Document::Line const *line = nullptr;
-		if (row < (int)editor_cx->engine->document.lines.size()) {
-			if (m->valid_line_index < 0) {
-				m->valid_line_index = 0;
-			}
-			if (row >= m->valid_line_index) {
-				{
-					Document::Line const &line2 = Line(m->valid_line_index);
-					offset = line2.byte_offset;
-					num = line2.line_number;
-				}
-				while (m->valid_line_index <= row) {
-					Document::Line const &line = Line(m->valid_line_index);
-					if (line.type != Document::LineType::Unknown) {
-						offset += line.text().size();
-						num++;
-					}
-					m->valid_line_index++;
-				}
-			}
+		if (vrow < (int)nlines()) {
 			if (left_margin > 1) {
-				line = &Line(row);
-				unsigned int linenum = -1;
-				if (row < m->valid_line_index) {
-					linenum = line->line_number;
+				line = &Line(vrow);
+				unsigned int linenum = 0;
+				if (line->sp->meta.line_number_override >= 0) {
+					linenum = line->sp->meta.line_number_override;
+				} else {
+					auto pos = query_logical_for_visual_row(vrow); // 物理行から論理行番号を取得する
+					if (pos.lcol == 0) {
+						linenum = pos.lrow + 1;
+					}
 				}
-				if (linenum != (unsigned int)-1 && line->type != Document::LineType::Unknown) {
-					tmp = LineNumberText(linenum);
+				if (line->sp->meta.type != Document::LineType::Invalid) {
+					text = LineNumberText(linenum);
 				}
 			}
-		} else if (row == 0 && editor_cx->engine->document.lines.empty()) {
-			tmp = LineNumberText(1);
+		} else if (vrow == 0 && nlines() == 0) {
+			text = LineNumberText(1);
 		}
 		int y = editor_cx->viewport_org_y + i;
-		draw(y, tmp, line);
+		draw(y, text, line);
 	}
 }
 
-bool AbstractCharacterBasedApplication::isAutoLayout() const
+bool AbstractTextEditorApplication::isAutoLayout() const
 {
 	return m->auto_layout;
 }
 
-void AbstractCharacterBasedApplication::preparePaintScreen()
+void AbstractTextEditorApplication::setNormalTextEditorMode(bool f)
 {
-	if (m->header_line > 0) {
-		char const *line = "Hello, world\xe3\x81\x82\xe3\x81\x84\xe3\x81\x86";
-		printInvertedBar(0, 0, line, ' ');
-	}
-
-	if (m->show_line_number) {
-		Option opt_normal;
-        paintLineNumbers([&](int y, QString const &text, Document::Line const *line){
-			(void)line;
-			print(0, y, text + '|', opt_normal);
-		});
-	}
-
-	SelectionAnchor anchor_a;
-	SelectionAnchor anchor_b;
-
-	auto MakeSelectionAnchor = [&](){
-		if (selection_end.enabled != SelectionAnchor::False) {
-			anchor_a = selection_end;
-#if 0
-			anchor_b.row = cx()->current_row;
-			anchor_b.col = cx()->current_col;
-			anchor_b.enabled = selection_anchor_0.enabled;
-#else
-			anchor_b = selection_start;
-#endif
-		}
-	};
-
-	if (isDialogMode()) {
-		printArea(editor_cx.get(), &anchor_a, &anchor_b);
-
-		std::string text = m->dialog_title.toStdString();
-		text = ' ' + text + ' ';
-		int y = screenHeight() - 2;
-		printInvertedBar(3, y, text.c_str(), '-');
-
-		MakeSelectionAnchor();
-		printArea(dialog_cx.get(), &anchor_a, &anchor_b);
-	} else {
-		MakeSelectionAnchor();
-		editor_cx->bottom_line_y = printArea(editor_cx.get(), &anchor_a, &anchor_b);
-
-		if (m->footer_line > 0) {
-			QString line = statusLine();
-			int y = screenHeight() - 1;
-			printInvertedBar(0, y, line.toStdString().c_str(), ' ');
-		}
-	}
-}
-
-void AbstractCharacterBasedApplication::onQuit()
-{
-	if (!m->is_quit_enabled) return;
-
-	if (!isDialogMode()) {
-		m->state = State::Exit;
-	}
-}
-
-void AbstractCharacterBasedApplication::onOpenFile()
-{
-	if (isReadOnly()) return;
-	if (!m->is_open_enabled) return;
-
-	if (!isDialogMode()) {
-		execDialog("Open File", recentlyUsedPath(), [&](bool ok, QString const &text){
-			if (ok) {
-				openFile(text);
-			}
-		});
-	}
-}
-
-void AbstractCharacterBasedApplication::onSaveFile()
-{
-	if (!m->is_save_enabled) return;
-
-	if (!isDialogMode()) {
-		execDialog("Save File", recentlyUsedPath(), [&](bool ok, QString const &text){
-			if (ok) {
-				saveFile(text);
-			}
-		});
-	}
-}
-
-void AbstractCharacterBasedApplication::setNormalTextEditorMode(bool f)
-{
-	m->is_quit_enabled = f;
-	m->is_open_enabled = f;
-	m->is_save_enabled = f;
 	setTerminalMode(!f);
 }
 
-SelectionAnchor AbstractCharacterBasedApplication::currentAnchor(SelectionAnchor::Enabled enabled)
+SelectionAnchor AbstractTextEditorApplication::currentAnchor(bool enabled) const
 {
 	SelectionAnchor a;
-	a.row = currentRow();
-	a.col = currentCol();
+	a.lrow = current_logical_row();
+	a.lcol = current_logical_col();
 	a.enabled = enabled;
 	return a;
 }
 
-void AbstractCharacterBasedApplication::setToggleSelectionAnchorEnabled(bool f)
-{
-	m->is_toggle_selection_anchor_enabled = f;
-}
-
-void AbstractCharacterBasedApplication::setReadOnly(bool f)
+void AbstractTextEditorApplication::set_read_only(bool f)
 {
 	m->is_read_only = f;
 }
 
-bool AbstractCharacterBasedApplication::isReadOnly() const
+bool AbstractTextEditorApplication::is_read_only() const
 {
 	return m->is_read_only && !m->is_terminal_mode;
 }
 
-void AbstractCharacterBasedApplication::setSelectionAnchor(SelectionAnchor::Enabled enabled, bool update_anchor, bool auto_scroll)
+void AbstractTextEditorApplication::setSelectionAnchor(bool enabled, bool update_anchor, bool auto_scroll)
 {
 	if (update_anchor) {
-		selection_end = currentAnchor(enabled);
+		set_selection_end(currentAnchor(enabled));
 	} else {
-		selection_end.enabled = enabled;
+		set_selection_end_enabled(enabled);
 	}
 	clearParsedLine();
-	updateVisibility(false, false, auto_scroll);
+	updateVisibility({false, false, auto_scroll});
 }
 
-void AbstractCharacterBasedApplication::editPaste()
+void AbstractTextEditorApplication::editPaste()
 {
-	if (isReadOnly()) return;
+	if (is_read_only()) return;
 	if (isTerminalMode()) return;
 
 	setPaintingSuppressed(true);
@@ -2043,167 +2174,120 @@ void AbstractCharacterBasedApplication::editPaste()
 	});
 
 	setPaintingSuppressed(false);
-	updateVisibility(true, true, true);
+	updateVisibility({});
 }
 
-void AbstractCharacterBasedApplication::editCopy()
+void AbstractTextEditorApplication::edit_copy()
 {
-	edit_(EditOperation::Copy);
+	_edit_op(EditOperation::Copy);
 }
 
-void AbstractCharacterBasedApplication::editCut()
+void AbstractTextEditorApplication::edit_cut()
 {
-	if (isReadOnly()) return;
+	if (is_read_only()) return;
 	if (isTerminalMode()) return;
-	edit_(EditOperation::Cut);
+	_edit_op(EditOperation::Cut);
 }
 
-void AbstractCharacterBasedApplication::setWriteMode(WriteMode wm)
+void AbstractTextEditorApplication::setWriteMode(WriteMode wm)
 {
 	m->write_mode = wm;
 }
 
-bool AbstractCharacterBasedApplication::isInsertMode() const
+bool AbstractTextEditorApplication::isInsertMode() const
 {
 	return m->write_mode == WriteMode::Insert && !isTerminalMode();
 }
 
-bool AbstractCharacterBasedApplication::isOverwriteMode() const
+bool AbstractTextEditorApplication::isOverwriteMode() const
 {
 	return m->write_mode == WriteMode::Overwrite || isTerminalMode();
 }
 
-void AbstractCharacterBasedApplication::setTerminalMode(bool f)
+void AbstractTextEditorApplication::setTerminalMode(bool f)
 {
 	m->is_terminal_mode = f;
 	if (isTerminalMode()) {
-		showHeader(false);
-		showFooter(false);
 		showLineNumber(false, 0);
-		setLineMargin(0);
+		setLineMargin(1);
 		setWriteMode(WriteMode::Overwrite);
-		setReadOnly(true);
+		set_read_only(true);
 	}
 	layoutEditor();
 }
 
-bool AbstractCharacterBasedApplication::isTerminalMode() const
+bool AbstractTextEditorApplication::isTerminalMode() const
 {
 	return m->is_terminal_mode;
 }
 
-bool AbstractCharacterBasedApplication::isBottom() const
+void AbstractTextEditorApplication::moveToTop()
 {
-	if (currentRow() == m->parsed_row_index) {
-		if (m->parsed_col_index == (int)m->parsed_current_line_chars.size()) {
-			return true;
-		}
-	}
-	return false;
-}
+	clear_selection();
 
-void AbstractCharacterBasedApplication::moveToTop()
-{
-	if (isSingleLineMode()) return;
-
-	deselect();
-
-	setCurrentRow(0);
-	setCurrentCol(0);
-	cx()->current_col_hint = 0;
-	cx()->scroll_row_pos = 0;
+	set_current_visual_row(0);
+	set_current_visual_col(0);
+	cx()->current_visual_col_hint = 0;
+	set_scroll_vert_pos(0);
 	scrollToTop();
-	invalidateArea();
 	clearParsedLine();
-	updateVisibility(true, false, true);
+	updateVisibility({true, false, true});
 }
 
-void AbstractCharacterBasedApplication::logicalMoveToBottom()
+void AbstractTextEditorApplication::logicalMoveToBottom()
 {
-	deselect();
+	clear_selection();
 
-	setCurrentRow(documentLines());
-	setCurrentCol(0);
-	if (currentRow() > 0) {
-		setCurrentRow(currentRow() - 1);
-		clearParsedLine();
-		fetchCurrentLine();
-		if (m->current_line_data) {
-			int col = calcVisualWidth(Document::Line::View(m->current_line_data->text()));
-			setCurrentCol(col);
-			cx()->current_col_hint = col;
-		}
+	row_index_t vrow = nlines();
+	if (vrow > 0) {
+		vrow--;
 	}
-	cx()->scroll_row_pos = scrollBottomLimit();
+	setCursorRow(vrow);
+	ensureCurrentLineVisible();
 }
 
-void AbstractCharacterBasedApplication::logicalMoveToBottom2()
+void AbstractTextEditorApplication::moveToBottom()
 {
-	deselect();
+	logicalMoveToBottom();
 
-	setCurrentRow(documentLines());
-	setCurrentCol(0);
-	if (currentRow() > 0) {
-		setCurrentRow(currentRow() - 1);
-		clearParsedLine();
-		fetchCurrentLine();
-		if (m->current_line_data) {
-			int col = calcVisualWidth(Document::Line::View(m->current_line_data->text()));
-			setCurrentCol(col);
-			cx()->current_col_hint = col;
-		}
-	}
-	cx()->scroll_row_pos = scrollBottomLimit2();
-}
-
-void AbstractCharacterBasedApplication::moveToBottom()
-{
-	if (isSingleLineMode()) return;
-
-	logicalMoveToBottom2();
-
-	invalidateArea();
 	clearParsedLine();
-	updateVisibility(true, false, true);
+	updateVisibility({true, false, true});
 }
 
-void AbstractCharacterBasedApplication::internalWrite(const ushort *begin, const ushort *end)
+void AbstractTextEditorApplication::internalWrite(const ushort *begin, const ushort *end)
 {
+	if (!isCurrentLineWritable()) return;
+	
 	deleteIfSelected();
 	clearShiftModifier();
 	
-	Document *doc = &cx()->engine->document;
-	if (doc->lines.empty()) {
+	Document *doc = document();
+	if (doc->logical_lines.empty()) {
 		Document::Line line;
-		line.type = Document::LineType::Normal;
-		line.line_number = 1;
-		doc->lines.push_back(line);
+		line.sp->meta.type = Document::LineType::Normal;
+		doc->logical_lines.push_back(line);
 	}
 
-	if (!isCurrentLineWritable()) return;
+	row_index_t vrow = current_visual_row();
+	row_index_t lrow = current_logical_row();
+	col_index_t lcol = current_logical_col();
 
-	parseCurrentLine(nullptr, nullptr, false);
-	int col_index = m->parsed_col_index;
-	if (col_index < 0) {
-		addNewLineToBottom();
-		col_index = 0;
-	}
-
-	std::vector<Char> *vec = &m->parsed_current_line_chars;
+	std::vector<Character> vec = parseLogicalLine(cx(), lrow);
 
 	auto WriteChar = [&](uint32_t c){
 		if (isInsertMode()) {
-			vec->insert(vec->begin() + col_index, Char(c));
+			assert(lcol >= 0 && lcol <= vec.size());
+			vec.insert(vec.begin() + lcol, Character(c));
 		} else if (isOverwriteMode()) {
-			if (col_index < (int)vec->size()) {
-				char32_t d = vec->at(col_index).unicode;
-				if (d == '\n' || d == '\r') {
-					vec->insert(vec->begin() + col_index, Char(c));
+			if (lcol < (int)vec.size()) {
+				char32_t d = vec[lcol].unicode;
+				if (d == '\n' || d == '\r') { // 行末の改行コードを上書きする場合は、挿入する
+					vec.insert(vec.begin() + lcol, Character(c));
 				} else {
-					vec->at(col_index) = Char(c);
+					vec[lcol] = Character(c);
 				}
 			} else {
-				vec->emplace_back(c);
+				vec.emplace_back(c);
 			}
 		}
 	};
@@ -2219,58 +2303,43 @@ void AbstractCharacterBasedApplication::internalWrite(const ushort *begin, const
 					ptr++;
 					int u = 0x10000 + (c - 0xd800) * 0x400 + (d - 0xdc00);
 					WriteChar(u);
-					col_index++;
+					lcol++;
 				}
 			}
 		} else {
 			WriteChar(c);
-			col_index++;
+			lcol++;
 		}
 	}
-	m->parsed_col_index = col_index;
-	commitLine(*vec);
-	setCursorCol(col_index);
-	updateVisibility(true, true, true);
+
+	if (commit_line(lrow, vec)) {
+		invalidate_visual_row_info(vrow + 1);
+	}
+
+	if (wrappingMode() == WrappingMode::NoWrap) {
+		setCursorPos({lrow, lcol});
+	} else {
+		auto [vrow, vcol] = cx()->line_index_map.logical_to_visual(lrow, lcol);
+		setCursorPos({vrow, vcol});
+	}
+
+	updateVisibility({});
 }
 
-void AbstractCharacterBasedApplication::pressLetterWithControl(int c)
+void AbstractTextEditorApplication::writeCR()
 {
-	if (c < 0 || c > 0x7f) {
-		return;
-	}
-	if (c < 0x40) {
-		c += 0x40;
-	}
-	c = toupper(c);
-	switch (c) {
-	case 'Q':
-		onQuit();
-		break;
-	case 'O':
-		onOpenFile();
-		break;
-	case 'S':
-		onSaveFile();
-		break;
-	case 'X':
-		editCut();
-		break;
-	case 'C':
-		editCopy();
-		break;
-	case 'V':
-		editPaste();
-		break;
-	}
+	deleteIfSelected();
+	
+	moveCursorHome(false);
 }
 
-void AbstractCharacterBasedApplication::write(uint32_t c, bool by_keyboard)
+void AbstractTextEditorApplication::write(uint32_t c, bool by_keyboard)
 {
 	if (isTerminalMode()) {
 		if (c == '\r') {
 			setCursorCol(0);
 			clearParsedLine();
-			updateVisibility(true, true, true);
+			updateVisibility({});
 			return;
 		}
 		if (m->cursor_moved_by_mouse) {
@@ -2304,8 +2373,8 @@ void AbstractCharacterBasedApplication::write(uint32_t c, bool by_keyboard)
 			}
 		} else if (c == 0x1b) {
 			pressEscape();
-		} else if (c >= 1 && c <= 26) {
-			pressLetterWithControl(c);
+		// } else if (c >= 1 && c <= 26) {
+		// 	pressLetterWithControl(c);
 		}
 	} else if (c == 0x7f) {
 		if (ok) {
@@ -2338,7 +2407,7 @@ void AbstractCharacterBasedApplication::write(uint32_t c, bool by_keyboard)
 			if (ok) moveCursorLeft();
 			break;
 		case EscapeCode::Home:
-			if (ok) moveCursorHome();
+			if (ok) moveCursorHome(true);
 			break;
 		case EscapeCode::End:
 			if (ok) moveCursorEnd();
@@ -2360,22 +2429,84 @@ void AbstractCharacterBasedApplication::write(uint32_t c, bool by_keyboard)
 	}
 }
 
-void AbstractCharacterBasedApplication::appendBulk(std::string_view const &str)
+/**
+ * @brief 文字列を複数行に分割する（改行コードを保持する）
+ * @param begin 文字列の先頭
+ * @param size 文字列のサイズ
+ * @return 分割された文字列のリスト
+ */
+static std::vector<std::string_view> split_lines(char const *begin, size_t size)
 {
-	Document *doc = &cx()->engine->document;
-	if (!doc->lines.empty()) {
-		if (!doc->lines.back().endsWithNewLine()) {
-			doc->lines.back().append_text(str);
+	std::vector<std::string_view> ret;
+	char const *end = begin + size;
+	char const *ptr = begin;
+	char const *left = ptr;
+	while (1) {
+		int c = 0;
+		if (ptr < end) {
+			c = (unsigned char)*ptr;
+		}
+		if (c == '\n' || c == '\r' || c == 0) {
+			char const *right = ptr;
+			if (c == '\n') {
+				ptr++;
+			} else if (c == '\r') {
+				ptr++;
+				if (ptr < end && *ptr == '\n') {
+					ptr++;
+				}
+			}
+			if (true) {
+				right = ptr; // keep new line
+			}
+			ret.push_back(std::string_view(left, right - left));
+			if (c == 0) break;
+			left = ptr;
+		} else {
+			ptr++;
+		}
+	}
+	return ret;
+}
+
+/**
+ * @brief 文字列を複数行に分割して、ドキュメントの末尾に追加する
+ * @param str 追加する文字列
+ */
+void AbstractTextEditorApplication::appendBulk(std::string_view const &str)
+{
+	std::vector<std::string_view> lines = split_lines(str.data(), str.size());
+
+	// 末尾の行が空で、かつその前の行が改行で終わっている場合は、末尾の行を削除する
+	if (lines.size() > 1) {
+		if (lines[lines.size() - 1].empty()) {
+			std::string_view v = lines[lines.size() - 2];
+			if (v.size() > 0) {
+				char c = v[v.size() - 1];
+				if (c == '\n' || c == '\r') {
+					lines.pop_back();
+				}
+			}
+		}
+	}
+	
+	Document *doc = document();
+	if (!doc->logical_lines.empty()) {
+		if (!doc->logical_lines.back().endsWithNewLine()) {
+			doc->logical_lines.back().append_text(str);
 			return;
 		}
 	}
-	Document::Line line(std::vector<char>(str.data(), str.data() + str.size()));
-	doc->lines.push_back(line);
+	
+	for (std::string_view line : lines) {
+		Document::Line l(std::vector<char>(line.data(), line.data() + line.size()));
+		doc->logical_lines.push_back(l);
+	}
 }
 
-void AbstractCharacterBasedApplication::write(char const *ptr, int len, bool by_keyboard)
+void AbstractTextEditorApplication::write(char const *ptr, int len, bool by_keyboard)
 {
-	if (isReadOnly()) return;
+	if (is_read_only()) return;
 
 	char const *begin = ptr;
 	char const *end = begin + (len < 0 ? strlen(ptr) : len);
@@ -2412,21 +2543,21 @@ void AbstractCharacterBasedApplication::write(char const *ptr, int len, bool by_
 	}
 }
 
-void AbstractCharacterBasedApplication::write(std::string const &text)
+void AbstractTextEditorApplication::write(std::string const &text)
 {
 	if (!text.empty()) {
 		write(text.c_str(), (int)text.size(), false);
 	}
 }
 
-void AbstractCharacterBasedApplication::write_(char const *ptr, bool by_keyboard)
+void AbstractTextEditorApplication::write_(char const *ptr, bool by_keyboard)
 {
 	write(ptr, -1, by_keyboard);
 }
 
-void AbstractCharacterBasedApplication::write_(QString const &text, bool by_keyboard)
+void AbstractTextEditorApplication::write_(QString const &text, bool by_keyboard)
 {
-	if (isReadOnly()) return;
+	if (is_read_only()) return;
 
 	if (text.size() == 1) {
 		ushort c = text.at(0).unicode();
@@ -2468,7 +2599,7 @@ void AbstractCharacterBasedApplication::write_(QString const &text, bool by_keyb
 	}
 }
 
-void AbstractCharacterBasedApplication::write(QKeyEvent *e)
+void AbstractTextEditorApplication::write(QKeyEvent *e)
 {
 	setModifierKeys(e->modifiers());
 

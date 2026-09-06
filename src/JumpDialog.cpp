@@ -78,7 +78,7 @@ public:
 
 		for (Element const &e : elements) {
 			QString text = e.text;
-			int w = painter->fontMetrics().size(Qt::TextSingleLine, text).width();
+			int w = painter->fontMetrics().horizontalAdvance(text);
 			QRect rect(x, opt.rect.y(), w, opt.rect.height());
 			if (e.decorated) {
 				painter->fillRect(rect, global->appsettings.incremental_search_color.highlight_bg);

@@ -280,7 +280,7 @@ private:
 				painter->setFont(font);
 
 				// ラベルの矩形
-				int w = painter->fontMetrics().size(0, text).width() + space * 2; // 幅
+				int w = painter->fontMetrics().horizontalAdvance(text) + space * 2; // 幅
 				int x0 = x1 - w;
 				QRect r(x0, y0, x1 - x0, y1 - y0);
 

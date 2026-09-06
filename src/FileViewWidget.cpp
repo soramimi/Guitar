@@ -33,11 +33,8 @@ FileViewWidget::FileViewWidget(QWidget *parent)
 	QMetaObject::connectSlotsByName(this);
 
 	texteditor()->setTheme(TextEditorTheme::Light());
-	texteditor()->showHeader(false);
-	texteditor()->showFooter(false);
-	texteditor()->setAutoLayout(true);
-	texteditor()->setReadOnly(true);
-	texteditor()->setToggleSelectionAnchorEnabled(false);
+	texteditor()->set_auto_layout(true);
+	texteditor()->set_read_only(true);
 	texteditor()->setFocusFrameVisible(true);
 
 	ui_stackedWidget->setCurrentWidget(ui_page_none);
@@ -45,12 +42,7 @@ FileViewWidget::FileViewWidget(QWidget *parent)
 	setMouseTracking(true);
 }
 
-// void FileViewWidget::setTextCodec(std::shared_ptr<MyTextCodec> codec)
-// {
-// 	texteditor()->setTextCodec(codec);
-// }
-
-void FileViewWidget::bind(FileDiffWidget *fdw, QScrollBar *vsb, QScrollBar *hsb, TextEditorThemePtr const &theme)
+void FileViewWidget::bind_controls(FileDiffWidget *fdw, QScrollBar *vsb, QScrollBar *hsb, TextEditorThemePtr const &theme)
 {
 	texteditor()->bindScrollBar(vsb, hsb);
 	ui_page_image->bind(fdw, vsb, hsb);
@@ -94,7 +86,6 @@ void FileViewWidget::reflectScrollBar()
 	switch (view_type) {
 	case FileViewType::Text:
 		texteditor()->reflectScrollBar();
-		texteditor()->fetchLines(); // スクロールバーの値に合わせて、テキスト領域をスクロールする
 		return;
 	case FileViewType::Image:
 		ui_page_image->reflectScrollBar();
@@ -153,8 +144,9 @@ void FileViewWidget::setText(QByteArray const &ba, std::string const &object_id,
 	source.reserve(lines.size());
 	int num = 0;
 	for (std::string_view const &line : lines) {
+		num++;
 		auto t = Document::Line::View(line);
-		t.line_number = ++num;
+		t.set_line_number_override(num);
 		source.push_back(t);
 	}
 	setText(&source, object_id, object_path);

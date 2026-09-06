@@ -50,7 +50,7 @@ CommitExploreWindow::CommitExploreWindow(QWidget *parent, GitObjectCache *objcac
 	m->commit = commit;
 
 	m->text_editor_engine = std::make_shared<TextEditorEngine>();
-	ui->widget_fileview->bind(nullptr, ui->verticalScrollBar, ui->horizontalScrollBar, mainwindow()->themeForTextEditor());
+	ui->widget_fileview->bind_controls(nullptr, ui->verticalScrollBar, ui->horizontalScrollBar, mainwindow()->themeForTextEditor());
 	ui->widget_fileview->setDiffMode(m->text_editor_engine, ui->verticalScrollBar, ui->horizontalScrollBar);
 
 	ui->splitter->setSizes({100, 100, 200});

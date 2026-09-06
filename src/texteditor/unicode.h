@@ -7,7 +7,10 @@
 #include <cstdint>
 #include <functional>
 
+
 namespace unicode_helper_ {
+
+void encode_utf8(uint32_t code, std::function<void (char)> put);
 
 struct utf8_reader_state_t {
 	int a;

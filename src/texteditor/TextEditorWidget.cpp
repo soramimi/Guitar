@@ -1,6 +1,8 @@
 #include "TextEditorWidget.h"
 
 
+
+
 TextEditorWidget::TextEditorWidget(QWidget *parent)
 	: QWidget(parent)
 {
@@ -22,5 +24,10 @@ TextEditorWidget::TextEditorWidget(QWidget *parent)
 	connect(hsb_, &QScrollBar::valueChanged, [&](){ view_->reflectScrollBar(); });
 
 	view_->setFocusPolicy(Qt::StrongFocus);
+}
+
+void TextEditorWidget::test()
+{
+	
 }
 
