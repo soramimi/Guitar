@@ -603,7 +603,7 @@ RowCol AbstractTextEditorApplication::visual_position(SelectionAnchor const &a) 
 		return {a.lrow, a.lcol};
 	} else {
 		auto pos = cx()->line_index_map.logical_to_visual(a.lrow, a.lcol);
-		return {pos.vrow, pos.vcol};
+		return RowCol(pos.vrow, pos.vcol);
 	}
 }
 
@@ -2320,7 +2320,7 @@ void AbstractTextEditorApplication::internalWrite(const ushort *begin, const ush
 		setCursorPos({lrow, lcol});
 	} else {
 		auto [vrow, vcol] = cx()->line_index_map.logical_to_visual(lrow, lcol);
-		setCursorPos({vrow, vcol});
+		setCursorPos(RowCol(vrow, vcol));
 	}
 
 	updateVisibility({});
