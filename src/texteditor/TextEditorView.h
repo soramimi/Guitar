@@ -29,25 +29,6 @@ struct PreEditText {
 	std::vector<Format> format;
 };
 
-class TextMetrics : public AbstractTextMetrics {
-public:	
-	struct TextWidthCache {
-		std::unordered_map<QString, int> map;
-	};
-	QFont text_font_;
-	std::unique_ptr<QFontMetrics> fm_;
-	int ascent_ = 0;
-	int descent_ = 0;
-	QSize basic_character_size_;
-	mutable TextWidthCache text_width_cache_;
-
-	void setTextFont(QFont const &font);
-
-	int basisCharWidth() const override;
-	int textWidth(QString const &text) const override;
-};
-
-
 class TextEditorView : public QWidget, public AbstractTextEditorApplication {
 	Q_OBJECT
 public:
@@ -72,7 +53,7 @@ private:
 	void drawCursor(int row, int col, QPainter *pr);
 	void drawCursor(QPainter *pr);
 	void drawFocusFrame(QPainter *pr);
-	void updateCursorRect(bool auto_scroll);
+	void update_cursor_rect(bool auto_scroll);
 	QColor defaultForegroundColor();
 	QColor defaultBackgroundColor();
 	QColor colorForIndex(CharAttr const &attr, bool foreground);
@@ -82,19 +63,19 @@ public:
 private:
 	void moveCursorByMouse();
 	
-	static void _calc_pos_x(std::vector<Character> *chars, const TextEditorContext *cx, const TextMetrics &fixed_tm, const TextMetrics &text_tm);
+	static void _calc_pos_x(std::vector<Character> *chars, const TextEditorContext *cx, const FontMetrics &fixed_tm, const FontMetrics &text_tm);
 	int pos_x_px(row_index_t vrow, col_index_t vcol) const;
 	
 	int scrollpos_x() const;
 	int view_y_from_vrow(row_index_t vrow) const;
-	int linenumber_area_width() const;
+	int linenum_area_width_px() const;
 
 	QColor cursorColor() const;
-public:
-	void debug();
+	int basic_character_width_px() const;
 protected:
 	void timerEvent(QTimerEvent *) override;
 	void setCursorRow(row_index_t row, bool auto_scroll, bool by_mouse) override;
+	
 	void calc_pos_x(std::vector<Character> *chars) const;
 	
 public:
@@ -126,10 +107,10 @@ public:
 	
 	bool event(QEvent *event) override;
 	
-	void bindScrollBar(QScrollBar *vsb, QScrollBar *hsb);
-	void setupForLogWidget(const TextEditorThemePtr &theme);
+	void bind_scroll_bar(QScrollBar *vsb, QScrollBar *hsb);
+	void setup_for_log_widget(const TextEditorThemePtr &theme);
 	
-	RowCol mapFromPixel(const QPoint &pt);
+	RowCol vpos_from_px(const QPoint &pt);
 	
 	QVariant inputMethodQuery(Qt::InputMethodQuery q) const override;
 	void inputMethodEvent(QInputMethodEvent *e) override;
@@ -145,8 +126,8 @@ public:
 	void setScrollUnit(int n);
 	int scrollUnit() const;
 	
-	void setFixedFont(const QFont &font);
-	void setTextFont(const QFont &font);
+	// void setFixedFont(const QFont &font);
+	// void setTextFont(const QFont &font);
 	void setFont(const QFont &font)
 	{
 		setFixedFont(font);
@@ -167,6 +148,10 @@ signals:
 	void updateScrollBar();
 	void idle();
 	
+public:
+	void debug();
+	
+	// AbstractTextEditorApplication interface
 };
 
 #endif // TEXTEDITORVIEW_H

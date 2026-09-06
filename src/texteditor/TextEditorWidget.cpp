@@ -18,7 +18,7 @@ TextEditorWidget::TextEditorWidget(QWidget *parent)
 	layout_->addWidget(vsb_, 0, 1, 1, 1);
 	hsb_->setOrientation(Qt::Horizontal);
 	vsb_->setOrientation(Qt::Vertical);
-	view_->bindScrollBar(vsb_, hsb_);
+	view_->bind_scroll_bar(vsb_, hsb_);
 
 	connect(vsb_, &QScrollBar::valueChanged, [&](){ view_->reflectScrollBar(); });
 	connect(hsb_, &QScrollBar::valueChanged, [&](){ view_->reflectScrollBar(); });

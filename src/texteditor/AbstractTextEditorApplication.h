@@ -12,13 +12,63 @@
 #include <variant>
 #include <vector>
 #include <mutex>
+#include <QFont>
+#include <QPixmap>
+#include <QPainter>
+#include <QFontMetrics>
 
 #include "LineIndexMap/LineIndexMap.h"
 
-class AbstractTextMetrics {
-public:
-	virtual int basisCharWidth() const = 0;
-	virtual int textWidth(QString const &text) const = 0;
+class FontMetrics {
+public:	
+	struct TextWidthCache {
+		std::unordered_map<QString, int> map;
+	};
+	QFont text_font_;
+	std::unique_ptr<QFontMetrics> fm_;
+	int ascent_ = 0;
+	int descent_ = 0;
+	QSize basic_character_size_;
+	mutable TextWidthCache text_width_cache_;
+	
+	void setTextFont(QFont const &font)
+	{
+		text_font_ = font;
+		
+		QPixmap pm(1, 1);
+		QPainter pr(&pm);
+		pr.setFont(text_font_);
+		fm_ = std::make_unique<QFontMetrics>(pr.fontMetrics());
+		ascent_ = fm_->ascent();
+		descent_ = fm_->descent();
+		basic_character_size_ = QSize(fm_->horizontalAdvance("0"), fm_->height());
+	}
+	QFont font() const
+	{
+		return text_font_;
+	}
+	int basisCharWidth() const
+	{
+		int w = basic_character_size_.width();
+		return w > 0 ? w : 1;
+	}
+	int basisCharHeight() const
+	{
+		int h = basic_character_size_.height();
+		return h > 0 ? h : 1;
+	}
+	int textWidth(QString const &text) const
+	{
+		int ret = 0;
+		auto it = text_width_cache_.map.find(text);
+		if (it != text_width_cache_.map.end()) {
+			ret = it->second;
+		} else {
+			ret = fm_->horizontalAdvance(text);
+			text_width_cache_.map[text] = ret;
+		}
+		return ret;
+	}
 };
 
 namespace EscapeCode {
@@ -346,7 +396,7 @@ struct TextEditorContext {
 	int current_char_span = 1;
 	col_index_t scroll_horz_pos = 0;
 	row_index_t scroll_vert_pos = 0;
-	col_index_t viewport_org_x = 0;
+	col_index_t viewport_org_x = 0; // テキスト領域の原点（桁位置）（行番号表示領域の幅の文字数）
 	row_index_t viewport_org_y = 0;
 	int viewport_width = 80;
 	int viewport_height = 23;
@@ -473,8 +523,6 @@ protected:
 	int editor_viewport_width() const;
 	int editor_viewport_height() const;
 	
-	virtual int print(int x, int y, QString const &text, Option const &opt);
-	
 	std::shared_ptr<TextEditorContext> editor_cx;
 	
 	TextEditorContext *cx();
@@ -486,11 +534,9 @@ protected:
 	
 	void ensureCurrentLineVisible();
 	
-	// int calcVisualWidth(Document::Line const &line) const;
-	
 	int leftMargin_() const;
 	
-	void makeBuffer();
+	// void makeBuffer();
 	
 	struct UpdateVisibilityOption {
 		bool ensure_current_line_visible = true;
@@ -513,7 +559,6 @@ protected:
 	
 private:
 	void internalWrite(const ushort *begin, const ushort *end);
-	void printInvertedBar(int x, int y, char const *text, int padchar);
 	SelectionAnchor currentAnchor(bool enabled) const;
 	enum class EditOperation {
 		Cut,
@@ -562,7 +607,7 @@ protected:
 	
 	void setRecentlyUsedPath(QString const &path);
 	QString recentlyUsedPath();
-	void clearRect(int x, int y, int w, int h);
+	// void clearRect(int x, int y, int w, int h);
 	void paintLineNumbers(std::function<void(int, QString const &, Document::Line const *)> const &draw);
 	bool isAutoLayout() const;
 	void savePos();
@@ -587,9 +632,9 @@ public:
 	void scrollToTop();
 	
 	TextEditorEngine_sp engine() const;
-	int screenWidth() const;
-	int screenHeight() const;
-	void setScreenSize(int w, int h, bool update_layout);
+	int screen_width_px() const;
+	int screen_height_px() const;
+	void set_screen_size(int w, int h, bool update_layout);
 	void setContentWidth(int w);
 	void setTextEditorEngine(const TextEditorEngine_sp &e);
 	void openFile(QString const &path);
@@ -659,6 +704,11 @@ protected:
 	void updateSelectionAnchor1(bool auto_scroll);
 	void updateSelectionAnchor2(bool auto_scroll);
 	virtual int currentPixelX() const { return 0; }
+	
+	void setFixedFont(const QFont &font);
+	void setTextFont(const QFont &font);
+	FontMetrics const &fixedFontMetrics() const;
+	FontMetrics const &textFontMetrics() const;
 public:
 	void setWrappingMode(WrappingMode mode);
 	AbstractTextEditorApplication::WrappingMode wrappingMode() const;

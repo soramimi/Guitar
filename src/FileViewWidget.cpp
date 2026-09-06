@@ -44,7 +44,7 @@ FileViewWidget::FileViewWidget(QWidget *parent)
 
 void FileViewWidget::bind_controls(FileDiffWidget *fdw, QScrollBar *vsb, QScrollBar *hsb, TextEditorThemePtr const &theme)
 {
-	texteditor()->bindScrollBar(vsb, hsb);
+	texteditor()->bind_scroll_bar(vsb, hsb);
 	ui_page_image->bind(fdw, vsb, hsb);
 	texteditor()->setTheme(theme);
 }
@@ -78,7 +78,7 @@ int FileViewWidget::lineHeight() const
 void FileViewWidget::setDiffMode(TextEditorEngine_sp const &editor_engine, QScrollBar *vsb, QScrollBar *hsb)
 {
 	texteditor()->setTextEditorEngine(editor_engine);
-	return texteditor()->bindScrollBar(vsb, hsb);
+	return texteditor()->bind_scroll_bar(vsb, hsb);
 }
 
 void FileViewWidget::reflectScrollBar()

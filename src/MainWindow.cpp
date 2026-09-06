@@ -292,7 +292,7 @@ MainWindow::MainWindow(QWidget *parent)
 	setShowAvatars(appsettings()->show_avatars, false);
 
 	ui->widget_log->view()->setFont(global->textFont());
-	ui->widget_log->view()->setupForLogWidget(themeForTextEditor());
+	ui->widget_log->view()->setup_for_log_widget(themeForTextEditor());
 	onLogVisibilityChanged();
 
 	platform::initNetworking();

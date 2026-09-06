@@ -73,14 +73,14 @@ struct AbstractTextEditorApplication::Private {
 	bool is_terminal_mode = false;
 	bool is_cursor_visible = true;
 	State state = State::Normal;
-	int screen_width = 80;
-	int screen_height = 24;
+	int screen_width_px = 1920;
+	int screen_height_px = 1080;
 	int content_width_px = -1;
 	bool auto_layout = false;
 	QString recently_used_path;
 	bool show_line_number = true;
 	int left_margin = AbstractTextEditorApplication::LEFT_MARGIN;
-	std::vector<AbstractTextEditorApplication::Char16> screen;
+	// std::vector<AbstractTextEditorApplication::Char16> screen;
 
 	bool is_painting_suppressed = false;
 	int line_margin = 3;
@@ -99,7 +99,10 @@ struct AbstractTextEditorApplication::Private {
 		SelectionAnchor end;
 	};
 	Selection selection;
-
+	
+	FontMetrics fixed_font_metrics;
+	FontMetrics text_font_metrics;
+	
 	struct Cache {
 		std::optional<std::vector<Character>> parsed_current_line_chars;
 	};
@@ -185,14 +188,14 @@ QString AbstractTextEditorApplication::recentlyUsedPath()
 	return m->recently_used_path;
 }
 
-void AbstractTextEditorApplication::makeBuffer()
-{
-	int w = screenWidth();
-	int h = screenHeight();
-	int size = w * h;
-	m->screen.resize(size);
-	std::fill(m->screen.begin(), m->screen.end(), Char16());
-}
+// void AbstractTextEditorApplication::makeBuffer()
+// {
+// 	int w = screenWidth();
+// 	int h = screenHeight();
+// 	int size = w * h;
+// 	m->screen.resize(size);
+// 	std::fill(m->screen.begin(), m->screen.end(), Char16());
+// }
 
 int AbstractTextEditorApplication::logicalLines() const
 {
@@ -878,11 +881,11 @@ bool AbstractTextEditorApplication::commit_line(row_index_t lrow, std::vector<Ch
 
 void AbstractTextEditorApplication::layoutEditor()
 {
-	makeBuffer();
+	// makeBuffer();
 	editor_cx->viewport_org_x = leftMargin_();
 	editor_cx->viewport_org_y = 0;
-	editor_cx->viewport_width = screenWidth() - cx()->viewport_org_x;
-	editor_cx->viewport_height = screenHeight();
+	editor_cx->viewport_width = screen_width_px() - cx()->viewport_org_x;
+	editor_cx->viewport_height = screen_height_px();
 }
 
 void AbstractTextEditorApplication::initEditor()
@@ -928,20 +931,20 @@ Document::Line *AbstractTextEditorApplication::visual_line(row_index_t vrow)
 	return nullptr;
 }
 
-int AbstractTextEditorApplication::screenWidth() const
+int AbstractTextEditorApplication::screen_width_px() const
 {
-	return m->screen_width;
+	return m->screen_width_px;
 }
 
-int AbstractTextEditorApplication::screenHeight() const
+int AbstractTextEditorApplication::screen_height_px() const
 {
-	return m->screen_height;
+	return m->screen_height_px;
 }
 
-void AbstractTextEditorApplication::setScreenSize(int w, int h, bool update_layout)
+void AbstractTextEditorApplication::set_screen_size(int w, int h, bool update_layout)
 {
-	m->screen_width = w;
-	m->screen_height = h;
+	m->screen_width_px = w;
+	m->screen_height_px = h;
 	if (update_layout) {
 		layoutEditor();
 	}
@@ -1022,67 +1025,6 @@ int AbstractTextEditorApplication::editor_viewport_width() const
 int AbstractTextEditorApplication::editor_viewport_height() const
 {
 	return cx()->viewport_height;
-}
-
-int AbstractTextEditorApplication::print(int x, int y, QString const &text, const AbstractTextEditorApplication::Option &opt)
-{
-	CharAttr attr = opt.char_attr;
-	if (opt.char_flag.selected) {
-		attr.index = CharAttr::Invert;
-	}
-	if (opt.char_flag.current_line) {
-		attr.index = CharAttr::Hilite;
-	}
-
-	const int screen_w = screenWidth();
-	const int screen_h = screenHeight();
-	int x_start = 0;
-	int y_start = 0;
-	int x_limit = screen_w;
-	int y_limit = screen_h;
-	if (!opt.clip.isNull()) {
-		x_start = opt.clip.x();
-		y_start = opt.clip.y();
-		x_limit = x_start + opt.clip.width();
-		y_limit = y_start + opt.clip.height();
-	}
-	if (y >= y_start && y < y_limit) {
-		bool changed = false;
-		int x2 = x;
-		int y2 = y;
-		if (text.isEmpty()) {
-			changed = true; // set changed flag if text is empty
-		} else {
-			for (int i = 0; i < text.size(); i++) {
-				ushort c = text.utf16()[i];
-				if (c < ' ' || c == 0x7f) continue;
-				int cw = charWidth(c);
-				if (x2 + cw > x_limit) {
-					break;
-				}
-				for (int j = 0; j < cw; j++) {
-					if (x2 >= x_start && x2 < screen_w) {
-						int o = y2 * screen_w + x2;
-						CharAttr a;
-						if (j == 0) {
-							a = attr;
-						} else {
-							c = -1;
-						}
-						if (c != m->screen[o].c || a != m->screen[o].a) {
-							m->screen[o].c = c;
-							m->screen[o].a = a;
-							changed = true;
-						}
-					}
-					x2++;
-				}
-			}
-		}
-
-		x = x2;
-	}
-	return x;
 }
 
 void AbstractTextEditorApplication::initEngine(std::shared_ptr<TextEditorContext> const &cx)
@@ -1291,25 +1233,25 @@ bool AbstractTextEditorApplication::isWidthFixed() const
 // 	return x;
 // }
 
-void AbstractTextEditorApplication::clearRect(int x, int y, int w, int h)
-{
-	int scr_w = screenWidth();
-	int scr_h = screenHeight();
-	int y0 = y;
-	int y1 = y + h;
-	if (y0 < 0) y0 = 0;
-	if (y1 > scr_h) y1 = scr_h;
-	int x0 = x;
-	int x1 = x + w;
-	if (x0 < 0) x0 = 0;
-	if (x1 > scr_w) x1 = scr_w;
-	for (int y = y0; y < y1; y++) {
-		for (int x = x0; x < x1; x++) {
-			int o = y * scr_w + x;
-			m->screen[o] = Char16();
-		}
-	}
-}
+// void AbstractTextEditorApplication::clearRect(int x, int y, int w, int h)
+// {
+// 	int scr_w = screenWidth();
+// 	int scr_h = screenHeight();
+// 	int y0 = y;
+// 	int y1 = y + h;
+// 	if (y0 < 0) y0 = 0;
+// 	if (y1 > scr_h) y1 = scr_h;
+// 	int x0 = x;
+// 	int x1 = x + w;
+// 	if (x0 < 0) x0 = 0;
+// 	if (x1 > scr_w) x1 = scr_w;
+// 	for (int y = y0; y < y1; y++) {
+// 		for (int x = x0; x < x1; x++) {
+// 			int o = y * scr_w + x;
+// 			m->screen[o] = Char16();
+// 		}
+// 	}
+// }
 
 void AbstractTextEditorApplication::savePos()
 {
@@ -1355,6 +1297,26 @@ void AbstractTextEditorApplication::updateSelectionAnchor2(bool auto_scroll)
 		// 選択中なら、現在位置で更新
 		setSelectionAnchor(true, true, auto_scroll);
 	}
+}
+
+void AbstractTextEditorApplication::setFixedFont(const QFont &font)
+{
+	m->fixed_font_metrics.setTextFont(font);
+}
+
+void AbstractTextEditorApplication::setTextFont(const QFont &font)
+{
+	m->text_font_metrics.setTextFont(font);
+}
+
+FontMetrics const &AbstractTextEditorApplication::fixedFontMetrics() const
+{
+	return m->fixed_font_metrics;
+}
+
+FontMetrics const &AbstractTextEditorApplication::textFontMetrics() const
+{
+	return m->text_font_metrics;
 }
 
 void AbstractTextEditorApplication::setCursorRow(row_index_t vrow, bool auto_scroll, bool by_mouse)
@@ -1947,25 +1909,25 @@ void AbstractTextEditorApplication::update_horz_scroll()
 	set_scroll_horz_pos(vcol);
 }
 
-void AbstractTextEditorApplication::printInvertedBar(int x, int y, char const *text, int padchar)
-{
-	int w = screenWidth();
-	int o = w * y;
-	for (int i = 0; i < w; i++) {
-		m->screen[o + i].c = 0;
-	}
+// void AbstractTextEditorApplication::printInvertedBar(int x, int y, char const *text, int padchar)
+// {
+// 	int w = screenWidth();
+// 	int o = w * y;
+// 	for (int i = 0; i < w; i++) {
+// 		m->screen[o + i].c = 0;
+// 	}
 
-	AbstractTextEditorApplication::Option opt;
-	opt.char_attr = CharAttr::Invert;
-	print(x, y, text, opt);
+// 	AbstractTextEditorApplication::Option opt;
+// 	opt.char_attr = CharAttr::Invert;
+// 	print(x, y, text, opt);
 
-	for (int i = 0; i < w; i++) {
-		if (m->screen[o + i].c == 0) {
-			m->screen[o + i].c = padchar;
-		}
-		m->screen[o + i].a = opt.char_attr;
-	}
-}
+// 	for (int i = 0; i < w; i++) {
+// 		if (m->screen[o + i].c == 0) {
+// 			m->screen[o + i].c = padchar;
+// 		}
+// 		m->screen[o + i].a = opt.char_attr;
+// 	}
+// }
 
 QString AbstractTextEditorApplication::statusLine() const
 {
