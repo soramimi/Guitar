@@ -73,8 +73,8 @@ struct AbstractTextEditorApplication::Private {
 	bool is_terminal_mode = false;
 	bool is_cursor_visible = true;
 	State state = State::Normal;
-	int screen_width_px = 1920;
-	int screen_height_px = 1080;
+	int client_width_px = 1920;
+	int client_height_px = 1080;
 	int content_width_px = -1;
 	bool auto_layout = false;
 	QString recently_used_path;
@@ -221,12 +221,23 @@ row_index_t AbstractTextEditorApplication::nlines() const
 	}
 }
 
+void AbstractTextEditorApplication::need_to_update_scroll_bar()
+{
+	cx()->cache.need_scroll_bar_update = true;
+}
+
+int AbstractTextEditorApplication::linenum_area_width_px() const
+{
+	return editor_cx->viewport_org_x_cols * fixedFontMetrics().basisCharWidth();
+}
+
 /**
  * @brief 物理行数キャッシュを無効化する
  */
 void AbstractTextEditorApplication::invalidate_nlines_cache()
 {
 	cx()->cache.nlines = std::nullopt;
+	need_to_update_scroll_bar();
 }
 
 void AbstractTextEditorApplication::_update_logical_pos_cache() const
@@ -795,10 +806,7 @@ void AbstractTextEditorApplication::update_visual_lines_all()
 	
 	if (m->wrapping_mode == WrappingMode::NoWrap) {
 		cx->cache.visual_lines = {};
-		return;
-	}
-	
-	{
+	} else {
 		std::vector<Document::Line> *llines = &cx->engine->document.logical_lines;
 		
 		if (0) { // シングルスレッド
@@ -887,8 +895,8 @@ void AbstractTextEditorApplication::layoutEditor()
 	// makeBuffer();
 	editor_cx->viewport_org_x_cols = leftMargin_();
 	editor_cx->viewport_org_y_rows = 0;
-	editor_cx->viewport_width_px = screen_width_px() - cx()->viewport_org_x_cols * textFontMetrics().basisCharWidth();
-	editor_cx->viewport_height_rows = screen_height_px() / line_height_px();
+	editor_cx->viewport_width_px = client_width_px() - cx()->viewport_org_x_cols * textFontMetrics().basisCharWidth();
+	editor_cx->viewport_height_rows = client_height_px() / line_height_px();
 }
 
 void AbstractTextEditorApplication::initEditor()
@@ -934,20 +942,20 @@ Document::Line *AbstractTextEditorApplication::visual_line(row_index_t vrow)
 	return nullptr;
 }
 
-int AbstractTextEditorApplication::screen_width_px() const
+int AbstractTextEditorApplication::client_width_px() const
 {
-	return m->screen_width_px;
+	return m->client_width_px;
 }
 
-int AbstractTextEditorApplication::screen_height_px() const
+int AbstractTextEditorApplication::client_height_px() const
 {
-	return m->screen_height_px;
+	return m->client_height_px;
 }
 
-void AbstractTextEditorApplication::set_screen_size(int w, int h, bool update_layout)
+void AbstractTextEditorApplication::set_client_size(int w, int h, bool update_layout)
 {
-	m->screen_width_px = w;
-	m->screen_height_px = h;
+	m->client_width_px = w;
+	m->client_height_px = h;
 	if (update_layout) {
 		layoutEditor();
 	}
@@ -986,7 +994,7 @@ void AbstractTextEditorApplication::setDocument(std::vector<Document::Line> cons
 	}
 }
 
-void AbstractTextEditorApplication::insertLine(row_index_t lrow)
+void AbstractTextEditorApplication::insert_line(row_index_t lrow)
 {
 	std::vector<Document::Line> *llines = documentLinesForWrite();
 	if (!llines) return;
@@ -1023,7 +1031,7 @@ bool AbstractTextEditorApplication::isCurrentLineWritable() const
 int AbstractTextEditorApplication::editor_viewport_width_px() const
 {
 	// return cx()->viewport_width_px;
-	return screen_width_px() - editor_cx->viewport_org_x_cols;
+	return client_width_px() - editor_cx->viewport_org_x_cols * m->fixed_font_metrics.basisCharWidth();
 }
 
 int AbstractTextEditorApplication::editor_viewport_height() const
@@ -1090,7 +1098,7 @@ void AbstractTextEditorApplication::writeNewLine()
 
 	// 次の行を挿入
 	lrow++;
-	insertLine(lrow);
+	insert_line(lrow);
 	commit_line(lrow, next_line);
 
 	vrow++;
@@ -1383,7 +1391,9 @@ void AbstractTextEditorApplication::_set_cursor_col(col_index_t vcol, bool auto_
 void AbstractTextEditorApplication::setCursorCol(col_index_t vcol)
 {
 	_set_cursor_col(vcol, true, false);
-	cx()->current_visual_x_px = currentPixelX(); // カーソルのピクセル位置を更新する
+	auto pair = currentPixelX(); // カーソルのピクセル位置を更新する
+	cx()->current_visual_x_px = pair.first;
+	cx()->current_visual_absolute_x_px = pair.second;
 }
 
 void AbstractTextEditorApplication::setCursorPos(const RowCol &vpos)
@@ -1716,9 +1726,9 @@ void AbstractTextEditorApplication::moveCursorHome(bool consider_indent)
 			vcol = (curr_vcol > 0 && curr_vcol <= indent_vcol) ? 0 : indent_vcol; // カーソルがインデントの範囲内なら行頭へ、そうでなければインデントの先頭へ
 		}
 	}
-
-	setCursorCol(vcol);
+	
 	clearParsedLine();
+	setCursorCol(vcol);
 	updateVisibility({});
 }
 
@@ -1846,8 +1856,8 @@ void AbstractTextEditorApplication::moveCursorRight()
 	
 	auto MoveColumn = [this](col_index_t vcol){
 		if (vcol != current_visual_col()) {
-			setCursorCol(vcol);
 			clearParsedLine();
+			setCursorCol(vcol);
 			updateVisibility({});
 			return true;
 		}
@@ -1919,37 +1929,28 @@ void AbstractTextEditorApplication::movePageDown()
 
 void AbstractTextEditorApplication::update_horz_scroll()
 {
-	int vcol = 0;
-	if (!isWidthFixed()) { // TODO:
-		int x = current_visual_x_px();
-		int w = editor_viewport_width_px() - RIGHT_MARGIN * fixedFontMetrics().basisCharWidth();
-		if (w < 0) w = 0;
-		if (x > w) {
-			vcol = current_visual_col() - w;
+	if (isWidthFixed()) return; // 固定幅の場合は水平スクロールはしない
+	
+	int x = cx()->current_visual_absolute_x_px;
+	auto curr_scroll_pos = scroll_horz_pos_px();
+	auto textarea_width = client_width_px() - linenum_area_width_px();
+	auto left = textarea_width / 5;
+	auto right = textarea_width * 4 / 5;
+	int pos = curr_scroll_pos;
+	if (x - pos > right) {
+		pos = x - right;
+	} else if (x - pos < left) {
+		if (x > left) {
+			pos = x - left;
+		} else {
+			pos = 0;
 		}
 	}
-	set_scroll_horz_pos_px(vcol * textFontMetrics().basisCharWidth());
+	if (pos != curr_scroll_pos) {
+		set_scroll_horz_pos_px(pos);
+		need_to_update_scroll_bar();
+	}
 }
-
-// void AbstractTextEditorApplication::printInvertedBar(int x, int y, char const *text, int padchar)
-// {
-// 	int w = screenWidth();
-// 	int o = w * y;
-// 	for (int i = 0; i < w; i++) {
-// 		m->screen[o + i].c = 0;
-// 	}
-
-// 	AbstractTextEditorApplication::Option opt;
-// 	opt.char_attr = CharAttr::Invert;
-// 	print(x, y, text, opt);
-
-// 	for (int i = 0; i < w; i++) {
-// 		if (m->screen[o + i].c == 0) {
-// 			m->screen[o + i].c = padchar;
-// 		}
-// 		m->screen[o + i].a = opt.char_attr;
-// 	}
-// }
 
 QString AbstractTextEditorApplication::statusLine() const
 {

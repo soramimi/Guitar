@@ -384,10 +384,10 @@ using TextEditorEngine_sp = std::shared_ptr<TextEditorEngine>;
 
 struct TextEditorContext {
 	QRect cursor_rect;
-	// bool single_line = false;
 	row_index_t current_visual_row = 0; // 表示行（物理行）
 	col_index_t current_visual_col = 0; // 表示列（物理列）
 	int current_visual_col_hint = 0;
+	int current_visual_absolute_x_px = 0;
 	int current_visual_x_px = 0; // 桁ピクセル座標
 	int current_visual_pixel_y = 0; // 行ピクセル座標
 	row_index_t saved_row = 0;
@@ -409,6 +409,7 @@ struct TextEditorContext {
 		std::vector<Document::Line> visual_lines;
 		row_index_t current_logical_row = 0;
 		col_index_t current_logical_col = 0;
+		bool need_scroll_bar_update = true;
 	};
 	mutable Cache cache;
 };
@@ -536,8 +537,6 @@ protected:
 	
 	int leftMargin_() const;
 	
-	// void makeBuffer();
-	
 	struct UpdateVisibilityOption {
 		bool ensure_current_line_visible = true;
 		bool change_col = true;
@@ -545,7 +544,7 @@ protected:
 	};
 	virtual void updateVisibility(UpdateVisibilityOption const &arg) = 0;
 	
-	void insertLine(row_index_t lrow);
+	void insert_line(row_index_t lrow);
 	bool commit_line(row_index_t lrow, const std::vector<Character> &vec);
 	
 	void doDelete();
@@ -607,7 +606,7 @@ protected:
 	
 	void setRecentlyUsedPath(QString const &path);
 	QString recentlyUsedPath();
-	// void clearRect(int x, int y, int w, int h);
+	
 	void paintLineNumbers(std::function<void(int, QString const &, Document::Line const *)> const &draw);
 	bool isAutoLayout() const;
 	void savePos();
@@ -632,9 +631,9 @@ public:
 	void scrollToTop();
 	
 	TextEditorEngine_sp engine() const;
-	int screen_width_px() const;
-	int screen_height_px() const;
-	void set_screen_size(int w, int h, bool update_layout);
+	int client_width_px() const;
+	int client_height_px() const;
+	void set_client_size(int w, int h, bool update_layout);
 	void setContentWidth(int w);
 	void setTextEditorEngine(const TextEditorEngine_sp &e);
 	void openFile(QString const &path);
@@ -699,20 +698,22 @@ protected:
 protected:
 	void write_(char const *ptr, bool by_keyboard);
 	void write_(QString const &text, bool by_keyboard);
-	// void makeColumnPosList(std::vector<int> *out) const;
+	
 	bool hasSelection() const;
 	void updateSelectionAnchor1(bool auto_scroll);
 	void updateSelectionAnchor2(bool auto_scroll);
-	virtual int currentPixelX() const { return 0; }
+	virtual std::pair<int, int> currentPixelX() const { return {}; }
 	
 	void setFixedFont(const QFont &font);
 	void setTextFont(const QFont &font);
 	FontMetrics const &fixedFontMetrics() const;
 	FontMetrics const &textFontMetrics() const;
 	void set_line_margin_px(int top, int bottom);	
-	int line_height_px() const;
 	int line_baseline_px() const;
+	void need_to_update_scroll_bar();
+	int linenum_area_width_px() const;
 public:
+	int line_height_px() const;
 	void setWrappingMode(WrappingMode mode);
 	AbstractTextEditorApplication::WrappingMode wrappingMode() const;
 };

@@ -41,6 +41,7 @@ struct TextEditorView::Private {
 	QScrollBar *dragging_scroll_bar = nullptr;
 	
 	int max_text_width_px = 0;
+	QTimer timer;
 };
 
 TextEditorView::TextEditorView(QWidget *parent)
@@ -85,8 +86,6 @@ TextEditorView::TextEditorView(QWidget *parent)
 
 	update_cursor_rect(true);
 
-	setScrollUnit(ScrollByCharacter);
-
 	m->cursor_animation_counter = cursor_animation_cycle;
 	startTimer(100);
 }
@@ -118,21 +117,6 @@ TextEditorTheme const *TextEditorView::theme() const
 	}
 	return m->theme.get();
 }
-
-
-// void TextEditorView::setFixedFont(QFont const &font)
-// {
-// 	m->fixed_font_metrics.setTextFont(font);
-// }
-
-// void TextEditorView::setTextFont(QFont const &font)
-// {
-// 	m->text_font_metrics.setTextFont(font);
-// }
-
-
-
-
 
 void AbstractTextEditorApplication::loadExampleFile()
 {
@@ -219,20 +203,20 @@ Document::LineProperty const *TextEditorView::queryFormattedLine(row_index_t vro
 	return nullptr;
 }
 
-int TextEditorView::pos_x_px(row_index_t vrow, col_index_t vcol) const
+std::pair<int, int> TextEditorView::pos_x_px(row_index_t vrow, col_index_t vcol) const
 {
 	Document::LineProperty const *line = queryFormattedLine(vrow);
-	if (!line) return 0;
+	if (!line) return {};
 
-	int x = 0;
+	int absolute_x = 0; // 行番号表示領域とスクロール位置を考慮しない絶対X座標
+	
 	if (vcol > 0 && vcol - 1 < (col_index_t)line->chars.size()) {
-		x = (int)line->chars[vcol - 1].right_x;
+		absolute_x = (int)line->chars[vcol - 1].right_x;
 	}
 
-	// 原点とスクロール位置に応じてずらす
-	x += cx()->viewport_org_x_cols * basic_character_width_px() - scrollpos_x();
+	int scrolled_x = absolute_x + linenum_area_width_px() - scroll_horz_pos_px(); // 行番号表示領域とスクロール位置を考慮したX座標
 	
-	return x;
+	return { scrolled_x, absolute_x };
 }
 
 /**
@@ -258,8 +242,7 @@ RowCol TextEditorView::vpos_from_px(QPoint const &pt)
 		}
 		return t;
 	}
-	const int char_width = basic_character_width_px(); // 基準文字幅
-	const int x = pt.x() + (cx->scroll_horz_pos_px - cx->viewport_org_x_cols) * char_width;
+	const int x = pt.x() + scroll_horz_pos_px() - linenum_area_width_px();
 	std::vector<Character> const *chars = nullptr;
 	Document::LineProperty const *line = queryFormattedLine(vrow);
 	if (line) {
@@ -313,7 +296,7 @@ void TextEditorView::setCursorRow(row_index_t row, bool auto_scroll, bool by_mou
 	updateSelectionAnchor2(auto_scroll);
 }
 
-int TextEditorView::currentPixelX() const
+std::pair<int, int> TextEditorView::currentPixelX() const
 {
 	// 水平ピクセル座標
 	return pos_x_px(current_visual_row(), current_visual_col());
@@ -322,21 +305,25 @@ int TextEditorView::currentPixelX() const
 void TextEditorView::bind_scroll_bar(QScrollBar *vsb, QScrollBar *hsb)
 {
 	m->scroll_bar_v = vsb;
-	connect(m->scroll_bar_v, &QScrollBar::sliderPressed, this, [this]() { 
+#if 0
+	connect(m->scroll_bar_v, &QScrollBar::sliderPressed, this, [this]() {
 		m->dragging_scroll_bar = m->scroll_bar_v;
 	});
 	connect(m->scroll_bar_v, &QScrollBar::sliderReleased, this, [this]() {
 		m->dragging_scroll_bar = nullptr;
 		updateScrollBarRange();
 	});
+#endif
 
 	m->scroll_bar_h = hsb;
-	connect(m->scroll_bar_h, &QScrollBar::sliderPressed, this, [this]() { 
+#if 0
+	connect(m->scroll_bar_h, &QScrollBar::sliderPressed, this, [this]() {
 		m->dragging_scroll_bar = m->scroll_bar_h;
 	});
 	connect(m->scroll_bar_h, &QScrollBar::sliderReleased, this, [this]() {
 		m->dragging_scroll_bar = nullptr;
 	});
+#endif
 }
 
 void TextEditorView::setup_for_log_widget(TextEditorThemePtr const &theme)
@@ -353,9 +340,8 @@ void TextEditorView::update_cursor_rect(bool auto_scroll)
 		update_horz_scroll();
 	}
 
-	int x = cx()->viewport_org_x_cols * basic_character_width_px() + cursor_col_px();
+	int x = linenum_area_width_px() + cursor_col_px();
 	int y = cx()->viewport_org_y_rows + cursor_row_px();
-	// x *= basic_character_width_px();
 	y *= line_height_px();
 	QPoint pt = QPoint(x, y);
 	int w = 1;
@@ -387,7 +373,8 @@ void TextEditorView::updateScrollBarRange()
 			hsb->setPageStep(0);
 			hsb->setValue(0);
 		} else {
-			int w = m->max_text_width_px - (screen_width_px() - linenum_area_width_px() / 2);
+			auto half_of_textarea_width_px = (client_width_px() - linenum_area_width_px()) / 2; // テキスト表示領域の半分の幅
+			int w = m->max_text_width_px - half_of_textarea_width_px; // テキスト表示領域の半分の幅を引くことで、スクロールバーの最大値を調整する
 			hsb->setRange(0, w);
 			hsb->setPageStep(w / 10);
 			hsb->setValue(scroll_horz_pos_px());
@@ -414,8 +401,11 @@ void TextEditorView::internalUpdateVisibility(UpdateVisibilityOption const &arg)
 	if (isPaintingSuppressed()) {
 		return;
 	}
-
-	updateScrollBarRange();
+	
+	if (cx()->cache.need_scroll_bar_update) {
+		updateScrollBarRange();
+		cx()->cache.need_scroll_bar_update = false;
+	}
 
 	m->cursor_animation_counter = cursor_animation_cycle;
 	update();
@@ -493,28 +483,6 @@ void TextEditorView::drawFocusFrame(QPainter *pr)
 	misc::drawFrame(pr, 1, 1, width() - 2, height() - 2, QColor(0, 128, 255, 64));
 }
 
-void TextEditorView::setScrollUnit(int n)
-{
-	scroll_unit_ = n;
-}
-
-int TextEditorView::scrollUnit() const
-{
-	return scroll_unit_;
-}
-
-/**
- * @brief 水平スクロール位置のピクセル値を取得
- * @return
- */
-int TextEditorView::scrollpos_x() const
-{
-	int u = scrollUnit();
-	int n = editor_cx->scroll_horz_pos_px;
-	n *= (u == ScrollByCharacter) ? basic_character_width_px() : u;
-	return n;
-}
-
 /**
  * @brief TextEditorView::scrollTopRow
  * @return 
@@ -540,7 +508,7 @@ TextEditorView::PointInView TextEditorView::pointInView(int row, int col) const
 	PointInView pt;
 	pt.height = line_height_px();
 	pt.y = view_y_from_vrow(row);
-	pt.x = pos_x_px(row, col); // 行と桁位置から水平座標を求める
+	pt.x = pos_x_px(row, col).first; // 行と桁位置から水平座標を求める
 	return pt;
 }
 
@@ -576,10 +544,7 @@ void TextEditorView::drawCursor(QPainter *pr)
 	drawCursor(current_visual_row(), current_visual_col(), pr);
 }
 
-int TextEditorView::linenum_area_width_px() const
-{
-	return editor_cx->viewport_org_x_cols * basic_character_width_px();
-}
+
 
 void TextEditorView::paintEvent(QPaintEvent *)
 {
@@ -590,13 +555,13 @@ void TextEditorView::paintEvent(QPaintEvent *)
 	pr.fillRect(0, 0, width(), height(), defaultBackgroundColor());
 	
 	const int linenum_width_px = linenum_area_width_px(); // 行番号表示領域幅（ピクセル単位）
-	const int text_origin_x = linenum_width_px - scrollpos_x(); // 水平方向原点（ピクセル単位） = 行番号表示領域幅からスクロール量を引く
+	const int text_origin_x_px = linenum_width_px - scroll_horz_pos_px(); // 水平方向原点（ピクセル単位） = 行番号表示領域幅からスクロール量を引く
 	
 	TextEditorContext *cx = editor_cx.get();
 	
 	int vsplit_x = linenum_width_px - 2;
 	int text_area_w = width() - vsplit_x;
-	int bottom_y = (cx->line_index_map.total_visual_row_count() - cx->scroll_vert_pos_px) * line_height_px() + 1;
+	int bottom_y = (cx->line_index_map.total_visual_row_count() - scroll_vert_pos_px()) * line_height_px() + 1;
 	bottom_y = std::min(bottom_y, height());
 	
 	if (bottom_y > 0) {
@@ -703,7 +668,7 @@ void TextEditorView::paintEvent(QPaintEvent *)
 							right_x = Do(right_x, vupper, vrow);
 						}
 						if (left_x < right_x) {
-							int x = text_origin_x + left_x;
+							int x = text_origin_x_px + left_x;
 							int y = text_origin_y;
 							int w = right_x - left_x;
 							int h = line_height;
@@ -738,7 +703,7 @@ void TextEditorView::paintEvent(QPaintEvent *)
 									};
 									if (IsDiffMarker(CharFlags::Del) || IsDiffMarker(CharFlags::Add)) {
 										// 文字差分フラグがあるとき背景を描く
-										int x = text_origin_x + left_x;
+										int x = text_origin_x_px + left_x;
 										int w = right_x - left_x;
 										int h = line_height;
 										auto DrawDiffMarker = [&](QColor const &color){
@@ -763,7 +728,7 @@ void TextEditorView::paintEvent(QPaintEvent *)
 									return flags[j].diff_marker == value;
 								};
 								pr.setPen(defaultForegroundColor()); // 文字色
-								int x = text_origin_x + left_x;
+								int x = text_origin_x_px + left_x;
 								int w = right_x - left_x;
 								int h = line_height;
 								auto DrawDiffMarker = [&](QColor const &color){
@@ -802,13 +767,20 @@ void TextEditorView::paintEvent(QPaintEvent *)
 						if (iscurrentline) {
 							DrawCurrentLineForeground();
 						}
-						m->max_text_width_px = max_text_width_px;
 						break;
 					}
 				}
 				view_row++;
 				vrow++;
 			}
+		}
+		if (m->max_text_width_px != max_text_width_px) {
+			m->max_text_width_px = max_text_width_px;
+			need_to_update_scroll_bar();
+			m->timer.stop();
+			m->timer.singleShot(100, [this](){
+				updateScrollBarRange();
+			});
 		}
 	}
 	
@@ -982,7 +954,7 @@ void TextEditorView::reflectScrollBar()
 {
 	int v = m->scroll_bar_v ? m->scroll_bar_v->value() : -1;
 	int h = m->scroll_bar_h ? m->scroll_bar_h->value() : -1;
-	qDebug() << v << h;
+	// qDebug() << v << h;
 	move(-1, -1, v, h, false);
 }
 
@@ -991,7 +963,7 @@ void TextEditorView::layoutEditor()
 	if (isAutoLayout()) {
 		int h = height();
 		int w = width();
-		set_screen_size(w, h, false);
+		set_client_size(w, h, false);
 		
 		int content_width_px = w - linenum_area_width_px();
 		setContentWidth(content_width_px);
@@ -1086,10 +1058,11 @@ void TextEditorView::contextMenuEvent(QContextMenuEvent *event)
 
 void TextEditorView::debug()
 {
-	std::vector<Character> buf;
-	edit_cut();
-	QString text = qApp->clipboard()->text();
-	qDebug() << text;
+	// std::vector<Character> buf;
+	// edit_cut();
+	// QString text = qApp->clipboard()->text();
+	// qDebug() << text;
+	updateScrollBarRange();
 }
 
 

@@ -72,7 +72,7 @@ const TextEditorTheme *FileViewWidget::theme() const
 
 int FileViewWidget::lineHeight() const
 {
-	return texteditor()->lineHeight();
+	return texteditor()->line_height_px();
 }
 
 void FileViewWidget::setDiffMode(TextEditorEngine_sp const &editor_engine, QScrollBar *vsb, QScrollBar *hsb)

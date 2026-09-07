@@ -64,11 +64,9 @@ private:
 	void moveCursorByMouse();
 	
 	static void _calc_pos_x(std::vector<Character> *chars, const TextEditorContext *cx, const FontMetrics &fixed_tm, const FontMetrics &text_tm);
-	int pos_x_px(row_index_t vrow, col_index_t vcol) const;
+	std::pair<int, int> pos_x_px(row_index_t vrow, col_index_t vcol) const;
 	
-	int scrollpos_x() const;
 	int view_y_from_vrow(row_index_t vrow) const;
-	int linenum_area_width_px() const;
 
 	QColor cursorColor() const;
 	int basic_character_width_px() const;
@@ -93,7 +91,7 @@ protected:
 	QFont fixedFont() const;
 	QFont textFont() const;
 	void drawText(QPainter *painter, int px, int py, QString const &str);
-	int currentPixelX() const;
+	std::pair<int, int> currentPixelX() const;
 public:
 	explicit TextEditorView(QWidget *parent = nullptr);
 	~TextEditorView() override;
@@ -117,15 +115,7 @@ public:
 	void move(int cur_row, int cur_col, int scr_y_px, int scr_x_px, bool auto_scroll);
 	void layoutEditor() override;
 	void setFocusFrameVisible(bool f);
-	enum ScrollUnit {
-		ScrollByCharacter = 0,
-	};
-	int scroll_unit_ = ScrollByCharacter;
-	void setScrollUnit(int n);
-	int scrollUnit() const;
 	
-	// void setFixedFont(const QFont &font);
-	// void setTextFont(const QFont &font);
 	void setFont(const QFont &font)
 	{
 		setFixedFont(font);
