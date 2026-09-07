@@ -63,7 +63,7 @@ public:
 private:
 	void moveCursorByMouse();
 	
-	static void _calc_pos_x(std::vector<Character> *chars, const TextEditorContext *cx, const FontMetrics &fixed_tm, const FontMetrics &text_tm);
+	static void _calc_pos_x(std::vector<Character> *chars, const TextEditorContext *cx, const Font &fixed_tm, const Font &text_tm);
 	std::pair<int, int> pos_x_px(row_index_t vrow, col_index_t vcol) const;
 	
 	int view_y_from_vrow(row_index_t vrow) const;

@@ -19,58 +19,6 @@
 
 #include "LineIndexMap/LineIndexMap.h"
 
-class FontMetrics {
-public:	
-	struct TextWidthCache {
-		std::unordered_map<QString, int> map;
-	};
-	QFont text_font_;
-	std::unique_ptr<QFontMetrics> fm_;
-	int ascent_ = 0;
-	int descent_ = 0;
-	QSize basic_character_size_;
-	mutable TextWidthCache text_width_cache_;
-	
-	void setTextFont(QFont const &font)
-	{
-		text_font_ = font;
-		
-		QPixmap pm(1, 1);
-		QPainter pr(&pm);
-		pr.setFont(text_font_);
-		fm_ = std::make_unique<QFontMetrics>(pr.fontMetrics());
-		ascent_ = fm_->ascent();
-		descent_ = fm_->descent();
-		basic_character_size_ = QSize(fm_->horizontalAdvance("0"), fm_->height());
-	}
-	QFont font() const
-	{
-		return text_font_;
-	}
-	int basisCharWidth() const
-	{
-		int w = basic_character_size_.width();
-		return w > 0 ? w : 1;
-	}
-	int basisCharHeight() const
-	{
-		int h = basic_character_size_.height();
-		return h > 0 ? h : 1;
-	}
-	int textWidth(QString const &text) const
-	{
-		int ret = 0;
-		auto it = text_width_cache_.map.find(text);
-		if (it != text_width_cache_.map.end()) {
-			ret = it->second;
-		} else {
-			ret = fm_->horizontalAdvance(text);
-			text_width_cache_.map[text] = ret;
-		}
-		return ret;
-	}
-};
-
 namespace EscapeCode {
 enum EscapeCode {
 	Up = 0x1b5b4100,
@@ -426,8 +374,59 @@ struct RowCol {
 
 class AbstractTextEditorApplication {
 public:
-	static const int LEFT_MARGIN = 8;
-	static const int RIGHT_MARGIN = 10;
+	class Font {
+	public:
+		struct TextWidthCache {
+			std::unordered_map<QString, int> map;
+		};
+		QFont text_font_;
+		std::unique_ptr<QFontMetrics> fm_;
+		int ascent_ = 0;
+		int descent_ = 0;
+		QSize basic_character_size_;
+		mutable TextWidthCache text_width_cache_;
+
+		void set_font(QFont const &font)
+		{
+			text_font_ = font;
+
+			QPixmap pm(1, 1);
+			QPainter pr(&pm);
+			pr.setFont(text_font_);
+			fm_ = std::make_unique<QFontMetrics>(pr.fontMetrics());
+			ascent_ = fm_->ascent();
+			descent_ = fm_->descent();
+			basic_character_size_ = QSize(fm_->horizontalAdvance("0"), fm_->height());
+		}
+		QFont font() const
+		{
+			return text_font_;
+		}
+		int basis_char_width() const
+		{
+			int w = basic_character_size_.width();
+			return w > 0 ? w : 1;
+		}
+		int basis_char_height() const
+		{
+			int h = basic_character_size_.height();
+			return h > 0 ? h : 1;
+		}
+		int text_width(QString const &text) const
+		{
+			int ret = 0;
+			auto it = text_width_cache_.map.find(text);
+			if (it != text_width_cache_.map.end()) {
+				ret = it->second;
+			} else {
+				ret = fm_->horizontalAdvance(text);
+				text_width_cache_.map[text] = ret;
+			}
+			return ret;
+		}
+	};
+
+	static const int LINE_NUMBER_AREA_WIDTH = 8;
 	
 	enum class WriteMode {
 		Insert,
@@ -644,7 +643,7 @@ public:
 	void pressEscape();
 	State state() const;
 	bool isLineNumberVisible() const;
-	void showLineNumber(bool show, int left_margin = LEFT_MARGIN);
+	void showLineNumber(bool show, int left_margin = LINE_NUMBER_AREA_WIDTH);
 	void set_auto_layout(bool f);
 	void setDocument(const std::vector<Document::Line> *source);
 	void setSelectionAnchor(bool enabled, bool update_anchor, bool auto_scroll);
@@ -707,12 +706,13 @@ protected:
 	
 	void setFixedFont(const QFont &font);
 	void setTextFont(const QFont &font);
-	FontMetrics const &fixedFontMetrics() const;
-	FontMetrics const &textFontMetrics() const;
+	Font const &fixedFontMetrics() const;
+	Font const &textFontMetrics() const;
 	void set_line_margin_px(int top, int bottom);	
 	int line_baseline_px() const;
 	void need_to_update_scroll_bar();
 	int linenum_area_width_px() const;
+	void new_document();
 public:
 	int line_height_px() const;
 	void setWrappingMode(WrappingMode mode);

@@ -45,7 +45,7 @@ MainWindow::MainWindow(QWidget *parent)
 	texteditor()->setWrappingMode(TextEditorView::WrappingMode::WordWrap);
 	// texteditor()->setWrappingMode(TextEditorView::WrappingMode::CharWrap);
 
-	texteditor()->loadExampleFile();
+	// texteditor()->loadExampleFile();
 
 	connect(&m->tm, SIGNAL(timeout()), this, SLOT(updateIm()));
 }

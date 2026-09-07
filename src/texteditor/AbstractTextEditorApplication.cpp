@@ -79,7 +79,7 @@ struct AbstractTextEditorApplication::Private {
 	bool auto_layout = false;
 	QString recently_used_path;
 	bool show_line_number = true;
-	int left_margin = AbstractTextEditorApplication::LEFT_MARGIN;
+	int left_margin = AbstractTextEditorApplication::LINE_NUMBER_AREA_WIDTH;
 
 	bool is_painting_suppressed = false;
 	int line_margin = 3;
@@ -99,8 +99,10 @@ struct AbstractTextEditorApplication::Private {
 	};
 	Selection selection;
 	
-	FontMetrics fixed_font_metrics;
-	FontMetrics text_font_metrics;
+	struct {
+		AbstractTextEditorApplication::Font fixed;
+		AbstractTextEditorApplication::Font text;
+	} font;
 	
 	int top_margin_px = 0;
 	int bottom_margin_px = 1;
@@ -230,7 +232,7 @@ void AbstractTextEditorApplication::need_to_update_scroll_bar()
  */
 int AbstractTextEditorApplication::linenum_area_width_px() const
 {
-	return editor_cx->viewport_org_x_cols * fixedFontMetrics().basisCharWidth();
+	return editor_cx->viewport_org_x_cols * fixedFontMetrics().basis_char_width();
 }
 
 /**
@@ -313,7 +315,7 @@ void AbstractTextEditorApplication::set_scroll_horz_pos_px(int col)
 
 int AbstractTextEditorApplication::cursor_col_px() const
 {
-	return current_visual_col() * fixedFontMetrics().basisCharWidth() - scroll_horz_pos_px();
+	return current_visual_col() * fixedFontMetrics().basis_char_width() - scroll_horz_pos_px();
 }
 
 int AbstractTextEditorApplication::cursor_row_px() const
@@ -897,7 +899,7 @@ void AbstractTextEditorApplication::layoutEditor()
 	// makeBuffer();
 	editor_cx->viewport_org_x_cols = leftMargin_();
 	editor_cx->viewport_org_y_rows = 0;
-	editor_cx->viewport_width_px = client_width_px() - cx()->viewport_org_x_cols * textFontMetrics().basisCharWidth();
+	editor_cx->viewport_width_px = client_width_px() - cx()->viewport_org_x_cols * textFontMetrics().basis_char_width();
 	editor_cx->viewport_height_rows = client_height_px() / line_height_px();
 }
 
@@ -1033,7 +1035,7 @@ bool AbstractTextEditorApplication::isCurrentLineWritable() const
 int AbstractTextEditorApplication::editor_viewport_width_px() const
 {
 	// return cx()->viewport_width_px;
-	return client_width_px() - editor_cx->viewport_org_x_cols * m->fixed_font_metrics.basisCharWidth();
+	return client_width_px() - editor_cx->viewport_org_x_cols * m->font.fixed.basis_char_width();
 }
 
 int AbstractTextEditorApplication::editor_viewport_height() const
@@ -1065,9 +1067,20 @@ TextEditorEngine_sp AbstractTextEditorApplication::engine() const
 	return cx()->engine;
 }
 
+void AbstractTextEditorApplication::new_document()
+{
+	cx()->engine->document = {};
+	cx()->cache = {};
+	insert_line(0);
+	commit_line(0, {});
+	setCursorPos({});
+	updateVisibility({});
+}
+
 void AbstractTextEditorApplication::setTextEditorEngine(TextEditorEngine_sp const &e)
 {
 	cx()->engine = e;
+	new_document();
 }
 
 void AbstractTextEditorApplication::clear()
@@ -1317,22 +1330,22 @@ void AbstractTextEditorApplication::updateSelectionAnchor2(bool auto_scroll)
 
 void AbstractTextEditorApplication::setFixedFont(const QFont &font)
 {
-	m->fixed_font_metrics.setTextFont(font);
+	m->font.fixed.set_font(font);
 }
 
 void AbstractTextEditorApplication::setTextFont(const QFont &font)
 {
-	m->text_font_metrics.setTextFont(font);
+	m->font.text.set_font(font);
 }
 
-FontMetrics const &AbstractTextEditorApplication::fixedFontMetrics() const
+AbstractTextEditorApplication::Font const &AbstractTextEditorApplication::fixedFontMetrics() const
 {
-	return m->fixed_font_metrics;
+	return m->font.fixed;
 }
 
-FontMetrics const &AbstractTextEditorApplication::textFontMetrics() const
+AbstractTextEditorApplication::Font const &AbstractTextEditorApplication::textFontMetrics() const
 {
-	return m->text_font_metrics;
+	return m->font.text;
 }
 
 void AbstractTextEditorApplication::set_line_margin_px(int top, int bottom)
@@ -1343,7 +1356,7 @@ void AbstractTextEditorApplication::set_line_margin_px(int top, int bottom)
 
 int AbstractTextEditorApplication::line_height_px() const
 {
-	int h = fixedFontMetrics().basisCharHeight() + m->top_margin_px + m->bottom_margin_px;
+	int h = fixedFontMetrics().basis_char_height() + m->top_margin_px + m->bottom_margin_px;
 	return h > 0 ? h : 16;
 }
 

@@ -52,9 +52,14 @@ TextEditorView::TextEditorView(QWidget *parent)
 	
 #ifdef Q_OS_WIN
 
-
-	setTextFont(QFont("MS PGothic", 16));
-	// setTextFont(QFont("MS Gothic", 16));
+	{
+		QFont font("MS Gothic", 15);
+		setFont(font);
+	}
+	{
+		QFont font("MS PGothic", 15);
+		setTextFont(font);
+	}
 
 #else
 
@@ -102,7 +107,7 @@ TextEditorView::~TextEditorView()
 int TextEditorView::basic_character_width_px() const
 {
 	// 固定幅フォントの '0' を基準文字幅とする
-	return fixedFontMetrics().basisCharWidth();
+	return fixedFontMetrics().basis_char_width();
 }
 	
 void TextEditorView::setTheme(TextEditorThemePtr const &theme)
@@ -155,7 +160,7 @@ static inline QString appendUnicode(QString const &s, char32_t u)
  * @param chars
  * @param fm
  */
-void TextEditorView::_calc_pos_x(std::vector<Character> *chars, TextEditorContext const *cx, FontMetrics const &fixed_tm, FontMetrics const &text_tm)
+void TextEditorView::_calc_pos_x(std::vector<Character> *chars, TextEditorContext const *cx, Font const &fixed_tm, Font const &text_tm)
 {
 	int base_x = 0;
 	int left_x = 0;
@@ -165,7 +170,7 @@ void TextEditorView::_calc_pos_x(std::vector<Character> *chars, TextEditorContex
 		char32_t u = (*chars)[i].unicode;
 		if (u == '\t') {
 			int right_x = left_x;
-			int tab_indent = fixed_tm.basisCharWidth() * cx->tab_indent_size;
+			int tab_indent = fixed_tm.basis_char_width() * cx->tab_indent_size;
 			if (tab_indent > 0) {
 				right_x = (right_x / tab_indent + 1) * tab_indent;
 			}
@@ -174,7 +179,7 @@ void TextEditorView::_calc_pos_x(std::vector<Character> *chars, TextEditorContex
 			text.clear();
 		} else {
 			text = appendUnicode(text, u);
-			int right_x = base_x + text_tm.textWidth(text);
+			int right_x = base_x + text_tm.text_width(text);
 			(*chars)[i].right_x = right_x;
 			left_x = right_x;
 		}
@@ -305,25 +310,25 @@ std::pair<int, int> TextEditorView::currentPixelX() const
 void TextEditorView::bind_scroll_bar(QScrollBar *vsb, QScrollBar *hsb)
 {
 	m->scroll_bar_v = vsb;
-#if 0
-	connect(m->scroll_bar_v, &QScrollBar::sliderPressed, this, [this]() {
-		m->dragging_scroll_bar = m->scroll_bar_v;
-	});
-	connect(m->scroll_bar_v, &QScrollBar::sliderReleased, this, [this]() {
-		m->dragging_scroll_bar = nullptr;
-		updateScrollBarRange();
-	});
-#endif
+	if (0) {
+		connect(m->scroll_bar_v, &QScrollBar::sliderPressed, this, [this]() {
+			m->dragging_scroll_bar = m->scroll_bar_v;
+		});
+		connect(m->scroll_bar_v, &QScrollBar::sliderReleased, this, [this]() {
+			m->dragging_scroll_bar = nullptr;
+			updateScrollBarRange();
+		});
+	}
 
 	m->scroll_bar_h = hsb;
-#if 0
-	connect(m->scroll_bar_h, &QScrollBar::sliderPressed, this, [this]() {
-		m->dragging_scroll_bar = m->scroll_bar_h;
-	});
-	connect(m->scroll_bar_h, &QScrollBar::sliderReleased, this, [this]() {
-		m->dragging_scroll_bar = nullptr;
-	});
-#endif
+	if (0) {
+		connect(m->scroll_bar_h, &QScrollBar::sliderPressed, this, [this]() {
+			m->dragging_scroll_bar = m->scroll_bar_h;
+		});
+		connect(m->scroll_bar_h, &QScrollBar::sliderReleased, this, [this]() {
+			m->dragging_scroll_bar = nullptr;
+		});
+	}
 }
 
 void TextEditorView::setup_for_log_widget(TextEditorThemePtr const &theme)
@@ -571,8 +576,7 @@ void TextEditorView::paintEvent(QPaintEvent *)
 	int text_area_w = width() - vsplit_x;
 	int bottom_y = (total_visual_row_count() - scroll_vert_pos_px()) * line_height_px() + 1;
 	bottom_y = std::min(bottom_y, height());
-	qDebug() << total_visual_row_count();
-	
+
 	if (bottom_y > 0) {
 		// テキスト領域の背景
 		pr.fillRect(vsplit_x, 0, text_area_w, bottom_y, theme()->bg_default);
@@ -1074,11 +1078,10 @@ void TextEditorView::contextMenuEvent(QContextMenuEvent *event)
 
 void TextEditorView::debug()
 {
-	// std::vector<Character> buf;
-	// edit_cut();
-	// QString text = qApp->clipboard()->text();
-	// qDebug() << text;
-	updateScrollBarRange();
+	insert_line(0);
+	commit_line(0, {});
+	setCursorPos({});
+	updateVisibility({});
 }
 
 
