@@ -376,7 +376,13 @@ struct AiChatResponseParser : public GenerativeAI::AbstractVisitor<AiResult> {
 	{
 		return parse_openai_chat_completions_format();
 	}
-
+	
+	/// Requesty：OpenAI Chat Completions 互換形式
+	AiResult case_Requesty()
+	{
+		return parse_openai_chat_completions_format();
+	}
+	
 	/// OrcaRouter：OrcaAI Chat Completions 互換形式
 	AiResult case_OrcaRouter()
 	{
@@ -639,7 +645,13 @@ struct _PromptJsonGenerator : public GenerativeAI::AbstractVisitor<std::string> 
 	{
 		return case_OpenAI_chat_completions();
 	}
-
+	
+	/// Requesty：OpenAI Chat Completions 互換形式
+	std::string case_Requesty()
+	{
+		return case_OpenAI_chat_completions();
+	}
+	
 	/// OrcaRouter：OrcaAI Chat Completions 互換形式
 	std::string case_OrcaRouter()
 	{
@@ -828,18 +840,18 @@ AiResult AiApiBridge::request(GenerativeAI::EndPoint::Type eptype, std::string c
 								cred.api_key = key.toStdString();
 								ok = true;
 							} else {
-								errmsg = "Failed to retrieve AI API key from 1Password. Please check your 1Password configuration.";
+								errmsg = "Failed to retrieve API key from 1Password. Please check your 1Password configuration.";
 							}
 						} else {
 							errmsg = "Invalid 1Password API key format. Expected 'op://account_name/secret_path'.";
 						}
 					} else {
-						errmsg  = "1Password integration is not available. Cannot retrieve AI API key.";
+						errmsg  = "1Password integration is not available. Cannot retrieve API key.";
 					}
 					if (!ok) {
 						// QMessageBox::critical(nullptr, "AI API Key Retrieval Error", errmsg);
-						logprintf(LOG_DEFAULT, "AI API Key Retrieval Error: %s\n", errmsg.c_str());
-						return AiResult::Error("AI API Key Retrieval Error", errmsg);
+						logprintf(LOG_DEFAULT, "API Key Retrieval Error: %s\n", errmsg.c_str());
+						return AiResult::Error("API Key Retrieval Error", errmsg);
 					}
 				}
 			}
@@ -868,7 +880,7 @@ AiResult AiApiBridge::request(GenerativeAI::EndPoint::Type eptype, std::string c
 				assert(0);
 			}
 			
-			if (ret >= 0) {
+			if (ret >= 0 && ret < 300) {
 				char const *data = http->content_data();
 				size_t size = http->content_length();
 				response_json.assign(data, size);
@@ -876,6 +888,10 @@ AiResult AiApiBridge::request(GenerativeAI::EndPoint::Type eptype, std::string c
 					logprintf(LOG_RAW, "%s\n", response_json.c_str());
 				}
 				// fprintf(stderr, "%s\n", response_json.c_str());
+			} else {
+				std::string msg = std::to_string(ret);
+				AiResult r = AiResult::Error("Error", msg);
+				return r;
 			}
 		}
 	}

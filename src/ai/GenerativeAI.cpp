@@ -38,6 +38,7 @@ const std::vector<ProviderInfo> &complete_provider_table()
 		{ProviderID::Sakura,                       "sakura",                          "Sakura AI Engine",               "SAKURA_AI_API_KEY"},
 		{ProviderID::DeepSeek,                     "deepseek",                        "DeepSeek",                       "DEEPSEEK_API_KEY"},
 		{ProviderID::OpenRouter,                   "openrouter",                      "OpenRouter",                     "OPENROUTER_API_KEY"},
+		{ProviderID::Requesty,                     "requesty",                        "Requesty",                       "REQUESTY_API_KEY"},
 		{ProviderID::OrcaRouter,                   "orcarouter",                      "OrcaRouter",                     "ORCAROUTER_API_KEY"},
 		{ProviderID::Ollama,                       "ollama",                          "Ollama (experimental)",          ""},
 		{ProviderID::LMStudio,                     "lmstudio",                        "LM Studio (experimental)",       ""},
@@ -75,6 +76,7 @@ std::vector<Model> const &ai_model_presets()
 		{ProviderID::Sakura,           "sakura:gpt-oss-120b"},
 		{ProviderID::DeepSeek,         "deepseek-v4-flash"},
 		{ProviderID::OpenRouter,       "openrouter:///anthropic/claude-4.6-sonnet"},
+		{ProviderID::Requesty,         "requesty:///google/gemma-4-31b-it"},
 		{ProviderID::OrcaRouter,       "orcarouter:///deepseek/deepseek-v4-pro-free"},
 		{ProviderID::Ollama,           "ollama:///gemma4"},
 		{ProviderID::LMStudio,         "lmstudio:///meta-llama-3-8b-instruct"},
@@ -102,6 +104,7 @@ std::vector<ProviderID> const &ai_provider_id_list_for_present_to_users()
 		ProviderID::Sakura,
 		ProviderID::DeepSeek,
 		ProviderID::OpenRouter,
+		ProviderID::Requesty,
 		ProviderID::OrcaRouter,
 		ProviderID::Ollama,
 		ProviderID::LMStudio,
@@ -136,6 +139,7 @@ Model Model::from_name(std::string const &name)
 		{ProviderID::Ollama, "^ollama://"},
 		{ProviderID::LMStudio, "^lmstudio://"},
 		{ProviderID::OpenRouter, "^openrouter://"},
+		{ProviderID::Requesty, "^requesty://"},
 		{ProviderID::OrcaRouter, "^orcarouter://"},
 		{ProviderID::LLAMACPP, "^llamacpp://"},
 	};
@@ -191,6 +195,7 @@ void Model::parse_model(const std::string &model_uri)
 	if (Parse("ollama://", 11434)) return;
 	if (Parse("lmstudio://", 1234)) return;
 	if (Parse("openrouter://", 443)) return;
+	if (Parse("requesty://", 443)) return;
 	if (Parse("orcarouter://", 443)) return;
 	if (Parse("llamacpp://", 8080)) return;
 }
@@ -348,7 +353,16 @@ struct _MakeRequest : public AbstractVisitor<Request> {
 		set_authorization_bearer_cred(&r, cred_);
 		return r;
 	}
-
+	
+	Request case_Requesty()
+	{
+		Request r;
+		r.endpoint = "https://router.requesty.ai/v1/chat/completions";
+		r.model_name = model_.model_name();
+		set_authorization_bearer_cred(&r, cred_);
+		return r;
+	}
+	
 	Request case_OrcaRouter()
 	{
 		Request r;
