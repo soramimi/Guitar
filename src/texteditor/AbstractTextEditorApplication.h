@@ -387,9 +387,9 @@ struct TextEditorContext {
 	row_index_t current_visual_row = 0; // 表示行（物理行）
 	col_index_t current_visual_col = 0; // 表示列（物理列）
 	int current_visual_col_hint = 0;
-	int current_visual_absolute_x_px = 0;
-	int current_visual_x_px = 0; // 桁ピクセル座標
-	int current_visual_pixel_y = 0; // 行ピクセル座標
+	int current_absolute_x_px = 0; // 桁ピクセル座標（行頭基準）
+	int current_visual_x_px = 0; // 桁ピクセル座標（クライアント領域基準）
+	int current_visual_y_px = 0; // 行ピクセル座標
 	row_index_t saved_row = 0;
 	col_index_t saved_col = 0;
 	int saved_col_hint = 0;
@@ -409,7 +409,7 @@ struct TextEditorContext {
 		std::vector<Document::Line> visual_lines;
 		row_index_t current_logical_row = 0;
 		col_index_t current_logical_col = 0;
-		bool need_scroll_bar_update = true;
+		bool scroll_bar_update_needed = true;
 	};
 	mutable Cache cache;
 };
@@ -491,7 +491,7 @@ protected:
 	void clear_selection();
 protected:
 
-	row_index_t nlines() const;
+	row_index_t visual_nlines() const;
 	void invalidate_nlines_cache();
 
 	Document::Line *visual_line(row_index_t vrow);
@@ -531,7 +531,7 @@ protected:
 	
 	Document *document();
 	Document const *document() const;
-	int logicalLines() const;
+	int logical_nlines() const;
 	
 	void ensureCurrentLineVisible();
 	
@@ -604,8 +604,6 @@ protected:
 	
 	QString statusLine() const;
 	
-	void setRecentlyUsedPath(QString const &path);
-	QString recentlyUsedPath();
 	
 	void paintLineNumbers(std::function<void(int, QString const &, Document::Line const *)> const &draw);
 	bool isAutoLayout() const;
@@ -615,6 +613,9 @@ public:
 	
 	AbstractTextEditorApplication();
 	virtual ~AbstractTextEditorApplication();
+
+	void setRecentlyUsedPath(QString const &path);
+	QString recentlyUsedPath();
 	
 	virtual void layoutEditor();
 	void scrollUp();
@@ -636,7 +637,7 @@ public:
 	void set_client_size(int w, int h, bool update_layout);
 	void setContentWidth(int w);
 	void setTextEditorEngine(const TextEditorEngine_sp &e);
-	void openFile(QString const &path);
+	bool openFile(QString const &path);
 	void saveFile(QString const &path);
 	void loadExampleFile();
 	void pressEnter();
@@ -716,6 +717,18 @@ public:
 	int line_height_px() const;
 	void setWrappingMode(WrappingMode mode);
 	AbstractTextEditorApplication::WrappingMode wrappingMode() const;
+
+	bool save(std::function<bool (char const *p, size_t n)> callback) const
+	{
+		std::vector<Document::Line> const &llines = document()->logical_lines;
+		for (Document::Line const &line : llines) {
+			std::string_view view = line.text();
+			if (!callback(view.data(), view.size())) {
+				return false;
+			}
+		}
+		return true;
+	}
 };
 
 #endif // ABSTRACTTEXTEDITORAPPLICATION_H

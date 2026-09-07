@@ -4,6 +4,7 @@
 #include "Logger.h"
 #include <common/jstream.h>
 #include <common/misc.h>
+#include <inet/httpstatus.h>
 #include <inet/inetclient.h>
 #include <subprojects/FileTypePlugin/src/FileTypeInterface.h>
 #include <subprojects/IncrementalSearchPlugin/src/IncrementalSearch.h>
@@ -880,7 +881,9 @@ AiResult AiApiBridge::request(GenerativeAI::EndPoint::Type eptype, std::string c
 				assert(0);
 			}
 			
-			if (ret >= 0 && ret < 300) {
+			std::string_view httpstat = http_status_text(ret);
+			
+			if (ret >= 200 && ret < 300) {
 				char const *data = http->content_data();
 				size_t size = http->content_length();
 				response_json.assign(data, size);
@@ -890,6 +893,8 @@ AiResult AiApiBridge::request(GenerativeAI::EndPoint::Type eptype, std::string c
 				// fprintf(stderr, "%s\n", response_json.c_str());
 			} else {
 				std::string msg = std::to_string(ret);
+				msg += '\n';
+				msg += httpstat;
 				AiResult r = AiResult::Error("Error", msg);
 				return r;
 			}

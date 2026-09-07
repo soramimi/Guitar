@@ -30,6 +30,8 @@ private:
 	TextEditorEngine_sp engine();
 	Document *document();
 	TextEditorView *texteditor();
+
+	bool saveFile(const QString &path);
 protected:
 	void keyPressEvent(QKeyEvent *);
 
@@ -43,6 +45,8 @@ private slots:
 	void on_action_file_save_triggered();
 	void on_action_test_triggered();
 	void updateIm();
+	void on_action_file_save_as_triggered();
+	
 protected:
 	void moveEvent(QMoveEvent *);
 signals:

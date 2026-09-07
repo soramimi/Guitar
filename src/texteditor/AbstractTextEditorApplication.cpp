@@ -80,7 +80,6 @@ struct AbstractTextEditorApplication::Private {
 	QString recently_used_path;
 	bool show_line_number = true;
 	int left_margin = AbstractTextEditorApplication::LEFT_MARGIN;
-	// std::vector<AbstractTextEditorApplication::Char16> screen;
 
 	bool is_painting_suppressed = false;
 	int line_margin = 3;
@@ -191,16 +190,11 @@ QString AbstractTextEditorApplication::recentlyUsedPath()
 	return m->recently_used_path;
 }
 
-// void AbstractTextEditorApplication::makeBuffer()
-// {
-// 	int w = screenWidth();
-// 	int h = screenHeight();
-// 	int size = w * h;
-// 	m->screen.resize(size);
-// 	std::fill(m->screen.begin(), m->screen.end(), Char16());
-// }
-
-int AbstractTextEditorApplication::logicalLines() const
+/**
+ * @brief 論理行数を返す
+ * @return
+ */
+int AbstractTextEditorApplication::logical_nlines() const
 {
 	return document()->logical_lines.size();
 }
@@ -209,23 +203,31 @@ int AbstractTextEditorApplication::logicalLines() const
  * @brief 物理行数を返す
  * @return
  */
-row_index_t AbstractTextEditorApplication::nlines() const
+row_index_t AbstractTextEditorApplication::visual_nlines() const
 {
 	if (m->wrapping_mode == WrappingMode::NoWrap) {
-		return logicalLines();
+		return logical_nlines();
 	} else {
-		if (cx()->cache.nlines == std::nullopt) { // キャッシュが無効化されている場合は再計算する
-			cx()->cache.nlines = cx()->line_index_map.total_visual_row_count();
+		TextEditorContext const *cx = this->cx();
+		if (cx->cache.nlines == std::nullopt) { // キャッシュが無効化されている場合は再計算する
+			cx->cache.nlines = cx->line_index_map.total_visual_row_count();
 		}
-		return *cx()->cache.nlines;
+		return *cx->cache.nlines;
 	}
 }
 
+/**
+ * @brief スクロールバー更新が必要であることを通知する
+ */
 void AbstractTextEditorApplication::need_to_update_scroll_bar()
 {
-	cx()->cache.need_scroll_bar_update = true;
+	cx()->cache.scroll_bar_update_needed = true;
 }
 
+/**
+ * @brief 行番号表示領域の幅を返す（ピクセル単位）
+ * @return
+ */
 int AbstractTextEditorApplication::linenum_area_width_px() const
 {
 	return editor_cx->viewport_org_x_cols * fixedFontMetrics().basisCharWidth();
@@ -322,7 +324,7 @@ int AbstractTextEditorApplication::cursor_row_px() const
 Document::Line const *AbstractTextEditorApplication::currentLine() const
 {
 	row_index_t vrow = current_visual_row();
-	return (vrow >= 0 && vrow < nlines()) ? visual_line(vrow) : nullptr;
+	return (vrow >= 0 && vrow < visual_nlines()) ? visual_line(vrow) : nullptr;
 }
 
 //
@@ -433,7 +435,7 @@ std::vector<Character> AbstractTextEditorApplication::parseLine(Document::Line c
  */
 std::vector<Character> AbstractTextEditorApplication::parseLine(row_index_t vrow) const
 {
-	if (vrow >= 0 && vrow < nlines()) {
+	if (vrow >= 0 && vrow < visual_nlines()) {
 		return parseLine(visual_line(vrow));
 	}
 	return {};
@@ -597,7 +599,7 @@ std::vector<Document::Line> AbstractTextEditorApplication::wrap_line(Document::L
 row_index_t AbstractTextEditorApplication::lrow_to_vrow(row_index_t lrow) const
 {
 	if (wrappingMode() == WrappingMode::NoWrap) {
-		return std::min(lrow, nlines());
+		return std::min(lrow, visual_nlines());
 	}
 	
 	auto pos = cx()->line_index_map.logical_to_visual(lrow, 0);
@@ -607,7 +609,7 @@ row_index_t AbstractTextEditorApplication::lrow_to_vrow(row_index_t lrow) const
 row_index_t AbstractTextEditorApplication::vrow_to_lrow(row_index_t vrow) const
 {
 	if (wrappingMode() == WrappingMode::NoWrap) {
-		return std::min(vrow, nlines());
+		return std::min(vrow, visual_nlines());
 	}
 	
 	auto pos = cx()->line_index_map.visual_to_logical(vrow);
@@ -665,7 +667,7 @@ LineIndexMap::LogicalPosition AbstractTextEditorApplication::query_logical_for_v
 	LineIndexMap::LogicalPosition ret;
 	
 	if (wrappingMode() == WrappingMode::NoWrap) {
-		ret.lrow = std::min(vrow, nlines()); // NoWrapの場合、論理行と物理行は同じ
+		ret.lrow = std::min(vrow, visual_nlines()); // NoWrapの場合、論理行と物理行は同じ
 		ret.lcol = 0;
 	} else {
 		ret = cx()->line_index_map.visual_to_logical(vrow);
@@ -928,7 +930,7 @@ Document::Line *AbstractTextEditorApplication::visual_line(row_index_t vrow)
 	} else {
 		vlines = &cx()->cache.visual_lines;
 		row_index_t lrow = 0;
-		if (vrow < nlines()) {
+		if (vrow < visual_nlines()) {
 			lrow = vrow_to_lrow(vrow); // 物理行番号から論理行番号を求める
 			while (vlines->size() <= vrow) { // 物理行情報が不足している場合は追加する
 				if (!update_visual_line(lrow, true)) break;
@@ -1020,7 +1022,7 @@ bool AbstractTextEditorApplication::isCurrentLineWritable() const
 	if (is_read_only()) return false;
 
 	row_index_t vrow = current_visual_row();
-	if (vrow >= 0 && vrow < nlines()) {
+	if (vrow >= 0 && vrow < visual_nlines()) {
 		if (visual_line(vrow)->sp->meta.type != Document::LineType::Invalid) {
 			return true;
 		}
@@ -1109,42 +1111,41 @@ void AbstractTextEditorApplication::writeNewLine()
 	updateVisibility({});
 }
 
-void AbstractTextEditorApplication::openFile(QString const &path)
+bool AbstractTextEditorApplication::openFile(QString const &path)
 {
 	document()->logical_lines.clear();
 	QFile file(path);
-	if (file.open(QFile::ReadOnly)) {
-		document()->all = file.readAll();
-		std::vector<Document::varline_t> lines;
-		char const *begin = document()->all.data();
-		char const *end = begin + document()->all.size();
-		char const *left = begin;
-		char const *right = begin;
-		while (1) {
-			int c = -1;
-			if (right < end) {
-				c = (unsigned char)*right++;
-			}
-			if (c == '\r' || c == '\n' || c == -1) {
-				if (c == '\r' && right < end && *right == '\n') {
-					right++;
-				}
-				std::string_view line(left, right - left);
-				lines.emplace_back(line);
-				if (c == -1) break;
-				left = right;
-			}
+	if (!file.open(QFile::ReadOnly)) return false;
+	
+	document()->all = file.readAll();
+	std::vector<Document::varline_t> lines;
+	char const *begin = document()->all.data();
+	char const *end = begin + document()->all.size();
+	char const *left = begin;
+	char const *right = begin;
+	while (1) {
+		int c = -1;
+		if (right < end) {
+			c = (unsigned char)*right++;
 		}
-		for (size_t i = 0; i < lines.size(); i++) {
-			assert(std::holds_alternative<std::string_view>(lines[i]));
-			std::string_view sv = std::get<std::string_view>(lines[i]);
-			auto line = Document::Line::View(sv);
-			line.sp->meta.type = Document::LineType::Normal;
-			document()->logical_lines.push_back(line);
+		if (c == '\r' || c == '\n' || c == -1) {
+			if (c == '\r' && right < end && *right == '\n') {
+				right++;
+			}
+			std::string_view line(left, right - left);
+			lines.emplace_back(line);
+			if (c == -1) break;
+			left = right;
 		}
-		document()->raw_lines = std::move(lines);
-		setRecentlyUsedPath(path);
 	}
+	for (size_t i = 0; i < lines.size(); i++) {
+		assert(std::holds_alternative<std::string_view>(lines[i]));
+		std::string_view sv = std::get<std::string_view>(lines[i]);
+		auto line = Document::Line::View(sv);
+		line.sp->meta.type = Document::LineType::Normal;
+		document()->logical_lines.push_back(line);
+	}
+	document()->raw_lines = std::move(lines);
 
 	if (document()->logical_lines.empty()) {
 		Document::Line line;
@@ -1155,15 +1156,18 @@ void AbstractTextEditorApplication::openFile(QString const &path)
 	update_visual_lines_all();
 	
 	scrollToTop();
+
+	setRecentlyUsedPath(path);
+	return true;
 }
 
 void AbstractTextEditorApplication::saveFile(QString const &path)
 {
 	QFile file(path);
 	if (file.open(QFile::WriteOnly)) {
-		for (Document::Line const &line : document()->logical_lines) {
-			file.write(line.text().data(), line.text().size());
-		}
+		save([&file](char const *p, size_t n){
+			return file.write(p, n) == n;
+		});
 	}
 }
 
@@ -1354,7 +1358,7 @@ void AbstractTextEditorApplication::setCursorRow(row_index_t vrow, bool auto_scr
 	if (vrow < 0) {
 		vrow = 0;
 	} else {
-		const row_index_t n = nlines();
+		const row_index_t n = visual_nlines();
 		if (vrow >= n) {
 			vrow = (n > 0) ? (n - 1) : 0;
 		}
@@ -1393,7 +1397,7 @@ void AbstractTextEditorApplication::setCursorCol(col_index_t vcol)
 	_set_cursor_col(vcol, true, false);
 	auto pair = currentPixelX(); // カーソルのピクセル位置を更新する
 	cx()->current_visual_x_px = pair.first;
-	cx()->current_visual_absolute_x_px = pair.second;
+	cx()->current_absolute_x_px = pair.second;
 }
 
 void AbstractTextEditorApplication::setCursorPos(const RowCol &vpos)
@@ -1599,7 +1603,7 @@ void AbstractTextEditorApplication::doDelete()
 			row_index_t next_lrow = lrow + 1;
 			std::vector<Character> next = parseLogicalLine(cx(), next_lrow);
 			chars.insert(chars.end(), next.begin(), next.end());
-			if (next_lrow < logicalLines()) {
+			if (next_lrow < logical_nlines()) {
 				delete_line(next_lrow);
 			}
 		}
@@ -1628,8 +1632,8 @@ void AbstractTextEditorApplication::doDelete()
 		vcol -= chars.size();
 		vrow++;
 	}
-	if (nlines() > 0 && vrow >= nlines()) {
-		vrow = nlines() - 1;
+	if (visual_nlines() > 0 && vrow >= visual_nlines()) {
+		vrow = visual_nlines() - 1;
 	}
 	setCursorPos({vrow, vcol});
 
@@ -1691,12 +1695,12 @@ int AbstractTextEditorApplication::calcColumnToIndex(int column)
 
 int AbstractTextEditorApplication::scrollBottomLimit() const
 {
-	return logicalLines() - editor_viewport_height() / 2;
+	return logical_nlines() - editor_viewport_height() / 2;
 }
 
 int AbstractTextEditorApplication::scrollBottomLimit2() const
 {
-	return logicalLines() - editor_viewport_height();
+	return logical_nlines() - editor_viewport_height();
 }
 
 void AbstractTextEditorApplication::moveCursorOut()
@@ -1784,7 +1788,7 @@ void AbstractTextEditorApplication::moveCursorUp()
 void AbstractTextEditorApplication::moveCursorDown()
 {
 	row_index_t vrow = current_visual_row();
-	if (vrow + 1 < nlines()) {
+	if (vrow + 1 < visual_nlines()) {
 		vrow++;
 	}
 	setCursorRow(vrow); // カーソルを1行下へ
@@ -1846,7 +1850,7 @@ void AbstractTextEditorApplication::moveCursorRight()
 
 	auto MoveToNextRow = [this](){
 		int next_vrow = current_visual_row() + 1;
-		if (next_vrow < nlines()) {
+		if (next_vrow < visual_nlines()) {
 			setCursorRow(next_vrow, false);
 			moveCursorHome(false); // 行頭へ移動
 			return true;
@@ -1909,7 +1913,7 @@ void AbstractTextEditorApplication::movePageUp()
 
 void AbstractTextEditorApplication::movePageDown()
 {
-	row_index_t vrow_limit = nlines();
+	row_index_t vrow_limit = visual_nlines();
 	if (vrow_limit > 0) {
 		vrow_limit--;
 		int step = editor_viewport_height();
@@ -1930,12 +1934,13 @@ void AbstractTextEditorApplication::movePageDown()
 void AbstractTextEditorApplication::update_horz_scroll()
 {
 	if (isWidthFixed()) return; // 固定幅の場合は水平スクロールはしない
-	
-	int x = cx()->current_visual_absolute_x_px;
-	auto curr_scroll_pos = scroll_horz_pos_px();
-	auto textarea_width = client_width_px() - linenum_area_width_px();
-	auto left = textarea_width / 5;
-	auto right = textarea_width * 4 / 5;
+
+	// 計算はすべてピクセル単位	
+	int x = cx()->current_absolute_x_px; // カーソルの絶対位置（行頭基準）
+	auto curr_scroll_pos = scroll_horz_pos_px(); // 現在の水平スクロール位置
+	auto textarea_width = client_width_px() - linenum_area_width_px(); // テキストエリアの幅
+	auto left = textarea_width / 5; // 左端の余白
+	auto right = textarea_width * 4 / 5; // 右端の余白
 	int pos = curr_scroll_pos;
 	if (x - pos > right) {
 		pos = x - right;
@@ -1978,7 +1983,7 @@ void AbstractTextEditorApplication::paintLineNumbers(std::function<void(int, QSt
 		};
 		QString text;
 		Document::Line const *line = nullptr;
-		if (vrow < (int)nlines()) {
+		if (vrow < (int)visual_nlines()) {
 			if (left_margin > 1) {
 				line = &Line(vrow);
 				unsigned int linenum = 0;
@@ -1994,7 +1999,7 @@ void AbstractTextEditorApplication::paintLineNumbers(std::function<void(int, QSt
 					text = LineNumberText(linenum);
 				}
 			}
-		} else if (vrow == 0 && nlines() == 0) {
+		} else if (vrow == 0 && visual_nlines() == 0) {
 			text = LineNumberText(1);
 		}
 		int y = editor_cx->viewport_org_y_rows + i;
@@ -2120,7 +2125,7 @@ void AbstractTextEditorApplication::logicalMoveToBottom()
 {
 	clear_selection();
 
-	row_index_t vrow = nlines();
+	row_index_t vrow = visual_nlines();
 	if (vrow > 0) {
 		vrow--;
 	}

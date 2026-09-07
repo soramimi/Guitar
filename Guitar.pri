@@ -119,6 +119,7 @@ macx {
 SOURCES += \
 	$$PWD/src/GitDiff.cpp \
 	$$PWD/src/MyProcess.cpp \
+	$$PWD/src/inet/httpstatus.cpp \
 	$$SRC/CommitRecord.cpp \
 	$$SRC/IncrementalSearchHelper.cpp \
 	$$SRC/LoadPlugin.cpp \
@@ -315,6 +316,7 @@ HEADERS += \
 	$$PWD/src/MainWindowTypes.h \
 	$$PWD/src/ProcessStatus.h \
 	$$PWD/src/TraceEventItem.h \
+	$$PWD/src/inet/httpstatus.h \
 	$$PWD/src/main.h \
 	$$PWD/src/texteditor/LineIndexMap/LineIndexMap.h \
 	$$SRC/CommitRecord.h \

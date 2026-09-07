@@ -169,3 +169,31 @@ void MainWindow::on_action_test_triggered()
 {
 	texteditor()->debug();
 }
+
+bool MainWindow::saveFile(QString const &path)
+{
+	QFile file(path);
+	if (file.open(QFile::WriteOnly)) {
+		for (Document::Line const &line : document()->logical_lines) {
+			file.write(line.text().data(), line.text().size());
+		}
+		return true;
+	}
+	return false;
+}
+
+void MainWindow::on_action_file_save_as_triggered()
+{
+	QString path = texteditor()->recentlyUsedPath();
+	path = QFileDialog::getSaveFileName(this, tr("Save as"), path);
+	if (!path.isEmpty()) {
+		texteditor()->saveFile(path);
+		{
+			MySettings s;
+			s.beginGroup("File");
+			s.setValue("LastUsedFile", path);
+		}
+		texteditor()->setRecentlyUsedPath(path);
+	}
+}
+

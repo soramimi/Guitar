@@ -51,6 +51,7 @@
     <addaction name="action_file_open"/>
     <addaction name="action_file_save"/>
     <addaction name="action_test"/>
+    <addaction name="action_file_save_as"/>
    </widget>
    <addaction name="menu_File"/>
   </widget>
@@ -73,6 +74,11 @@
    </property>
    <property name="shortcut">
     <string>Ctrl+T</string>
+   </property>
+  </action>
+  <action name="action_file_save_as">
+   <property name="text">
+    <string>Save as...</string>
    </property>
   </action>
  </widget>
