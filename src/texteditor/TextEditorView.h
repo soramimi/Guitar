@@ -63,7 +63,7 @@ public:
 private:
 	void moveCursorByMouse();
 	
-	static void _calc_pos_x(std::vector<Character> *chars, const TextEditorContext *cx, const Font &fixed_tm, const Font &text_tm);
+	static void _calc_pos_x(CharBuffer *chars, const TextEditorContext *cx, const Font &fixed_tm, const Font &text_tm);
 	std::pair<int, int> pos_x_px(row_index_t vrow, col_index_t vcol) const;
 	
 	int view_y_from_vrow(row_index_t vrow) const;
@@ -74,7 +74,7 @@ protected:
 	void timerEvent(QTimerEvent *) override;
 	void setCursorRow(row_index_t row, bool auto_scroll, bool by_mouse) override;
 	
-	void calc_pos_x(std::vector<Character> *chars) const;
+	void calc_pos_x(CharBuffer *chars) const;
 	
 public:
 	const Document::LineProperty *queryFormattedLine(row_index_t vrow) const;

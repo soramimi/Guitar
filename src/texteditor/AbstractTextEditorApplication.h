@@ -89,6 +89,78 @@ struct Character {
 		return unicode;
 	}
 };
+class CharBuffer {
+public:
+	std::vector<Character> vec;
+	void reserve(size_t n)
+	{
+		vec.reserve(n);
+	}
+	void clear()
+	{
+		vec.clear();
+	}
+	void resize(size_t n)
+	{
+		vec.resize(n);
+	}
+	size_t size() const
+	{
+		return vec.size();
+	}
+	bool empty() const
+	{
+		return vec.empty();
+	}
+	Character const &back() const
+	{
+		return vec.back();
+	}
+	Character &operator [] (size_t i)
+	{
+		return vec[i];
+	}
+	Character const &operator [] (size_t i) const
+	{
+		return vec[i];
+	}
+	void push_back(Character const &c)
+	{
+		vec.push_back(c);
+	}
+	void emplace_back(Character const &c)
+	{
+		vec.emplace_back(c);
+	}
+	std::vector<Character>::iterator begin()
+	{
+		return vec.begin();
+	}
+	std::vector<Character> ::iterator end()
+	{
+		return vec.end();
+	}
+	void insert(std::vector<Character>::iterator pos, Character const &first)
+	{
+		vec.insert(pos, first);
+	}
+	void insert(std::vector<Character>::iterator pos, Character const *first, Character const *last)
+	{
+		vec.insert(pos, first, last);
+	}
+	void insert(std::vector<Character>::iterator pos, std::vector<Character>::const_iterator first, std::vector<Character>::const_iterator last)
+	{
+		vec.insert(pos, first, last);
+	}
+	void erase(std::vector<Character>::iterator pos)
+	{
+		vec.erase(pos);
+	}
+	void erase(std::vector<Character>::iterator first, std::vector<Character>::iterator last)
+	{
+		vec.erase(first, last);
+	}
+};
 
 typedef int32_t row_index_t;
 typedef int32_t col_index_t;
@@ -98,7 +170,7 @@ public:
 	typedef std::variant<std::vector<char>, std::string_view> varline_t;
 	
 	struct LineProperty {
-		std::vector<Character> chars;
+		CharBuffer chars;
 		std::vector<CharFlags> flags;
 		bool char_diff = false;
 	};
@@ -493,7 +565,7 @@ protected:
 	row_index_t visual_nlines() const;
 	void invalidate_nlines_cache();
 
-	Document::Line *visual_line(row_index_t vrow);
+	Document::Line const *visual_line(row_index_t vrow);
 	
 	Document::Line const *visual_line(row_index_t vrow) const
 	{
@@ -544,16 +616,17 @@ protected:
 	virtual void updateVisibility(UpdateVisibilityOption const &arg) = 0;
 	
 	void insert_line(row_index_t lrow);
-	bool commit_line(row_index_t lrow, const std::vector<Character> &vec);
+	bool commit_line(row_index_t lrow, const CharBuffer &vec);
 	
 	void doDelete();
 	void doBackspace();
 	
 	void invalidate_visual_row_info(row_index_t vrow);
+	void invalidate_logical_row_info(row_index_t vrow);
 
 	LineIndexMap::LogicalPosition query_logical_for_visual_row(row_index_t vrow);
 
-	virtual void calc_pos_x(std::vector<Character> *chars) const {}
+	virtual void calc_pos_x(CharBuffer *chars) const {}
 	
 private:
 	void internalWrite(const ushort *begin, const ushort *end);
@@ -562,7 +635,7 @@ private:
 		Cut,
 		Copy,
 	};
-	void edit_selection(EditOperation op, std::vector<Character> *clip_text_out);
+	void edit_selection(EditOperation op, CharBuffer *clip_text_out);
 	int calcColumnToIndex(int column);
 	void _edit_op(EditOperation op);
 	bool isCurrentLineWritable() const;
@@ -576,13 +649,13 @@ public:
 	row_index_t vrow_to_lrow(row_index_t vrow) const;
 	RowCol visual_position(SelectionAnchor const &a) const;
 protected:
-	std::vector<Character> parseLogicalLine(const TextEditorContext *cx, row_index_t lrow) const;
-	const std::vector<Character> &parseCurrentLine() const;
+	CharBuffer parseLogicalLine(const TextEditorContext *cx, row_index_t lrow) const;
+	const CharBuffer &parseCurrentLine() const;
 private:
-	std::vector<Character> _parseLine(const TextEditorContext *cx, const Document::Line *line, std::mutex *mutex) const;
+	CharBuffer _parseLine(const TextEditorContext *cx, const Document::Line *line, std::mutex *mutex) const;
 protected:
-	std::vector<Character> parseLine(Document::Line const *line, std::mutex *mutex = nullptr) const;
-	std::vector<Character> parseLine(row_index_t vrow) const;
+	CharBuffer _parseLine(Document::Line const *line, std::mutex *mutex = nullptr) const;
+	CharBuffer parseLine(row_index_t vrow) const;
 
 	virtual void updateScrollBarRange() {}
 	
@@ -713,8 +786,10 @@ protected:
 	void need_to_update_scroll_bar();
 	int linenum_area_width_px() const;
 	void new_document();
+	void invalidateParsedLineByLogicalRow(row_index_t lrow);
 public:
 	int line_height_px() const;
+	
 	void setWrappingMode(WrappingMode mode);
 	AbstractTextEditorApplication::WrappingMode wrappingMode() const;
 

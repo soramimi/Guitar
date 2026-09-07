@@ -160,7 +160,7 @@ static inline QString appendUnicode(QString const &s, char32_t u)
  * @param chars
  * @param fm
  */
-void TextEditorView::_calc_pos_x(std::vector<Character> *chars, TextEditorContext const *cx, Font const &fixed_tm, Font const &text_tm)
+void TextEditorView::_calc_pos_x(CharBuffer *chars, TextEditorContext const *cx, Font const &fixed_tm, Font const &text_tm)
 {
 	int base_x = 0;
 	int left_x = 0;
@@ -186,7 +186,7 @@ void TextEditorView::_calc_pos_x(std::vector<Character> *chars, TextEditorContex
 	}
 }
 
-void TextEditorView::calc_pos_x(std::vector<Character> *chars) const
+void TextEditorView::calc_pos_x(CharBuffer *chars) const
 {
 	_calc_pos_x(chars, cx(), fixedFontMetrics(), textFontMetrics());
 }
@@ -240,7 +240,7 @@ RowCol TextEditorView::vpos_from_px(QPoint const &pt)
 		RowCol t;
 		t.row = max_vrow - 1;
 		if (max_vrow > 0) {
-			std::vector<Character> chars = parseLine(t.row);
+			CharBuffer chars = parseLine(t.row);
 			if (!chars.empty()) {
 				t.col = (int)chars.size();
 			}
@@ -248,7 +248,7 @@ RowCol TextEditorView::vpos_from_px(QPoint const &pt)
 		return t;
 	}
 	const int x = pt.x() + scroll_horz_pos_px() - linenum_area_width_px();
-	std::vector<Character> const *chars = nullptr;
+	CharBuffer const *chars = nullptr;
 	Document::LineProperty const *line = queryFormattedLine(vrow);
 	if (line) {
 		chars = &line->chars;
@@ -624,7 +624,7 @@ void TextEditorView::paintEvent(QPaintEvent *)
 					const bool iscurrentline = has_focus && vrow == editor_cx->current_visual_row; // 現在の行？
 					const int text_origin_y = view_row * line_height; // テキスト原点座標Y（ピクセル単位）
 					
-					std::vector<Character> const &chars = formatted_line->chars;
+					CharBuffer const &chars = formatted_line->chars;
 					std::vector<CharFlags> const &flags = formatted_line->flags;
 					
 					// 背景の描画

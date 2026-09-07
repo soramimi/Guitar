@@ -108,7 +108,8 @@ struct AbstractTextEditorApplication::Private {
 	int bottom_margin_px = 1;
 	
 	struct Cache {
-		std::optional<std::vector<Character>> parsed_current_line_chars;
+		std::optional<CharBuffer> parsed_current_line_chars;
+		std::unordered_map<row_index_t, CharBuffer> parsed_lines;
 	};
 	mutable Cache cache;
 };
@@ -323,6 +324,33 @@ int AbstractTextEditorApplication::cursor_row_px() const
 	return current_visual_row() - scroll_vert_pos_px();
 }
 
+/**
+ * @brief 物理行を取得する
+ * @param vrow 物理行番号
+ * @return 物理行（存在しない場合はnullptrを返す）
+ */
+Document::Line const *AbstractTextEditorApplication::visual_line(row_index_t vrow)
+{
+	std::vector<Document::Line> const *vlines = nullptr;
+	if (m->wrapping_mode == WrappingMode::NoWrap) {
+		vlines = &document()->logical_lines; // NoWrapの場合、物理行は論理行と同じ
+	} else {
+		vlines = &cx()->cache.visual_lines;
+		row_index_t lrow = 0;
+		if (vrow < visual_nlines()) {
+			lrow = vrow_to_lrow(vrow); // 物理行番号から論理行番号を求める
+			while (vlines->size() <= vrow) { // 物理行情報が不足している場合は追加する
+				if (!update_visual_line(lrow, true)) break;
+				lrow++;
+			}
+		}
+	}
+	if (vrow >= 0 && vrow < (row_index_t)vlines->size()) {
+		return &(*vlines)[vrow];
+	}
+	return nullptr;
+}
+
 Document::Line const *AbstractTextEditorApplication::currentLine() const
 {
 	row_index_t vrow = current_visual_row();
@@ -379,11 +407,14 @@ void AbstractTextEditorApplication::clear_selection()
  * @param line
  * @return
  */
-std::vector<Character> AbstractTextEditorApplication::_parseLine(TextEditorContext const *cx, Document::Line const *line, std::mutex *mutex) const
+CharBuffer AbstractTextEditorApplication::_parseLine(TextEditorContext const *cx, Document::Line const *line, std::mutex *mutex) const
 {
 	if (!line) return {};
 	
-	std::vector<Character> ret;
+	static int _ = 0;
+	qDebug() << Q_FUNC_INFO << ++_;
+	
+	CharBuffer ret;
 	
 	std::string_view text = line->text();
 	
@@ -425,7 +456,7 @@ std::vector<Character> AbstractTextEditorApplication::_parseLine(TextEditorConte
  * @param mutex
  * @return
  */
-std::vector<Character> AbstractTextEditorApplication::parseLine(Document::Line const *line, std::mutex *mutex) const
+CharBuffer AbstractTextEditorApplication::_parseLine(Document::Line const *line, std::mutex *mutex) const
 {
 	return _parseLine(cx(), line, mutex);
 }
@@ -435,10 +466,15 @@ std::vector<Character> AbstractTextEditorApplication::parseLine(Document::Line c
  * @param vrow
  * @return
  */
-std::vector<Character> AbstractTextEditorApplication::parseLine(row_index_t vrow) const
+CharBuffer AbstractTextEditorApplication::parseLine(row_index_t vrow) const
 {
 	if (vrow >= 0 && vrow < visual_nlines()) {
-		return parseLine(visual_line(vrow));
+		auto it = m->cache.parsed_lines.find(vrow);
+		if (it == m->cache.parsed_lines.end()) {
+			it = m->cache.parsed_lines.insert(m->cache.parsed_lines.end(), {vrow, {}});
+			it->second = _parseLine(visual_line(vrow));
+		}
+		return it->second;
 	}
 	return {};
 }
@@ -448,7 +484,7 @@ void AbstractTextEditorApplication::clearParsedLine()
 	m->cache.parsed_current_line_chars = std::nullopt;
 }
 
-std::vector<Character> const &AbstractTextEditorApplication::parseCurrentLine() const
+CharBuffer const &AbstractTextEditorApplication::parseCurrentLine() const
 {
 	if (!m->cache.parsed_current_line_chars) {
 		m->cache.parsed_current_line_chars = parseLine(current_visual_row());
@@ -472,8 +508,8 @@ std::vector<Document::Line> AbstractTextEditorApplication::wrap_line(Document::L
 	
 	const int width_px = m->content_width_px;
 	
-	std::vector<std::vector<Character>> chrs_out;
-	std::vector<Character> chrs_in = parseLine(&line, mutex);
+	std::vector<CharBuffer> chrs_out;
+	CharBuffer chrs_in = _parseLine(&line, mutex);
 	
 	if (chrs_in.empty()) {
 		chrs_out.push_back({});
@@ -482,7 +518,7 @@ std::vector<Document::Line> AbstractTextEditorApplication::wrap_line(Document::L
 		int right_px = 0;
 
 		auto Out = [&](size_t i, size_t n){
-			std::vector<Character> chrs;
+			CharBuffer chrs;
 			for (size_t j = 0; j < n; j++) {
 				Character c = chrs_in[i + j];
 				c.left_x = right_px - left_px;
@@ -578,9 +614,9 @@ std::vector<Document::Line> AbstractTextEditorApplication::wrap_line(Document::L
 	std::vector<Document::Line> ret;
 	{
 		int logical_col = 0;
-		for (std::vector<Character> const &w : chrs_out) {
+		for (CharBuffer const &w : chrs_out) {
 			std::vector<char> v;
-			for (Character const &c : w) {
+			for (Character const &c : w.vec) {
 				unicode_helper_::encode_utf8(c.unicode, [&](char d){v.push_back(d);});
 			}
 			Document::Line line(v);
@@ -630,6 +666,7 @@ RowCol AbstractTextEditorApplication::visual_position(SelectionAnchor const &a) 
 
 void AbstractTextEditorApplication::_wrap_line(Document::Line *ll, bool force, std::mutex *mutex)
 {
+	static int _ = 0;
 	if (force || ll->sp->meta.visual_lines.empty()) { // 折り返し未処理の場合
 		if (wrappingMode() == WrappingMode::NoWrap) {
 			ll->sp->meta.visual_lines.resize(1);
@@ -687,6 +724,22 @@ void AbstractTextEditorApplication::invalidate_visual_row_info(row_index_t vrow)
 	TextEditorContext *cx = this->cx();
 	if (vrow >= 0 && vrow < cx->cache.visual_lines.size()) {
 		cx->cache.visual_lines.resize(vrow);
+	}
+	
+	auto it = m->cache.parsed_lines.find(vrow);
+	if (it != m->cache.parsed_lines.end()) {
+		qDebug() << Q_FUNC_INFO << vrow;
+		m->cache.parsed_lines.erase(it, m->cache.parsed_lines.end());
+	}
+}
+
+void AbstractTextEditorApplication::invalidate_logical_row_info(row_index_t lrow)
+{
+	row_index_t vrow = lrow_to_vrow(lrow);
+	while (vrow < visual_nlines()) {
+		if (vrow_to_lrow(vrow) > lrow) break;
+		invalidate_visual_row_info(vrow);
+		vrow++;
 	}
 }
 
@@ -860,7 +913,7 @@ void AbstractTextEditorApplication::update_visual_lines_all()
  * @param vec 更新する文字列（Characterの配列）
  * @return 物理行数が変化したかどうか
  */
-bool AbstractTextEditorApplication::commit_line(row_index_t lrow, std::vector<Character> const &vec)
+bool AbstractTextEditorApplication::commit_line(row_index_t lrow, CharBuffer const &vec)
 {
 	std::vector<Document::Line> *llines = documentLinesForWrite();
 	if (!llines) return false;
@@ -870,7 +923,7 @@ bool AbstractTextEditorApplication::commit_line(row_index_t lrow, std::vector<Ch
 	if (!vec.empty()){
 		std::vector<char32_t> v;
 		v.reserve(vec.size());
-		for (Character const &c : vec) {
+		for (Character const &c : vec.vec) {
 			v.push_back(c.unicode);
 		}
 		utf32 u32(&v[0], v.size());
@@ -889,6 +942,7 @@ bool AbstractTextEditorApplication::commit_line(row_index_t lrow, std::vector<Ch
 	}
 	
 	clearParsedLine();
+	invalidate_logical_row_info(lrow);
 	
 	bool vline_count_changed  = _update_line(lrow, ba, false, nullptr);
 	return vline_count_changed;
@@ -917,33 +971,6 @@ bool AbstractTextEditorApplication::isLineNumberVisible() const
 int AbstractTextEditorApplication::charWidth(uint32_t c)
 {
 	return UnicodeWidth::width(UnicodeWidth::type(c));
-}
-
-/**
- * @brief 物理行を取得する
- * @param vrow 物理行番号
- * @return 物理行（存在しない場合はnullptrを返す）
- */
-Document::Line *AbstractTextEditorApplication::visual_line(row_index_t vrow)
-{
-	std::vector<Document::Line> *vlines = nullptr;
-	if (m->wrapping_mode == WrappingMode::NoWrap) {
-		vlines = &document()->logical_lines; // NoWrapの場合、物理行は論理行と同じ
-	} else {
-		vlines = &cx()->cache.visual_lines;
-		row_index_t lrow = 0;
-		if (vrow < visual_nlines()) {
-			lrow = vrow_to_lrow(vrow); // 物理行番号から論理行番号を求める
-			while (vlines->size() <= vrow) { // 物理行情報が不足している場合は追加する
-				if (!update_visual_line(lrow, true)) break;
-				lrow++;
-			}
-		}
-	}
-	if (vrow >= 0 && vrow < (row_index_t)vlines->size()) {
-		return &(*vlines)[vrow];
-	}
-	return nullptr;
 }
 
 int AbstractTextEditorApplication::client_width_px() const
@@ -1009,12 +1036,12 @@ void AbstractTextEditorApplication::insert_line(row_index_t lrow)
 	invalidate_nlines_cache();
 }
 
-std::vector<Character> AbstractTextEditorApplication::parseLogicalLine(TextEditorContext const *cx, row_index_t lrow) const
+CharBuffer AbstractTextEditorApplication::parseLogicalLine(TextEditorContext const *cx, row_index_t lrow) const
 {
 	std::vector<Document::Line> const &lines = cx->engine->document.logical_lines;
 	if (lrow >= 0 && lrow < lines.size()) {
 		Document::Line const *line = &lines[lrow];
-		return parseLine(line);
+		return _parseLine(line);
 	}
 	return {};
 }
@@ -1098,8 +1125,8 @@ void AbstractTextEditorApplication::writeNewLine()
 	
 	invalidate_visual_row_info(vrow);
 	
-	std::vector<Character> curr_line;
-	std::vector<Character> next_line;
+	CharBuffer curr_line;
+	CharBuffer next_line;
 	
 	curr_line = parseLogicalLine(cx(), lrow);
 	
@@ -1433,7 +1460,7 @@ int AbstractTextEditorApplication::nextTabStop(const TextEditorContext *cx, int 
 	return x;
 }
 
-void AbstractTextEditorApplication::edit_selection(EditOperation op, std::vector<Character> *clip_text_out)
+void AbstractTextEditorApplication::edit_selection(EditOperation op, CharBuffer *clip_text_out)
 {
 	if (clip_text_out) {
 		clip_text_out->clear();
@@ -1464,7 +1491,7 @@ void AbstractTextEditorApplication::edit_selection(EditOperation op, std::vector
 		updateVisibility({false, false, false});
 	};
 
-	std::vector<Character> cliptext;
+	CharBuffer cliptext;
 
 	bool cut = false;
 	if (op == EditOperation::Cut) {
@@ -1476,7 +1503,7 @@ void AbstractTextEditorApplication::edit_selection(EditOperation op, std::vector
 	row_index_t end_lrow = std::min(b.lrow + 1, (row_index_t)llines->size());
 	if (a.lrow == b.lrow) { // 選択範囲が1行のみの場合
 		if (a.lcol < b.lcol) {
-			std::vector<Character> chars = parseLogicalLine(cx(), a.lrow);
+			CharBuffer chars = parseLogicalLine(cx(), a.lrow);
 			AppendClipText(&chars[a.lcol], b.lcol - a.lcol);
 			if (cut) { // 切り取りの場合は、選択範囲の文字を削除して行を更新
 				chars.erase(chars.begin() + a.lcol, chars.begin() + b.lcol);
@@ -1488,7 +1515,7 @@ void AbstractTextEditorApplication::edit_selection(EditOperation op, std::vector
 		SelectionAnchor curr = a;
 		// 選択範囲の論理行を順に処理
 		while (curr.lrow < end_lrow) {
-			std::vector<Character> chars = parseLogicalLine(cx(), curr.lrow);
+			CharBuffer chars = parseLogicalLine(cx(), curr.lrow);
 			size_t begin = 0;
 			size_t end = chars.size();
 			bool entire = false;
@@ -1515,11 +1542,11 @@ void AbstractTextEditorApplication::edit_selection(EditOperation op, std::vector
 			for (auto it = delete_list.rbegin(); it != delete_list.rend(); it++) {
 				delete_line(*it);
 			}
-			std::vector<Character> chars = parseLogicalLine(cx(), a.lrow);
+			CharBuffer chars = parseLogicalLine(cx(), a.lrow);
 			if (!chars.empty()) {
 				char32_t c = chars.back().unicode;
 				if (c != '\n' && c != '\n') { // 最後の文字が改行でない場合は、次の行を結合する
-					std::vector<Character> next = parseLogicalLine(cx(), a.lrow + 1);
+					CharBuffer next = parseLogicalLine(cx(), a.lrow + 1);
 					if (!next.empty()) {
 						// 次の行の文字を現在の行の末尾に追加して、現在の行を更新
 						chars.insert(chars.end(), next.begin(), next.end());
@@ -1542,7 +1569,7 @@ void AbstractTextEditorApplication::edit_selection(EditOperation op, std::vector
 
 void AbstractTextEditorApplication::_edit_op(EditOperation op)
 {
-	std::vector<Character> cutbuf;
+	CharBuffer cutbuf;
 	edit_selection(op, &cutbuf);
 	if (cutbuf.empty()) return;
 
@@ -1598,7 +1625,7 @@ void AbstractTextEditorApplication::doDelete()
 	
 	col_index_t lrow = current_logical_row();
 	col_index_t lcol = current_logical_col();
-	std::vector<Character> chars = parseLogicalLine(cx(), lrow);
+	CharBuffer chars = parseLogicalLine(cx(), lrow);
 	bool delete_nl = false; // 削除した文字が改行コードであるかどうか
 	char32_t c = -1;
 	if (lcol >= 0 && lcol < (int)chars.size()) {
@@ -1614,7 +1641,7 @@ void AbstractTextEditorApplication::doDelete()
 		delete_nl = true;
 		if (lcol == (int)chars.size()) { // カーソルが行末にある場合は、次の行を結合する
 			row_index_t next_lrow = lrow + 1;
-			std::vector<Character> next = parseLogicalLine(cx(), next_lrow);
+			CharBuffer next = parseLogicalLine(cx(), next_lrow);
 			chars.insert(chars.end(), next.begin(), next.end());
 			if (next_lrow < logical_nlines()) {
 				delete_line(next_lrow);
@@ -1640,7 +1667,7 @@ void AbstractTextEditorApplication::doDelete()
 	std::vector<Document::Line> *llines = &doc->logical_lines;
 	Document::Line const &line = (*llines)[lrow];
 	for (size_t i = 0; i < line.sp->meta.visual_lines.size(); i++) {
-		std::vector<Character> chars = parseLine(&line.sp->meta.visual_lines[i]);
+		CharBuffer chars = _parseLine(&line.sp->meta.visual_lines[i]);
 		if (vcol <= chars.size()) break;
 		vcol -= chars.size();
 		vrow++;
@@ -1728,7 +1755,7 @@ void AbstractTextEditorApplication::moveCursorHome(bool consider_indent)
 	if (consider_indent) { // 行頭の空白を飛ばす
 		row_index_t vrow = current_visual_row();
 		if (vrow == lrow_to_vrow(current_logical_row())) { // 論理行の先頭なら
-			std::vector<Character> const &vline = parseCurrentLine();
+			CharBuffer const &vline = parseCurrentLine();
 			const col_index_t ncols = vline.size();
 			col_index_t indent_vcol = 0;
 			while (indent_vcol < ncols) {
@@ -1751,7 +1778,7 @@ void AbstractTextEditorApplication::moveCursorHome(bool consider_indent)
 
 void AbstractTextEditorApplication::moveCursorEnd()
 {
-	std::vector<Character> const &vline = parseCurrentLine();
+	CharBuffer const &vline = parseCurrentLine();
 	col_index_t col = vline.size();
 	
 	while (col > 0) { // 行末の改行コードを飛ばす
@@ -1884,7 +1911,7 @@ void AbstractTextEditorApplication::moveCursorRight()
 	const auto curr_pos = query_logical_for_visual_row(current_visual_row());
 	const auto next_pos = query_logical_for_visual_row(current_visual_row() + 1);
 	
-	std::vector<Character> const &vline = parseCurrentLine();
+	CharBuffer const &vline = parseCurrentLine();
 	
 	col_index_t vcol = current_visual_col();
 	
@@ -2172,7 +2199,7 @@ void AbstractTextEditorApplication::internalWrite(const ushort *begin, const ush
 	row_index_t lrow = current_logical_row();
 	col_index_t lcol = current_logical_col();
 
-	std::vector<Character> vec = parseLogicalLine(cx(), lrow);
+	CharBuffer vec = parseLogicalLine(cx(), lrow);
 
 	auto WriteChar = [&](uint32_t c){
 		if (isInsertMode()) {
