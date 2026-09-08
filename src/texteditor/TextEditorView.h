@@ -120,6 +120,9 @@ public:
 	{
 		setFixedFont(font);
 		setTextFont(font);
+		if (editor_cx) {
+			layoutEditor();
+		}
 	}
 	
 	

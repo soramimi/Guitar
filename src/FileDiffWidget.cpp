@@ -784,7 +784,7 @@ static void characterWiseDiff(TextEditorView *left_editor, TextEditorView *right
 			Line ret;
 			ret.property = const_cast<Document::LineProperty *>(editorview->queryFormattedLine(row));
 			if (ret.property) {
-				ret.chars = &ret.property->chars;
+				ret.chars = ret.property->chars.vec.get();
 				ret.flags = &ret.property->flags;
 			}
 			return ret;

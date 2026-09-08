@@ -40,8 +40,8 @@ struct CharAttr {
 		Invert,
 		Hilite,
 	};
-	uint16_t index = 0;
-	QColor color;
+	uint16_t index = 0; // テーマ側で解釈する属性番号
+	QColor color;       // 属性番号では表せない明示色（未指定なら無効色）
 	CharAttr(int index = Normal)
 		: index(index)
 	{
@@ -65,9 +65,9 @@ struct CharFlags {
 	};
 	union {
 		struct {
-			bool selected : 1;
-			bool current_line : 1;
-			uint8_t diff_marker : 2;
+			bool selected : 1;       // 選択範囲内の文字
+			bool current_line : 1;   // カーソルが属する論理行の文字
+			uint8_t diff_marker : 2; // 文字単位diffの種別
 			
 		};
 		uint16_t all = 0;
@@ -75,10 +75,10 @@ struct CharFlags {
 };
 
 struct Character {
-	char32_t unicode = 0;
-	int left_x = 0;
-	int right_x = 0;
-	CharAttr attr;
+	char32_t unicode = 0; // Unicodeコードポイント。UTF-16のcode unitではない
+	int left_x = 0;       // 行頭を0とする文字左端のピクセル座標
+	int right_x = 0;      // 行頭を0とする文字右端のピクセル座標
+	CharAttr attr;        // 描画属性
 	Character() = default;
 	Character(char32_t unicode)
 		: unicode(unicode)
@@ -91,6 +91,8 @@ struct Character {
 };
 class CharBuffer {
 public:
+	// コピー時にCharacter列を複製せず共有する。編集目的でコピーした場合も同じ
+	// vectorを指すため、呼び出し側は値型の深いコピーと誤認しないこと。
 	std::shared_ptr<std::vector<Character>> vec;
 	CharBuffer()
 		: vec(std::make_shared<std::vector<Character>>())
@@ -175,12 +177,19 @@ typedef int32_t col_index_t;
 
 class Document {
 public:
+	// vector<char>は編集可能な所有データ、string_viewはDocument::allなどを参照する
+	// 読み取り専用ビュー。編集時はLine::to_vector()で所有データへ昇格する。
 	typedef std::variant<std::vector<char>, std::string_view> varline_t;
 	
+	// UTF-8をデコードし、フォントメトリクスで位置計算した結果。
+	// 論理行と折り返し断片の双方で使うが、それぞれのLineが個別に所有する。
 	struct LineProperty {
-		CharBuffer chars;
-		std::vector<CharFlags> flags;
-		bool char_diff = false;
+		CharBuffer chars;             // デコード済み文字と各文字のX座標
+		std::vector<CharFlags> flags; // charsと同じ添字で参照する描画フラグ
+		bool char_diff = false;       // 文字単位diff情報を保持しているか
+		// charsを再利用できる入力テキストとフォントメトリクスの世代。
+		uint64_t text_revision = 0;
+		uint64_t metrics_revision = 0;
 	};
 	
 	enum LineType {
@@ -191,17 +200,22 @@ public:
 	};
 	struct Line {
 		struct Meta {
-			LineType type = Normal;
-			col_index_t logical_col_pos = 0;
-			col_index_t logical_col_len = 0;
-			int32_t line_number_override = -1;
-			mutable std::shared_ptr<LineProperty> detail;
+			LineType type = Normal;              // 通常行、diff追加行、削除行などの種別
+			uint64_t text_revision = 1;          // text変更時に増加する解析キャッシュ世代
+			col_index_t logical_col_pos = 0;     // 折り返し断片の論理行内開始列
+			col_index_t logical_col_len = 0;     // 折り返し断片が受け持つコードポイント数
+			int32_t line_number_override = -1;   // 0以上なら通常の論理行番号より優先
+			mutable std::shared_ptr<LineProperty> detail; // デコード・文字位置計算キャッシュ
+			// 論理行だけが使用する折り返し結果。各要素は1表示行に対応する。
+			// 表示行の平坦なコピーは持たず、LineIndexMapのwrap_indexで参照する。
 			mutable std::vector<Document::Line> visual_lines;
 		};
 		struct D {
-			varline_t text = std::string_view();
-			Meta meta;
+			varline_t text = std::string_view(); // 改行コードを含み得るUTF-8列
+			Meta meta;                           // textから導出される情報と表示属性
 		};
+		// LineのコピーはDを共有する浅いコピー。折り返し断片のvector自体は
+		// 別Lineだが、Lineをコンテナ間でコピーすると同じDを参照する。
 		std::shared_ptr<D> sp;
 		
 		Line()
@@ -320,6 +334,8 @@ public:
 		void set_text(std::vector<char> const &text)
 		{
 			sp->text = text;
+			sp->meta.text_revision++;
+			sp->meta.detail.reset();
 		}
 		
 		std::vector<char> *to_vector()
@@ -337,6 +353,9 @@ public:
 			if (!new_text.empty()) {
 				std::vector<char> *v = to_vector();
 				v->insert(v->end(), new_text.data(), new_text.data() + new_text.size());
+				sp->meta.text_revision++;
+				sp->meta.detail.reset();
+				sp->meta.visual_lines.clear();
 			}
 		}
 		
@@ -359,9 +378,10 @@ public:
 	};
 	
 	
-	QByteArray all;
-	std::vector<varline_t> raw_lines;
+	QByteArray all;                    // openFile()で読み込んだファイル全体の所有領域
+	std::vector<varline_t> raw_lines;  // allを行単位に分けたビュー（互換・保持用）
 
+	// 文書の唯一の正本。折り返し断片やLineIndexMapはここから再生成できる。
 	std::vector<Line> logical_lines;
 };
 
@@ -380,9 +400,9 @@ struct VisualRowInfo {
 };
 
 struct SelectionAnchor {
-	bool enabled = false;
-	row_index_t lrow = 0;
-	col_index_t lcol = 0;
+	bool enabled = false; // falseならlrow/lcolは選択端点として無効
+	row_index_t lrow = 0; // 論理行番号
+	col_index_t lcol = 0; // 論理行内のコードポイント位置
 	explicit operator bool () const
 	{
 		return enabled;
@@ -411,33 +431,34 @@ static inline bool operator > (SelectionAnchor const &a, SelectionAnchor const &
 using TextEditorEngine_sp = std::shared_ptr<TextEditorEngine>;
 
 struct TextEditorContext {
-	QRect cursor_rect;
+	QRect cursor_rect; // IMEへ通知する、ウィジェット座標系のカーソル矩形
 	row_index_t current_visual_row = 0; // 表示行（物理行）
 	col_index_t current_visual_col = 0; // 表示列（物理列）
-	int current_visual_col_hint = 0;
+	int current_visual_col_hint = 0; // 上下移動時に維持したい表示列
 	int current_absolute_x_px = 0; // 桁ピクセル座標（行頭基準）
 	int current_visual_x_px = 0; // 桁ピクセル座標（クライアント領域基準）
 	int current_visual_y_px = 0; // 行ピクセル座標
-	row_index_t saved_row = 0;
-	col_index_t saved_col = 0;
-	int saved_col_hint = 0;
-	int current_char_span = 1;
-	int scroll_horz_pos_px = 0;
-	int scroll_vert_pos_px = 0;
+	row_index_t saved_row = 0; // terminal modeなどで一時退避する表示行
+	col_index_t saved_col = 0; // 同上の表示列
+	int saved_col_hint = 0;    // 同上の列ヒント
+	int current_char_span = 1; // 現在文字が占める表示セル数
+	int scroll_horz_pos_px = 0; // 水平スクロール量（ピクセル）
+	int scroll_vert_pos_px = 0; // 垂直スクロール量（実態は表示行数）
 	col_index_t viewport_org_x_cols = 0; // テキスト領域の原点（桁位置）（行番号表示領域の幅の文字数）
-	row_index_t viewport_org_y_rows = 0;
-	int viewport_width_px = 640;
-	int viewport_height_rows = 25;
-	int tab_indent_size = 4;
-	int bottom_line_y = -1;
-	TextEditorEngine_sp engine;
+	row_index_t viewport_org_y_rows = 0; // ビューポート上端の行オフセット
+	int viewport_width_px = 640;         // ビューポート幅（ピクセル）
+	int viewport_height_rows = 25;       // ビューポートに入る表示行数
+	int tab_indent_size = 4;             // タブストップ間隔
+	int bottom_line_y = -1;              // 最終描画行のY位置（未設定は-1）
+	TextEditorEngine_sp engine;           // Documentを共有するエンジン
+	// 論理行ごとの折り返し数・各断片長を保持し、論理座標と表示座標を変換する。
+	// wrapping時のvisual_lines参照は、この索引と常に同じ世代でなければならない。
 	LineIndexMap line_index_map;
 	struct Cache {
-		std::optional<row_index_t> nlines;
-		std::vector<Document::Line> visual_lines;
-		row_index_t current_logical_row = 0;
-		col_index_t current_logical_col = 0;
-		bool scroll_bar_update_needed = true;
+		std::optional<row_index_t> nlines; // 総表示行数。nulloptならLineIndexMapから再取得
+		row_index_t current_logical_row = 0; // 現在の表示座標を変換した一時結果
+		col_index_t current_logical_col = 0; // 同上の論理列
+		bool scroll_bar_update_needed = true; // 次回の表示更新でrangeを再設定する
 	};
 	mutable Cache cache;
 };
@@ -457,18 +478,21 @@ public:
 	class Font {
 	public:
 		struct TextWidthCache {
+			// 同じ文字列のhorizontalAdvance()呼び出しを抑える。
+			// フォント変更時には必ず全消去する。
 			std::unordered_map<QString, int> map;
 		};
-		QFont text_font_;
-		std::unique_ptr<QFontMetrics> fm_;
-		int ascent_ = 0;
-		int descent_ = 0;
-		QSize basic_character_size_;
-		mutable TextWidthCache text_width_cache_;
+		QFont text_font_;                         // 計測対象フォント
+		std::unique_ptr<QFontMetrics> fm_;         // text_font_に対応するメトリクス
+		int ascent_ = 0;                           // ベースラインより上の高さ
+		int descent_ = 0;                          // ベースラインより下の高さ
+		QSize basic_character_size_;               // 基準文字"0"の幅とフォントの高さ
+		mutable TextWidthCache text_width_cache_;   // 文字列単位の幅キャッシュ
 
 		void set_font(QFont const &font)
 		{
 			text_font_ = font;
+			text_width_cache_.map.clear();
 
 			QPixmap pm(1, 1);
 			QPainter pr(&pm);
@@ -557,6 +581,7 @@ public:
 	};
 	
 private:
+	// 実装詳細と状態を隠すPimpl。所有権は本クラスにありデストラクタで破棄する。
 	struct Private;
 	Private *m;
 protected:
@@ -569,10 +594,12 @@ protected:
 	void sync_selection();
 	void clear_selection();
 protected:
-
+	// 総表示行数。NoWrapでは論理行数、wrapping時はLineIndexMapの値の総和。
 	row_index_t visual_nlines() const;
 	void invalidate_nlines_cache();
 
+	// 表示行をLineIndexMapで(logical row, wrap index)へ変換して取得する。
+	// 戻り値はlogical_lines内または論理行のvisual_lines内を指す非所有ポインタ。
 	Document::Line *visual_line(row_index_t vrow);
 	
 	Document::Line const *visual_line(row_index_t vrow) const
@@ -602,6 +629,8 @@ protected:
 	int editor_viewport_width_px() const;
 	int editor_viewport_height() const;
 	
+	// カーソル、スクロール、Document、LineIndexMapをまとめた実行時コンテキスト。
+	// TextEditorViewなど派生クラスも描画時に参照する。
 	std::shared_ptr<TextEditorContext> editor_cx;
 	
 	TextEditorContext *cx();
@@ -622,15 +651,15 @@ protected:
 	};
 	virtual void updateVisibility(UpdateVisibilityOption const &arg) = 0;
 	
-	void insert_line(row_index_t lrow);
-	bool commit_line(row_index_t lrow, const CharBuffer &vec);
+	void insert_line(row_index_t lrow); // DocumentとLineIndexMapへ同じ位置を挿入する
+	bool commit_line(row_index_t lrow, const CharBuffer &vec); // 変更行だけを再解析・再折り返しする
 	
 	void doDelete();
 	void doBackspace();
 	
 	void invalidate_visual_row_info(row_index_t vrow, size_t n = -1);
 	void invalidate_logical_row_info(row_index_t vrow);
-	void erase_parsed_line_cache(row_index_t vrow, size_t n = -1);
+	void invalidate_visual_line_details(row_index_t vrow, size_t n = -1);
 
 	LineIndexMap::LogicalPosition query_logical_for_visual_row(row_index_t vrow);
 
@@ -758,8 +787,9 @@ public:
 	void appendBulk(std::string_view const &str);
 	void clear();
 private:
+	// 1論理行を現在の幅とWrappingModeで表示行へ分割する。
+	// 入力行のLinePropertyが有効ならUTF-8解析と文字幅計測は再利用される。
 	std::vector<Document::Line> wrap_line(Document::Line line, std::mutex *mutex) const;
-	void _update_visual_line_by_logical_line(col_index_t lrow, Document::Line const &ll, std::mutex *mutex);
 
 	void _wrap_line(Document::Line *ll, bool force, std::mutex *mutex);
 	void _update_line_index_map(row_index_t lrow, Document::Line *ll, std::mutex *mutex);
@@ -767,6 +797,7 @@ private:
 	bool _update_line(row_index_t lrow, std::optional<std::vector<char>> text, bool force, std::mutex *mutex);
 protected:
 	bool update_visual_line(row_index_t lrow, bool force);
+	// 幅・フォント・モード・文書全体の変更時に、全論理行を並列で再折り返しする。
 	void update_visual_lines_all();
 private:
 	void _update_logical_pos_cache() const;
@@ -794,7 +825,6 @@ protected:
 	void need_to_update_scroll_bar();
 	int linenum_area_width_px() const;
 	void new_document();
-	void invalidateParsedLineByLogicalRow(row_index_t lrow);
 public:
 	int line_height_px() const;
 	

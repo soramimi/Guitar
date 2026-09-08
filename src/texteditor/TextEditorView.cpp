@@ -41,7 +41,8 @@ struct TextEditorView::Private {
 	QScrollBar *dragging_scroll_bar = nullptr;
 	
 	int max_text_width_px = 0;
-	QTimer timer;
+	QTimer update_scroll_bar_timer;
+	QTimer resize_timer;
 };
 
 TextEditorView::TextEditorView(QWidget *parent)
@@ -93,6 +94,10 @@ TextEditorView::TextEditorView(QWidget *parent)
 
 	m->cursor_animation_counter = cursor_animation_cycle;
 	startTimer(100);
+	m->resize_timer.setSingleShot(true);
+	connect(&m->resize_timer, &QTimer::timeout, this, [this](){
+		layoutEditor();
+	});
 }
 
 TextEditorView::~TextEditorView()
@@ -193,15 +198,11 @@ void TextEditorView::calc_pos_x(CharBuffer *chars) const
 Document::LineProperty const *TextEditorView::queryFormattedLine(row_index_t vrow) const
 {
 	if (vrow >= 0 && vrow < visual_nlines()) {
-		const_cast<TextEditorView *>(this)->update_visual_line(vrow_to_lrow(vrow), false);
-		Document::LineProperty *detail = visual_line(vrow)->detail();
-		if (!detail) {
-			visual_line(vrow)->sp->meta.detail = std::make_shared<Document::LineProperty>();
-			detail = visual_line(vrow)->detail();
-		}
-		detail->chars = *parseLine(vrow);
+		CharBuffer *chars = parseLine(vrow);
+		Document::Line const *line = visual_line(vrow);
+		if (!chars || !line) return nullptr;
+		Document::LineProperty *detail = line->detail();
 		detail->flags.resize(detail->chars.size());
-		calc_pos_x(&detail->chars);
 		return detail;
 	}
 	return nullptr;
@@ -795,8 +796,8 @@ void TextEditorView::paintEvent(QPaintEvent *)
 		if (m->max_text_width_px != max_text_width_px) {
 			m->max_text_width_px = max_text_width_px;
 			need_to_update_scroll_bar();
-			m->timer.stop();
-			m->timer.singleShot(100, [this](){
+			m->update_scroll_bar_timer.stop();
+			m->update_scroll_bar_timer.singleShot(100, [this](){
 				updateScrollBarRange();
 			});
 		}
@@ -993,7 +994,9 @@ void TextEditorView::layoutEditor()
 void TextEditorView::resizeEvent(QResizeEvent * /*event*/)
 {
 	if (isAutoLayout()) {
-		layoutEditor();
+		set_client_size(width(), height(), false);
+		AbstractTextEditorApplication::layoutEditor();
+		m->resize_timer.start(75);
 	}
 	updateScrollBarRange();
 }
@@ -1078,5 +1081,3 @@ void TextEditorView::debug()
 	setCursorPos({});
 	updateVisibility({});
 }
-
-

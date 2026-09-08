@@ -13,17 +13,19 @@ C++/Qt による、折り返し(ワードラップ)・Unicode・IME 入力に対
 MainWindow (QMainWindow, TextEditorApp/src)
  └─ TextEditorWidget (View + 縦横スクロールバーのコンテナ)
      └─ TextEditorView (QWidget: 描画・キーボード/マウス/IME入力)
-        └─ AbstractTextEditorApplication (Qt非依存の編集ロジック基底クラス)
+        └─ AbstractTextEditorApplication (編集・折り返し・座標変換ロジックの基底クラス)
            └─ TextEditorEngine (shared_ptr) → Document → logical_lines
 ```
 
 - **AbstractTextEditorApplication.h/.cpp** — エディタ本体のロジック(カーソル移動、選択、
   クリップボード、ファイルI/O、折り返し計算など)を持つ基底クラス。`Character` / `Document` /
   `TextEditorContext` などのデータ構造もここに定義。マルチスレッド(8スレッド)で
-  `update_visual_lines_all()` により全行の折り返しを再計算する
+  `update_visual_lines_all()` により全行の折り返しを再計算する。基底クラスだが現在は
+  `QKeyEvent` / `QColor` / `QFont` などの Qt 型に依存している
 - **TextEditorView.h/.cpp** — `AbstractTextEditorApplication` を継承した `QWidget`。
   `paintEvent` での描画、マウス/キーボード/IME イベント処理、フォントメトリクスのキャッシュ
-  (`TextMetrics`)を担当
+  (`AbstractTextEditorApplication::Font`)を担当。連続 resize は 75ms デバウンスしてから
+  折り返し幅を更新する
 - **TextEditorWidget.h/.cpp** — View と横/縦スクロールバーをまとめる薄いコンテナ
 - **TextEditorTheme.h/.cpp** — Light/Dark の配色定義
 - **InputMethodPopup.h/.cpp** — IME 変換候補ポップアップ(プラットフォームによっては無効化)
@@ -41,8 +43,25 @@ MainWindow (QMainWindow, TextEditorApp/src)
 1. キー入力 → `TextEditorView::keyPressEvent()` → `AbstractTextEditorApplication::write(QKeyEvent*)`
 2. 文字の挿入/削除 → `Document::Line` を変更
 3. `commit_line()` → `_update_line()` → `wrap_line()` → `LineIndexMap` を更新
-4. `TextEditorView::paintEvent()` → `queryFormattedLine()` → `parseLine()` +
-   `calc_pos_x()` で座標計算 → `QPainter` で描画(テキスト・選択範囲・カーソル・行番号)
+4. `TextEditorView::paintEvent()` → `queryFormattedLine()` → `parseLine()` で解析済み文字列を取得
+   → `QPainter` で描画(テキスト・選択範囲・カーソル・行番号)
+
+## 行管理とレイアウトキャッシュ
+
+- `Document::logical_lines` が文書の唯一の正本。各 `Document::Line` の
+  `Meta::visual_lines` は、その論理行を現在の幅で分割した表示行(折り返し断片)
+- 表示行の平坦な配列は持たない。表示行番号 `vrow` は `LineIndexMap::visual_to_logical()` で
+  `(logical row, wrap index)` に変換し、対象論理行の `visual_lines[wrap_index]` を直接参照する
+- `LineIndexMap` は論理行ごとの折り返し数と各断片のコードポイント数を保持する。
+  `logical_lines` の挿入・削除時は、必ず同じ位置の `LineIndexMap` エントリも更新する
+- UTF-8 デコードと文字の X 座標計算結果は、表示行番号をキーにしたLRUではなく、
+  各 `Document::Line::Meta::detail` (`LineProperty`) に保存する。`text_revision` と
+  `metrics_revision` が一致する場合のみ再利用する
+- 通常の文字編集では変更された論理行だけを再解析・再折り返しする。後続論理行は再計算しない
+- 幅変更では全論理行の折り返し境界を更新するが、フォントが同じならデコード・文字幅計測結果を
+  再利用する。同じ幅での再レイアウト要求は `full_wrap_update_needed` によりスキップする
+- `Document::Line` と `CharBuffer` は `shared_ptr` を使う浅いコピー。値型の深いコピーではないため、
+  コピー後の変更が共有先へ伝播し得ることに注意する
 
 ## ビルド
 
@@ -53,24 +72,30 @@ qmake プロジェクト(Qt Creator, C++17)。
 - `LineIndexMap/LineIndexMap.pro` — Qt 非依存のヘッダオンリーライブラリ + GoogleTest
 
 ```
-cd TextEditorApp/build/Qt_6_9_0_qt6_gcc_Debug && qmake6 ../../TextEditorApp.pro && make
+cd TextEditorApp/build/Qt_6_9_0_Debug && qmake6 ../../TextEditorApp.pro && make
 ```
 
 ## 既知の未実装・不完全な箇所
 
-- `AbstractTextEditorApplication.cpp` の `_lines()` は `assert(0)` が残ったスタブ
-  (NoWrap/Wrap で論理行・表示行を切り替える処理が未完成)
-- 水平スクロールの計算(`update_horz_scroll()` 付近)が `if (0 && ...)` で無効化されたまま
 - Undo/Redo、検索・置換、シンタックスハイライト、複数ドキュメント(タブ)は未実装
 - diff 表示用の `CharFlags`/`TextEditorTheme` の配色は定義済みだが、diff 解析処理自体は未実装
-- マウスドラッグによる範囲選択は未結線(クリックでのカーソル移動のみ)
-- `MainWindow` の矢印キー用ハンドラ(`upArrow()` 等)は空のスタブ
 - `MainWindow::on_action_file_save_triggered()` は保存先が `/tmp/test.txt` に固定(暫定実装)
+- 折り返し断片は現在、元論理行の範囲参照ではなく独立した UTF-8 文字列として生成するため、
+  全幅変更時には断片文字列の再生成コストが残る
+- 行ごとの `LineProperty` キャッシュには全体のメモリ上限がない。非常に大きなファイルで
+  メモリ使用量が問題になる場合は、安定した行IDをキーとするLRUなどを検討する
+- エディタ本体には LineIndexMap のような常設の自動テストがまだない。折り返し・編集・座標変換を
+  「毎回全再計算する参照実装」と比較するランダムテストの追加が望ましい
 
 ## 規約・注意点
 
 - インデントはタブ(既存コードに合わせる)
-- Qt 依存部分(`TextEditorView` 以下)と Qt 非依存部分(`AbstractTextEditorApplication`,
-  `unicode.*`, `UnicodeWidth.*`, `LineIndexMap`)を分離する設計を維持すること
+- `unicode.*`、`UnicodeWidth.*`、`LineIndexMap` は Qt 非依存として維持すること。
+  `AbstractTextEditorApplication` は現在 Qt 型に依存しているため、Qt 非依存化する場合は
+  入力イベント・色・フォント計測・クリップボード/ファイルI/Oの境界を先に設計する
+- 行管理を変更するときは `logical_lines`、各行の `visual_lines`、`LineIndexMap` の三者を
+  同じ更新処理内で同期させる。表示行番号だけを安定したキャッシュキーとして使用しない
+- テキスト・フォント・タブ幅など、文字位置へ影響する値を追加するときは、対応する revision の
+  更新と `full_wrap_update_needed` の設定を忘れないこと
 - `LineIndexMap` は独立ライブラリとして扱い、変更する際は
   [LineIndexMap/AGENTS.md](LineIndexMap/AGENTS.md) の不変条件・テスト方針も確認する
