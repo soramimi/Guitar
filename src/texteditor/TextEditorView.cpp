@@ -19,30 +19,30 @@
 constexpr int cursor_animation_cycle = 10;
 
 struct TextEditorView::Private {
-	PreEditText preedit;
-	InputMethodPopup *ime_popup = nullptr;
+	PreEditText preedit; // IME変換確定前の文字列と、その中の選択・カーソル状態
+	InputMethodPopup *ime_popup = nullptr; // IME候補表示用。現在は生成・表示処理とも無効
 
-	QString status_line;
-	QScrollBar *scroll_bar_v = nullptr;
-	QScrollBar *scroll_bar_h = nullptr;
+	QString status_line; // 将来のステータス表示用。現在は未使用
+	QScrollBar *scroll_bar_v = nullptr; // TextEditorWidgetが所有する縦スクロールバーへの非所有参照
+	QScrollBar *scroll_bar_h = nullptr; // TextEditorWidgetが所有する横スクロールバーへの非所有参照
 
-	TextEditorThemePtr theme;
+	TextEditorThemePtr theme; // 本文・行番号・diff・現在行アクセントなど、View固有の配色
 
-	int wheel_delta = 0;
+	int wheel_delta = 0; // wheelEvent()で40単位の行移動へ変換するまで保持する未消化delta
 
-	bool is_focus_frame_visible = false;
+	bool is_focus_frame_visible = false; // trueならフォーカス時にウィジェット外周の枠を描く
 
-	unsigned int idle_count = 0;
+	unsigned int idle_count = 0; // 100ms timerの無変更回数。5回ごとにidle()を通知する
 
-	int cursor_animation_counter = 0;
+	int cursor_animation_counter = 0; // カーソル表示位相。入力・移動時にcycleへ戻す（点滅更新は現在無効）
 
-	std::function<void(void)> custom_context_menu_requested;
+	std::function<void(void)> custom_context_menu_requested; // 外部メニュー処理用の予約領域。現在は未使用
 
-	QScrollBar *dragging_scroll_bar = nullptr;
+	QScrollBar *dragging_scroll_bar = nullptr; // ドラッグ中のバー。現在、設定処理は無効化されている
 	
-	int max_text_width_px = 0;
-	QTimer update_scroll_bar_timer;
-	QTimer resize_timer;
+	int max_text_width_px = 0; // 最後のpaintEvent()で観測した最長表示行幅（ピクセル）
+	QTimer update_scroll_bar_timer; // 最大行幅の変化後、横スクロール範囲更新を遅延実行する
+	QTimer resize_timer; // 連続resize完了後に折り返し幅を反映する75msデバウンスタイマー
 };
 
 TextEditorView::TextEditorView(QWidget *parent)
@@ -166,6 +166,9 @@ static inline QString appendUnicode(QString const &s, char32_t u)
  */
 void TextEditorView::_calc_pos_x(CharBuffer *chars, TextEditorContext const *cx, Font const &fixed_tm, Font const &text_tm)
 {
+	// 通常文字は行頭または直前のタブからの文字列としてまとめて計測し、
+	// kerningなどを含む実際の描画幅を各Characterの左右座標へ記録する。
+	// タブは等幅フォントを基準に次のタブストップへ進め、そこで計測区間をリセットする。
 	int base_x = 0;
 	int left_x = 0;
 	QString text;
@@ -198,6 +201,8 @@ void TextEditorView::calc_pos_x(CharBuffer *chars) const
 Document::LineProperty const *TextEditorView::queryFormattedLine(row_index_t vrow) const
 {
 	if (vrow >= 0 && vrow < visual_nlines()) {
+		// parseLine()は有効なrevisionのキャッシュがあれば再利用する。
+		// flagsは描画時にcharsと同じ添字で安全に参照できる長さへ揃える。
 		CharBuffer *chars = parseLine(vrow);
 		Document::Line const *line = visual_line(vrow);
 		if (!chars || !line) return nullptr;
@@ -211,7 +216,15 @@ Document::LineProperty const *TextEditorView::queryFormattedLine(row_index_t vro
 std::pair<int, int> TextEditorView::pos_x_px(row_index_t vrow, col_index_t vcol) const
 {
 	Document::LineProperty const *line = queryFormattedLine(vrow);
-	if (!line) return {};
+	if (!line) {
+		// 空Documentでは実在する表示行はないが、行番号1と同様に編集開始位置
+		// (0, 0)を仮想行として描画する。本文原点を返さないとカーソルが
+		// x=0付近へ移動し、行番号領域との境界クリップで見えなくなる。
+		if (visual_nlines() == 0 && vrow == 0 && vcol == 0) {
+			return {linenum_area_width_px() - scroll_horz_pos_px(), 0};
+		}
+		return {};
+	}
 
 	int absolute_x = 0; // 行番号表示領域とスクロール位置を考慮しない絶対X座標
 	
@@ -556,15 +569,22 @@ void TextEditorView::paintEvent(QPaintEvent *)
 {
 	bool has_focus = hasFocus();
 
+	// まずウィジェット全体を既定色で消去し、その上へ文書内・文書末尾以降・
+	// diff・選択・文字・カーソル・行番号の順で重ねていく。
 	QPainter pr(this);
 	pr.setFont(textFont());
 	pr.fillRect(0, 0, width(), height(), defaultBackgroundColor());
 	
-	const int linenum_width_px = linenum_area_width_px(); // 行番号表示領域幅（ピクセル単位）
-	const int text_origin_x_px = linenum_width_px - scroll_horz_pos_px(); // 水平方向原点（ピクセル単位） = 行番号表示領域幅からスクロール量を引く
+	// viewport_org_x_colsから求める本文の左端。左余白を0に設定した場合は0となる。
+	const int linenum_width_px = linenum_area_width_px();
+	// 論理的な本文X=0をウィジェット座標へ移した位置。NoWrapの水平スクロール分だけ左へ動く。
+	const int text_origin_x_px = linenum_width_px - scroll_horz_pos_px();
 	
+	// Document、LineIndexMap、現在位置など、今回の描画で共通して参照する状態。
 	TextEditorContext *cx = editor_cx.get();
 	
+	// NoWrapではLineIndexMapを構築しないため論理行数をそのまま表示行数とする。
+	// Wrap時は各論理行の折り返し数を合計したLineIndexMapの値を使う。
 	auto total_visual_row_count = [&]()-> uint64_t {
 		if (wrappingMode() == WrappingMode::NoWrap) {
 			return logical_nlines();
@@ -573,17 +593,33 @@ void TextEditorView::paintEvent(QPaintEvent *)
 		}
 	};
 	
-	int vsplit_x = linenum_width_px - 2;
-	int text_area_w = width() - vsplit_x;
+	// 行番号と本文の縦境界。本文原点より2px左へ置き、境界線の右側に
+	// カーソルや文字を描き始めるための小さな余白を確保する。
+	const int vsplit_x = linenum_width_px - 2;
+	// vsplit_xからウィジェット右端までの背景描画幅。
+	const int text_area_w = width() - vsplit_x;
+
+	// 文書全体に存在する表示行数。空Documentでは0であり、仮想行は含まない。
 	const uint64_t total_rows = total_visual_row_count();
+	// 名前にpxが残っているが、scroll_vert_pos_px()の実態はビューポート上端の表示行番号。
+	// 負値をuint64_tへ変換して巨大値にしないよう、描画計算では0へ丸める。
 	const uint64_t scroll_row = scroll_vert_pos_px() > 0
 		? static_cast<uint64_t>(scroll_vert_pos_px()) : 0;
+	// ビューポート上端から文書末尾までに実在する表示行数。末尾以降では0。
 	const uint64_t remaining_rows = total_rows > scroll_row ? total_rows - scroll_row : 0;
+	// 空DocumentでもpaintLineNumbers()は編集開始位置として行番号1を描く。
+	// 実在する残り行数は0のまま保ち、先頭にいる場合だけ仮想1行分の背景を描画する。
+	const uint64_t paint_rows = total_rows == 0 && scroll_row == 0 ? 1 : remaining_rows;
+	// 0除算とゼロ高の描画矩形を避けるため、背景計算上の行高は最低1pxとする。
 	const int line_height = std::max(1, line_height_px());
+	// ウィジェットを覆うのに必要な最大行数より1行多い安全な閾値。
+	// paint_rowsがこれ以上なら、乗算せずbottom_yをheight()へ固定して桁あふれを防ぐ。
 	const uint64_t visible_capacity = static_cast<uint64_t>(std::max(0, height())) / line_height + 1;
-	const int bottom_y = remaining_rows >= visible_capacity
+	// 通常の文書背景を塗る下端Y。末尾が画面内なら行高の合計に境界線1pxを加え、
+	// 文書が画面下まで続く場合はウィジェット下端へ固定する。
+	const int bottom_y = paint_rows >= visible_capacity
 		? height()
-		: std::min(height(), static_cast<int>(remaining_rows * line_height + 1));
+		: std::min(height(), static_cast<int>(paint_rows * line_height + 1));
 
 	if (bottom_y > 0) {
 		// テキスト領域の背景
@@ -597,6 +633,7 @@ void TextEditorView::paintEvent(QPaintEvent *)
 		pr.fillRect(0, bottom_y, width(), height() - bottom_y, theme()->bg_diff_unknown);
 	}
 
+	// 選択と本文が行番号領域へはみ出さないように使う、本文専用クリップ矩形。
 	auto TextAreaRectForClip = [&](){
 		return QRect(linenum_width_px, 0, width() - linenum_width_px, height());
 	};
@@ -620,6 +657,9 @@ void TextEditorView::paintEvent(QPaintEvent *)
 		}
 
 		int max_text_width_px = 0;
+		// 行ごとに完結させるのではなく、全表示行を3回走査して重なり順を固定する。
+		// pass 0: 行背景、pass 1: 選択背景、pass 2: 文字と現在行の下線。
+		// これにより、後続行の背景が前の行の選択や文字を上書きしない。
 		for (int pass = 0; pass < 3; pass++) {
 			int view_row = 0; // 描画行番号（ビューポートの左上隅を0とした行位置）
 			row_index_t vrow = scrollTopRow(); // 行インデックス（view_row位置に描画すべき論理行インデックス）
