@@ -15,6 +15,20 @@
 using WriteMode = AbstractTextEditorApplication::WriteMode;
 using FormattedLine = AbstractTextEditorApplication::FormattedLine;
 
+namespace {
+
+// Character列や折り返しキャッシュは元データの数倍に膨らむため、単一ファイルの
+// 無制限なreadAll()を避ける。現段階のインメモリエディタで扱う上限とする。
+constexpr qint64 MAX_DOCUMENT_BYTES = 64LL * 1024 * 1024;
+
+row_index_t to_row_count(uint64_t count)
+{
+	return static_cast<row_index_t>(std::min<uint64_t>(
+		count, static_cast<uint64_t>(std::numeric_limits<row_index_t>::max())));
+}
+
+}
+
 // このファイルで扱う行データの関係:
 //
 //   Document::logical_lines                 文書の正本
@@ -211,7 +225,7 @@ QString AbstractTextEditorApplication::recentlyUsedPath()
  */
 int AbstractTextEditorApplication::logical_nlines() const
 {
-	return document()->logical_lines.size();
+	return to_row_count(document()->logical_lines.size());
 }
 
 /**
@@ -227,7 +241,7 @@ row_index_t AbstractTextEditorApplication::visual_nlines() const
 		TextEditorContext const *cx = this->cx();
 		if (cx->cache.nlines == std::nullopt) { // キャッシュが無効化されている場合は再計算する
 			// LineIndexMapが保持する各論理行の折り返し数の総和。
-			cx->cache.nlines = cx->line_index_map.total_visual_row_count();
+			cx->cache.nlines = to_row_count(cx->line_index_map.total_visual_row_count());
 		}
 		return *cx->cache.nlines;
 	}
@@ -446,14 +460,18 @@ CharBuffer AbstractTextEditorApplication::_parseLine(TextEditorContext const *cx
 	std::string_view text = line->text();
 	
 	int col = 0;
-	int len = text.size();
+	size_t len = text.size();
 	if (len > 0) {
 		ret.reserve(len);
 		char const *src = text.data();
 		utf8 u8(src, len);
 		while (1) {
 			int n = 0;
+			const size_t offset_before = u8.offset();
 			char32_t c = u8.next();
+			// next()は入力終端とU+0000の双方で0を返す。入力位置が進んだ場合は
+			// 実際のNUL文字なので、後続テキストを失わず1文字として保持する。
+			if (c == 0 && u8.offset() == offset_before) break;
 			if (c == 0) {
 				n = 1;
 			} else {
@@ -464,7 +482,6 @@ CharBuffer AbstractTextEditorApplication::_parseLine(TextEditorContext const *cx
 					n = charWidth(c);
 				}
 			}
-			if (c == 0) break;
 			col += n;
 			ret.emplace_back(c);
 		}
@@ -801,7 +818,7 @@ bool AbstractTextEditorApplication::_update_line(row_index_t lrow, std::optional
 	
 	Document *doc = &cx()->engine->document;
 	std::vector<Document::Line> *llines = &doc->logical_lines;
-	if (lrow >= 0 && lrow < llines->size()) {
+	if (lrow >= 0 && static_cast<size_t>(lrow) < llines->size()) {
 		Document::Line *ll = &(*llines)[lrow];
 		
 		const size_t nvlines = ll->sp->meta.visual_lines.size(); // 折り返し前の物理行数
@@ -837,7 +854,7 @@ bool AbstractTextEditorApplication::_update_line(row_index_t lrow, std::optional
 bool AbstractTextEditorApplication::update_visual_line(row_index_t lrow, bool force)
 {
 	std::vector<Document::Line> *llines = &document()->logical_lines;
-	if (lrow >= 0 && lrow < llines->size()) {
+	if (lrow >= 0 && static_cast<size_t>(lrow) < llines->size()) {
 		_update_line(lrow, std::nullopt, force, nullptr);
 		return true;
 	}
@@ -864,10 +881,14 @@ void AbstractTextEditorApplication::update_visual_lines_all()
 
 	// 全再計算では古い索引を段階的に更新せず、一度空にして同じ順序で再構築する。
 	cx->line_index_map.clear();
+	std::vector<Document::Line> *llines = &cx->engine->document.logical_lines;
+	// コンテナ間の浅いコピーなどで同じDを指す行があると、編集が別行へ波及し、
+	// WordWrapの並列処理ではdetail/visual_linesへの同時書き込みにもなる。
+	for (Document::Line &line : *llines) {
+		line.detachIfShared();
+	}
 	
 	if (m->wrapping_mode != WrappingMode::NoWrap) {
-		std::vector<Document::Line> *llines = &cx->engine->document.logical_lines;
-		
 		if (0) { // シングルスレッド
 			for (row_index_t lrow = 0; lrow < (row_index_t)llines->size(); lrow++) {
 				update_visual_line(lrow, true);
@@ -879,12 +900,12 @@ void AbstractTextEditorApplication::update_visual_lines_all()
 				constexpr int nthreads = 8;
 				std::mutex mutex;
 				std::vector<std::thread> thread(nthreads);
-				std::atomic<row_index_t> index = 0;
-				const row_index_t nlines = (row_index_t)llines->size();
+				std::atomic<size_t> index = 0;
+				const size_t nlines = llines->size();
 				for (int i = 0; i < nthreads; i++) {
 					thread[i] = std::thread([&](){
 						while (1) {
-							row_index_t lrow = index++;
+							size_t lrow = index++;
 							if (lrow >= nlines) break;
 							Document::Line *ll = &(*llines)[lrow];
 							_wrap_line(ll, true, &mutex);
@@ -928,25 +949,19 @@ bool AbstractTextEditorApplication::commit_line(row_index_t lrow, CharBuffer con
 {
 	std::vector<Document::Line> *llines = documentLinesForWrite();
 	if (!llines) return false;
+	if (lrow < 0) return false;
 
-	// Characterの配列をUTF-8に変換する
+	// Characterの配列をUTF-8に変換する。汎用utf32 readerはU+0000を
+	// 終端として扱うため、1コードポイントずつ直接エンコードする。
 	std::vector<char> ba;
-	if (!vec.empty()){
-		std::vector<char32_t> v;
-		v.reserve(vec.size());
-		for (Character const &c : *vec.vec) {
-			v.push_back(c.unicode);
-		}
-		utf32 u32(&v[0], v.size());
-		u32.to_utf8([&](char c, int pos){
-			(void)pos;
-			ba.push_back(c);
-			return true;
+	for (Character const &c : *vec.vec) {
+		unicode_helper_::encode_utf8(c.unicode, [&](char byte){
+			ba.push_back(byte);
 		});
 	}
 
 	// 論理行番号が範囲外の場合は、新しい論理行を追加する
-	if (lrow == llines->size()) {
+	if (static_cast<size_t>(lrow) == llines->size()) {
 		Document::Line newline;
 		newline.sp->meta.type = Document::LineType::Normal;
 		llines->push_back(newline);
@@ -1031,8 +1046,15 @@ void AbstractTextEditorApplication::setDocument(std::vector<Document::Line> cons
 	if (!lines) return;
 	
 	if (source) {
-		// Lineはshared_ptr<D>を持つため、これはLine内容の浅いコピーになる。
-		*lines = *source;
+		// 編集やレイアウトキャッシュの更新が呼び出し元のLineへ波及しないよう、
+		// テキストと表示属性だけを複製する。
+		if (source->size() > static_cast<size_t>(std::numeric_limits<row_index_t>::max())) return;
+		std::vector<Document::Line> replacement;
+		replacement.reserve(source->size());
+		for (Document::Line const &line : *source) {
+			replacement.push_back(line.detachedCopy());
+		}
+		*lines = std::move(replacement);
 	} else {
 		lines->clear();
 	}
@@ -1046,6 +1068,7 @@ void AbstractTextEditorApplication::insert_line(row_index_t lrow)
 	std::vector<Document::Line> *llines = documentLinesForWrite();
 	if (!llines) return;
 	if (lrow < 0 || (size_t)lrow > llines->size()) return;
+	if (llines->size() >= static_cast<size_t>(std::numeric_limits<row_index_t>::max())) return;
 
 	llines->insert(llines->begin() + lrow, Document::Line::NormalEmptyLine());
 	// LineIndexMapのキーは論理行の位置なので、同じ位置へ空エントリを挿入し、
@@ -1058,7 +1081,7 @@ void AbstractTextEditorApplication::insert_line(row_index_t lrow)
 CharBuffer AbstractTextEditorApplication::parseLogicalLine(TextEditorContext const *cx, row_index_t lrow) const
 {
 	std::vector<Document::Line> const &lines = cx->engine->document.logical_lines;
-	if (lrow >= 0 && lrow < lines.size()) {
+	if (lrow >= 0 && static_cast<size_t>(lrow) < lines.size()) {
 		Document::Line const *line = &lines[lrow];
 		return _parseLine(line);
 	}
@@ -1196,16 +1219,38 @@ void AbstractTextEditorApplication::writeNewLine()
 	updateVisibility({});
 }
 
-bool AbstractTextEditorApplication::openFile(QString const &path)
+bool AbstractTextEditorApplication::openFile(QString const &path, QString *error_message)
 {
+	auto SetError = [&](QString const &message){
+		if (error_message) *error_message = message;
+	};
+	if (error_message) error_message->clear();
+
 	QFile file(path);
-	if (!file.open(QFile::ReadOnly)) return false;
+	if (!file.open(QFile::ReadOnly)) {
+		SetError(file.errorString());
+		return false;
+	}
+	if (file.size() < 0 || file.size() > MAX_DOCUMENT_BYTES) {
+		SetError(QStringLiteral("File is too large (maximum %1 MiB).")
+			.arg(MAX_DOCUMENT_BYTES / (1024 * 1024)));
+		return false;
+	}
 
 	// 読み込みと行構築がすべて成功するまで、現在のDocumentには触れない。
 	// これによりopen失敗時にも編集中の内容を保持する。
 	Document replacement;
-	replacement.all = file.readAll();
-	if (file.error() != QFileDevice::NoError) return false;
+	replacement.all = file.read(MAX_DOCUMENT_BYTES + 1);
+	if (file.error() != QFileDevice::NoError) {
+		SetError(file.errorString());
+		return false;
+	}
+	// 読み込み中にファイルが増加した場合も上限を越えて取り込まない。
+	if (replacement.all.size() > MAX_DOCUMENT_BYTES || !file.atEnd()) {
+		SetError(QStringLiteral("File is too large (maximum %1 MiB).")
+			.arg(MAX_DOCUMENT_BYTES / (1024 * 1024)));
+		return false;
+	}
 
 	std::vector<Document::varline_t> lines;
 	char const *begin = replacement.all.data();
@@ -1683,16 +1728,17 @@ void AbstractTextEditorApplication::doDelete()
 	
 	Document *doc = document();
 	
-	col_index_t lrow = current_logical_row();
+	row_index_t lrow = current_logical_row();
 	col_index_t lcol = current_logical_col();
 	CharBuffer chars = parseLogicalLine(cx(), lrow);
 	bool delete_nl = false; // 削除した文字が改行コードであるかどうか
-	char32_t c = -1;
+	constexpr char32_t NO_CHARACTER = std::numeric_limits<char32_t>::max();
+	char32_t c = NO_CHARACTER;
 	if (lcol >= 0 && lcol < (int)chars.size()) {
 		c = (chars)[lcol].unicode;
 	}
-	if (c == '\n' || c == '\r' || c == -1) {
-		if (c != -1) {
+	if (c == '\n' || c == '\r' || c == NO_CHARACTER) {
+		if (c != NO_CHARACTER) {
 			chars.erase(chars.begin() + lcol);
 			if (c == '\r' && lcol < (int)chars.size() && (chars)[lcol].unicode == '\n') {
 				chars.erase(chars.begin() + lcol);
@@ -1735,8 +1781,8 @@ void AbstractTextEditorApplication::doDelete()
 	Document::Line const &line = (*llines)[lrow];
 	for (size_t i = 0; i < line.sp->meta.visual_lines.size(); i++) {
 		CharBuffer chars = _parseLine(&line.sp->meta.visual_lines[i]);
-		if (vcol <= chars.size()) break;
-		vcol -= chars.size();
+		if (vcol < 0 || static_cast<size_t>(vcol) <= chars.size()) break;
+		vcol -= static_cast<col_index_t>(chars.size());
 		vrow++;
 	}
 	if (visual_nlines() > 0 && vrow >= visual_nlines()) {
@@ -1980,7 +2026,7 @@ void AbstractTextEditorApplication::moveCursorRight()
 	col_index_t vcol = current_visual_col();
 	
 	char32_t c = -1;
-	if (vcol < vline->size()) {
+	if (vcol >= 0 && static_cast<size_t>(vcol) < vline->size()) {
 		c = (*vline)[vcol].unicode;
 	}
 	if (c == '\r' || c == '\n' || c == (char32_t)-1) {
@@ -1992,7 +2038,7 @@ void AbstractTextEditorApplication::moveCursorRight()
 	if (vcol > current_visual_col()) {
 		if (curr_pos.lrow == next_pos.lrow) { // 同じ論理行の続きなら
 			const size_t len = next_pos.lcol - curr_pos.lcol; // 物理行の長さ
-			if (vcol >= len) { // 行末
+			if (vcol >= 0 && static_cast<size_t>(vcol) >= len) { // 行末
 				if (MoveToNextRow()) return;
 			}
 		}
@@ -2433,12 +2479,9 @@ static std::vector<std::string_view> split_lines(char const *begin, size_t size)
 	char const *end = begin + size;
 	char const *ptr = begin;
 	char const *left = ptr;
-	while (1) {
-		int c = 0;
-		if (ptr < end) {
-			c = (unsigned char)*ptr;
-		}
-		if (c == '\n' || c == '\r' || c == 0) {
+	while (ptr < end) {
+		int c = (unsigned char)*ptr;
+		if (c == '\n' || c == '\r') {
 			char const *right = ptr;
 			if (c == '\n') {
 				ptr++;
@@ -2452,12 +2495,12 @@ static std::vector<std::string_view> split_lines(char const *begin, size_t size)
 				right = ptr; // keep new line
 			}
 			ret.push_back(std::string_view(left, right - left));
-			if (c == 0) break;
 			left = ptr;
 		} else {
 			ptr++;
 		}
 	}
+	ret.push_back(std::string_view(left, end - left));
 	return ret;
 }
 
@@ -2467,6 +2510,7 @@ static std::vector<std::string_view> split_lines(char const *begin, size_t size)
  */
 void AbstractTextEditorApplication::appendBulk(std::string_view const &str)
 {
+	if (str.empty()) return;
 	std::vector<std::string_view> lines = split_lines(str.data(), str.size());
 
 	// 末尾の行が空で、かつその前の行が改行で終わっている場合は、末尾の行を削除する
@@ -2485,15 +2529,17 @@ void AbstractTextEditorApplication::appendBulk(std::string_view const &str)
 	Document *doc = document();
 	if (!doc->logical_lines.empty()) {
 		if (!doc->logical_lines.back().endsWithNewLine()) {
-			// 未完の最終論理行へ連結した場合は、その1行だけを再解析・再折り返しする。
+			// 最初の断片だけを未完の最終論理行へ連結する。入力中の改行より
+			// 後ろは新しい論理行として追加し、1論理行の不変条件を保つ。
 			row_index_t lrow = doc->logical_lines.size() - 1;
-			doc->logical_lines.back().append_text(str);
+			doc->logical_lines.back().append_text(lines.front());
 			update_visual_line(lrow, false);
-			return;
+			lines.erase(lines.begin());
 		}
 	}
 	
 	for (std::string_view line : lines) {
+		if (doc->logical_lines.size() >= static_cast<size_t>(std::numeric_limits<row_index_t>::max())) break;
 		// 末尾追加は各新規行について索引をappendし、既存行の折り返しを保持する。
 		Document::Line l(std::vector<char>(line.data(), line.data() + line.size()));
 		row_index_t lrow = doc->logical_lines.size();
@@ -2520,9 +2566,15 @@ void AbstractTextEditorApplication::write(char const *ptr, int len, bool by_keyb
 		if (c == '\n' || c == '\r' || c < 0) {
 			utf8 src(left, right);
 			while (1) {
+				size_t offset_before = src.offset();
 				int d = src.next();
-				if (d == 0) break;
-				write(d, by_keyboard);
+				if (d == 0 && src.offset() == offset_before) break;
+				if (d == 0 && !(isTerminalMode() && by_keyboard)) {
+					ushort nul = 0;
+					internalWrite(&nul, &nul + 1);
+				} else {
+					write(d, by_keyboard);
+				}
 			}
 			if (c < 0) break;
 			right++;

@@ -140,12 +140,14 @@ void MainWindow::on_action_file_open_triggered()
 	}
 	path = QFileDialog::getOpenFileName(this, tr("Open"), path);
 	if (!path.isEmpty()) {
-		if (texteditor()->openFile(path)) {
+		QString error_message;
+		if (texteditor()->openFile(path, &error_message)) {
 			MySettings s;
 			s.beginGroup("File");
 			s.setValue("LastUsedFile", path);
 		} else {
-			QMessageBox::warning(this, tr("Open"), tr("Failed to open file:\n%1").arg(path));
+			QMessageBox::warning(this, tr("Open"),
+				tr("Failed to open file:\n%1\n\n%2").arg(path, error_message));
 		}
 	}
 }

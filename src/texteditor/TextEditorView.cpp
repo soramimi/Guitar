@@ -364,7 +364,8 @@ void TextEditorView::updateScrollBarRange()
 	
 	if (vsb) {
 		vsb->blockSignals(true);
-		vsb->setRange(0, visual_nlines() - cx()->viewport_height_rows / 2);
+		vsb->setRange(0, std::max<row_index_t>(0,
+			visual_nlines() - cx()->viewport_height_rows / 2));
 		vsb->setPageStep(editor_viewport_height());
 		vsb->setValue(scroll_vert_pos_px());
 		vsb->blockSignals(false);
@@ -418,7 +419,8 @@ void TextEditorView::internalUpdateVisibility(UpdateVisibilityOption const &arg)
 std::pair<row_index_t, row_index_t> TextEditorView::visibleRowAndCount()
 {
 	row_index_t row_start = scrollTopRow();
-	row_index_t row_count = std::min(editor_cx->viewport_height_rows, visual_nlines() - row_start);
+	row_index_t remaining = std::max<row_index_t>(0, visual_nlines() - row_start);
+	row_index_t row_count = std::min(editor_cx->viewport_height_rows, remaining);
 
 	return std::make_pair(row_start, row_count);
 }
@@ -573,8 +575,15 @@ void TextEditorView::paintEvent(QPaintEvent *)
 	
 	int vsplit_x = linenum_width_px - 2;
 	int text_area_w = width() - vsplit_x;
-	int bottom_y = (total_visual_row_count() - scroll_vert_pos_px()) * line_height_px() + 1;
-	bottom_y = std::min(bottom_y, height());
+	const uint64_t total_rows = total_visual_row_count();
+	const uint64_t scroll_row = scroll_vert_pos_px() > 0
+		? static_cast<uint64_t>(scroll_vert_pos_px()) : 0;
+	const uint64_t remaining_rows = total_rows > scroll_row ? total_rows - scroll_row : 0;
+	const int line_height = std::max(1, line_height_px());
+	const uint64_t visible_capacity = static_cast<uint64_t>(std::max(0, height())) / line_height + 1;
+	const int bottom_y = remaining_rows >= visible_capacity
+		? height()
+		: std::min(height(), static_cast<int>(remaining_rows * line_height + 1));
 
 	if (bottom_y > 0) {
 		// テキスト領域の背景

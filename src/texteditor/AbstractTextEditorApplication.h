@@ -288,6 +288,30 @@ public:
 			assert(v);
 			return View(std::string_view(v->data(), v->size()), line.sp->meta);
 		}
+
+		// テキストと表示属性を複製し、解析・折り返しキャッシュは引き継がない。
+		// 外部Documentの取り込みや、同じDを参照する論理行の並列更新前に使う。
+		Line detachedCopy() const
+		{
+			std::vector<char> owned_text;
+			std::string_view source_text = text();
+			if (!source_text.empty()) {
+				owned_text.assign(source_text.begin(), source_text.end());
+			}
+			Line line(owned_text, sp->meta.type);
+			line.sp->meta.text_revision = sp->meta.text_revision;
+			line.sp->meta.logical_col_pos = sp->meta.logical_col_pos;
+			line.sp->meta.logical_col_len = sp->meta.logical_col_len;
+			line.sp->meta.line_number_override = sp->meta.line_number_override;
+			return line;
+		}
+
+		void detachIfShared()
+		{
+			if (!sp.unique()) {
+				*this = detachedCopy();
+			}
+		}
 		
 		LineType type() const
 		{
@@ -746,7 +770,7 @@ public:
 	void set_client_size(int w, int h, bool update_layout);
 	void setContentWidth(int w);
 	void setTextEditorEngine(const TextEditorEngine_sp &e);
-	bool openFile(QString const &path);
+	bool openFile(QString const &path, QString *error_message = nullptr);
 	bool saveFile(QString const &path, QString *error_message = nullptr);
 	void loadExampleFile();
 	void pressEnter();

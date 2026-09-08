@@ -43,7 +43,8 @@ bool is_valid_scalar_value(uint32_t code)
 // 不正な先頭バイト、途中で終端したシーケンス、継続バイトの不足・不正、
 // 冗長エンコーディング(overlong)、サロゲート、U+10FFFF超過は
 // すべて置換文字 U+FFFD として扱い、先頭バイト1つ分だけ読み飛ばして再同期する。
-// 戻り値の 0 は「(誤り検出ではなく)バッファの終端に達した」ことのみを意味する。
+// 戻り値の 0 はバッファ終端と実際の U+0000 の双方を表す。呼び出し側で区別が必要なら、
+// 呼び出し前後の pos (utf8::offset()) が進んだかを確認する。
 uint32_t decode_utf8(char const *begin, char const *end, size_t *pos)
 {
 	size_t avail = (size_t)(end - begin) - *pos;
@@ -385,5 +386,4 @@ char32_t utf8::next()
 {
 	return reader.next();
 }
-
 
