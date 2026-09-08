@@ -747,7 +747,7 @@ public:
 	void setContentWidth(int w);
 	void setTextEditorEngine(const TextEditorEngine_sp &e);
 	bool openFile(QString const &path);
-	void saveFile(QString const &path);
+	bool saveFile(QString const &path, QString *error_message = nullptr);
 	void loadExampleFile();
 	void pressEnter();
 	void pressEscape();

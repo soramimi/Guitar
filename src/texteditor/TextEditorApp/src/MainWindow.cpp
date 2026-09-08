@@ -5,6 +5,7 @@
 
 #include <QDebug>
 #include <QKeyEvent>
+#include <QMessageBox>
 #include <QPainter>
 #include <QTextFormat>
 #include <QFileDialog>
@@ -139,18 +140,19 @@ void MainWindow::on_action_file_open_triggered()
 	}
 	path = QFileDialog::getOpenFileName(this, tr("Open"), path);
 	if (!path.isEmpty()) {
-		{
+		if (texteditor()->openFile(path)) {
 			MySettings s;
 			s.beginGroup("File");
 			s.setValue("LastUsedFile", path);
+		} else {
+			QMessageBox::warning(this, tr("Open"), tr("Failed to open file:\n%1").arg(path));
 		}
-		texteditor()->openFile(path);
 	}
 }
 
 void MainWindow::on_action_file_save_triggered()
 {
-	texteditor()->saveFile("/tmp/test.txt");
+	saveFile("/tmp/test.txt");
 }
 
 void MainWindow::updateIm()
@@ -172,22 +174,19 @@ void MainWindow::on_action_test_triggered()
 
 bool MainWindow::saveFile(QString const &path)
 {
-	QFile file(path);
-	if (file.open(QFile::WriteOnly)) {
-		for (Document::Line const &line : document()->logical_lines) {
-			file.write(line.text().data(), line.text().size());
-		}
-		return true;
+	QString error_message;
+	if (!texteditor()->saveFile(path, &error_message)) {
+		QMessageBox::warning(this, tr("Save"), tr("Failed to save file:\n%1\n\n%2").arg(path, error_message));
+		return false;
 	}
-	return false;
+	return true;
 }
 
 void MainWindow::on_action_file_save_as_triggered()
 {
 	QString path = texteditor()->recentlyUsedPath();
 	path = QFileDialog::getSaveFileName(this, tr("Save as"), path);
-	if (!path.isEmpty()) {
-		texteditor()->saveFile(path);
+	if (!path.isEmpty() && saveFile(path)) {
 		{
 			MySettings s;
 			s.beginGroup("File");
@@ -196,4 +195,3 @@ void MainWindow::on_action_file_save_as_triggered()
 		texteditor()->setRecentlyUsedPath(path);
 	}
 }
-

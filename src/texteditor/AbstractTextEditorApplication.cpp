@@ -5,8 +5,10 @@
 #include <QClipboard>
 #include <QDebug>
 #include <QFile>
+#include <QSaveFile>
 #include <atomic>
 #include <common/misc.h>
+#include <limits>
 #include <memory>
 #include <thread>
 
@@ -1043,6 +1045,7 @@ void AbstractTextEditorApplication::insert_line(row_index_t lrow)
 {
 	std::vector<Document::Line> *llines = documentLinesForWrite();
 	if (!llines) return;
+	if (lrow < 0 || (size_t)lrow > llines->size()) return;
 
 	llines->insert(llines->begin() + lrow, Document::Line::NormalEmptyLine());
 	// LineIndexMapのキーは論理行の位置なので、同じ位置へ空エントリを挿入し、
@@ -1065,10 +1068,14 @@ CharBuffer AbstractTextEditorApplication::parseLogicalLine(TextEditorContext con
 bool AbstractTextEditorApplication::isCurrentLineWritable() const
 {
 	if (is_read_only()) return false;
+	// 空Documentは最初の入力時に1行目を生成する。エンジンを設定するだけでは
+	// 外部所有のDocumentを変更しない。
+	if (document()->logical_lines.empty()) return current_visual_row() == 0;
 
 	row_index_t vrow = current_visual_row();
 	if (vrow >= 0 && vrow < visual_nlines()) {
-		if (visual_line(vrow)->sp->meta.type != Document::LineType::Invalid) {
+		Document::Line const *line = visual_line(vrow);
+		if (line && line->sp->meta.type != Document::LineType::Invalid) {
 			return true;
 		}
 	}
@@ -1125,8 +1132,14 @@ void AbstractTextEditorApplication::new_document()
 
 void AbstractTextEditorApplication::setTextEditorEngine(TextEditorEngine_sp const &e)
 {
-	cx()->engine = e;
-	new_document();
+	// 外部から渡されたエンジンのDocumentは共有データであり、ここで初期化してはならない。
+	cx()->engine = e ? e : std::make_shared<TextEditorEngine>();
+	cx()->cache = {};
+	cx()->line_index_map.clear();
+	m->full_wrap_update_needed = true;
+	update_visual_lines_all();
+	setCursorPos({});
+	updateVisibility({});
 }
 
 void AbstractTextEditorApplication::clear()
@@ -1137,10 +1150,19 @@ void AbstractTextEditorApplication::clear()
 void AbstractTextEditorApplication::writeNewLine()
 {
 	if (is_read_only()) return;
+	if (document()->logical_lines.empty()) {
+		insert_line(0);
+		if (document()->logical_lines.empty()) return;
+		// WordWrapでは空の索引エントリを逆引きすると末尾の次の論理行になる。
+		// 座標変換より先に空行を確定し、1表示行として索引へ登録する。
+		commit_line(0, {});
+	}
 
 	row_index_t vrow = current_visual_row();
 	row_index_t lrow = current_logical_row();
 	col_index_t lcol = current_logical_col();
+	std::vector<Document::Line> const &lines = document()->logical_lines;
+	if (lrow < 0 || (size_t)lrow >= lines.size()) return;
 	
 	invalidate_visual_row_info(vrow);
 	
@@ -1148,6 +1170,11 @@ void AbstractTextEditorApplication::writeNewLine()
 	CharBuffer next_line;
 	
 	curr_line = parseLogicalLine(cx(), lrow);
+	if (lcol < 0) {
+		lcol = 0;
+	} else if ((size_t)lcol > curr_line.size()) {
+		lcol = (col_index_t)curr_line.size();
+	}
 	
 	// 行を分割
 	next_line.insert(next_line.end(), curr_line.begin() + lcol, curr_line.end());
@@ -1171,14 +1198,18 @@ void AbstractTextEditorApplication::writeNewLine()
 
 bool AbstractTextEditorApplication::openFile(QString const &path)
 {
-	document()->logical_lines.clear();
 	QFile file(path);
 	if (!file.open(QFile::ReadOnly)) return false;
-	
-	document()->all = file.readAll();
+
+	// 読み込みと行構築がすべて成功するまで、現在のDocumentには触れない。
+	// これによりopen失敗時にも編集中の内容を保持する。
+	Document replacement;
+	replacement.all = file.readAll();
+	if (file.error() != QFileDevice::NoError) return false;
+
 	std::vector<Document::varline_t> lines;
-	char const *begin = document()->all.data();
-	char const *end = begin + document()->all.size();
+	char const *begin = replacement.all.data();
+	char const *end = begin + replacement.all.size();
 	char const *left = begin;
 	char const *right = begin;
 	while (1) {
@@ -1201,16 +1232,20 @@ bool AbstractTextEditorApplication::openFile(QString const &path)
 		std::string_view sv = std::get<std::string_view>(lines[i]);
 		auto line = Document::Line::View(sv);
 		line.sp->meta.type = Document::LineType::Normal;
-		document()->logical_lines.push_back(line);
+		replacement.logical_lines.push_back(line);
 	}
-	document()->raw_lines = std::move(lines);
+	replacement.raw_lines = std::move(lines);
 
-	if (document()->logical_lines.empty()) {
+	if (replacement.logical_lines.empty()) {
 		Document::Line line;
 		line.sp->meta.type = Document::LineType::Normal;
-		document()->logical_lines.push_back(line);
+		replacement.logical_lines.push_back(line);
 	}
 
+	*document() = std::move(replacement);
+	cx()->cache = {};
+	cx()->line_index_map.clear();
+	m->full_wrap_update_needed = true;
 	update_visual_lines_all();
 	
 	scrollToTop();
@@ -1219,14 +1254,39 @@ bool AbstractTextEditorApplication::openFile(QString const &path)
 	return true;
 }
 
-void AbstractTextEditorApplication::saveFile(QString const &path)
+bool AbstractTextEditorApplication::saveFile(QString const &path, QString *error_message)
 {
-	QFile file(path);
-	if (file.open(QFile::WriteOnly)) {
-		save([&file](char const *p, size_t n){
-			return file.write(p, n) == n;
-		});
+	auto SetError = [&](QString const &message){
+		if (error_message) *error_message = message;
+	};
+	if (error_message) error_message->clear();
+
+	QSaveFile file(path);
+	if (!file.open(QFile::WriteOnly)) {
+		SetError(file.errorString());
+		return false;
 	}
+
+	const bool written = save([&file](char const *p, size_t n){
+		while (n > 0) {
+			const size_t chunk_size = std::min(n, (size_t)std::numeric_limits<qint64>::max());
+			const qint64 written_size = file.write(p, (qint64)chunk_size);
+			if (written_size <= 0) return false;
+			p += written_size;
+			n -= (size_t)written_size;
+		}
+		return true;
+	});
+	if (!written) {
+		SetError(file.errorString());
+		file.cancelWriting();
+		return false;
+	}
+	if (!file.commit()) {
+		SetError(file.errorString());
+		return false;
+	}
+	return true;
 }
 
 void AbstractTextEditorApplication::pressEnter()
@@ -1604,9 +1664,8 @@ bool AbstractTextEditorApplication::deleteIfSelected()
 void AbstractTextEditorApplication::delete_line(row_index_t lrow)
 {
 	std::vector<Document::Line> *llines = &document()->logical_lines;
-	if (lrow < llines->size()) {
-		llines->erase(llines->begin() + lrow);
-	}
+	if (lrow < 0 || (size_t)lrow >= llines->size()) return;
+	llines->erase(llines->begin() + lrow);
 	// Documentと同じ位置を削除し、後続論理行のキーを詰める。
 	// 折り返しキャッシュは各Lineに属するため、後続行の再計算は不要。
 	cx()->line_index_map.erase(lrow);
@@ -2190,20 +2249,27 @@ void AbstractTextEditorApplication::internalWrite(const ushort *begin, const ush
 	
 	Document *doc = document();
 	if (doc->logical_lines.empty()) {
-		Document::Line line;
-		line.sp->meta.type = Document::LineType::Normal;
-		doc->logical_lines.push_back(line);
+		insert_line(0);
+		if (doc->logical_lines.empty()) return;
+		// current_logical_row()より先に折り返し索引を有効化する。
+		commit_line(0, {});
 	}
 
 	row_index_t vrow = current_visual_row();
 	row_index_t lrow = current_logical_row();
 	col_index_t lcol = current_logical_col();
+	if (lrow < 0 || (size_t)lrow >= doc->logical_lines.size()) return;
 
 	CharBuffer vec = parseLogicalLine(cx(), lrow);
+	// カーソルキャッシュが一時的に不整合でも、Releaseビルドで不正iteratorを作らない。
+	if (lcol < 0) {
+		lcol = 0;
+	} else if ((size_t)lcol > vec.size()) {
+		lcol = (col_index_t)vec.size();
+	}
 
 	auto WriteChar = [&](uint32_t c){
 		if (isInsertMode()) {
-			assert(lcol >= 0 && lcol <= vec.size());
 			vec.insert(vec.begin() + lcol, Character(c));
 		} else if (isOverwriteMode()) {
 			if (lcol < (int)vec.size()) {
