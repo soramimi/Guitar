@@ -138,7 +138,6 @@ void AbstractTextEditorApplication::loadExampleFile()
 bool TextEditorView::event(QEvent *event)
 {
 	if (event->type() == QEvent::Polish) {
-		clearParsedLine();
 		updateVisibility({});
 	}
 	return QWidget::event(event);
@@ -296,7 +295,6 @@ void TextEditorView::setCursorRow(row_index_t row, bool auto_scroll, bool by_mou
 	auto cr = vpos_from_px({x, y});
 
 	set_current_visual_col(cr.col); // 桁位置
-	clearParsedLine();
 
 	updateSelectionAnchor2(auto_scroll);
 }
@@ -874,7 +872,6 @@ void TextEditorView::moveCursorByMouse()
 	}
 	setCursorPosByMouse(pos, mousepos);
 
-	clearParsedLine();
 	updateVisibility({false, true, false});
 }
 
@@ -903,7 +900,6 @@ void TextEditorView::mousePressEvent(QMouseEvent *event)
 	sync_selection();
 
 	if (isTerminalMode()) {
-		clearParsedLine();
 		restorePos();
 	}
 }
@@ -926,7 +922,6 @@ void TextEditorView::mouseMoveEvent(QMouseEvent * /*event*/)
 	setSelectionAnchor(true, true, false);
 
 	if (isTerminalMode()) {
-		clearParsedLine();
 		restorePos();
 	}
 }

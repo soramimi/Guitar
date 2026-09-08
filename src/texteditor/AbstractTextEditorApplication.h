@@ -583,7 +583,6 @@ protected:
 	void initEditor();
 protected:
 	const Document::Line *currentLine() const;
-	void clearParsedLine();
 	
 	void set_current_visual_row(row_index_t row);
 	void set_current_visual_col(col_index_t col);

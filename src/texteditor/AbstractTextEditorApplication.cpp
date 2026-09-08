@@ -108,8 +108,6 @@ struct AbstractTextEditorApplication::Private {
 	int bottom_margin_px = 1;
 	
 	struct Cache {
-		// std::optional<CharBuffer> parsed_current_line_chars;
-		
 		struct ParsedLineItem {
 			row_index_t vrow;
 			CharBuffer line;
@@ -528,14 +526,7 @@ LineIndexMap::LogicalPosition AbstractTextEditorApplication::query_logical_for_v
  */
 void AbstractTextEditorApplication::invalidate_visual_row_info(row_index_t vrow, size_t n)
 {
-	TextEditorContext *cx = this->cx();
-#if 0
-	if (vrow >= 0 && vrow < cx->cache.visual_lines.size()) {
-		cx->cache.visual_lines.resize(vrow);
-	}
-#else
 	size_t end = visual_nlines();
-	
 	if (n == -1) { // nが-1の場合、vrow以降のすべてのキャッシュを削除する
 		end = visual_nlines();
 	} else {
@@ -548,7 +539,6 @@ void AbstractTextEditorApplication::invalidate_visual_row_info(row_index_t vrow,
 			vl->sp->meta.visual_lines.clear();
 		}
 	}
-#endif
 	
 	erase_parsed_line_cache(vrow, n);
 }
@@ -566,7 +556,6 @@ void AbstractTextEditorApplication::invalidate_logical_row_info(row_index_t lrow
 void AbstractTextEditorApplication::erase_parsed_line_cache(row_index_t vrow, size_t n)
 {
 	size_t end = visual_nlines();
-	
 	if (n == -1) { // nが-1の場合、vrow以降のすべてのキャッシュを削除する
 		end = visual_nlines();
 	} else {
@@ -584,21 +573,11 @@ void AbstractTextEditorApplication::erase_parsed_line_cache(row_index_t vrow, si
 	}
 }
 
-void AbstractTextEditorApplication::clearParsedLine()
-{
-	// m->cache.parsed_current_line_chars = std::nullopt;
-}
+
 
 CharBuffer const *AbstractTextEditorApplication::parseCurrentLine() const
 {
-#if 0
-	if (!m->cache.parsed_current_line_chars) {
-		m->cache.parsed_current_line_chars = parseLine(current_visual_row());
-	}
-	return *m->cache.parsed_current_line_chars;
-#else
 	return parseLine(current_visual_row());
-#endif
 }
 
 void AbstractTextEditorApplication::setWrappingMode(WrappingMode mode)
@@ -1001,7 +980,6 @@ bool AbstractTextEditorApplication::commit_line(row_index_t lrow, CharBuffer con
 		llines->push_back(newline);
 	}
 	
-	clearParsedLine();
 	invalidate_logical_row_info(lrow);
 	
 	bool vline_count_changed  = _update_line(lrow, ba, false, nullptr);
@@ -1210,7 +1188,6 @@ void AbstractTextEditorApplication::writeNewLine()
 	set_current_visual_row(vrow);
 
 	setCursorCol(0);
-	clearParsedLine();
 	updateVisibility({});
 }
 
@@ -1583,7 +1560,6 @@ void AbstractTextEditorApplication::edit_selection(EditOperation op, CharBuffer 
 		setCursorPos(visual_position(a)); // カーソルを選択範囲の開始位置に移動
 	}
 
-	clearParsedLine();
 	UpdateVisibility();
 }
 
@@ -1800,7 +1776,6 @@ void AbstractTextEditorApplication::moveCursorHome(bool consider_indent)
 		}
 	}
 	
-	clearParsedLine();
 	setCursorCol(vcol);
 	updateVisibility({});
 }
@@ -1822,7 +1797,6 @@ void AbstractTextEditorApplication::moveCursorEnd()
 	}
 	
 	setCursorCol(col);
-	clearParsedLine();
 	updateVisibility({});
 }
 
@@ -1830,7 +1804,6 @@ void AbstractTextEditorApplication::scrollUp()
 {
 	if (scroll_vert_pos_px() > 0) {
 		set_scroll_vert_pos_px(scroll_vert_pos_px() - 1);
-		clearParsedLine();
 		updateVisibility({false, false, true});
 	}
 }
@@ -1840,7 +1813,6 @@ void AbstractTextEditorApplication::scrollDown()
 	int limit = scrollBottomLimit();
 	if (scroll_vert_pos_px() < limit) {
 		set_scroll_vert_pos_px(scroll_vert_pos_px() + 1);
-		clearParsedLine();
 		updateVisibility({false, false, true});
 	}
 }
@@ -1852,7 +1824,6 @@ void AbstractTextEditorApplication::moveCursorUp()
 		vrow--;
 	}
 	setCursorRow(vrow); // カーソルを1行上へ
-	clearParsedLine();
 	updateVisibility({true, false, true});
 }
 
@@ -1863,7 +1834,6 @@ void AbstractTextEditorApplication::moveCursorDown()
 		vrow++;
 	}
 	setCursorRow(vrow); // カーソルを1行下へ
-	clearParsedLine();
 	updateVisibility({true, false, true});
 }
 
@@ -1872,7 +1842,6 @@ void AbstractTextEditorApplication::scrollToTop()
 	setCursorRow(0);
 	setCursorCol(0);
 	set_scroll_vert_pos_px(0);
-	clearParsedLine();
 	updateVisibility({true, false, true});
 }
 
@@ -1931,7 +1900,6 @@ void AbstractTextEditorApplication::moveCursorRight()
 	
 	auto MoveColumn = [this](col_index_t vcol){
 		if (vcol != current_visual_col()) {
-			clearParsedLine();
 			setCursorCol(vcol);
 			updateVisibility({});
 			return true;
@@ -1979,7 +1947,6 @@ void AbstractTextEditorApplication::movePageUp()
 	if (scroll_vert_pos_px() < 0) {
 		set_scroll_vert_pos_px(0);
 	}
-	clearParsedLine();
 	updateVisibility({true, false, true});
 }
 
@@ -1999,7 +1966,6 @@ void AbstractTextEditorApplication::movePageDown()
 		setCursorRow(0);
 		set_scroll_vert_pos_px(0);
 	}
-	clearParsedLine();
 	updateVisibility({true, false, true});
 }
 
@@ -2115,7 +2081,6 @@ void AbstractTextEditorApplication::setSelectionAnchor(bool enabled, bool update
 	} else {
 		set_selection_end_enabled(enabled);
 	}
-	clearParsedLine();
 	updateVisibility({false, false, auto_scroll});
 }
 
@@ -2189,7 +2154,6 @@ void AbstractTextEditorApplication::moveToTop()
 	cx()->current_visual_col_hint = 0;
 	set_scroll_vert_pos_px(0);
 	scrollToTop();
-	clearParsedLine();
 	updateVisibility({true, false, true});
 }
 
@@ -2209,7 +2173,6 @@ void AbstractTextEditorApplication::moveToBottom()
 {
 	logicalMoveToBottom();
 
-	clearParsedLine();
 	updateVisibility({true, false, true});
 }
 
@@ -2297,7 +2260,6 @@ void AbstractTextEditorApplication::write(uint32_t c, bool by_keyboard)
 	if (isTerminalMode()) {
 		if (c == '\r') {
 			setCursorCol(0);
-			clearParsedLine();
 			updateVisibility({});
 			return;
 		}
