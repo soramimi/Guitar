@@ -266,7 +266,8 @@ void AbstractTextEditorApplication::_update_logical_pos_cache() const
 	
 	// カーソルは描画・上下移動に都合のよい表示座標で保持する。
 	// 編集操作の直前に、折り返し断片の先頭論理列と表示列を合成して論理座標へ戻す。
-	auto logical = cx()->line_index_map.visual_to_logical(vrow);
+	// NoWrapではLineIndexMapを構築しないため、必ずモードを考慮する共通変換を使う。
+	auto logical = query_logical_for_visual_row(vrow);
 	cache->current_logical_row = logical.lrow;
 	cache->current_logical_col = logical.lcol + vcol;
 }
@@ -512,7 +513,7 @@ CharBuffer *AbstractTextEditorApplication::parseLine(row_index_t vrow) const
  * @param vrow 物理行番号
  * @return 論理行番号と論理列番号を含むVisualRowInfo構造体
  */
-LineIndexMap::LogicalPosition AbstractTextEditorApplication::query_logical_for_visual_row(row_index_t vrow)
+LineIndexMap::LogicalPosition AbstractTextEditorApplication::query_logical_for_visual_row(row_index_t vrow) const
 {
 	if (vrow < 0) return {};
 	
@@ -1446,9 +1447,10 @@ void AbstractTextEditorApplication::edit_selection(EditOperation op, CharBuffer 
 		clip_text_out->clear();
 	}
 
-	auto AppendClipText = [&clip_text_out](Character const *p, size_t n){
-		if (clip_text_out) {
-			clip_text_out->insert(clip_text_out->end(), p, p + n);
+	auto AppendClipText = [&clip_text_out](CharBuffer &chars, size_t begin, size_t end){
+		// 空行では&chars[0]を作れない。iteratorの範囲も空ならinsert自体を省略する。
+		if (clip_text_out && begin < end) {
+			clip_text_out->insert(clip_text_out->end(), chars.begin() + begin, chars.begin() + end);
 		}
 	};
 	
@@ -1467,6 +1469,25 @@ void AbstractTextEditorApplication::edit_selection(EditOperation op, CharBuffer 
 		std::swap(a, b);
 	}
 
+	std::vector<Document::Line> const *llines = &document()->logical_lines;
+	// SelectionAnchorはイベント処理や座標変換から来るが、編集処理の境界でも検証する。
+	// 不正な行は拒否し、列は実際のコードポイント数へ丸めてiterator範囲を保証する。
+	if (a.lrow < 0 || b.lrow < 0 ||
+		a.lrow >= (row_index_t)llines->size() || b.lrow >= (row_index_t)llines->size()) {
+		return;
+	}
+	auto ClampColumn = [&](SelectionAnchor *anchor){
+		CharBuffer chars = parseLogicalLine(cx(), anchor->lrow);
+		if (anchor->lcol < 0) {
+			anchor->lcol = 0;
+		} else if ((size_t)anchor->lcol > chars.size()) {
+			anchor->lcol = (col_index_t)chars.size();
+		}
+	};
+	ClampColumn(&a);
+	ClampColumn(&b);
+	if (a == b) return;
+
 	auto UpdateVisibility = [&](){
 		updateVisibility({false, false, false});
 	};
@@ -1475,16 +1496,15 @@ void AbstractTextEditorApplication::edit_selection(EditOperation op, CharBuffer 
 
 	bool cut = false;
 	if (op == EditOperation::Cut) {
-		invalidate_visual_row_info(lrow_to_vrow(a.lcol));
+		invalidate_visual_row_info(lrow_to_vrow(a.lrow));
 		cut = true;
 	}
 
-	std::vector<Document::Line> const *llines = &document()->logical_lines;
 	row_index_t end_lrow = std::min(b.lrow + 1, (row_index_t)llines->size());
 	if (a.lrow == b.lrow) { // 選択範囲が1行のみの場合
 		if (a.lcol < b.lcol) {
 			CharBuffer chars = parseLogicalLine(cx(), a.lrow);
-			AppendClipText(&chars[a.lcol], b.lcol - a.lcol);
+			AppendClipText(chars, a.lcol, b.lcol);
 			if (cut) { // 切り取りの場合は、選択範囲の文字を削除して行を更新
 				chars.erase(chars.begin() + a.lcol, chars.begin() + b.lcol);
 				commit_line(a.lrow, chars);
@@ -1506,7 +1526,7 @@ void AbstractTextEditorApplication::edit_selection(EditOperation op, CharBuffer 
 			} else {
 				entire = true;
 			}
-			AppendClipText(&chars[begin], end - begin);
+			AppendClipText(chars, begin, end);
 			if (cut) { // 切り取りの場合は、選択範囲の文字を削除して行を更新
 				if (entire) { // 論理行全体が選択されている場合は、行を削除する
 					delete_list.push_back(curr.lrow); // 後ろから削除するため削除リストに登録
@@ -1525,7 +1545,7 @@ void AbstractTextEditorApplication::edit_selection(EditOperation op, CharBuffer 
 			CharBuffer chars = parseLogicalLine(cx(), a.lrow);
 			if (!chars.empty()) {
 				char32_t c = chars.back().unicode;
-				if (c != '\n' && c != '\n') { // 最後の文字が改行でない場合は、次の行を結合する
+				if (c != '\n' && c != '\r') { // 最後の文字が改行でない場合は、次の行を結合する
 					CharBuffer next = parseLogicalLine(cx(), a.lrow + 1);
 					if (!next.empty()) {
 						// 次の行の文字を現在の行の末尾に追加して、現在の行を更新

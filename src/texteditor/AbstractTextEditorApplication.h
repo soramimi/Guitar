@@ -661,7 +661,7 @@ protected:
 	void invalidate_logical_row_info(row_index_t vrow);
 	void invalidate_visual_line_details(row_index_t vrow, size_t n = -1);
 
-	LineIndexMap::LogicalPosition query_logical_for_visual_row(row_index_t vrow);
+	LineIndexMap::LogicalPosition query_logical_for_visual_row(row_index_t vrow) const;
 
 	virtual void calc_pos_x(CharBuffer *chars) const {}
 	

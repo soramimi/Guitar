@@ -663,17 +663,18 @@ void TextEditorView::paintEvent(QPaintEvent *)
 						if (!chars.empty()) {
 							right_x = chars.back().right_x;
 						}
-						LineIndexMap::VisualPosition vlower = cx->line_index_map.logical_to_visual(selection_lower.lrow, selection_lower.lcol);
-						LineIndexMap::VisualPosition vupper = cx->line_index_map.logical_to_visual(selection_upper.lrow, selection_upper.lcol);
-						if (vlower.vrow > vrow) {
+						// NoWrapではLineIndexMapが空なので、モードを考慮する共通変換を使う。
+						RowCol vlower = visual_position(selection_lower);
+						RowCol vupper = visual_position(selection_upper);
+						if (vlower.row > vrow) {
 							right_x = 0;
-						} else if (vupper.vrow < vrow) {
+						} else if (vupper.row < vrow) {
 							right_x = 0;
 						} else {
-							auto Do = [&](int xpos, LineIndexMap::VisualPosition vpos, row_index_t vrow){
-								if (vpos.vrow == vrow) {
-									if (vpos.vcol > 0 && vpos.vcol - 1 < chars.size()) {
-										xpos = chars[vpos.vcol - 1].right_x;
+							auto Do = [&](int xpos, RowCol vpos, row_index_t vrow){
+								if (vpos.row == vrow) {
+									if (vpos.col > 0 && vpos.col - 1 < (col_index_t)chars.size()) {
+										xpos = chars[vpos.col - 1].right_x;
 									} else {
 										xpos = 0;
 									}
