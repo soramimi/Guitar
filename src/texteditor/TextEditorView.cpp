@@ -200,7 +200,7 @@ Document::LineProperty const *TextEditorView::queryFormattedLine(row_index_t vro
 			visual_line(vrow)->sp->meta.detail = std::make_shared<Document::LineProperty>();
 			detail = visual_line(vrow)->detail();
 		}
-		detail->chars = parseLine(vrow);
+		detail->chars = *parseLine(vrow);
 		detail->flags.resize(detail->chars.size());
 		calc_pos_x(&detail->chars);
 		return detail;
@@ -240,9 +240,9 @@ RowCol TextEditorView::vpos_from_px(QPoint const &pt)
 		RowCol t;
 		t.row = max_vrow - 1;
 		if (max_vrow > 0) {
-			CharBuffer chars = parseLine(t.row);
-			if (!chars.empty()) {
-				t.col = (int)chars.size();
+			CharBuffer const *chars = parseLine(t.row);
+			if (chars && !chars->empty()) {
+				t.col = (int)chars->size();
 			}
 		}
 		return t;

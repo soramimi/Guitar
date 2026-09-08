@@ -91,74 +91,82 @@ struct Character {
 };
 class CharBuffer {
 public:
-	std::vector<Character> vec;
+	std::shared_ptr<std::vector<Character>> vec;
+	CharBuffer()
+		: vec(std::make_shared<std::vector<Character>>())
+	{
+	}
+	CharBuffer(std::vector<Character> const &v)
+		: vec(std::make_shared<std::vector<Character>>(v))
+	{
+	}
 	void reserve(size_t n)
 	{
-		vec.reserve(n);
+		vec->reserve(n);
 	}
 	void clear()
 	{
-		vec.clear();
+		vec->clear();
 	}
 	void resize(size_t n)
 	{
-		vec.resize(n);
+		vec->resize(n);
 	}
 	size_t size() const
 	{
-		return vec.size();
+		return vec->size();
 	}
 	bool empty() const
 	{
-		return vec.empty();
+		return vec->empty();
 	}
 	Character const &back() const
 	{
-		return vec.back();
+		return vec->back();
 	}
 	Character &operator [] (size_t i)
 	{
-		return vec[i];
+		return (*vec)[i];
 	}
 	Character const &operator [] (size_t i) const
 	{
-		return vec[i];
+		return (*vec)[i];
 	}
 	void push_back(Character const &c)
 	{
-		vec.push_back(c);
+		vec->push_back(c);
 	}
 	void emplace_back(Character const &c)
 	{
-		vec.emplace_back(c);
+		vec->emplace_back(c);
 	}
 	std::vector<Character>::iterator begin()
 	{
-		return vec.begin();
+		return vec->begin();
 	}
 	std::vector<Character> ::iterator end()
 	{
-		return vec.end();
+		return vec->end();
 	}
 	void insert(std::vector<Character>::iterator pos, Character const &first)
 	{
-		vec.insert(pos, first);
+		vec->insert(pos, first);
 	}
 	void insert(std::vector<Character>::iterator pos, Character const *first, Character const *last)
 	{
-		vec.insert(pos, first, last);
+		vec->insert(pos, first, last);
 	}
 	void insert(std::vector<Character>::iterator pos, std::vector<Character>::const_iterator first, std::vector<Character>::const_iterator last)
 	{
-		vec.insert(pos, first, last);
+		vec->insert(pos, first, last);
 	}
 	void erase(std::vector<Character>::iterator pos)
 	{
-		vec.erase(pos);
+		vec->erase(pos);
 	}
 	void erase(std::vector<Character>::iterator first, std::vector<Character>::iterator last)
 	{
-		vec.erase(first, last);
+		vec->erase(first, last);
 	}
 };
 
@@ -565,7 +573,7 @@ protected:
 	row_index_t visual_nlines() const;
 	void invalidate_nlines_cache();
 
-	Document::Line const *visual_line(row_index_t vrow);
+	Document::Line *visual_line(row_index_t vrow);
 	
 	Document::Line const *visual_line(row_index_t vrow) const
 	{
@@ -621,8 +629,9 @@ protected:
 	void doDelete();
 	void doBackspace();
 	
-	void invalidate_visual_row_info(row_index_t vrow);
+	void invalidate_visual_row_info(row_index_t vrow, size_t n = -1);
 	void invalidate_logical_row_info(row_index_t vrow);
+	void erase_parsed_line_cache(row_index_t vrow, size_t n = -1);
 
 	LineIndexMap::LogicalPosition query_logical_for_visual_row(row_index_t vrow);
 
@@ -650,12 +659,12 @@ public:
 	RowCol visual_position(SelectionAnchor const &a) const;
 protected:
 	CharBuffer parseLogicalLine(const TextEditorContext *cx, row_index_t lrow) const;
-	const CharBuffer &parseCurrentLine() const;
+	const CharBuffer *parseCurrentLine() const;
 private:
 	CharBuffer _parseLine(const TextEditorContext *cx, const Document::Line *line, std::mutex *mutex) const;
 protected:
 	CharBuffer _parseLine(Document::Line const *line, std::mutex *mutex = nullptr) const;
-	CharBuffer parseLine(row_index_t vrow) const;
+	CharBuffer *parseLine(row_index_t vrow) const;
 
 	virtual void updateScrollBarRange() {}
 	

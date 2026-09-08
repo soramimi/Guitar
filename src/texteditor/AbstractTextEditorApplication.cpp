@@ -108,8 +108,19 @@ struct AbstractTextEditorApplication::Private {
 	int bottom_margin_px = 1;
 	
 	struct Cache {
-		std::optional<CharBuffer> parsed_current_line_chars;
-		std::unordered_map<row_index_t, CharBuffer> parsed_lines;
+		// std::optional<CharBuffer> parsed_current_line_chars;
+		
+		struct ParsedLineItem {
+			row_index_t vrow;
+			CharBuffer line;
+			ParsedLineItem() = default;
+			ParsedLineItem(row_index_t vrow, CharBuffer const &line)
+				: vrow(vrow), line(line)
+			{
+			}
+		};
+		std::list<ParsedLineItem> parsed_lines_list;
+		std::unordered_map<row_index_t, std::list<ParsedLineItem>::iterator> parsed_lines_map;
 	};
 	mutable Cache cache;
 };
@@ -329,9 +340,9 @@ int AbstractTextEditorApplication::cursor_row_px() const
  * @param vrow 物理行番号
  * @return 物理行（存在しない場合はnullptrを返す）
  */
-Document::Line const *AbstractTextEditorApplication::visual_line(row_index_t vrow)
+Document::Line *AbstractTextEditorApplication::visual_line(row_index_t vrow)
 {
-	std::vector<Document::Line> const *vlines = nullptr;
+	std::vector<Document::Line> *vlines = nullptr;
 	if (m->wrapping_mode == WrappingMode::NoWrap) {
 		vlines = &document()->logical_lines; // NoWrapの場合、物理行は論理行と同じ
 	} else {
@@ -466,30 +477,128 @@ CharBuffer AbstractTextEditorApplication::_parseLine(Document::Line const *line,
  * @param vrow
  * @return
  */
-CharBuffer AbstractTextEditorApplication::parseLine(row_index_t vrow) const
+CharBuffer *AbstractTextEditorApplication::parseLine(row_index_t vrow) const
 {
+	static constexpr size_t MAX_CACHE_SIZE = 100; // キャッシュサイズの上限
 	if (vrow >= 0 && vrow < visual_nlines()) {
-		auto it = m->cache.parsed_lines.find(vrow);
-		if (it == m->cache.parsed_lines.end()) {
-			it = m->cache.parsed_lines.insert(m->cache.parsed_lines.end(), {vrow, {}});
-			it->second = _parseLine(visual_line(vrow));
+		auto it_map = m->cache.parsed_lines_map.find(vrow);
+		if (it_map != m->cache.parsed_lines_map.end()) {
+			m->cache.parsed_lines_list.splice(m->cache.parsed_lines_list.begin(), m->cache.parsed_lines_list, it_map->second); // 先頭に移動
+			return &it_map->second->line;
+		} else {
+			if (m->cache.parsed_lines_list.size() >= MAX_CACHE_SIZE) {
+				// キャッシュが上限に達している場合、最も古いキャッシュを削除する
+				auto last_it = std::prev(m->cache.parsed_lines_list.end());
+				m->cache.parsed_lines_map.erase(last_it->vrow);
+				m->cache.parsed_lines_list.pop_back();
+			}
+			m->cache.parsed_lines_list.push_front(Private::Cache::ParsedLineItem(vrow, _parseLine(visual_line(vrow))));
+			m->cache.parsed_lines_map[vrow] = m->cache.parsed_lines_list.begin();
+			assert(m->cache.parsed_lines_list.size() == m->cache.parsed_lines_map.size());
+			return &m->cache.parsed_lines_list.front().line;
 		}
-		return it->second;
 	}
-	return {};
+	return nullptr;
+}
+
+/**
+ * @brief 物理行番号から論理行番号と論理列番号を求める。
+ * @param vrow 物理行番号
+ * @return 論理行番号と論理列番号を含むVisualRowInfo構造体
+ */
+LineIndexMap::LogicalPosition AbstractTextEditorApplication::query_logical_for_visual_row(row_index_t vrow)
+{
+	if (vrow < 0) return {};
+	
+	LineIndexMap::LogicalPosition ret;
+	
+	if (wrappingMode() == WrappingMode::NoWrap) {
+		ret.lrow = std::min(vrow, visual_nlines()); // NoWrapの場合、論理行と物理行は同じ
+		ret.lcol = 0;
+	} else {
+		ret = cx()->line_index_map.visual_to_logical(vrow);
+		
+	}
+	return ret;
+}
+
+/**
+ * @brief 物理行番号以降の物理行情報を無効化する
+ * @param vrow 物理行番号
+ */
+void AbstractTextEditorApplication::invalidate_visual_row_info(row_index_t vrow, size_t n)
+{
+	TextEditorContext *cx = this->cx();
+#if 0
+	if (vrow >= 0 && vrow < cx->cache.visual_lines.size()) {
+		cx->cache.visual_lines.resize(vrow);
+	}
+#else
+	size_t end = visual_nlines();
+	
+	if (n == -1) { // nが-1の場合、vrow以降のすべてのキャッシュを削除する
+		end = visual_nlines();
+	} else {
+		end = vrow + n;
+	}
+	
+	for (size_t vr = vrow; vr < end; vr++) {
+		Document::Line *vl = visual_line(vr);
+		if (vl) {
+			vl->sp->meta.visual_lines.clear();
+		}
+	}
+#endif
+	
+	erase_parsed_line_cache(vrow, n);
+}
+
+void AbstractTextEditorApplication::invalidate_logical_row_info(row_index_t lrow)
+{
+	row_index_t vrow = lrow_to_vrow(lrow);
+	while (vrow < visual_nlines()) {
+		if (vrow_to_lrow(vrow) > lrow) break;
+		invalidate_visual_row_info(vrow, 1);
+		vrow++;
+	}
+}
+
+void AbstractTextEditorApplication::erase_parsed_line_cache(row_index_t vrow, size_t n)
+{
+	size_t end = visual_nlines();
+	
+	if (n == -1) { // nが-1の場合、vrow以降のすべてのキャッシュを削除する
+		end = visual_nlines();
+	} else {
+		end = vrow + n;
+	}
+	
+	while (vrow < end) {
+		auto it = m->cache.parsed_lines_map.find(vrow);
+		if (it != m->cache.parsed_lines_map.end()) {
+			m->cache.parsed_lines_list.erase(it->second);
+			m->cache.parsed_lines_map.erase(it);
+			assert(m->cache.parsed_lines_list.size() == m->cache.parsed_lines_map.size());
+		}
+		vrow++;
+	}
 }
 
 void AbstractTextEditorApplication::clearParsedLine()
 {
-	m->cache.parsed_current_line_chars = std::nullopt;
+	// m->cache.parsed_current_line_chars = std::nullopt;
 }
 
-CharBuffer const &AbstractTextEditorApplication::parseCurrentLine() const
+CharBuffer const *AbstractTextEditorApplication::parseCurrentLine() const
 {
+#if 0
 	if (!m->cache.parsed_current_line_chars) {
 		m->cache.parsed_current_line_chars = parseLine(current_visual_row());
 	}
 	return *m->cache.parsed_current_line_chars;
+#else
+	return parseLine(current_visual_row());
+#endif
 }
 
 void AbstractTextEditorApplication::setWrappingMode(WrappingMode mode)
@@ -509,7 +618,7 @@ std::vector<Document::Line> AbstractTextEditorApplication::wrap_line(Document::L
 	const int width_px = m->content_width_px;
 	
 	std::vector<CharBuffer> chrs_out;
-	CharBuffer chrs_in = _parseLine(&line, mutex);
+	const CharBuffer chrs_in = _parseLine(&line, mutex);
 	
 	if (chrs_in.empty()) {
 		chrs_out.push_back({});
@@ -616,7 +725,7 @@ std::vector<Document::Line> AbstractTextEditorApplication::wrap_line(Document::L
 		int logical_col = 0;
 		for (CharBuffer const &w : chrs_out) {
 			std::vector<char> v;
-			for (Character const &c : w.vec) {
+			for (Character const &c : *w.vec) {
 				unicode_helper_::encode_utf8(c.unicode, [&](char d){v.push_back(d);});
 			}
 			Document::Line line(v);
@@ -692,55 +801,6 @@ void AbstractTextEditorApplication::_update_line_index_map(row_index_t lrow, Doc
 	if (mutex) mutex->lock();
 	cx()->line_index_map.update(lrow, col_list); // 論理行に対応する物理行数を更新
 	if (mutex) mutex->unlock();	
-}
-
-/**
- * @brief 物理行番号から論理行番号と論理列番号を求める。
- * @param vrow 物理行番号
- * @return 論理行番号と論理列番号を含むVisualRowInfo構造体
- */
-LineIndexMap::LogicalPosition AbstractTextEditorApplication::query_logical_for_visual_row(row_index_t vrow)
-{
-	if (vrow < 0) return {};
-	
-	LineIndexMap::LogicalPosition ret;
-	
-	if (wrappingMode() == WrappingMode::NoWrap) {
-		ret.lrow = std::min(vrow, visual_nlines()); // NoWrapの場合、論理行と物理行は同じ
-		ret.lcol = 0;
-	} else {
-		ret = cx()->line_index_map.visual_to_logical(vrow);
-		
-	}
-	return ret;
-}
-
-/**
- * @brief 物理行番号以降の物理行情報を無効化する
- * @param vrow 物理行番号
- */
-void AbstractTextEditorApplication::invalidate_visual_row_info(row_index_t vrow)
-{
-	TextEditorContext *cx = this->cx();
-	if (vrow >= 0 && vrow < cx->cache.visual_lines.size()) {
-		cx->cache.visual_lines.resize(vrow);
-	}
-	
-	auto it = m->cache.parsed_lines.find(vrow);
-	if (it != m->cache.parsed_lines.end()) {
-		qDebug() << Q_FUNC_INFO << vrow;
-		m->cache.parsed_lines.erase(it, m->cache.parsed_lines.end());
-	}
-}
-
-void AbstractTextEditorApplication::invalidate_logical_row_info(row_index_t lrow)
-{
-	row_index_t vrow = lrow_to_vrow(lrow);
-	while (vrow < visual_nlines()) {
-		if (vrow_to_lrow(vrow) > lrow) break;
-		invalidate_visual_row_info(vrow);
-		vrow++;
-	}
 }
 
 /**
@@ -923,7 +983,7 @@ bool AbstractTextEditorApplication::commit_line(row_index_t lrow, CharBuffer con
 	if (!vec.empty()){
 		std::vector<char32_t> v;
 		v.reserve(vec.size());
-		for (Character const &c : vec.vec) {
+		for (Character const &c : *vec.vec) {
 			v.push_back(c.unicode);
 		}
 		utf32 u32(&v[0], v.size());
@@ -945,6 +1005,10 @@ bool AbstractTextEditorApplication::commit_line(row_index_t lrow, CharBuffer con
 	invalidate_logical_row_info(lrow);
 	
 	bool vline_count_changed  = _update_line(lrow, ba, false, nullptr);
+	if (vline_count_changed) {
+		row_index_t vrow = lrow_to_vrow(lrow);
+		erase_parsed_line_cache(vrow);
+	}
 	return vline_count_changed;
 }
 
@@ -1061,7 +1125,6 @@ bool AbstractTextEditorApplication::isCurrentLineWritable() const
 
 int AbstractTextEditorApplication::editor_viewport_width_px() const
 {
-	// return cx()->viewport_width_px;
 	return client_width_px() - editor_cx->viewport_org_x_cols * m->font.fixed.basis_char_width();
 }
 
@@ -1265,49 +1328,6 @@ bool AbstractTextEditorApplication::isWidthFixed() const
 {
 	return (wrappingMode() != WrappingMode::NoWrap);
 }
-
-// int AbstractTextEditorApplication::calcVisualWidth(const Document::Line &line) const
-// {
-// 	std::vector<FormattedLine> lines = formatLine_(line, cx()->tab_indent_size);
-// 	int x = 0;
-// 	for (FormattedLine const &line : lines) {
-// 		if (line.text.isEmpty()) continue;
-// 		ushort const *ptr = line.text.utf16();
-// 		ushort const *end = ptr + line.text.size();
-// 		while (1) {
-// 			int c = -1;
-// 			if (ptr < end) {
-// 				c = *ptr;
-// 				ptr++;
-// 			}
-// 			if (c == -1 || c == '\r' || c == '\n') {
-// 				break;
-// 			}
-// 			x++;
-// 		}
-// 	}
-// 	return x;
-// }
-
-// void AbstractTextEditorApplication::clearRect(int x, int y, int w, int h)
-// {
-// 	int scr_w = screenWidth();
-// 	int scr_h = screenHeight();
-// 	int y0 = y;
-// 	int y1 = y + h;
-// 	if (y0 < 0) y0 = 0;
-// 	if (y1 > scr_h) y1 = scr_h;
-// 	int x0 = x;
-// 	int x1 = x + w;
-// 	if (x0 < 0) x0 = 0;
-// 	if (x1 > scr_w) x1 = scr_w;
-// 	for (int y = y0; y < y1; y++) {
-// 		for (int x = x0; x < x1; x++) {
-// 			int o = y * scr_w + x;
-// 			m->screen[o] = Char16();
-// 		}
-// 	}
-// }
 
 void AbstractTextEditorApplication::savePos()
 {
@@ -1654,13 +1674,20 @@ void AbstractTextEditorApplication::doDelete()
 	row_index_t vrow = lrow_to_vrow(lrow);
 	col_index_t vcol = current_visual_col();
 	
+	row_index_t invalidate_vrow = -1; // 物理行情報を無効化する論理行番号
+	
 	if (commit_line(lrow, chars)) {
-		// 折り返し後の物理行数が変化した場合は、これ以降の物理行情報を無効化する
-		if (delete_nl) {
-			invalidate_visual_row_info(vrow);
-		} else {
-			invalidate_visual_row_info(vrow + 1);
-		}
+		// 折り返し後の物理行数が変化した場合は、次の行以降の物理行情報を無効化する
+		invalidate_vrow = vrow + 1;
+	}
+	
+	if (delete_nl) {
+		// 削除した文字が改行コードなら、現在行以降の物理行情報を無効化する
+		invalidate_vrow = vrow;
+	}
+	
+	if (invalidate_vrow != -1) {
+		invalidate_visual_row_info(invalidate_vrow);
 	}
 	
 	vcol = lcol; // 論理行から物理行を再計算
@@ -1755,19 +1782,21 @@ void AbstractTextEditorApplication::moveCursorHome(bool consider_indent)
 	if (consider_indent) { // 行頭の空白を飛ばす
 		row_index_t vrow = current_visual_row();
 		if (vrow == lrow_to_vrow(current_logical_row())) { // 論理行の先頭なら
-			CharBuffer const &vline = parseCurrentLine();
-			const col_index_t ncols = vline.size();
-			col_index_t indent_vcol = 0;
-			while (indent_vcol < ncols) {
-				char32_t c = vline[indent_vcol].unicode;
-				if (c == ' ' || c == '\t') {
-					indent_vcol++;
-				} else {
-					break;
+			CharBuffer const *vline = parseCurrentLine();
+			if (vline) {
+				const col_index_t ncols = vline->size();
+				col_index_t indent_vcol = 0;
+				while (indent_vcol < ncols) {
+					char32_t c = (*vline)[indent_vcol].unicode;
+					if (c == ' ' || c == '\t') {
+						indent_vcol++;
+					} else {
+						break;
+					}
 				}
+				col_index_t curr_vcol = current_visual_col();
+				vcol = (curr_vcol > 0 && curr_vcol <= indent_vcol) ? 0 : indent_vcol; // カーソルがインデントの範囲内なら行頭へ、そうでなければインデントの先頭へ
 			}
-			col_index_t curr_vcol = current_visual_col();
-			vcol = (curr_vcol > 0 && curr_vcol <= indent_vcol) ? 0 : indent_vcol; // カーソルがインデントの範囲内なら行頭へ、そうでなければインデントの先頭へ
 		}
 	}
 	
@@ -1778,11 +1807,13 @@ void AbstractTextEditorApplication::moveCursorHome(bool consider_indent)
 
 void AbstractTextEditorApplication::moveCursorEnd()
 {
-	CharBuffer const &vline = parseCurrentLine();
-	col_index_t col = vline.size();
+	CharBuffer const *vline = parseCurrentLine();
+	if (!vline) return;
+	
+	col_index_t col = vline->size();
 	
 	while (col > 0) { // 行末の改行コードを飛ばす
-		char32_t c = vline[col - 1].unicode;
+		char32_t c = (*vline)[col - 1].unicode;
 		if (c == '\r' || c == '\n') {
 			col--;
 		} else {
@@ -1911,13 +1942,14 @@ void AbstractTextEditorApplication::moveCursorRight()
 	const auto curr_pos = query_logical_for_visual_row(current_visual_row());
 	const auto next_pos = query_logical_for_visual_row(current_visual_row() + 1);
 	
-	CharBuffer const &vline = parseCurrentLine();
+	CharBuffer const *vline = parseCurrentLine();
+	if (!vline) return;
 	
 	col_index_t vcol = current_visual_col();
 	
 	char32_t c = -1;
-	if (vcol < vline.size()) {
-		c = vline[vcol].unicode;
+	if (vcol < vline->size()) {
+		c = (*vline)[vcol].unicode;
 	}
 	if (c == '\r' || c == '\n' || c == (char32_t)-1) {
 		MoveToNextRow(); // 次の行の先頭へ移動
