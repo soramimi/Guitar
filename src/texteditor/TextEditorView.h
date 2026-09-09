@@ -118,8 +118,8 @@ public:
 	
 	void setFont(const QFont &font)
 	{
-		setFixedFont(font);
-		setTextFont(font);
+		set_fixed_font(font);
+		set_text_font(font);
 		if (editor_cx) {
 			layoutEditor();
 		}

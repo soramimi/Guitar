@@ -150,6 +150,14 @@ public:
 	{
 		return vec->end();
 	}
+	std::vector<Character>::const_iterator begin() const
+	{
+		return vec->begin();
+	}
+	std::vector<Character> ::const_iterator end() const
+	{
+		return vec->end();
+	}
 	void insert(std::vector<Character>::iterator pos, Character const &first)
 	{
 		vec->insert(pos, first);
@@ -291,7 +299,7 @@ public:
 
 		// テキストと表示属性を複製し、解析・折り返しキャッシュは引き継がない。
 		// 外部Documentの取り込みや、同じDを参照する論理行の並列更新前に使う。
-		Line detachedCopy() const
+		Line detached_copy() const
 		{
 			std::vector<char> owned_text;
 			std::string_view source_text = text();
@@ -306,10 +314,10 @@ public:
 			return line;
 		}
 
-		void detachIfShared()
+		void detach_if_shared()
 		{
 			if (!sp.unique()) {
-				*this = detachedCopy();
+				*this = detached_copy();
 			}
 		}
 		
@@ -328,18 +336,18 @@ public:
 			return sp->meta.detail.get();
 		}
 		
-		LineProperty *newDetail()
+		LineProperty *new_detail()
 		{
 			sp->meta.detail = std::make_shared<LineProperty>();
 			return detail();
 		}
 		
-		void clearDetail()
+		void clear_detail()
 		{
 			sp->meta.detail.reset();
 		}
 		
-		bool endsWithNewLine() const
+		bool ends_with_new_line() const
 		{
 			int c = text().empty() ? 0 : text().back();
 			return c == '\n' || c == '\r';
@@ -664,7 +672,7 @@ protected:
 	Document const *document() const;
 	int logical_nlines() const;
 	
-	void ensureCurrentLineVisible();
+	void ensure_current_line_visible();
 	
 	int leftMargin_() const;
 	
@@ -696,10 +704,10 @@ private:
 		Cut,
 		Copy,
 	};
-	void edit_selection(EditOperation op, CharBuffer *clip_text_out);
+	std::optional<CharBuffer> edit_selection(EditOperation op);
 	int calcColumnToIndex(int column);
 	void _edit_op(EditOperation op);
-	bool isCurrentLineWritable() const;
+	bool is_current_line_writable() const;
 	void initEngine(const std::shared_ptr<TextEditorContext>& cx);
 	void writeCR();
 	bool deleteIfSelected();
@@ -710,13 +718,13 @@ public:
 	row_index_t vrow_to_lrow(row_index_t vrow) const;
 	RowCol visual_position(SelectionAnchor const &a) const;
 protected:
-	CharBuffer parseLogicalLine(const TextEditorContext *cx, row_index_t lrow) const;
-	const CharBuffer *parseCurrentLine() const;
+	CharBuffer parse_logical_line(const TextEditorContext *cx, row_index_t lrow) const;
+	const CharBuffer *parse_current_line() const;
 private:
-	CharBuffer _parseLine(const TextEditorContext *cx, const Document::Line *line, std::mutex *mutex) const;
+	CharBuffer _parse_line(const TextEditorContext *cx, const Document::Line *line, std::mutex *mutex) const;
 protected:
-	CharBuffer _parseLine(Document::Line const *line, std::mutex *mutex = nullptr) const;
-	CharBuffer *parseLine(row_index_t vrow) const;
+	CharBuffer _parse_line(Document::Line const *line, std::mutex *mutex = nullptr) const;
+	CharBuffer *parse_line(row_index_t vrow) const;
 
 	virtual void updateScrollBarRange() {}
 	
@@ -784,7 +792,7 @@ public:
 	void setNormalTextEditorMode(bool f);
 	void set_read_only(bool f);
 	bool is_read_only() const;
-	void editPaste();
+	void edit_paste();
 	void edit_copy();
 	void edit_cut();
 	void setWriteMode(WriteMode wm);
@@ -794,7 +802,7 @@ public:
 	bool isTerminalMode() const;
 	void moveToTop();
 	void moveToBottom();
-	void setLineMargin(int n);
+	void set_line_margin(int n);
 	void write(uint32_t c, bool by_keyboard);
 	void write(char const *ptr, int len, bool by_keyboard);
 	void write(std::string const &text);
@@ -813,10 +821,10 @@ public:
 private:
 	// 1論理行を現在の幅とWrappingModeで表示行へ分割する。
 	// 入力行のLinePropertyが有効ならUTF-8解析と文字幅計測は再利用される。
-	std::vector<Document::Line> wrap_line(Document::Line line, std::mutex *mutex) const;
+	std::vector<Document::Line> _wrap_line(Document::Line line, std::mutex *mutex) const;
 
-	void _wrap_line(Document::Line *ll, bool force, std::mutex *mutex);
-	void _update_line_index_map(row_index_t lrow, Document::Line *ll, std::mutex *mutex);
+	void wrap_line(Document::Line *ll, bool force, std::mutex *mutex);
+	void update_line_index_map(row_index_t lrow, Document::Line *ll, std::mutex *mutex);
 
 	bool _update_line(row_index_t lrow, std::optional<std::vector<char>> text, bool force, std::mutex *mutex);
 protected:
@@ -840,10 +848,10 @@ protected:
 	void updateSelectionAnchor2(bool auto_scroll);
 	virtual std::pair<int, int> currentPixelX() const { return {}; }
 	
-	void setFixedFont(const QFont &font);
-	void setTextFont(const QFont &font);
-	Font const &fixedFontMetrics() const;
-	Font const &textFontMetrics() const;
+	void set_fixed_font(const QFont &font);
+	void set_text_font(const QFont &font);
+	Font const &fixed_font() const;
+	Font const &text_font() const;
 	void set_line_margin_px(int top, int bottom);	
 	int line_baseline_px() const;
 	void need_to_update_scroll_bar();

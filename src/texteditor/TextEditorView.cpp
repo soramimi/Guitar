@@ -72,7 +72,7 @@ TextEditorView::TextEditorView(QWidget *parent)
 	{
 		QFont font = QFontDatabase::systemFont(QFontDatabase::GeneralFont);
 		font.setPointSize(16);
-		setTextFont(font);
+		set_text_font(font);
 	}
 
 #endif
@@ -112,7 +112,7 @@ TextEditorView::~TextEditorView()
 int TextEditorView::basic_character_width_px() const
 {
 	// 固定幅フォントの '0' を基準文字幅とする
-	return fixedFontMetrics().basis_char_width();
+	return fixed_font().basis_char_width();
 }
 	
 void TextEditorView::setTheme(TextEditorThemePtr const &theme)
@@ -195,15 +195,15 @@ void TextEditorView::_calc_pos_x(CharBuffer *chars, TextEditorContext const *cx,
 
 void TextEditorView::calc_pos_x(CharBuffer *chars) const
 {
-	_calc_pos_x(chars, cx(), fixedFontMetrics(), textFontMetrics());
+	_calc_pos_x(chars, cx(), fixed_font(), text_font());
 }
 
 Document::LineProperty const *TextEditorView::queryFormattedLine(row_index_t vrow) const
 {
 	if (vrow >= 0 && vrow < visual_nlines()) {
-		// parseLine()は有効なrevisionのキャッシュがあれば再利用する。
+		// parse_line()は有効なrevisionのキャッシュがあれば再利用する。
 		// flagsは描画時にcharsと同じ添字で安全に参照できる長さへ揃える。
-		CharBuffer *chars = parseLine(vrow);
+		CharBuffer *chars = parse_line(vrow);
 		Document::Line const *line = visual_line(vrow);
 		if (!chars || !line) return nullptr;
 		Document::LineProperty *detail = line->detail();
@@ -253,7 +253,7 @@ RowCol TextEditorView::vpos_from_px(QPoint const &pt)
 		RowCol t;
 		t.row = max_vrow - 1;
 		if (max_vrow > 0) {
-			CharBuffer const *chars = parseLine(t.row);
+			CharBuffer const *chars = parse_line(t.row);
 			if (chars && !chars->empty()) {
 				t.col = (int)chars->size();
 			}
@@ -407,7 +407,7 @@ void TextEditorView::updateScrollBarRange()
 void TextEditorView::internalUpdateVisibility(UpdateVisibilityOption const &arg)
 {
 	if (arg.ensure_current_line_visible) {
-		ensureCurrentLineVisible();
+		ensure_current_line_visible();
 	}
 
 	update_cursor_rect(arg.auto_scroll);
@@ -461,12 +461,12 @@ void TextEditorView::move(int cur_row, int cur_col, int scr_y_px, int scr_x_px, 
 
 QFont TextEditorView::fixedFont() const
 {
-	return fixedFontMetrics().font();
+	return fixed_font().font();
 }
 
 QFont TextEditorView::textFont() const
 {
-	return textFontMetrics().font();
+	return text_font().font();
 }
 
 void TextEditorView::drawText(QPainter *painter, int px, int py, QString const &str)
@@ -1118,7 +1118,7 @@ void TextEditorView::contextMenuEvent(QContextMenuEvent *event)
 			return;
 		}
 		if (a == a_paste) {
-			editPaste();
+			edit_paste();
 			return;
 		}
 	}
@@ -1126,8 +1126,12 @@ void TextEditorView::contextMenuEvent(QContextMenuEvent *event)
 
 void TextEditorView::debug()
 {
-	insert_line(0);
-	commit_line(0, {});
-	setCursorPos({});
-	updateVisibility({});
+#if 0
+	edit_copy();
+	QString str = qApp->clipboard()->text();
+	qDebug() << str;
+#else
+	qApp->clipboard()->setText("Hello,\n world");
+	edit_paste();
+#endif
 }
