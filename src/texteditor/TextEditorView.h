@@ -64,12 +64,15 @@ private:
 	void moveCursorByMouse();
 	
 	static void _calc_pos_x(CharBuffer *chars, const TextEditorContext *cx, const Font &fixed_tm, const Font &text_tm);
-	std::pair<int, int> pos_x_px(row_index_t vrow, col_index_t vcol) const;
 	
 	int view_y_from_vrow(row_index_t vrow) const;
-
+	
 	QColor cursorColor() const;
 	int basic_character_width_px() const;
+private:
+	PositionX pos_x_px(row_index_t vrow, col_index_t vcol) const;
+protected:
+	PositionX currentPixelX() const override;
 protected:
 	void timerEvent(QTimerEvent *) override;
 	void setCursorRow(row_index_t row, bool auto_scroll, bool by_mouse) override;
@@ -77,7 +80,7 @@ protected:
 	void calc_pos_x(CharBuffer *chars) const;
 	
 public:
-	const Document::LineProperty *queryFormattedLine(row_index_t vrow) const;
+	const Document::LineProperty *property_of_visual_line(row_index_t vrow) const;
 	std::pair<row_index_t, row_index_t> visibleRowAndCount();
 	int basisCharWidth() const;
 protected:
@@ -91,7 +94,6 @@ protected:
 	QFont fixedFont() const;
 	QFont textFont() const;
 	void drawText(QPainter *painter, int px, int py, QString const &str);
-	std::pair<int, int> currentPixelX() const;
 public:
 	explicit TextEditorView(QWidget *parent = nullptr);
 	~TextEditorView() override;
@@ -125,7 +127,6 @@ public:
 		}
 	}
 	
-	
 	struct PointInView {
 		int x = 0;
 		int y = 0;
@@ -141,8 +142,6 @@ signals:
 	
 public:
 	void debug();
-	
-	// AbstractTextEditorApplication interface
 };
 
 #endif // TEXTEDITORVIEW_H

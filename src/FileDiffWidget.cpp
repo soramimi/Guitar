@@ -30,6 +30,14 @@ struct HunkItem {
 	std::vector<std::string> lines;
 };
 
+
+struct CharDiffInfo {
+	struct Side {
+		std::vector<uint8_t> marker; // CharFlags::DiffMarker
+	};
+	Side left, right;
+};
+
 struct FileDiffWidget::Private {
 	FileDiffWidget::InitParam_ init_param_;
 	
@@ -48,6 +56,8 @@ struct FileDiffWidget::Private {
 
 	int scroll_value_v = 0;
 	int scroll_value_h = 0;
+	
+	std::unordered_map<int, CharDiffInfo> char_diff_cache;
 };
 
 FileDiffWidget::FileDiffWidget(QWidget *parent)
@@ -355,7 +365,9 @@ FileDiffWidget::TextDiffData FileDiffWidget::makeSideBySideDiffData(GitDiff cons
 void FileDiffWidget::setDiffText(GitDiff const &diff, TextDiffData const &data)
 {
 	ASSERT_MAIN_THREAD();
+	
 	m->max_line_length = 0;
+	m->char_diff_cache.clear();
 
 	enum Pane {
 		Left,
@@ -491,6 +503,8 @@ void FileDiffWidget::setOriginalLines_(QByteArray const &ba, GitSubmoduleItem co
 void FileDiffWidget::_setDiff(ViewStyle viewstyle, GitDiff const &diff, QByteArray const &ba, bool uncommitted, QString const &workingdir)
 {
 	m->init_param_ = {};
+	m->char_diff_cache.clear();
+	
 	setViewStyle(viewstyle);
 	
 	if (viewstyle == ViewStyle::LeftOnly) {
@@ -762,7 +776,7 @@ void FileDiffWidget::onUpdateSliderBar()
  * @param llines 左の行データ
  * @param rlines 右の行データ
  */
-static void characterWiseDiff(TextEditorView *left_editor, TextEditorView *right_editor)
+static void characterWiseDiff(TextEditorView *left_editor, TextEditorView *right_editor, std::unordered_map<int, CharDiffInfo> *char_diff_map)
 {
 	auto [row_start_l, row_count_l] = left_editor->visibleRowAndCount();
 	auto [row_start_r, row_count_r] = right_editor->visibleRowAndCount();
@@ -775,6 +789,8 @@ static void characterWiseDiff(TextEditorView *left_editor, TextEditorView *right
 	using Flag = CharFlags;
 	
 	for (int i = 0; i < row_count; i++) {
+		const int rownum = row_start + i;
+		
 		struct Line {
 			Document::LineProperty *property = nullptr;
 			std::vector<Char> *chars = nullptr;
@@ -782,21 +798,32 @@ static void characterWiseDiff(TextEditorView *left_editor, TextEditorView *right
 		};
 		auto FindLine = [&](TextEditorView *editorview, int row)-> Line {
 			Line ret;
-			ret.property = const_cast<Document::LineProperty *>(editorview->queryFormattedLine(row));
+			ret.property = const_cast<Document::LineProperty *>(editorview->property_of_visual_line(row));
 			if (ret.property) {
 				ret.chars = ret.property->chars.vec.get();
 				ret.flags = &ret.property->flags;
 			}
 			return ret;
 		};
-		Line left = FindLine(left_editor, row_start + i);
-		Line right = FindLine(right_editor, row_start + i);
+		Line left = FindLine(left_editor, rownum);
+		Line right = FindLine(right_editor, rownum);
 		if (!left.chars) continue;
 		if (!right.chars) continue;
-		if (left.property->char_diff && right.property->char_diff) continue; // すでに文字差分が求められている場合はスキップ
-	
+		
+		auto it_char_diff = char_diff_map->find(rownum);
+		
+#if 0		
+		if (left.property->char_diff && right.property->char_diff) continue; // すでに文字差分が計算済みの場合はスキップ
 		left.property->char_diff = true;
 		right.property->char_diff = true;
+#else
+		if (it_char_diff != char_diff_map->end()) continue; // すでに文字差分が計算済みの場合はスキップ
+		
+		it_char_diff = char_diff_map->insert(char_diff_map->end(), {rownum, CharDiffInfo()});
+		CharDiffInfo *info = &it_char_diff->second;
+#endif
+		info->left.marker.resize(left.chars->size());
+		info->right.marker.resize(right.chars->size());
 		
 		// 文字差分を求める
 		// dtl (diff template library) https://github.com/cubicdaiya/dtl
@@ -815,10 +842,12 @@ static void characterWiseDiff(TextEditorView *left_editor, TextEditorView *right
 					break;
 				case dtl::SES_DELETE:
 					left.flags->at(l).diff_marker = CharFlags::Del;
+					info->left.marker[l] = CharFlags::Del;
 					l++;
 					break;
 				case dtl::SES_ADD:
 					right.flags->at(r).diff_marker = CharFlags::Add;
+					info->right.marker[l] = CharFlags::Add;
 					r++;
 					break;
 				}
@@ -901,6 +930,7 @@ static void characterWiseDiff(TextEditorView *left_editor, TextEditorView *right
 						size_t pos = token_left[l].pos;
 						for (size_t i = 0; i < token_left[l].vec.size(); i++) {
 							left.flags->at(pos + i).diff_marker = CharFlags::Del;
+							info->left.marker[pos + i] = CharFlags::Del;
 						}
 					}
 					l++;
@@ -910,6 +940,7 @@ static void characterWiseDiff(TextEditorView *left_editor, TextEditorView *right
 						size_t pos = token_right[r].pos;
 						for (size_t j = 0; j < token_right[r].vec.size(); j++) {
 							right.flags->at(pos + j).diff_marker = CharFlags::Add;
+							info->right.marker[pos + j] = CharFlags::Add;
 						}
 					}
 					r++;
@@ -935,7 +966,7 @@ void FileDiffWidget::reflectScrollBar()
 
 	if (isSideBySideView()) {
 		// サイドバイサイドのとき文字差分を求める
-		characterWiseDiff(ui->widget_diff_left->getTextEditorView(), ui->widget_diff_right->getTextEditorView()); // 文字差分を求める
+		characterWiseDiff(ui->widget_diff_left->getTextEditorView(), ui->widget_diff_right->getTextEditorView(), &m->char_diff_cache); // 文字差分を求める
 	}
 
 	onUpdateSliderBar();

@@ -98,8 +98,8 @@ struct AbstractTextEditorApplication::Private {
 	bool is_terminal_mode = false;  // 端末出力向けの追記・エスケープ処理を使うか
 	bool is_cursor_visible = true;  // カーソル描画を許可するか
 	State state = State::Normal;    // エディタの実行状態
-	int client_width_px = 1920;     // ウィジェット全体の幅
-	int client_height_px = 1080;    // ウィジェット全体の高さ
+	int client_width_px = 0;     // ウィジェット全体の幅
+	int client_height_px = 0;    // ウィジェット全体の高さ
 	int content_width_px = -1;      // 行番号領域を除く折り返し可能幅
 	bool auto_layout = false;       // resize時にビューポートと折り返しを更新するか
 	QString recently_used_path;     // Open/Saveダイアログの基準パス
@@ -321,7 +321,7 @@ int AbstractTextEditorApplication::current_visual_col() const
 
 int AbstractTextEditorApplication::current_visual_x_px() const
 {
-	return cx()->current_visual_x_px;
+	return cx()->current_pos.visual_x_px;
 }
 
 int AbstractTextEditorApplication::scroll_vert_pos_px() const
@@ -336,12 +336,18 @@ int AbstractTextEditorApplication::scroll_horz_pos_px() const
 
 void AbstractTextEditorApplication::set_scroll_vert_pos_px(int row)
 {
-	cx()->scroll_vert_pos_px = row;
+	if (cx()->scroll_vert_pos_px != row) {
+		cx()->scroll_vert_pos_px = row;
+		need_to_update_scroll_bar();
+	}
 }
 
 void AbstractTextEditorApplication::set_scroll_horz_pos_px(int col)
 {
-	cx()->scroll_horz_pos_px = col;
+	if (cx()->scroll_horz_pos_px != col) {
+		cx()->scroll_horz_pos_px = col;
+		need_to_update_scroll_bar();
+	}
 }
 
 int AbstractTextEditorApplication::cursor_col_px() const
@@ -1077,7 +1083,6 @@ void AbstractTextEditorApplication::insert_line(row_index_t lrow)
 
 CharBuffer AbstractTextEditorApplication::parse_logical_line(TextEditorContext const *cx, row_index_t lrow) const
 {
-	qDebug() << Q_FUNC_INFO << lrow;
 	std::vector<Document::Line> const &lines = cx->engine->document.logical_lines;
 	if (lrow >= 0 && static_cast<size_t>(lrow) < lines.size()) {
 		Document::Line const *line = &lines[lrow];
@@ -1230,8 +1235,7 @@ bool AbstractTextEditorApplication::openFile(QString const &path, QString *error
 		return false;
 	}
 	if (file.size() < 0 || file.size() > MAX_DOCUMENT_BYTES) {
-		SetError(QStringLiteral("File is too large (maximum %1 MiB).")
-			.arg(MAX_DOCUMENT_BYTES / (1024 * 1024)));
+		SetError(QStringLiteral("File is too large (maximum %1 MiB).").arg(MAX_DOCUMENT_BYTES / (1024 * 1024)));
 		return false;
 	}
 
@@ -1245,8 +1249,7 @@ bool AbstractTextEditorApplication::openFile(QString const &path, QString *error
 	}
 	// 読み込み中にファイルが増加した場合も上限を越えて取り込まない。
 	if (replacement.all.size() > MAX_DOCUMENT_BYTES || !file.atEnd()) {
-		SetError(QStringLiteral("File is too large (maximum %1 MiB).")
-			.arg(MAX_DOCUMENT_BYTES / (1024 * 1024)));
+		SetError(QStringLiteral("File is too large (maximum %1 MiB).").arg(MAX_DOCUMENT_BYTES / (1024 * 1024)));
 		return false;
 	}
 
@@ -1277,7 +1280,7 @@ bool AbstractTextEditorApplication::openFile(QString const &path, QString *error
 		line.sp->meta.type = Document::LineType::Normal;
 		replacement.logical_lines.push_back(line);
 	}
-	replacement.raw_lines = std::move(lines);
+	// replacement.raw_lines = std::move(lines);
 
 	if (replacement.logical_lines.empty()) {
 		Document::Line line;
@@ -1377,9 +1380,7 @@ void AbstractTextEditorApplication::ensure_current_line_visible()
 	pos = std::min(pos, top);
 	pos = std::max(pos, bottom);
 	pos = std::max(pos, 0);
-	if (scroll_vert_pos_px() != pos) {
-		set_scroll_vert_pos_px(pos);
-	}
+	set_scroll_vert_pos_px(pos);
 }
 
 bool AbstractTextEditorApplication::isWidthFixed() const
@@ -1519,9 +1520,7 @@ void AbstractTextEditorApplication::_set_cursor_col(col_index_t vcol, bool auto_
 void AbstractTextEditorApplication::setCursorCol(col_index_t vcol)
 {
 	_set_cursor_col(vcol, true, false);
-	auto pair = currentPixelX(); // カーソルのピクセル位置を更新する
-	cx()->current_visual_x_px = pair.first;
-	cx()->current_absolute_x_px = pair.second;
+	cx()->current_pos = currentPixelX(); // カーソルのピクセル位置を更新する
 }
 
 void AbstractTextEditorApplication::setCursorPos(const RowCol &vpos)
@@ -1534,7 +1533,7 @@ void AbstractTextEditorApplication::setCursorPosByMouse(RowCol vpos, QPoint pt)
 {
 	setCursorRow(vpos.row, false, true);
 	_set_cursor_col(vpos.col, false, true);
-	cx()->current_visual_x_px = pt.x(); // マウスでクリックした位置にカーソルを移動した場合は、現在のピクセル位置をマウスの位置に合わせる
+	cx()->current_pos.visual_x_px = pt.x(); // マウスでクリックした位置にカーソルを移動した場合は、現在のピクセル位置をマウスの位置に合わせる
 }
 
 int AbstractTextEditorApplication::nextTabStop(const TextEditorContext *cx, int x)
@@ -2085,7 +2084,7 @@ void AbstractTextEditorApplication::update_horz_scroll()
 	if (isWidthFixed()) return; // 固定幅の場合は水平スクロールはしない
 
 	// 計算はすべてピクセル単位	
-	int x = cx()->current_absolute_x_px; // カーソルの絶対位置（行頭基準）
+	int x = cx()->current_pos.absolute_x_px; // カーソルの絶対位置（行頭基準）
 	auto curr_scroll_pos = scroll_horz_pos_px(); // 現在の水平スクロール位置
 	auto textarea_width = client_width_px() - linenum_area_width_px(); // テキストエリアの幅
 	auto left = textarea_width / 5; // 左端の余白
@@ -2102,7 +2101,6 @@ void AbstractTextEditorApplication::update_horz_scroll()
 	}
 	if (pos != curr_scroll_pos) {
 		set_scroll_horz_pos_px(pos);
-		need_to_update_scroll_bar();
 	}
 }
 

@@ -194,7 +194,7 @@ public:
 	struct LineProperty {
 		CharBuffer chars;             // デコード済み文字と各文字のX座標
 		std::vector<CharFlags> flags; // charsと同じ添字で参照する描画フラグ
-		bool char_diff = false;       // 文字単位diff情報を保持しているか
+		// bool char_diff = false;       // 文字単位diff情報を保持しているか
 		// charsを再利用できる入力テキストとフォントメトリクスの世代。
 		uint64_t text_revision = 0;
 		uint64_t metrics_revision = 0;
@@ -212,7 +212,7 @@ public:
 			uint64_t text_revision = 1;          // text変更時に増加する解析キャッシュ世代
 			col_index_t logical_col_pos = 0;     // 折り返し断片の論理行内開始列
 			col_index_t logical_col_len = 0;     // 折り返し断片が受け持つコードポイント数
-			int32_t line_number_override = -1;   // 0以上なら通常の論理行番号より優先
+			int32_t line_number_override = -1;   // 画面表示用行番号。-1のとき(論理行+1)、0のとき非表示、1以上のときはこの値を表示
 			mutable std::shared_ptr<LineProperty> detail; // デコード・文字位置計算キャッシュ
 			// 論理行だけが使用する折り返し結果。各要素は1表示行に対応する。
 			// 表示行の平坦なコピーは持たず、LineIndexMapのwrap_indexで参照する。
@@ -411,7 +411,7 @@ public:
 	
 	
 	QByteArray all;                    // openFile()で読み込んだファイル全体の所有領域
-	std::vector<varline_t> raw_lines;  // allを行単位に分けたビュー（互換・保持用）
+	// std::vector<varline_t> raw_lines;  // allを行単位に分けたビュー（互換・保持用）
 
 	// 文書の唯一の正本。折り返し断片やLineIndexMapはここから再生成できる。
 	std::vector<Line> logical_lines;
@@ -462,13 +462,27 @@ static inline bool operator > (SelectionAnchor const &a, SelectionAnchor const &
 
 using TextEditorEngine_sp = std::shared_ptr<TextEditorEngine>;
 
+struct PositionX {
+	int absolute_x_px = 0; // 桁ピクセル座標（行頭基準）
+	int visual_x_px = 0; // 桁ピクセル座標（クライアント領域基準）
+};
+
+struct RowCol {
+	row_index_t row = 0;
+	col_index_t col = 0;
+	RowCol(row_index_t row = 0, col_index_t col = 0)
+		: row(row)
+		, col(col)
+	{
+	}
+};
+
 struct TextEditorContext {
 	QRect cursor_rect; // IMEへ通知する、ウィジェット座標系のカーソル矩形
 	row_index_t current_visual_row = 0; // 表示行（物理行）
 	col_index_t current_visual_col = 0; // 表示列（物理列）
 	int current_visual_col_hint = 0; // 上下移動時に維持したい表示列
-	int current_absolute_x_px = 0; // 桁ピクセル座標（行頭基準）
-	int current_visual_x_px = 0; // 桁ピクセル座標（クライアント領域基準）
+	PositionX current_pos; // 桁ピクセル座標
 	int current_visual_y_px = 0; // 行ピクセル座標
 	row_index_t saved_row = 0; // terminal modeなどで一時退避する表示行
 	col_index_t saved_col = 0; // 同上の表示列
@@ -493,16 +507,6 @@ struct TextEditorContext {
 		bool scroll_bar_update_needed = true; // 次回の表示更新でrangeを再設定する
 	};
 	mutable Cache cache;
-};
-
-struct RowCol {
-	row_index_t row = 0;
-	col_index_t col = 0;
-	RowCol(row_index_t row = 0, col_index_t col = 0)
-		: row(row)
-		, col(col)
-	{
-	}
 };
 
 class AbstractTextEditorApplication {
@@ -818,14 +822,16 @@ public:
 	void logicalMoveToBottom();
 	void appendBulk(std::string_view const &str);
 	void clear();
+protected:
+	virtual PositionX currentPixelX() const { return {}; }
 private:
 	// 1論理行を現在の幅とWrappingModeで表示行へ分割する。
 	// 入力行のLinePropertyが有効ならUTF-8解析と文字幅計測は再利用される。
 	std::vector<Document::Line> _wrap_line(Document::Line line, std::mutex *mutex) const;
-
+	
 	void wrap_line(Document::Line *ll, bool force, std::mutex *mutex);
 	void update_line_index_map(row_index_t lrow, Document::Line *ll, std::mutex *mutex);
-
+	
 	bool _update_line(row_index_t lrow, std::optional<std::vector<char>> text, bool force, std::mutex *mutex);
 protected:
 	bool update_visual_line(row_index_t lrow, bool force);
@@ -846,7 +852,6 @@ protected:
 	bool hasSelection() const;
 	void updateSelectionAnchor1(bool auto_scroll);
 	void updateSelectionAnchor2(bool auto_scroll);
-	virtual std::pair<int, int> currentPixelX() const { return {}; }
 	
 	void set_fixed_font(const QFont &font);
 	void set_text_font(const QFont &font);
