@@ -54,6 +54,7 @@
 #include "common/misc.h"
 #include "common/qmisc.h"
 #include "GitObjectData.h"
+#include "SelectAiModelDialog.h"
 #include "gpg.h"
 #include "main.h"
 #include "platform.h"
@@ -7552,10 +7553,17 @@ void MainWindow::on_action_restart_trace_logger_triggered()
 	global->close_trace_logger();
 }
 
-void MainWindow::test()
+void MainWindow::test2()
 {
 	if (global->onepassword) {
 		QString apikey = global->onepassword->getapikey("SHINICHI FUCHITA", "op://API_KEY/ANTHROPIC_API_KEY/credential");
 		qDebug() << apikey;
 	}
+}
+
+void MainWindow::test()
+{
+	SelectAiModelDialog dlg(this);
+	dlg.exec();
+	
 }

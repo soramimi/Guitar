@@ -525,7 +525,9 @@ private slots:
 	void on_treeWidget_repos_itemDoubleClicked(QTreeWidgetItem *item, int column);
 	void on_toolButton_addrepo_clicked();
 
+	void test2();
 	void test();
+	
 	void toggleMaximized();
 
 	void onRemoteInfoChanged();

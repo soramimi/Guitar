@@ -378,18 +378,18 @@ struct AiChatResponseParser : public GenerativeAI::AbstractVisitor<AiResult> {
 		return parse_openai_chat_completions_format();
 	}
 	
-	/// Requesty：OpenAI Chat Completions 互換形式
-	AiResult case_Requesty()
-	{
-		return parse_openai_chat_completions_format();
-	}
-	
 	/// OrcaRouter：OrcaAI Chat Completions 互換形式
 	AiResult case_OrcaRouter()
 	{
 		return parse_openai_chat_completions_format();
 	}
 
+	/// Requesty：OpenAI Chat Completions 互換形式
+	AiResult case_Requesty()
+	{
+		return parse_openai_chat_completions_format();
+	}
+	
 	/**
 	 * @brief Ollama のレスポンスを解析する。
 	 *
@@ -647,18 +647,18 @@ struct _PromptJsonGenerator : public GenerativeAI::AbstractVisitor<std::string> 
 		return case_OpenAI_chat_completions();
 	}
 	
-	/// Requesty：OpenAI Chat Completions 互換形式
-	std::string case_Requesty()
-	{
-		return case_OpenAI_chat_completions();
-	}
-	
 	/// OrcaRouter：OrcaAI Chat Completions 互換形式
 	std::string case_OrcaRouter()
 	{
 		return case_OpenAI_chat_completions();
 	}
 
+	/// Requesty：OpenAI Chat Completions 互換形式
+	std::string case_Requesty()
+	{
+		return case_OpenAI_chat_completions();
+	}
+	
 	/// LM Studio：Ollama 互換形式
 	std::string case_LMStudio()
 	{
