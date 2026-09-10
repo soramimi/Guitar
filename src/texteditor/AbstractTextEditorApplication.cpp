@@ -2687,6 +2687,20 @@ void AbstractTextEditorApplication::write(QKeyEvent *e)
 	setModifierKeys(e->modifiers());
 
 	int c = e->key();
+	
+	if (isControlModifierPressed()) {
+		if (c == Qt::Key_X) {
+			edit_cut();
+			return;
+		} else if (c == Qt::Key_C) {
+			edit_copy();
+			return;
+		} else if (c == Qt::Key_V) {
+			edit_paste();
+			return;
+		}
+	}
+	
 	if (c == Qt::Key_Backspace) {
 		write(0x08, true);
 	} else if (c == Qt::Key_Delete) {
