@@ -57,7 +57,6 @@ private:
 	QColor defaultForegroundColor();
 	QColor defaultBackgroundColor();
 	QColor colorForIndex(CharAttr const &attr, bool foreground);
-	void internalUpdateVisibility(const UpdateVisibilityOption &arg);
 public:
 	void updateScrollBarRange() override;
 private:
@@ -70,9 +69,9 @@ private:
 	QColor cursorColor() const;
 	int basic_character_width_px() const;
 private:
-	PositionX pos_x_px(row_index_t vrow, col_index_t vcol) const;
+	texteditor::PositionX pos_x_px(row_index_t vrow, col_index_t vcol) const;
 protected:
-	PositionX currentPixelX() const override;
+	texteditor::PositionX currentPixelX() const override;
 protected:
 	void timerEvent(QTimerEvent *) override;
 	void setCursorRow(row_index_t row, bool auto_scroll, bool by_mouse) override;
@@ -94,6 +93,9 @@ protected:
 	QFont fixedFont() const;
 	QFont textFont() const;
 	void drawText(QPainter *painter, int px, int py, QString const &str);
+	
+	using AbstractTextEditorApplication::updateVisibility;
+	void updateVisibility(update_visibility_option_t const &arg) override;
 public:
 	explicit TextEditorView(QWidget *parent = nullptr);
 	~TextEditorView() override;
@@ -101,14 +103,12 @@ public:
 	void setTheme(const TextEditorThemePtr &theme);
 	TextEditorTheme const *theme() const;
 	
-	void updateVisibility(UpdateVisibilityOption const &arg) override;
-	
 	bool event(QEvent *event) override;
 	
 	void bind_scroll_bar(QScrollBar *vsb, QScrollBar *hsb);
 	void setup_for_log_widget(const TextEditorThemePtr &theme);
 	
-	RowCol vpos_from_px(const QPoint &pt);
+	texteditor::RowCol vpos_from_px(const QPoint &pt);
 	
 	QVariant inputMethodQuery(Qt::InputMethodQuery q) const override;
 	void inputMethodEvent(QInputMethodEvent *e) override;

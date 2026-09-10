@@ -15,7 +15,8 @@
 using WriteMode = AbstractTextEditorApplication::WriteMode;
 using FormattedLine = AbstractTextEditorApplication::FormattedLine;
 
-namespace {
+
+namespace texteditor {
 
 // Character列や折り返しキャッシュは元データの数倍に膨らむため、単一ファイルの
 // 無制限なreadAll()を避ける。現段階のインメモリエディタで扱う上限とする。
@@ -27,6 +28,8 @@ row_index_t to_row_count(uint64_t count)
 }
 
 }
+
+using namespace texteditor;
 
 // このファイルで扱う行データの関係:
 //
@@ -1153,7 +1156,7 @@ void AbstractTextEditorApplication::new_document()
 	insert_line(0);
 	commit_line(0, {});
 	setCursorPos({});
-	updateVisibility({});
+	updateVisibility();
 }
 
 void AbstractTextEditorApplication::setTextEditorEngine(TextEditorEngine_sp const &e)
@@ -1165,7 +1168,7 @@ void AbstractTextEditorApplication::setTextEditorEngine(TextEditorEngine_sp cons
 	m->full_wrap_update_needed = true;
 	update_visual_lines_all();
 	setCursorPos({});
-	updateVisibility({});
+	updateVisibility();
 }
 
 void AbstractTextEditorApplication::clear()
@@ -1219,7 +1222,7 @@ void AbstractTextEditorApplication::writeNewLine()
 	set_current_visual_row(vrow);
 
 	setCursorCol(0);
-	updateVisibility({});
+	updateVisibility();
 }
 
 bool AbstractTextEditorApplication::openFile(QString const &path, QString *error_message)
@@ -1347,8 +1350,11 @@ void AbstractTextEditorApplication::pressEscape()
 		m->escape_sequence.write(0x1b);
 		return;
 	}
-
-	updateVisibility({false, false, false});
+	
+	update_visibility_option_t opt;
+	opt.ensure_current_line_visible = false;
+	opt.auto_scroll = false;
+	updateVisibility(opt);
 }
 
 AbstractTextEditorApplication::State AbstractTextEditorApplication::state() const
@@ -1388,24 +1394,37 @@ bool AbstractTextEditorApplication::isWidthFixed() const
 	return (wrappingMode() != WrappingMode::NoWrap);
 }
 
-void AbstractTextEditorApplication::savePos()
+std::optional<texteditor::SavedPos> AbstractTextEditorApplication::savePos()
 {
 	TextEditorContext *p = editor_cx.get();
-	if (p) {
-		p->saved_row = current_visual_row();
-		p->saved_col = current_visual_col();
-		p->saved_col_hint = p->current_visual_col_hint;
-	}
+	if (!p) return std::nullopt;
+		
+		// p->saved_pos.vrow = current_visual_row();
+		// p->saved_pos.vcol = current_visual_col();
+	
+	texteditor::SavedPos pos;
+	pos.vrow = current_visual_row();
+	pos.vcol = current_visual_col();
+	p->saved_pos = pos;
+	return pos;
 }
 
 void AbstractTextEditorApplication::restorePos()
 {
 	TextEditorContext *p = editor_cx.get();
-	if (p) {
-		set_current_visual_row(p->saved_row);
-		set_current_visual_col(p->saved_col);
-		p->current_visual_col_hint = p->saved_col_hint;
-	}
+	if (!p) return;
+	
+	set_current_visual_row(p->saved_pos.vrow);
+	set_current_visual_col(p->saved_pos.vcol);
+}
+
+void AbstractTextEditorApplication::restorePos(texteditor::SavedPos const &pos)
+{
+	TextEditorContext *p = editor_cx.get();
+	if (!p) return;
+	
+	set_current_visual_row(pos.vrow);
+	set_current_visual_col(pos.vcol);
 }
 
 bool AbstractTextEditorApplication::hasSelection() const
@@ -1502,15 +1521,11 @@ void AbstractTextEditorApplication::setCursorRow(row_index_t vrow, bool auto_scr
 
 void AbstractTextEditorApplication::_set_cursor_col(col_index_t vcol, bool auto_scroll, bool by_mouse)
 {
-	if (current_visual_col() == vcol) {
-		cx()->current_visual_col_hint = vcol;
-		return;
-	}
+	if (current_visual_col() == vcol) return;
 
 	updateSelectionAnchor1(false);
 
 	set_current_visual_col(vcol);
-	cx()->current_visual_col_hint = vcol;
 
 	updateSelectionAnchor2(auto_scroll);
 
@@ -1546,15 +1561,6 @@ int AbstractTextEditorApplication::nextTabStop(const TextEditorContext *cx, int 
 // 選択処理
 std::optional<CharBuffer> AbstractTextEditorApplication::edit_selection(EditOperation op)
 {
-	CharBuffer out;
-	
-	auto AppendClipText = [&out](CharBuffer &chars, size_t begin, size_t end){
-		// 空行では&chars[0]を作れない。iteratorの範囲も空ならinsert自体を省略する。
-		if (&out && begin < end) {
-			out.insert(out.end(), chars.begin() + begin, chars.begin() + end);
-		}
-	};
-	
 	if (is_read_only() && op == EditOperation::Cut) { // 読み取り専用モードでは切り取りはできないのでコピーに変更
 		op = EditOperation::Copy;
 	}
@@ -1590,7 +1596,10 @@ std::optional<CharBuffer> AbstractTextEditorApplication::edit_selection(EditOper
 	if (a == b) return std::nullopt;
 
 	auto UpdateVisibility = [&](){
-		updateVisibility({false, false, false});
+		update_visibility_option_t opt;
+		opt.ensure_current_line_visible = false;
+		opt.auto_scroll = false;
+		updateVisibility(opt);
 	};
 
 	bool cut = false;
@@ -1598,7 +1607,16 @@ std::optional<CharBuffer> AbstractTextEditorApplication::edit_selection(EditOper
 		invalidate_visual_row_info(lrow_to_vrow(a.lrow));
 		cut = true;
 	}
-
+	
+	CharBuffer out;
+	
+	auto AppendClipText = [&out](CharBuffer &chars, size_t begin, size_t end){
+		// 空行では&chars[0]を作れない。iteratorの範囲も空ならinsert自体を省略する。
+		if (&out && begin < end) {
+			out.insert(out.end(), chars.begin() + begin, chars.begin() + end);
+		}
+	};
+	
 	row_index_t end_lrow = std::min(b.lrow + 1, (row_index_t)llines->size());
 	if (a.lrow == b.lrow) { // 選択範囲が1行のみの場合
 		if (a.lcol < b.lcol) {
@@ -1790,7 +1808,7 @@ void AbstractTextEditorApplication::doDelete()
 	}
 	setCursorPos({vrow, vcol}); // カーソル位置を更新
 
-	updateVisibility({});
+	updateVisibility();
 }
 
 void AbstractTextEditorApplication::doBackspace()
@@ -1807,7 +1825,7 @@ void AbstractTextEditorApplication::doBackspace()
 		moveCursorLeft();
 		doDelete();
 		setPaintingSuppressed(false);
-		updateVisibility({});
+		updateVisibility();
 	}
 }
 
@@ -1887,7 +1905,7 @@ void AbstractTextEditorApplication::moveCursorHome(bool consider_indent)
 	}
 	
 	setCursorCol(vcol);
-	updateVisibility({});
+	updateVisibility();
 }
 
 void AbstractTextEditorApplication::moveCursorEnd()
@@ -1907,14 +1925,18 @@ void AbstractTextEditorApplication::moveCursorEnd()
 	}
 	
 	setCursorCol(col);
-	updateVisibility({});
+	updateVisibility();
 }
 
 void AbstractTextEditorApplication::scrollUp()
 {
 	if (scroll_vert_pos_px() > 0) {
 		set_scroll_vert_pos_px(scroll_vert_pos_px() - 1);
-		updateVisibility({false, false, true});
+		
+		update_visibility_option_t opt;
+		opt.ensure_current_line_visible = false;
+		opt.auto_scroll = true;
+		updateVisibility(opt);
 	}
 }
 
@@ -1923,7 +1945,11 @@ void AbstractTextEditorApplication::scrollDown()
 	int limit = scrollBottomLimit();
 	if (scroll_vert_pos_px() < limit) {
 		set_scroll_vert_pos_px(scroll_vert_pos_px() + 1);
-		updateVisibility({false, false, true});
+		
+		update_visibility_option_t opt;
+		opt.ensure_current_line_visible = false;
+		opt.auto_scroll = true;
+		updateVisibility(opt);
 	}
 }
 
@@ -1934,7 +1960,7 @@ void AbstractTextEditorApplication::moveCursorUp()
 		vrow--;
 	}
 	setCursorRow(vrow); // カーソルを1行上へ
-	updateVisibility({true, false, true});
+	updateVisibility();
 }
 
 void AbstractTextEditorApplication::moveCursorDown()
@@ -1944,7 +1970,7 @@ void AbstractTextEditorApplication::moveCursorDown()
 		vrow++;
 	}
 	setCursorRow(vrow); // カーソルを1行下へ
-	updateVisibility({true, false, true});
+	updateVisibility();
 }
 
 void AbstractTextEditorApplication::scrollToTop()
@@ -1952,7 +1978,7 @@ void AbstractTextEditorApplication::scrollToTop()
 	setCursorRow(0);
 	setCursorCol(0);
 	set_scroll_vert_pos_px(0);
-	updateVisibility({true, false, true});
+	updateVisibility();
 }
 
 void AbstractTextEditorApplication::moveCursorLeft()
@@ -1962,7 +1988,7 @@ void AbstractTextEditorApplication::moveCursorLeft()
 			SelectionAnchor a = std::min(selection_end(), selection_start()); // 選択範囲の先頭位置
 			clear_selection();
 			setCursorPos(visual_position(a)); // 選択範囲の先頭位置にカーソルを移動
-			updateVisibility({});
+			updateVisibility();
 			return;
 		}
 	}
@@ -1983,7 +2009,7 @@ void AbstractTextEditorApplication::moveCursorLeft()
 	}
 
 	setCursorCol(current_visual_col() - 1);
-	updateVisibility({});
+	updateVisibility();
 }
 
 void AbstractTextEditorApplication::moveCursorRight()
@@ -1993,7 +2019,7 @@ void AbstractTextEditorApplication::moveCursorRight()
 			SelectionAnchor a = std::max(selection_end(), selection_start()); // 選択範囲の末尾位置
 			clear_selection();
 			setCursorPos(visual_position(a)); // 選択範囲の先頭位置にカーソルを移動
-			updateVisibility({});
+			updateVisibility();
 			return;
 		}
 	}
@@ -2011,7 +2037,7 @@ void AbstractTextEditorApplication::moveCursorRight()
 	auto MoveColumn = [this](col_index_t vcol){
 		if (vcol != current_visual_col()) {
 			setCursorCol(vcol);
-			updateVisibility({});
+			updateVisibility();
 			return true;
 		}
 		return false;
@@ -2057,7 +2083,7 @@ void AbstractTextEditorApplication::movePageUp()
 	if (scroll_vert_pos_px() < 0) {
 		set_scroll_vert_pos_px(0);
 	}
-	updateVisibility({true, false, true});
+	updateVisibility();
 }
 
 void AbstractTextEditorApplication::movePageDown()
@@ -2076,7 +2102,7 @@ void AbstractTextEditorApplication::movePageDown()
 		setCursorRow(0);
 		set_scroll_vert_pos_px(0);
 	}
-	updateVisibility({true, false, true});
+	updateVisibility();
 }
 
 void AbstractTextEditorApplication::update_horz_scroll()
@@ -2190,7 +2216,11 @@ void AbstractTextEditorApplication::setSelectionAnchor(bool enabled, bool update
 	} else {
 		set_selection_end_enabled(enabled);
 	}
-	updateVisibility({false, false, auto_scroll});
+	
+	update_visibility_option_t opt;
+	opt.ensure_current_line_visible = false;
+	opt.auto_scroll = auto_scroll;
+	updateVisibility(opt);
 }
 
 void AbstractTextEditorApplication::edit_paste()
@@ -2207,7 +2237,7 @@ void AbstractTextEditorApplication::edit_paste()
 	});
 
 	setPaintingSuppressed(false);
-	updateVisibility({});
+	updateVisibility();
 }
 
 void AbstractTextEditorApplication::edit_copy()
@@ -2260,10 +2290,10 @@ void AbstractTextEditorApplication::moveToTop()
 
 	set_current_visual_row(0);
 	set_current_visual_col(0);
-	cx()->current_visual_col_hint = 0;
+	// cx()->current_visual_vcol_hint = 0;
 	set_scroll_vert_pos_px(0);
 	scrollToTop();
-	updateVisibility({true, false, true});
+	updateVisibility();
 }
 
 void AbstractTextEditorApplication::logicalMoveToBottom()
@@ -2282,7 +2312,7 @@ void AbstractTextEditorApplication::moveToBottom()
 {
 	logicalMoveToBottom();
 
-	updateVisibility({true, false, true});
+	updateVisibility();
 }
 
 void AbstractTextEditorApplication::internalWrite(const ushort *begin, const ushort *end)
@@ -2361,7 +2391,7 @@ void AbstractTextEditorApplication::internalWrite(const ushort *begin, const ush
 		setCursorPos(RowCol(vrow, vcol));
 	}
 
-	updateVisibility({});
+	updateVisibility();
 }
 
 void AbstractTextEditorApplication::writeCR()
@@ -2376,7 +2406,7 @@ void AbstractTextEditorApplication::write(uint32_t c, bool by_keyboard)
 	if (isTerminalMode()) {
 		if (c == '\r') {
 			setCursorCol(0);
-			updateVisibility({});
+			updateVisibility();
 			return;
 		}
 		if (m->cursor_moved_by_mouse) {

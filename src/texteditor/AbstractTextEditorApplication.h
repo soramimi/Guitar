@@ -462,6 +462,8 @@ static inline bool operator > (SelectionAnchor const &a, SelectionAnchor const &
 
 using TextEditorEngine_sp = std::shared_ptr<TextEditorEngine>;
 
+namespace texteditor {
+
 struct PositionX {
 	int absolute_x_px = 0; // 桁ピクセル座標（行頭基準）
 	int visual_x_px = 0; // 桁ピクセル座標（クライアント領域基準）
@@ -477,16 +479,25 @@ struct RowCol {
 	}
 };
 
+struct SavedPos {
+	row_index_t vrow = 0;
+	col_index_t vcol = 0;
+};
+
+} // namespace texteditor
+
 struct TextEditorContext {
 	QRect cursor_rect; // IMEへ通知する、ウィジェット座標系のカーソル矩形
 	row_index_t current_visual_row = 0; // 表示行（物理行）
 	col_index_t current_visual_col = 0; // 表示列（物理列）
-	int current_visual_col_hint = 0; // 上下移動時に維持したい表示列
-	PositionX current_pos; // 桁ピクセル座標
+	// int current_visual_vcol_hint = 0; // 上下移動時に維持したい表示列
+	texteditor::PositionX current_pos; // 桁ピクセル座標
 	int current_visual_y_px = 0; // 行ピクセル座標
-	row_index_t saved_row = 0; // terminal modeなどで一時退避する表示行
-	col_index_t saved_col = 0; // 同上の表示列
-	int saved_col_hint = 0;    // 同上の列ヒント
+	
+	// row_index_t saved_pos.vrow = 0; // terminal modeなどで一時退避する表示行
+	// col_index_t saved_pos.vcol = 0; // 同上の表示列
+	texteditor::SavedPos saved_pos;
+	
 	int current_char_span = 1; // 現在文字が占める表示セル数
 	int scroll_horz_pos_px = 0; // 水平スクロール量（ピクセル）
 	int scroll_vert_pos_px = 0; // 垂直スクロール量（実態は表示行数）
@@ -518,21 +529,21 @@ public:
 			// フォント変更時には必ず全消去する。
 			std::unordered_map<QString, int> map;
 		};
-		QFont text_font_;                         // 計測対象フォント
-		std::unique_ptr<QFontMetrics> fm_;         // text_font_に対応するメトリクス
+		QFont font_;                               // 計測対象フォント
+		std::unique_ptr<QFontMetrics> fm_;         // font_に対応するメトリクス
 		int ascent_ = 0;                           // ベースラインより上の高さ
 		int descent_ = 0;                          // ベースラインより下の高さ
 		QSize basic_character_size_;               // 基準文字"0"の幅とフォントの高さ
-		mutable TextWidthCache text_width_cache_;   // 文字列単位の幅キャッシュ
-
+		mutable TextWidthCache text_width_cache_;  // 文字列単位の幅キャッシュ
+		
 		void set_font(QFont const &font)
 		{
-			text_font_ = font;
+			font_ = font;
 			text_width_cache_.map.clear();
 
 			QPixmap pm(1, 1);
 			QPainter pr(&pm);
-			pr.setFont(text_font_);
+			pr.setFont(font_);
 			fm_ = std::make_unique<QFontMetrics>(pr.fontMetrics());
 			ascent_ = fm_->ascent();
 			descent_ = fm_->descent();
@@ -540,7 +551,7 @@ public:
 		}
 		QFont font() const
 		{
-			return text_font_;
+			return font_;
 		}
 		int basis_char_width() const
 		{
@@ -680,12 +691,18 @@ protected:
 	
 	int leftMargin_() const;
 	
-	struct UpdateVisibilityOption {
+	struct update_visibility_option_t {
 		bool ensure_current_line_visible = true;
-		bool change_col = true;
 		bool auto_scroll = true;
+		bool emit_event = true;
+		
+		explicit update_visibility_option_t() = default;
 	};
-	virtual void updateVisibility(UpdateVisibilityOption const &arg) = 0;
+	virtual void updateVisibility(update_visibility_option_t const &arg) = 0;
+	void updateVisibility()
+	{
+		updateVisibility(update_visibility_option_t());
+	}
 	
 	void insert_line(row_index_t lrow); // DocumentとLineIndexMapへ同じ位置を挿入する
 	bool commit_line(row_index_t lrow, const CharBuffer &vec); // 変更行だけを再解析・再折り返しする
@@ -720,7 +737,7 @@ private:
 public:
 	row_index_t lrow_to_vrow(row_index_t lrow) const;
 	row_index_t vrow_to_lrow(row_index_t vrow) const;
-	RowCol visual_position(SelectionAnchor const &a) const;
+	texteditor::RowCol visual_position(SelectionAnchor const &a) const;
 protected:
 	CharBuffer parse_logical_line(const TextEditorContext *cx, row_index_t lrow) const;
 	const CharBuffer *parse_current_line() const;
@@ -734,8 +751,8 @@ protected:
 	
 	virtual void setCursorRow(row_index_t vrow, bool auto_scroll = true, bool by_mouse = false);
 	virtual void setCursorCol(col_index_t vcol);
-	void setCursorPos(RowCol const &vpos);
-	void setCursorPosByMouse(RowCol vpos, QPoint pt);
+	void setCursorPos(texteditor::RowCol const &vpos);
+	void setCursorPosByMouse(texteditor::RowCol vpos, QPoint pt);
 	
 	static int nextTabStop(TextEditorContext const *cx, int x);
 	int scrollBottomLimit() const;
@@ -752,8 +769,10 @@ protected:
 	
 	void paintLineNumbers(std::function<void(int, QString const &, Document::Line const *)> const &draw);
 	bool isAutoLayout() const;
-	void savePos();
+	
+	std::optional<texteditor::SavedPos> savePos();
 	void restorePos();
+	void restorePos(texteditor::SavedPos const &pos);
 public:
 	
 	AbstractTextEditorApplication();
@@ -823,7 +842,7 @@ public:
 	void appendBulk(std::string_view const &str);
 	void clear();
 protected:
-	virtual PositionX currentPixelX() const { return {}; }
+	virtual texteditor::PositionX currentPixelX() const = 0;
 private:
 	// 1論理行を現在の幅とWrappingModeで表示行へ分割する。
 	// 入力行のLinePropertyが有効ならUTF-8解析と文字幅計測は再利用される。
@@ -835,6 +854,7 @@ private:
 	bool _update_line(row_index_t lrow, std::optional<std::vector<char>> text, bool force, std::mutex *mutex);
 protected:
 	bool update_visual_line(row_index_t lrow, bool force);
+	
 	// 幅・フォント・モード・文書全体の変更時に、全論理行を並列で再折り返しする。
 	void update_visual_lines_all();
 private:

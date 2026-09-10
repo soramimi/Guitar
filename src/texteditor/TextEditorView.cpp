@@ -16,6 +16,8 @@
 #include <functional>
 #include "../Profile.h"
 
+using namespace texteditor;
+
 constexpr int cursor_animation_cycle = 10;
 
 struct TextEditorView::Private {
@@ -137,7 +139,7 @@ void AbstractTextEditorApplication::loadExampleFile()
 bool TextEditorView::event(QEvent *event)
 {
 	if (event->type() == QEvent::Polish) {
-		updateVisibility({});
+		updateVisibility();
 	}
 	return QWidget::event(event);
 }
@@ -246,7 +248,7 @@ PositionX TextEditorView::pos_x_px(row_index_t vrow, col_index_t vcol) const
  * @param pt
  * @return
  */
-RowCol TextEditorView::vpos_from_px(QPoint const &pt)
+texteditor::RowCol TextEditorView::vpos_from_px(QPoint const &pt)
 {
 	TextEditorContext *cx = this->cx();
 	const int y = pt.y() / line_height_px();
@@ -406,17 +408,13 @@ void TextEditorView::updateScrollBarRange()
 	emit updateScrollBar();
 }
 
-void TextEditorView::internalUpdateVisibility(UpdateVisibilityOption const &arg)
+void TextEditorView::updateVisibility(update_visibility_option_t const &arg)
 {
 	if (arg.ensure_current_line_visible) {
 		ensure_current_line_visible();
 	}
 
 	update_cursor_rect(arg.auto_scroll);
-
-	if (arg.change_col) {
-		cx()->current_visual_col_hint = current_visual_col();
-	}
 
 	if (isPaintingSuppressed()) {
 		return;
@@ -429,6 +427,10 @@ void TextEditorView::internalUpdateVisibility(UpdateVisibilityOption const &arg)
 
 	m->cursor_animation_counter = cursor_animation_cycle;
 	update();
+	
+	if (arg.emit_event) {
+		emit moved(current_visual_row(), current_visual_col(), scroll_vert_pos_px(), scroll_horz_pos_px());
+	}
 }
 
 std::pair<row_index_t, row_index_t> TextEditorView::visibleRowAndCount()
@@ -438,13 +440,6 @@ std::pair<row_index_t, row_index_t> TextEditorView::visibleRowAndCount()
 	row_index_t row_count = std::min(editor_cx->viewport_height_rows, remaining);
 
 	return std::make_pair(row_start, row_count);
-}
-
-void TextEditorView::updateVisibility(const UpdateVisibilityOption &arg)
-{
-	internalUpdateVisibility(arg);
-	
-	emit moved(current_visual_row(), current_visual_col(), scroll_vert_pos_px(), scroll_horz_pos_px());
 }
 
 void TextEditorView::move(int cur_row, int cur_col, int scr_y_px, int scr_x_px, bool auto_scroll)
@@ -457,7 +452,10 @@ void TextEditorView::move(int cur_row, int cur_col, int scr_y_px, int scr_x_px, 
 		if (cur_col >= 0) set_current_visual_col(cur_col);
 		if (scr_y_px >= 0) set_scroll_vert_pos_px(scr_y_px);
 		if (scr_x_px >= 0) set_scroll_horz_pos_px(scr_x_px);
-		internalUpdateVisibility({false, true, auto_scroll});
+		update_visibility_option_t opt;
+		opt.ensure_current_line_visible = false;
+		opt.auto_scroll = auto_scroll;
+		updateVisibility(opt);
 	}
 }
 
@@ -924,15 +922,18 @@ void TextEditorView::moveCursorByMouse()
 		pos.row = std::min(pos.row, max_vrow);
 	}
 	setCursorPosByMouse(pos, mousepos);
-
-	updateVisibility({false, true, false});
+	
+	update_visibility_option_t opt;
+	opt.ensure_current_line_visible = false;
+	opt.auto_scroll = false;
+	updateVisibility(opt);
 }
 
 void TextEditorView::mousePressEvent(QMouseEvent *event)
 {
 	if (event->button() == Qt::RightButton) return;
 
-	savePos();
+	auto saved_pos = savePos();
 
 	bool shift = (event->modifiers() & Qt::ShiftModifier);
 	if (shift) {
@@ -968,7 +969,7 @@ void TextEditorView::mouseReleaseEvent(QMouseEvent * /*event*/)
 
 void TextEditorView::mouseMoveEvent(QMouseEvent * /*event*/)
 {
-	savePos();
+	auto saved_pos = savePos();
 
 	moveCursorByMouse();
 
@@ -1038,7 +1039,7 @@ void TextEditorView::layoutEditor()
 		
 		update_visual_lines_all();
 		
-		updateVisibility({true, false, true});
+		updateVisibility();
 	}
 	AbstractTextEditorApplication::layoutEditor();
 }

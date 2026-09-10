@@ -847,7 +847,7 @@ static void characterWiseDiff(TextEditorView *left_editor, TextEditorView *right
 					break;
 				case dtl::SES_ADD:
 					right.flags->at(r).diff_marker = CharFlags::Add;
-					info->right.marker[l] = CharFlags::Add;
+					info->right.marker[r] = CharFlags::Add;
 					r++;
 					break;
 				}
