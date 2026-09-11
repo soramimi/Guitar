@@ -26,23 +26,23 @@ const std::vector<ProviderInfo> &complete_provider_table()
 {
 	static const std::vector<ProviderInfo> provider_info = {
 		// id                                      tag                                description                       env_name
-		{ProviderID::Unknown,                      "",                                "-",                              ""},
-		{ProviderID::OpenAI,                       "",                                "OpenAI",                         "OPENAI_API_KEY"}, // placeholder
-		{ProviderID::OpenAI_responses,             "openai-responses",                "OpenAI",                         "OPENAI_API_KEY"},
-		{ProviderID::OpenAI_chat_completions,      "openai-chat-completions",         "OpenAI (legacy)",                "OPENAI_API_KEY"},
-		{ProviderID::Anthropic,                    "anthropic",                       "Anthropic; Claude",              "ANTHROPIC_API_KEY"},
-		{ProviderID::Google,                       "google",                          "Google; Gemini",                 "GOOGLE_API_KEY"},
-		{ProviderID::XAI,                          "xai",                             "xAI; Grok",                      "XAI_API_KEY"},
-		{ProviderID::PFN,                          "pfn",                             "Preferred Networks",             "PFN_API_KEY"},
-		{ProviderID::Moonshot,                     "moonshot",                        "Moonshot AI",                    "MOONSHOT_API_KEY"},
-		{ProviderID::Sakura,                       "sakura",                          "Sakura AI Engine",               "SAKURA_AI_API_KEY"},
-		{ProviderID::DeepSeek,                     "deepseek",                        "DeepSeek",                       "DEEPSEEK_API_KEY"},
-		{ProviderID::OpenRouter,                   "openrouter",                      "OpenRouter",                     "OPENROUTER_API_KEY"},
-		{ProviderID::OrcaRouter,                   "orcarouter",                      "OrcaRouter",                     "ORCAROUTER_API_KEY"},
-		{ProviderID::Requesty,                     "requesty",                        "Requesty",                       "REQUESTY_API_KEY"},
-		{ProviderID::Ollama,                       "ollama",                          "Ollama (experimental)",          ""},
-		{ProviderID::LMStudio,                     "lmstudio",                        "LM Studio (experimental)",       ""},
-		{ProviderID::LLAMACPP,                     "llamacpp",                        "llama.cpp (experimental)",       "LLAMACPP_API_KEY"},
+		{ProviderID::Unknown,                      "other",                           "Other",                            ""},
+		{ProviderID::OpenAI,                       "",                                "OpenAI",                           "OPENAI_API_KEY"}, // placeholder
+		{ProviderID::OpenAI_responses,             "openai-responses",                "OpenAI / GPT (responses)",         "OPENAI_API_KEY"},
+		{ProviderID::OpenAI_chat_completions,      "openai-chat-completions",         "OpenAI / GPT (chat completions)",  "OPENAI_API_KEY"},
+		{ProviderID::Anthropic,                    "anthropic",                       "Anthropic / Claude",               "ANTHROPIC_API_KEY"},
+		{ProviderID::Google,                       "google",                          "Google / Gemini",                  "GOOGLE_API_KEY"},
+		{ProviderID::XAI,                          "xai",                             "xAI / Grok",                       "XAI_API_KEY"},
+		{ProviderID::PFN,                          "pfn",                             "Preferred Networks / PLaMo",       "PFN_API_KEY"},
+		{ProviderID::Moonshot,                     "moonshot",                        "Moonshot AI / Kimi",               "MOONSHOT_API_KEY"},
+		{ProviderID::Sakura,                       "sakura",                          "Sakura AI Engine",                 "SAKURA_AI_API_KEY"},
+		{ProviderID::DeepSeek,                     "deepseek",                        "DeepSeek",                         "DEEPSEEK_API_KEY"},
+		{ProviderID::OpenRouter,                   "openrouter",                      "OpenRouter",                       "OPENROUTER_API_KEY"},
+		{ProviderID::OrcaRouter,                   "orcarouter",                      "OrcaRouter",                       "ORCAROUTER_API_KEY"},
+		{ProviderID::Requesty,                     "requesty",                        "Requesty",                         "REQUESTY_API_KEY"},
+		{ProviderID::Ollama,                       "ollama",                          "Ollama",                           ""},
+		{ProviderID::LMStudio,                     "lmstudio",                        "LM Studio",                        ""},
+		{ProviderID::LLAMACPP,                     "llamacpp",                        "llama.cpp",                        "LLAMACPP_API_KEY"},
 	};
 	return provider_info;
 }
@@ -50,6 +50,7 @@ const std::vector<ProviderInfo> &complete_provider_table()
 ProviderID api_compatibility(ProviderID pid)
 {
 	switch (pid) {
+	case ProviderID::OpenAI:
 	case ProviderID::OpenAI_responses:
 	case ProviderID::Anthropic:
 	case ProviderID::Google:

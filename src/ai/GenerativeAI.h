@@ -8,9 +8,9 @@ namespace GenerativeAI {
 
 enum class ProviderID {
 	Unknown,
-	OpenAI, // generic OpenAI placeholder
-	OpenAI_responses, // for OpenAI responses API
-	OpenAI_chat_completions, // legacy for OpenAI chat completions API
+	OpenAI,
+	OpenAI_responses,
+	OpenAI_chat_completions,
 	Anthropic,
 	Google,
 	XAI,
