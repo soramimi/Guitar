@@ -117,6 +117,8 @@ macx {
 #
 
 SOURCES += \
+	$$PWD/src/common/ChaCha20.cpp \
+	$$PWD/src/obfuscation/obfuscation.cpp \
 	$$SRC/GitDiff.cpp \
 	$$SRC/MyProcess.cpp \
 	$$SRC/inet/httpstatus.cpp \
@@ -305,6 +307,8 @@ SOURCES += \
 	$$SRC/SelectAiModelPresetDialog.cpp
 
 HEADERS += \
+	$$PWD/src/common/ChaCha20.h \
+	$$PWD/src/obfuscation/obfuscation.h \
 	$$SRC/GitCloneData.h \
 	$$SRC/GitCommitItem.h \
 	$$SRC/GitDiff.h \

@@ -31,7 +31,7 @@ const std::vector<ProviderInfo> &complete_provider_table()
 		{ProviderID::OpenAI_responses,             "openai-responses",                "OpenAI / GPT (responses)",         "OPENAI_API_KEY"},
 		{ProviderID::OpenAI_chat_completions,      "openai-chat-completions",         "OpenAI / GPT (chat completions)",  "OPENAI_API_KEY"},
 		{ProviderID::Anthropic,                    "anthropic",                       "Anthropic / Claude",               "ANTHROPIC_API_KEY"},
-		{ProviderID::Google,                       "google",                          "Google / Gemini",                  "GOOGLE_API_KEY"},
+		{ProviderID::Google,                       "google",                          "Google / Gemini",                  "GEMINI_API_KEY"},
 		{ProviderID::DeepSeek,                     "deepseek",                        "DeepSeek",                         "DEEPSEEK_API_KEY"},
 		{ProviderID::MoonshotAI,                   "moonshot",                        "Moonshot AI / Kimi",               "MOONSHOT_API_KEY"},
 		{ProviderID::XAI,                          "xai",                             "xAI / Grok",                       "XAI_API_KEY"},

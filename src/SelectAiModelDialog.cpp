@@ -141,28 +141,36 @@ void SelectAiModelDialog::on_cred_key_source_changed()
 
 	std::string symbol = ui->lineEdit_cred_symbol->text().toStdString();
 	if (ui->radioButton_cred_environ->isChecked()) {
-		// std::string envname = m->model.provider_info_->env_name;
-		char const *env = std::getenv(symbol.c_str());
-		if (env) {
-			cred.api_key = env;
-		} else {
-			cred.api_key.clear();
-		}
-	} else if (ui->radioButton_cred_custom->isChecked()) {
-		ApplicationSettings const &s = global->appsettings;
-		int i = ui->comboBox_provider->currentIndex();
-		if (i >= 0 && i < ui->comboBox_provider->count()) {
-			int provider_index = ui->comboBox_provider->itemData(i).toInt();
-			ProviderInfo const &provider = complete_provider_table()[provider_index];
-			auto it = s.ai_api_keys.map.find(symbol);
-			if (it != s.ai_api_keys.map.end()) {
-				cred.api_key = it->second.api_key;
-			} else {
-				cred.api_key.clear();
+		auto GetEnvironmentApiKey = [this](std::string const &symbol)-> std::string {
+			char const *env = std::getenv(symbol.c_str());
+			if (env) {
+				return env;
 			}
-		}
+			return {};
+		};
+		cred.api_key = GetEnvironmentApiKey(symbol);
+	} else if (ui->radioButton_cred_custom->isChecked()) {
+		auto GetCustomApiKey = [this](std::string const &symbol)-> std::string {
+			ApplicationSettings const &s = global->appsettings;
+			int i = ui->comboBox_provider->currentIndex();
+			if (i >= 0 && i < ui->comboBox_provider->count()) {
+				auto it = s.ai_api_keys.map.find(symbol);
+				if (it != s.ai_api_keys.map.end()) {
+					return it->second.api_key;
+				}
+			}
+			return {};
+		};
+		cred.api_key = GetCustomApiKey(symbol);
 	}
 	ui->lineEdit_cred_api_key->setText(QString::fromStdString(cred.api_key));
+}
+
+void SelectAiModelDialog::on_checkBox_show_api_key_clicked()
+{
+	bool show = ui->checkBox_show_api_key->isChecked();
+	ui->lineEdit_cred_api_key->setEchoMode(show ? QLineEdit::Normal : QLineEdit::Password);
+	
 }
 
 void SelectAiModelDialog::on_radioButton_cred_environ_clicked()
@@ -176,16 +184,8 @@ void SelectAiModelDialog::on_radioButton_cred_custom_clicked()
 	on_cred_key_source_changed();
 }
 
-
-void SelectAiModelDialog::on_checkBox_stateChanged(int arg1)
+void SelectAiModelDialog::on_lineEdit_cred_symbol_textChanged(const QString &arg1)
 {
-}
-
-
-void SelectAiModelDialog::on_checkBox_show_api_key_clicked()
-{
-	bool show = ui->checkBox_show_api_key->isChecked();
-	ui->lineEdit_cred_api_key->setEchoMode(show ? QLineEdit::Normal : QLineEdit::Password);
-	
+	on_cred_key_source_changed();
 }
 

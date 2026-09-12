@@ -26,8 +26,8 @@ private slots:
 	void on_comboBox_provider_currentIndexChanged(int index);
 	void on_radioButton_cred_environ_clicked();
 	void on_radioButton_cred_custom_clicked();
-	void on_checkBox_stateChanged(int arg1);
 	void on_checkBox_show_api_key_clicked();
+	void on_lineEdit_cred_symbol_textChanged(const QString &arg1);
 };
 
 #endif // SELECTAIMODELDIALOG_H

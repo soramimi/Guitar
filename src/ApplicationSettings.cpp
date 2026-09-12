@@ -10,13 +10,16 @@
 #include <common/fmt.h>
 #include <common/joinpath.h>
 #include <common/misc.h>
+#include <obfuscation/obfuscation.h>
 #include <common/q/helper.h>
+#include <QBuffer>
 #include <vector>
 
 namespace {
 
 constexpr static char const secret_sub_dir[] = ".secret";
-constexpr static char const api_keys_ini[] = "apikeys.ini";
+constexpr static char const api_keys_bin[] = "apikeys.bin";
+constexpr std::string_view api_keys_magic = "APIK";
 
 template <typename T> class GetValue {
 private:
@@ -291,11 +294,18 @@ bool AiApiKeys::load(MySettings *s)
 
 	QString secret_dir = global->app_config_dir / secret_sub_dir;
 	if (QFileInfo(secret_dir).isDir()) {
-		QString ini_file = secret_dir / api_keys_ini;
-		QFile file(ini_file);
-		if (file.open(QIODevice::ReadOnly | QIODevice::Text)) {
-			while (!file.atEnd()) {
-				QByteArray line = file.readLine().trimmed();
+		QString in_file = secret_dir / api_keys_bin;
+		// QString in_file = secret_dir / "apikeys.ini";
+		QFile file(in_file);
+		if (file.open(QIODevice::ReadOnly)) {
+			QByteArray ba = file.readAll();
+			
+			ba = obfuscation::decode(ba, api_keys_magic);
+			
+			QBuffer buffer(&ba);
+			buffer.open(QIODevice::ReadOnly);
+			while (!buffer.atEnd()) {
+				QByteArray line = buffer.readLine().trimmed();
 				int eq = line.indexOf('=');
 				if (eq > 0) {
 					std::string envname = line.left(eq).trimmed().toStdString();
@@ -337,18 +347,29 @@ bool AiApiKeys::save(MySettings *s) const
 
 	QString secret_dir = global->app_config_dir / secret_sub_dir;
 	if (MKPATH(secret_dir)) {
-		QString ini_file = secret_dir / api_keys_ini;
-		QFile file(ini_file);
-		if (file.open(QIODevice::WriteOnly | QIODevice::Truncate | QIODevice::Text)) {
-			for (auto const &pair : map) {
-				std::string line = fmt("%s=%s\n")(pair.first)(misc::trimmed(pair.second.api_key));
-				file.write(line.c_str(), line.size());
+		QString in_file = secret_dir / api_keys_bin;
+		QFile file(in_file);
+		if (file.open(QIODevice::WriteOnly | QIODevice::Truncate)) {
+			QByteArray ba;
+			{
+				QBuffer buffer;
+				buffer.open(QIODevice::WriteOnly);
+				for (auto const &pair : map) {
+					std::string line = fmt("%s=%s\n")(pair.first)(misc::trimmed(pair.second.api_key));
+					buffer.write(line.c_str(), line.size());
+				}
+				ba = buffer.buffer();
 			}
+			
+			ba = obfuscation::encode(ba, api_keys_magic);
+			
+			file.write(ba);
 			file.close();
 			ret = true;
 		}
+		
 		QFile(secret_dir).setPermissions(QFile::ReadOwner | QFile::WriteOwner | QFile::ExeOwner); // 所有者のみ読み書きと実行可
-		QFile(ini_file).setPermissions(QFile::ReadOwner | QFile::WriteOwner); // 所有者のみ読み書き可
+		QFile(in_file).setPermissions(QFile::ReadOwner | QFile::WriteOwner); // 所有者のみ読み書き可
 
 		{
 			s->beginGroup("AI");
