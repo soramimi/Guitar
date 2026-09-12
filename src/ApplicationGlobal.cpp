@@ -240,9 +240,7 @@ GenerativeAI::Credential ApplicationGlobal::get_ai_credential(GenerativeAI::Mode
 	Q_ASSERT(provider);
 	std::string envname = provider->env_name;
 	if (envname.empty()) return {};
-	// if (envname.empty()) {
-	// 	envname = GenerativeAI::makeEnvName(model.model_uri());
-	// }
+
 	auto it = global->appsettings.ai_api_keys.map.find(envname);
 	if (it != global->appsettings.ai_api_keys.map.end()) {
 		apikey = &it->second;
@@ -257,7 +255,7 @@ GenerativeAI::Credential ApplicationGlobal::get_ai_credential(GenerativeAI::Mode
 			cred.api_key = env;
 		}
 	}
-	// cred.api_key = "aonymous";
+
 	return cred;
 }
 

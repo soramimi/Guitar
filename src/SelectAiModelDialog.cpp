@@ -1,3 +1,4 @@
+#include "ApplicationGlobal.h"
 #include "SelectAiModelDialog.h"
 #include "ui_SelectAiModelDialog.h"
 
@@ -104,6 +105,22 @@ void SelectAiModelDialog::on_comboBox_provider_currentIndexChanged(int index)
 		ProviderInfo const &provider = complete_provider_table()[i];
 		m->model.provider_info_ = &provider;
 		ui->comboBox_api_type->setCurrentIndex(ui->comboBox_api_type->findData((int)m->model.api_compatibility()));
+		ui->lineEdit_cred_symbol->setText(QString::fromStdString(provider.env_name));
+
+		Credential cred = global->get_ai_credential(m->model);
+		{
+			ApplicationSettings const &s = global->appsettings;
+			auto it = s.ai_api_keys.map.find(provider.env_name);
+			if (it != s.ai_api_keys.map.end()) {
+				cred.api_key = it->second.api_key;
+			} else {
+				cred.api_key.clear();
+			}
+			
+		}
+		ui->lineEdit_cred_api_key->setText(QString::fromStdString(cred.api_key));
+		ui->lineEdit_cred_api_key->setCursorPosition(0);
+		ui->lineEdit_cred_api_key->deselect();
 	}
 }
 
@@ -118,6 +135,57 @@ void SelectAiModelDialog::on_comboBox_api_type_currentIndexChanged(int index)
 	}
 }
 
+void SelectAiModelDialog::on_cred_key_source_changed()
+{
+	Credential cred = global->get_ai_credential(m->model);
+
+	std::string symbol = ui->lineEdit_cred_symbol->text().toStdString();
+	if (ui->radioButton_cred_environ->isChecked()) {
+		// std::string envname = m->model.provider_info_->env_name;
+		char const *env = std::getenv(symbol.c_str());
+		if (env) {
+			cred.api_key = env;
+		} else {
+			cred.api_key.clear();
+		}
+	} else if (ui->radioButton_cred_custom->isChecked()) {
+		ApplicationSettings const &s = global->appsettings;
+		int i = ui->comboBox_provider->currentIndex();
+		if (i >= 0 && i < ui->comboBox_provider->count()) {
+			int provider_index = ui->comboBox_provider->itemData(i).toInt();
+			ProviderInfo const &provider = complete_provider_table()[provider_index];
+			auto it = s.ai_api_keys.map.find(symbol);
+			if (it != s.ai_api_keys.map.end()) {
+				cred.api_key = it->second.api_key;
+			} else {
+				cred.api_key.clear();
+			}
+		}
+	}
+	ui->lineEdit_cred_api_key->setText(QString::fromStdString(cred.api_key));
+}
+
+void SelectAiModelDialog::on_radioButton_cred_environ_clicked()
+{
+	on_cred_key_source_changed();
+}
 
 
+void SelectAiModelDialog::on_radioButton_cred_custom_clicked()
+{
+	on_cred_key_source_changed();
+}
+
+
+void SelectAiModelDialog::on_checkBox_stateChanged(int arg1)
+{
+}
+
+
+void SelectAiModelDialog::on_checkBox_show_api_key_clicked()
+{
+	bool show = ui->checkBox_show_api_key->isChecked();
+	ui->lineEdit_cred_api_key->setEchoMode(show ? QLineEdit::Normal : QLineEdit::Password);
+	
+}
 

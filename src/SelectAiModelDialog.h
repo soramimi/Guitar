@@ -14,6 +14,7 @@ private:
 	Ui::SelectAiModelDialog *ui;
 	struct Private;
 	Private *m;	
+	void on_cred_key_source_changed();
 public:
 	explicit SelectAiModelDialog(QWidget *parent = nullptr);
 	~SelectAiModelDialog();
@@ -23,6 +24,10 @@ private slots:
 	void on_pushButton_fetch_model_clicked();
 	void on_comboBox_api_type_currentIndexChanged(int index);
 	void on_comboBox_provider_currentIndexChanged(int index);
+	void on_radioButton_cred_environ_clicked();
+	void on_radioButton_cred_custom_clicked();
+	void on_checkBox_stateChanged(int arg1);
+	void on_checkBox_show_api_key_clicked();
 };
 
 #endif // SELECTAIMODELDIALOG_H

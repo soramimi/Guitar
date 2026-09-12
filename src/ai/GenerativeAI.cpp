@@ -13,7 +13,7 @@ namespace GenerativeAI {
  */
 std::string Model::default_model()
 {
-	return "claude-sonnet-4-6";
+	return "claude-sonnet-5";
 }
 
 /**
