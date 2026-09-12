@@ -1181,11 +1181,8 @@
     </property>
     <addaction name="action_reset_HEAD_1"/>
     <addaction name="separator"/>
-    <addaction name="action_reset_hard"/>
     <addaction name="separator"/>
-    <addaction name="action_fetch_prune"/>
-    <addaction name="separator"/>
-    <addaction name="action_clean_df"/>
+    <addaction name="action_reset_and_clean"/>
    </widget>
    <widget class="QMenu" name="menuExperimental">
     <property name="title">
@@ -1847,6 +1844,11 @@
    </property>
    <property name="toolTip">
     <string>rebase --quit</string>
+   </property>
+  </action>
+  <action name="action_reset_and_clean">
+   <property name="text">
+    <string>Reset and &amp;clean...</string>
    </property>
   </action>
  </widget>

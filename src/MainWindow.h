@@ -227,10 +227,11 @@ private:
 
 	void clone(CloneParams const &a);
 
-	void push(bool set_upstream, QString const &remote, QString const &branch, bool force);
+public:
 	void fetch(GitRunner g, bool prune);
+private:
 	void stage(GitRunner g, const std::vector<std::string> &paths);
-	void fetch(GitRunner g);
+	void push(bool set_upstream, QString const &remote, QString const &branch, bool force);
 	void pull(GitRunner g);
 	void push_tags(GitRunner g);
 	void delete_tags(GitRunner g, const std::vector<std::string> &names);
@@ -550,7 +551,9 @@ private slots:
 	void on_action_rebase_continue_triggered();
 	void on_action_rebase_quit_triggered();
 	void on_action_rebase_abort_triggered();
-
+	
+	void on_action_reset_and_clean_triggered();
+	
 signals:
 	void signalUpdateCommitLog();
 	void signalSetProgress(float progress);
