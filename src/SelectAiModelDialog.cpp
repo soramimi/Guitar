@@ -1,7 +1,9 @@
 #include "SelectAiModelDialog.h"
-#include "SelectAiModelPresetDialog.h"
-#include "ai/GenerativeAI.h"
 #include "ui_SelectAiModelDialog.h"
+
+#include "SelectAiModelPresetDialog.h"
+#include <ai/AiApiBridge.h>
+#include <ai/GenerativeAI.h>
 
 using namespace GenerativeAI;
 
@@ -10,6 +12,8 @@ SelectAiModelDialog::SelectAiModelDialog(QWidget *parent) :
 	ui(new Ui::SelectAiModelDialog)
 {
 	ui->setupUi(this);
+
+	ui->splitter->setSizes({100, 300});
 	
 	std::vector<ProviderInfo> const &providers = complete_provider_table();
 	for (ProviderInfo const &provider : providers) {
@@ -40,5 +44,19 @@ void SelectAiModelDialog::on_pushButton_load_preset_clicked()
 {
 	SelectAiModelPresetDialog dlg(this);
 	dlg.exec();
+}
+
+
+
+void SelectAiModelDialog::on_pushButton_fetch_model_clicked()
+{
+	AiApiBridge api;
+	std::optional<AiResult::Models> models = api.queryModels();
+	if (models == std::nullopt) return;
+	
+	for (AiResult::Model const &model : models->list) {
+		// ui->listWidget_models->addItem(QString::fromStdString(model.model_uri.string));
+		qDebug() << model.id.c_str();
+	}
 }
 

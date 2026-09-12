@@ -73,7 +73,6 @@ std::vector<Model> const &ai_model_presets()
 		{ProviderID::XAI,              "grok-latest"},
 		{ProviderID::PFN,              "plamo-3.0-prime"},
 		{ProviderID::Moonshot,         "kimi-k2.7-code"},
-		{ProviderID::Moonshot,         "kimi-k2.6"},
 		{ProviderID::Sakura,           "sakura:gpt-oss-120b"},
 		{ProviderID::DeepSeek,         "deepseek-v4-flash"},
 		{ProviderID::OpenRouter,       "openrouter:anthropic/claude-4.6-sonnet"},

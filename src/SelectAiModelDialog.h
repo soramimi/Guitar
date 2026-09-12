@@ -18,6 +18,8 @@ public:
 private slots:
 	void on_pushButton_load_preset_clicked();
 	
+	void on_pushButton_fetch_model_clicked();
+	
 private:
 	Ui::SelectAiModelDialog *ui;
 };
