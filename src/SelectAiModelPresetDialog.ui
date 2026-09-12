@@ -6,18 +6,18 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>400</width>
+    <width>605</width>
     <height>300</height>
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Select Model</string>
+   <string>Load Preset AI Model</string>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>
-    <widget class="QListWidget" name="listWidget">
-     <property name="editTriggers">
-      <set>QAbstractItemView::EditTrigger::NoEditTriggers</set>
+    <widget class="QTableWidget" name="tableWidget">
+     <property name="sortingEnabled">
+      <bool>true</bool>
      </property>
     </widget>
    </item>
@@ -58,7 +58,6 @@
   </layout>
  </widget>
  <tabstops>
-  <tabstop>listWidget</tabstop>
   <tabstop>pushButton</tabstop>
   <tabstop>pushButton_2</tabstop>
  </tabstops>

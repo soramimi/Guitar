@@ -41,8 +41,15 @@ std::shared_ptr<AbstractInetClient> global_inet_client()
 AiApiBridge::AiApiBridge()
 	: m(new Private)
 {
-	set_ai_model(*global->appsettings.ai_model);
 }
+
+AiApiBridge::AiApiBridge(GenerativeAI::Model model)
+	: m(new Private)
+{
+	set_ai_model(*global->appsettings.ai_model);
+	
+}
+
 #else
 GenerativeAI::Model global_appsettings_ai_model();
 GenerativeAI::Credential global_get_ai_credential(GenerativeAI::Model const &model);
@@ -350,7 +357,7 @@ struct AiChatResponseParser : public GenerativeAI::AbstractVisitor<AiResult> {
 		return parse_openai_chat_completions_format();
 	}
 	
-	AiResult case_Kimi()
+	AiResult case_MoonshotAI()
 	{
 		switch (model.api_compatibility()) {
 		case GenerativeAI::ProviderID::Anthropic:
@@ -506,7 +513,7 @@ struct _PromptJsonGenerator : public GenerativeAI::AbstractVisitor<std::string> 
 		jstream::Writer w;
 		w.object({}, [&](){
 			w.string("model", modelname());
-			if (model.provider_id() == GenerativeAI::ProviderID::Moonshot) {
+			if (model.provider_id() == GenerativeAI::ProviderID::MoonshotAI) {
 				// pass
 			} else {
 				w.number("temperature", temperature_);
@@ -596,7 +603,7 @@ struct _PromptJsonGenerator : public GenerativeAI::AbstractVisitor<std::string> 
 	}
 	
 	/// Kimi
-	std::string case_Kimi()
+	std::string case_MoonshotAI()
 	{
 		switch (model.api_compatibility()) {
 		case GenerativeAI::ProviderID::Anthropic:

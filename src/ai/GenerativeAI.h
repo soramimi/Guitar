@@ -1,6 +1,7 @@
 #ifndef GENERATIVEAI_H
 #define GENERATIVEAI_H
 
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -13,11 +14,11 @@ enum class ProviderID {
 	OpenAI_chat_completions,
 	Anthropic,
 	Google,
+	DeepSeek,
+	MoonshotAI,
 	XAI,
 	PFN,
-	Moonshot,
 	Sakura, // さくらの AI Engine（OpenAI chat completions 互換）
-	DeepSeek,
 	OpenRouter,
 	OrcaRouter,
 	Requesty,
@@ -36,11 +37,11 @@ public:
 	virtual T case_OpenAI_chat_completions() = 0;
 	virtual T case_Anthropic() = 0;
 	virtual T case_Google() = 0;
+	virtual T case_DeepSeek() = 0;
+	virtual T case_MoonshotAI() = 0;
 	virtual T case_XAI() = 0;
 	virtual T case_PFN() = 0;
-	virtual T case_Kimi() = 0;
 	virtual T case_Sakura() = 0;
-	virtual T case_DeepSeek() = 0;
 	virtual T case_OpenRouter() = 0;
 	virtual T case_OrcaRouter() = 0;
 	virtual T case_Requesty() = 0;
@@ -57,11 +58,11 @@ public:
 		case ProviderID::OpenAI_chat_completions: return case_OpenAI_chat_completions();
 		case ProviderID::Anthropic:               return case_Anthropic();
 		case ProviderID::Google:                  return case_Google();
+		case ProviderID::DeepSeek:                return case_DeepSeek();
+		case ProviderID::MoonshotAI:                return case_MoonshotAI();
 		case ProviderID::XAI:                     return case_XAI();
 		case ProviderID::PFN:                     return case_PFN();
-		case ProviderID::Moonshot:                return case_Kimi();
 		case ProviderID::Sakura:                  return case_Sakura();
-		case ProviderID::DeepSeek:                return case_DeepSeek();
 		case ProviderID::OpenRouter:              return case_OpenRouter();
 		case ProviderID::OrcaRouter:              return case_OrcaRouter();
 		case ProviderID::Requesty:                return case_Requesty();
@@ -101,10 +102,14 @@ public:
 struct Model {
 	ModelURI model_uri_;
 	ProviderInfo const *provider_info_;
-	ProviderID api_compatibility__ = ProviderID::Unknown; // 基本的には設定しない。APIを選択できるプロバイダを使用する場合に指定できる。（例: llama.cppでAnthropic APIを使用する場合など）
+	
+	std::optional<ProviderID> api_compatibility_override;
+	
 	std::string model_name_;
 	std::string host_;
 	int port_ = 80;
+	std::optional<std::string> endpoint_url_override;
+	
 	Model()
 		: provider_info_(provider_info(ProviderID::Unknown))
 	{}
@@ -133,7 +138,15 @@ struct Model {
 	{
 		return provider_info_ ? provider_info_->id : ProviderID::Unknown;
 	}
-
+	
+	std::string provider_description() const
+	{
+		if (provider_info_) {
+			return provider_info_->description;
+		}
+		return {};
+	}
+	
 	ModelURI model_uri() const
 	{
 		return model_uri_;
@@ -161,6 +174,9 @@ struct Model {
 
 	ProviderID api_compatibility() const
 	{
+		if (api_compatibility_override) {
+			return *api_compatibility_override;
+		}
 		ProviderID pid = provider_id();
 		return GenerativeAI::api_compatibility(pid);
 	}
