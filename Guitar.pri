@@ -300,7 +300,8 @@ SOURCES += \
 	$$SRC/texteditor/unicode.cpp \
 	$$SRC/zip/zip.cpp \
 	$$SRC/zip/ziparchive.cpp \
-	$$SRC/zip/zipextract.cpp
+	$$SRC/zip/zipextract.cpp \
+	$$SRC/ResetAndCleanDialog.cpp
 
 HEADERS += \
 	$$PWD/src/GitCloneData.h \
@@ -516,7 +517,8 @@ HEADERS += \
 	$$SRC/texteditor/UnicodeWidth.h \
 	$$SRC/texteditor/unicode.h \
 	$$SRC/zip/zip.h \
-	$$SRC/zip/zipinternal.h
+	$$SRC/zip/zipinternal.h \
+	$$SRC/ResetAndCleanDialog.h
 
 FORMS += \
 	$$SRC/AboutDialog.ui \
@@ -586,7 +588,8 @@ FORMS += \
 	$$SRC/TextEditDialog.ui \
 	$$SRC/WelcomeWizardDialog.ui \
 	$$SRC/coloredit/ColorDialog.ui \
-	$$SRC/coloredit/ColorEditWidget.ui
+	$$SRC/coloredit/ColorEditWidget.ui \
+	$$SRC/ResetAndCleanDialog.ui
 
 RESOURCES += \
 	$$SRC/resources/resources.qrc

@@ -54,6 +54,7 @@
 #include "common/misc.h"
 #include "common/qmisc.h"
 #include "GitObjectData.h"
+#include "ResetAndCleanDialog.h"
 #include "gpg.h"
 #include "main.h"
 #include "platform.h"
@@ -2923,6 +2924,20 @@ void MainWindow::commitAmend()
 }
 
 /**
+ * @brief MainWindow::fetch
+ * @param g GitRunner
+ * @param prune pruneするかどうか
+ *
+ * fetchする
+ */
+void MainWindow::fetch(GitRunner g, bool prune)
+{
+	runPtyGit(tr("Fetching..."), g, Git_fetch { prune }, RUN_PTY_CALLBACK {
+		internalAfterFetch();
+	}, { });
+}
+
+/**
  * @brief MainWindow::push
  * @param -uオプションを有効にする
  * @param remote リモート
@@ -2951,23 +2966,11 @@ void MainWindow::push(bool set_upstream, const QString &remote, const QString &b
 	}, { });
 }
 
-void MainWindow::fetch(GitRunner g, bool prune)
-{
-	runPtyGit(tr("Fetching..."), g, Git_fetch { prune }, RUN_PTY_CALLBACK {
-		internalAfterFetch();
-	}, { });
-}
-
 void MainWindow::stage(GitRunner g, std::vector<std::string> const &paths)
 {
 	runPtyGit(tr("Stageing..."), g, Git_stage { paths }, RUN_PTY_CALLBACK {
 		updateCurrentFileList();
 	}, { });
-}
-
-void MainWindow::fetch(GitRunner g)
-{
-	runPtyGit(tr("Fetching tags..."), g, Git_fetch { false }, nullptr, { });
 }
 
 void MainWindow::pull(GitRunner g)
@@ -7558,6 +7561,14 @@ void MainWindow::on_action_restart_trace_logger_triggered()
 	global->close_trace_logger();
 }
 
+void MainWindow::on_action_reset_and_clean_triggered()
+{
+	ResetAndCleanDialog dlg(this);
+	if (dlg.exec() == QDialog::Accepted) {
+		dlg.perform(this);
+	}
+}
+
 void MainWindow::test()
 {
 	if (global->onepassword) {
@@ -7565,3 +7576,5 @@ void MainWindow::test()
 		qDebug() << apikey;
 	}
 }
+
+
