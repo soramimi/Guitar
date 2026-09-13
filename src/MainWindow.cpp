@@ -2312,22 +2312,28 @@ bool MainWindow::saveByteArrayAs(const QByteArray &ba, const QString &dstpath)
 
 /**
  * @brief MainWindow::makeRepositoryName
- * @param loc ロケーション
+ * @param path ロケーション
  *
  * リポジトリ名を作成する
  */
-QString MainWindow::makeRepositoryName(const QString &loc)
-{
-	auto i = loc.lastIndexOf('/');
-	auto j = loc.lastIndexOf('\\');
-	if (i < j) i = j;
+QString MainWindow::makeRepositoryName(const QString &path)
+{;
+	if (path.isEmpty()) return {};
+	
+	QString path2 = path;
+	path2.replace('\\', '/');
+	if (path2.back() == '/') {
+		path2.chop(1);
+	}
+	
+	auto i = path2.lastIndexOf('/');
 	if (i >= 0) {
 		i++;
-		j = loc.size();
-		if (loc.endsWith(".git")) {
+		auto j = path2.size();
+		if (path2.endsWith(".git")) {
 			j -= 4;
 		}
-		return loc.mid(i, j - i);
+		return path2.mid(i, j - i);
 	}
 	return QString();
 }

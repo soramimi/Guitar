@@ -582,7 +582,7 @@ public:
 	static std::vector<GitSubmoduleItem> updateSubmodules(GitRunner g, const GitHash &id);
 	static void updateCommitGraph(GitCommitItemList *logs);
 	static TagList findTag(std::map<GitHash, TagList> const &tagmap, GitHash const &id);
-	static QString makeRepositoryName(QString const &loc);
+        static QString makeRepositoryName(QString const &path);
 	static void addDiffItems(std::span<const GitDiff *> diff_list, const std::function<void(const GitObjectData &)> &add_item);
 	static GitHash getObjectID(const QListWidgetItem *item);
 	static QString getFilePath(const QListWidgetItem *item);
