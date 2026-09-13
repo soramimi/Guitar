@@ -40,6 +40,7 @@ FILETYPEPLUGIN = $$PWD/../../subprojects/FileTypePlugin
 
 SOURCES += $$FILETYPEPLUGIN/lib/magic_mgc_zst.c \
 	../../src/FileTypeDetector.cpp \
+	../../src/inet/httpstatus.cpp \
 	../../subprojects/FileTypePlugin/src/FileType.cpp \
 	../../subprojects/FileTypePlugin/src/zs.cpp
 
@@ -82,6 +83,7 @@ HEADERS +=  \
 ../../src/common/unicode_conversion.h \
 ../../src/common/urlencode.h \
 ../../src/inet/curlclient.h \
+    ../../src/inet/httpstatus.h \
 ../../src/inet/inetclient.h \
 ../../src/inet/inetresolver.h \
 ../../src/process/src/AbstractProcess.h \

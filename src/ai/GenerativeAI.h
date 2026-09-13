@@ -102,6 +102,7 @@ struct Model {
 	ModelURI model_uri_;
 	ProviderInfo const *provider_info_;
 	ProviderID api_compatibility__ = ProviderID::Unknown; // 基本的には設定しない。APIを選択できるプロバイダを使用する場合に指定できる。（例: llama.cppでAnthropic APIを使用する場合など）
+	std::string reasoning_effort_;
 	std::string model_name_;
 	std::string host_;
 	int port_ = 80;
@@ -125,8 +126,12 @@ struct Model {
 		return "medium";
 		return "high";
 		return "xhigh";
+		return "max";
 #endif
-		return nullptr; // default
+		if (reasoning_effort_.empty()) {
+			return nullptr; // default
+		}
+		return reasoning_effort_.c_str();
 	}
 
 	ProviderID provider_id() const

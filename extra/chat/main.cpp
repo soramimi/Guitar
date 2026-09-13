@@ -270,6 +270,8 @@ int main2(int argc, char **argv)
 		fprintf(stderr, "error: Invalid model name: %s\n", model_name.c_str());
 		return 1;
 	}
+	
+	// ai_model.reasoning_effort_ = "low";
 
 	std::string msg = request(opt);
 	if (!msg.empty()) {
