@@ -3,6 +3,8 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+
+#ifdef __linux__
 #include <sys/random.h>
 
 static void fill_random(void *p, size_t len)
@@ -22,6 +24,22 @@ static void fill_random(void *p, size_t len)
 		len -= n;
 	}
 }
+#endif
+
+#ifdef _WIN32
+#include <windows.h>
+#include <bcrypt.h>
+static void fill_random(void *p, size_t len)
+{
+	NTSTATUS status = BCryptGenRandom(nullptr, (PUCHAR)p, len, BCRYPT_USE_SYSTEM_PREFERRED_RNG);
+
+	if (status < 0) {
+		fprintf(stderr, "BCryptGenRandom failed: 0x%08x\n", status);
+		abort();
+		return;
+	}
+}
+#endif
 
 static uint32_t rotl(uint32_t v, int n)
 {
