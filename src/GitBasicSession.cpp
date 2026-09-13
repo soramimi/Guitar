@@ -73,6 +73,8 @@ std::optional<GitResult> GitBasicSession::exec_git(std::string const &arg, const
 	int exit_code = 0;
 	GitResult result;
 
+	// std::string cwd = Dir::current().currentPath();
+
 	auto DoIt = [&](){
 		// std::string cmd = fmt("%s %s --no-pager ")(Git::quoted_text(gitCommand()));
 		std::string cmd = Git::quoted_text(gitCommand());

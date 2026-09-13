@@ -185,6 +185,19 @@ bool BasicProcessWin::start(std::string const &cmd)
 		return false;
 	}
 
+	auto GetCWD = []()-> std::wstring {
+		wchar_t buf[MAX_PATH];
+		DWORD len = GetCurrentDirectoryW(MAX_PATH, buf);
+		if (len == 0 || len > MAX_PATH) return {};
+		return std::wstring(buf, len);
+	};
+	std::wstring cwd = GetCWD();
+	if (!m->change_dir.empty()) {
+		auto dir = m->change_dir;
+		std::replace(dir.begin(), dir.end(), L'/', L'\\');
+		SetCurrentDirectoryW(dir.c_str());
+	}
+
 	STARTUPINFOW si = { };
 	si.cb = sizeof(si);
 	si.dwFlags = STARTF_USESTDHANDLES;
@@ -203,6 +216,10 @@ bool BasicProcessWin::start(std::string const &cmd)
 
 	hInputRead.close();
 	hOutputWrite.close();
+
+	{
+		SetCurrentDirectoryW(cwd.c_str());
+	}
 
 	if (!ok) {
 		DWORD error_code = GetLastError();
