@@ -118,6 +118,7 @@ macx {
 
 SOURCES += \
 	$$PWD/src/common/ChaCha20.cpp \
+	$$PWD/src/common/uuid.cpp \
 	$$PWD/src/obfuscation/obfuscation.cpp \
 	$$SRC/GitDiff.cpp \
 	$$SRC/MyProcess.cpp \
@@ -308,6 +309,7 @@ SOURCES += \
 
 HEADERS += \
 	$$PWD/src/common/ChaCha20.h \
+	$$PWD/src/common/uuid.h \
 	$$PWD/src/obfuscation/obfuscation.h \
 	$$SRC/GitCloneData.h \
 	$$SRC/GitCommitItem.h \

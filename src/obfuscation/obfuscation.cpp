@@ -1,22 +1,32 @@
 #include "obfuscation.h"
-#include "../common/ChaCha20.h"
 #include "../common/crc32.h"
 #include <cstring>
 
+// This is obfuscation, not encryption.
+
 namespace {
 
-class KeyGenerator : ChaCha20 {
+class KeyGenerator {
+private:
+	uint32_t xorshift32_state_ = 12345678;
+	
+	uint32_t xorshift32()
+	{
+		uint32_t x = xorshift32_state_;
+		x ^= x << 13;
+		x ^= x >> 17;
+		x ^= x << 5;
+		return xorshift32_state_ = x;
+	}
+
+	uint32_t next_u32()
+	{
+		return xorshift32();
+	}
 private:
 	uint32_t bytes_ = 0;
-	int remain_ = 0;
+	short remain_ = 0;
 public:
-	KeyGenerator()
-	{
-		seed_zero();
-		init_state();
-		memcpy(key_, "It is obfuscation not encryption", 32);
-		memcpy(nonce_, "Hello, world", 12);
-	}
 	uint8_t next_u8()
 	{
 		if (remain_ == 0) {
@@ -28,7 +38,6 @@ public:
 		remain_--;
 		return b;
 	}
-
 };
 
 struct Header {
