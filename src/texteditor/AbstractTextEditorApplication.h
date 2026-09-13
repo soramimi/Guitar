@@ -316,7 +316,7 @@ public:
 
 		void detach_if_shared()
 		{
-			if (!sp.unique()) {
+			if (sp.use_count() > 1) {
 				*this = detached_copy();
 			}
 		}

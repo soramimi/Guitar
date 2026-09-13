@@ -51,11 +51,11 @@ TextEditorView::TextEditorView(QWidget *parent)
 
 	{
 		QFont font("MS Gothic", 15);
-		setFont(font);
+		set_fixed_font(font);
 	}
 	{
 		QFont font("MS PGothic", 15);
-		setTextFont(font);
+		set_text_font(font);
 	}
 
 #else
