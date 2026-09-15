@@ -58,14 +58,14 @@ SelectAiModelDialog::~SelectAiModelDialog()
 	delete ui;
 }
 
-
-
 void SelectAiModelDialog::on_pushButton_load_preset_clicked()
 {
 	SelectAiModelPresetDialog dlg(this);
 	if (dlg.exec() == QDialog::Accepted) {
 		m->model = dlg.selectedModel();
 		Model const &model = m->model;
+		
+		ui->lineEdit_name->setText(QString::fromStdString(m->model.model_name()));
 		
 		ui->comboBox_provider->setCurrentIndex(ui->comboBox_provider->findData((int)model.provider_id()));
 		
@@ -82,6 +82,11 @@ void SelectAiModelDialog::on_pushButton_fetch_model_clicked()
 	
 	m->model.provider_info_ = provider_info(m->model.provider_id());
 	m->model.endpoint_url_override = ui->lineEdit_endpoint_url->text().toStdString();
+
+	struct WaitCursor {
+		WaitCursor()  { GlobalSetOverrideWaitCursor(); }
+		~WaitCursor() { GlobalRestoreOverrideCursor(); }
+	} cursor;
 	
 	AiApiBridge api;
 	api.set_ai_model(m->model);
@@ -104,10 +109,16 @@ void SelectAiModelDialog::on_comboBox_provider_currentIndexChanged(int index)
 		int i = ui->comboBox_provider->itemData(index).toInt();
 		ProviderInfo const &provider = complete_provider_table()[i];
 		m->model.provider_info_ = &provider;
+		m->model.api_compatibility_override = std::nullopt;
+		Credential cred = global->get_ai_credential(m->model);
+		
 		ui->comboBox_api_type->setCurrentIndex(ui->comboBox_api_type->findData((int)m->model.api_compatibility()));
+		
+		Request req = GenerativeAI::make_request(provider.id, m->model, cred);
+		ui->lineEdit_endpoint_url->setText(req.endpoint.url_chat().c_str());
+		
 		ui->lineEdit_cred_symbol->setText(QString::fromStdString(provider.env_name));
 
-		Credential cred = global->get_ai_credential(m->model);
 		{
 			ApplicationSettings const &s = global->appsettings;
 			auto it = s.ai_api_keys.map.find(provider.env_name);

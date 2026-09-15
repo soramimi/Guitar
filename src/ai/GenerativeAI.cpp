@@ -377,7 +377,12 @@ struct _MakeRequest : public AbstractVisitor<Request> {
 	{
 		Request r;
 		r.model_name = model_.model_name();
-		r.endpoint = fmt("http://%s:%d/api/generate")(model_.host())(model_.port()); // experimental
+		std::string host = model_.host();
+		if (host.empty()) {
+			host = "localhost";
+		}
+		int port = model_.port();
+		r.endpoint = fmt("http://%s:%d/api/generate")(host)(port); // experimental
 		set_authorization_bearer_cred(&r, cred_);
 		return r;
 	}
@@ -386,7 +391,12 @@ struct _MakeRequest : public AbstractVisitor<Request> {
 	{
 		Request r;
 		r.model_name = model_.model_name();
-		r.endpoint = fmt("http://%s:%d/v1/completions")(model_.host())(model_.port()); // experimental
+		std::string host = model_.host();
+		if (host.empty()) {
+			host = "localhost";
+		}
+		int port = model_.port();
+		r.endpoint = fmt("http://%s:%d/v1/completions")(host)(port); // experimental
 		return r;
 	}
 
@@ -397,12 +407,17 @@ struct _MakeRequest : public AbstractVisitor<Request> {
 		if (r.model_name.empty())  {
 			r.model_name = "default";
 		}
+		std::string host = model_.host();
+		if (host.empty()) {
+			host = "localhost";
+		}
+		int port = model_.port();
 		switch (model_.api_compatibility()) {
 		case ProviderID::Anthropic:
-			r.endpoint = fmt("http://%s:%d/v1/messages")(model_.host())(model_.port());
+			r.endpoint = fmt("http://%s:%d/v1/messages")(host)(port);
 			break;
 		default:
-			r.endpoint = fmt("http://%s:%d/v1/chat/completions")(model_.host())(model_.port()); // experimental
+			r.endpoint = fmt("http://%s:%d/v1/chat/completions")(host)(port); // experimental
 			break;
 		}
 		set_authorization_bearer_cred(&r, cred_);

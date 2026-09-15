@@ -18,6 +18,7 @@ private:
 	Ui::SelectAiModelPresetDialog *ui;
 	struct Private;
 	Private *m;
+	int selectedModelIndex() const;
 public:
 	explicit SelectAiModelPresetDialog(QWidget *parent = nullptr);
 	~SelectAiModelPresetDialog();

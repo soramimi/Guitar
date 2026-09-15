@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>769</width>
-    <height>411</height>
+    <width>689</width>
+    <height>481</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -79,7 +79,7 @@
        </item>
       </layout>
      </widget>
-     <widget class="QWidget" name="layoutWidget">
+     <widget class="QWidget" name="">
       <layout class="QHBoxLayout" name="horizontalLayout_6">
        <item>
         <widget class="Line" name="line">
@@ -91,21 +91,55 @@
        <item>
         <layout class="QVBoxLayout" name="verticalLayout">
          <item>
+          <layout class="QHBoxLayout" name="horizontalLayout_5">
+           <item>
+            <spacer name="horizontalSpacer">
+             <property name="orientation">
+              <enum>Qt::Orientation::Horizontal</enum>
+             </property>
+             <property name="sizeHint" stdset="0">
+              <size>
+               <width>40</width>
+               <height>20</height>
+              </size>
+             </property>
+            </spacer>
+           </item>
+           <item>
+            <widget class="QPushButton" name="pushButton_load_preset">
+             <property name="text">
+              <string>Load preset...</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <spacer name="horizontalSpacer_2">
+             <property name="orientation">
+              <enum>Qt::Orientation::Horizontal</enum>
+             </property>
+             <property name="sizeHint" stdset="0">
+              <size>
+               <width>40</width>
+               <height>20</height>
+              </size>
+             </property>
+            </spacer>
+           </item>
+          </layout>
+         </item>
+         <item>
+          <widget class="QLabel" name="label_9">
+           <property name="text">
+            <string/>
+           </property>
+          </widget>
+         </item>
+         <item>
           <layout class="QGridLayout" name="gridLayout">
            <item row="4" column="0">
             <widget class="QLabel" name="label_4">
              <property name="text">
               <string>Endpoint URL</string>
-             </property>
-            </widget>
-           </item>
-           <item row="0" column="1">
-            <widget class="QLineEdit" name="lineEdit_name">
-             <property name="sizePolicy">
-              <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
-               <horstretch>0</horstretch>
-               <verstretch>0</verstretch>
-              </sizepolicy>
              </property>
             </widget>
            </item>
@@ -120,13 +154,6 @@
             <widget class="QLabel" name="label_2">
              <property name="text">
               <string>Name</string>
-             </property>
-            </widget>
-           </item>
-           <item row="0" column="2">
-            <widget class="QPushButton" name="pushButton_load_preset">
-             <property name="text">
-              <string>Load preset...</string>
              </property>
             </widget>
            </item>
@@ -252,6 +279,16 @@
              </layout>
             </widget>
            </item>
+           <item row="0" column="1" colspan="2">
+            <widget class="QLineEdit" name="lineEdit_name">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
+            </widget>
+           </item>
           </layout>
          </item>
          <item>
@@ -330,12 +367,23 @@
   </layout>
  </widget>
  <tabstops>
+  <tabstop>pushButton_load_preset</tabstop>
   <tabstop>lineEdit_name</tabstop>
   <tabstop>comboBox_provider</tabstop>
   <tabstop>comboBox_api_type</tabstop>
   <tabstop>lineEdit_endpoint_url</tabstop>
+  <tabstop>lineEdit_cred_symbol</tabstop>
+  <tabstop>radioButton_cred_environ</tabstop>
+  <tabstop>radioButton_cred_custom</tabstop>
+  <tabstop>lineEdit_cred_api_key</tabstop>
   <tabstop>comboBox_model</tabstop>
   <tabstop>pushButton_fetch_model</tabstop>
+  <tabstop>checkBox_show_api_key</tabstop>
+  <tabstop>pushButton_new</tabstop>
+  <tabstop>toolButton</tabstop>
+  <tabstop>listView</tabstop>
+  <tabstop>pushButton_up</tabstop>
+  <tabstop>pushButton_down</tabstop>
   <tabstop>pushButton_3</tabstop>
   <tabstop>pushButton_4</tabstop>
  </tabstops>

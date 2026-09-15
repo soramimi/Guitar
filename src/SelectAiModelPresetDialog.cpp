@@ -10,6 +10,11 @@ enum {
 	ModelIndexRole = Qt::UserRole,
 };
 
+enum class Column {
+	Provider,
+	Model,
+};
+
 }
 
 struct SelectAiModelPresetDialog::Private {
@@ -24,20 +29,10 @@ SelectAiModelPresetDialog::SelectAiModelPresetDialog(QWidget *parent)
 	ui->setupUi(this);
 	
 	m->models = ai_model_presets();
-	std::sort(m->models.begin(), m->models.end(), [](Model const &a, Model const &b){
-		auto Compare = [](Model const &a, Model const &b){
-			if (a.model_name() < b.model_name()) return -1;
-			if (a.model_name() > b.model_name()) return 1;
-			if (a.provider_description() < b.provider_description()) return -1;
-			if (a.provider_description() > b.provider_description()) return 1;
-			return 0;
-		};
-		return Compare(a, b) < 0;
-	});
 	
 	QStringList cols = {
-		tr("Model"),
 		tr("Provider"),
+		tr("Model"),
 	};
 	
 	ui->tableWidget->verticalHeader()->hide();
@@ -53,25 +48,36 @@ SelectAiModelPresetDialog::SelectAiModelPresetDialog(QWidget *parent)
 	ui->tableWidget->setRowCount(m->models.size());
 	for (size_t i = 0; i < m->models.size(); i++) {
 		ui->tableWidget->setRowHeight(i, 24);
-		QTableWidgetItem *model = new QTableWidgetItem(QString::fromStdString(m->models[i].model_name()));
-		QTableWidgetItem *descriontion = new QTableWidgetItem(QString::fromStdString(m->models[i].provider_description()));
+		QString provider = QString::fromStdString(m->models[i].provider_description());
+		QString model_name = QString::fromStdString(m->models[i].model_name());
+		if (model_name.isEmpty()) {
+			model_name = tr("(unknown)");
+		}
+		QTableWidgetItem *descriontion = new QTableWidgetItem(provider);
+		QTableWidgetItem *model = new QTableWidgetItem(model_name);
 		model->setData(ModelIndexRole, (int)i);
-		ui->tableWidget->setItem(i, 0, model);
-		ui->tableWidget->setItem(i, 1, descriontion);
+		ui->tableWidget->setItem(i, (int)Column::Provider, descriontion);
+		ui->tableWidget->setItem(i, (int)Column::Model, model);
 	}
 	
 	ui->tableWidget->resizeColumnsToContents();
 }
 
-Model SelectAiModelPresetDialog::selectedModel() const
+int SelectAiModelPresetDialog::selectedModelIndex() const
 {
 	int row = ui->tableWidget->currentRow();
 	if (row >= 0 && row < ui->tableWidget->rowCount()) {
-		QTableWidgetItem *item = ui->tableWidget->item(row, 0);
-		int index = item->data(ModelIndexRole).toInt();
-		if (index >= 0 && index < (int)m->models.size()) {
-			return m->models[index];
-		}
+		QTableWidgetItem *item = ui->tableWidget->item(row, (int)Column::Model);
+		return item->data(ModelIndexRole).toInt();
+	}
+	return -1;
+}
+
+Model SelectAiModelPresetDialog::selectedModel() const
+{
+	int index = selectedModelIndex();
+	if (index >= 0 && index < (int)m->models.size()) {
+		return m->models[index];
 	}
 	return {};
 }
