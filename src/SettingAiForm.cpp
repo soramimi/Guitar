@@ -29,10 +29,10 @@ struct SettingAiForm::ProviderFormData {
 };
 
 struct SettingAiForm::Private {
-	GenerativeAI::Model current_model_;
+	GenerativeAI::Model current_model;
 	GenerativeAI::ProviderID current_provider_id_ = GenerativeAI::ProviderID::Unknown;
 	std::vector<SettingAiForm::ProviderFormData> provider_formdata_;
-	AiApiKeys api_keys_;
+	AiApiKeys api_keys;
 
 	SettingAiForm::ProviderFormData *provider_formdata(GenerativeAI::ProviderID id)
 	{
@@ -192,7 +192,7 @@ static bool isKeyEnvDefined(std::string const &env_name)
 
 GenerativeAI::ModelURI SettingAiForm::currentModelURI() const
 {
-	return m->current_model_.model_uri();
+	return m->current_model.model_uri();
 }
 
 AiApiKeys::Item *SettingAiForm::currentKeyItem()
@@ -207,10 +207,10 @@ AiApiKeys::Item *SettingAiForm::currentKeyItem()
 		// }
 	}
 	if (!envname.empty()) {
-		auto it = m->api_keys_.map.find(envname);
-		if (it == m->api_keys_.map.end()) {
+		auto it = m->api_keys.map.find(envname);
+		if (it == m->api_keys.map.end()) {
 			// 存在しないenv_nameの場合は新規エントリを作成する。
-			it = m->api_keys_.map.emplace(envname, AiApiKeys::Item{}).first;
+			it = m->api_keys.map.emplace(envname, AiApiKeys::Item{}).first;
 
 			if (!isKeyEnvDefined(envname)) {
 				// プロバイダテーブルに定義されていないenv_nameの場合はユーザー入力モードとする。
@@ -220,6 +220,14 @@ AiApiKeys::Item *SettingAiForm::currentKeyItem()
 		return &it->second;
 	}
 	return nullptr;
+}
+
+void SettingAiForm::setCurrentApiKey(std::string const &apikey)
+{
+	auto item = currentKeyItem();
+	if (item) {
+		item->api_key = apikey;
+	}
 }
 
 /**
@@ -250,20 +258,23 @@ void SettingAiForm::exchange(bool save)
 
 		s->generate_commit_message_with_ai = ui->groupBox_generate_commit_message_by_ai->isChecked();
 
-		s->ai_api_keys.map.clear();
+		std::map<std::string, AiApiKeys::Item> newmap;
+		// s->ai_api_keys.map.clear();
 		for (SettingAiForm::ProviderFormData &formdata : m->provider_formdata_) {
 			std::string envname = formdata.info->env_name;
 			if (envname.empty()) continue;
-			// if (envname.empty()) {
-			// 	envname = GenerativeAI::makeEnvName(uri);
-			// }
+
 			AiApiKeys::Item form_item;
-			auto it = m->api_keys_.map.find(envname); // ensure the key exists
-			if (it != m->api_keys_.map.end()) {
+			auto it = m->api_keys.map.find(envname); // ensure the key exists
+			if (it != m->api_keys.map.end()) {
 				form_item = it->second;
 			}
-			AiApiKeys::Item *conf_item = &s->ai_api_keys.map[envname];
+			AiApiKeys::Item *conf_item = &newmap[envname];
 			*conf_item = form_item;
+		}
+		if (newmap != s->ai_api_keys.map) {
+			s->ai_api_keys.map = newmap;
+			s->ai_api_keys_changed = true;
 		}
 
 		*s->ai_model = GenerativeAI::Model(m->current_provider_id(), uri.string);
@@ -274,8 +285,8 @@ void SettingAiForm::exchange(bool save)
 
 		configureModel(model);
 
-		m->api_keys_ = s->ai_api_keys;
-		for (auto &pair : m->api_keys_.map) {
+		m->api_keys = s->ai_api_keys;
+		for (auto &pair : m->api_keys.map) {
 			if (!isKeyEnvDefined(pair.first)) {
 				// 設定ファイルに存在するが、プロバイダテーブルに定義されていないenv_nameの場合はユーザー入力モードとする。
 				pair.second.from = AiApiKeys::KeyFrom::LocalSecret;
@@ -291,6 +302,12 @@ void SettingAiForm::exchange(bool save)
 
 		reflectSettingsToUI();
 	}
+}
+
+bool SettingAiForm::isApiKeyChanged() const
+{
+	ApplicationSettings const *s = const_cast<SettingAiForm *>(this)->settings();
+	return m->api_keys == s->ai_api_keys;
 }
 
 /**
@@ -364,8 +381,8 @@ void SettingAiForm::reflectSettingsToUI()
 				// 	auto uri = currentModelURI();
 				// 	envname = GenerativeAI::makeEnvName(uri);
 				// }
-				auto it = m->api_keys_.map.find(envname);
-				if (it != m->api_keys_.map.end()) {
+				auto it = m->api_keys.map.find(envname);
+				if (it != m->api_keys.map.end()) {
 					apikey = it->second.api_key;
 				}
 			}
@@ -406,7 +423,8 @@ void SettingAiForm::on_lineEdit_api_key_textChanged(const QString &arg1)
 	if (ui->radioButton_use_custom_api_key->isChecked()) {
 		auto *keyitem = currentKeyItem();
 		if (keyitem) {
-			keyitem->api_key = arg1.toStdString();
+			// keyitem->api_key = arg1.toStdString();
+			setCurrentApiKey(arg1.toStdString());
 		}
 	}
 }
@@ -476,7 +494,7 @@ void SettingAiForm::on_comboBox_provider_currentIndexChanged(int index)
 
 	changeProvider(id);
 
-	auto *keyitem = currentKeyItem();
+	auto const *keyitem = currentKeyItem();
 	if (keyitem) {
 		setRadioButtons(true, keyitem->from);
 	}
@@ -489,9 +507,9 @@ void SettingAiForm::on_comboBox_provider_currentIndexChanged(int index)
  */
 void SettingAiForm::guessProviderFromModelName(std::string const &s)
 {
-	m->current_model_ = GenerativeAI::Model::from_name(s);
+	m->current_model = GenerativeAI::Model::from_name(s);
 
-	int data = static_cast<int>(m->current_model_.provider_id());
+	int data = static_cast<int>(m->current_model.provider_id());
 	int index = ui->comboBox_provider->findData(data);
 	if (index < 1) {
 		index = 0;
@@ -525,7 +543,7 @@ void SettingAiForm::configureModel(GenerativeAI::Model const &model)
 		return;
 	}
 
-	m->current_model_ = model;
+	m->current_model = model;
 
 	// プロバイダが既知の場合はシグナルをブロックしてモデル名を設定した後、
 	// プロバイダのコンボボックスを明示的に設定する。

@@ -210,8 +210,10 @@ void ApplicationSettings::saveSettings() const
 
 	// save api keys
 
-	if (!ai_api_keys.save(&s)) {
-		logprintf(LOG_DEFAULT, "Failed to save AI API keys\n");
+	if (ai_api_keys_changed) {
+		if (!ai_api_keys.save(&s)) {
+			logprintf(LOG_DEFAULT, "Failed to save AI API keys\n");
+		}
 	}
 
 	//

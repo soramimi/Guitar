@@ -1,13 +1,15 @@
 #include "obfuscation.h"
 #include "../common/crc32.h"
 #include <cstring>
+#include "../common/ChaCha20.h"
 
 // This is obfuscation, not encryption.
 
 namespace {
 
-class KeyGenerator {
+class KeyGenerator : ChaCha20 {
 private:
+#if 0
 	uint32_t xorshift32_state_ = 12345678;
 	
 	uint32_t xorshift32()
@@ -23,10 +25,38 @@ private:
 	{
 		return xorshift32();
 	}
+#endif
 private:
 	uint32_t bytes_ = 0;
 	short remain_ = 0;
+	uint32_t salt_ = 0;
+	
+	void _reset_obfuscator()
+	{
+		bytes_ = 0;
+		remain_ = 0;
+		seed_zero();
+		memcpy(key_, "It is obfuscation not encryption", 32);
+		memcpy(nonce_, &salt_, 4);
+		init_state();
+	}
 public:
+	void reset_random()
+	{
+		seed_random();
+		init_state();
+	}
+	uint32_t reset_obfuscator_for_encoder()
+	{
+		salt_ = next_u32();
+		_reset_obfuscator();
+		return salt_;
+	}
+	void reset_obfuscator_for_decoder(uint32_t salt)
+	{
+		salt_ = salt;
+		_reset_obfuscator();
+	}
 	uint8_t next_u8()
 	{
 		if (remain_ == 0) {
@@ -42,17 +72,16 @@ public:
 
 struct Header {
 	uint8_t magic[4] = {};
-	uint32_t reserved = 0;
 	uint32_t size = 0;
 	uint32_t crc32 = 0;
+	uint32_t salt = 0;
 };
 
-void _encdec(std::string_view source, char *out, size_t len)
+void _encdec(std::string_view source, char *out, size_t len, KeyGenerator *keygen)
 {
 	assert(source.size() == len);
-	KeyGenerator keygen;
 	for (char c : source) {
-		uint8_t key = keygen.next_u8();
+		uint8_t key = keygen->next_u8();
 		*out++ = c ^ key;
 	}
 }
@@ -70,8 +99,9 @@ QByteArray obfuscation::encode(QByteArray const &source, std::string_view magic_
 	Header *header = (Header *)out.data();
 	*header = {};
 	memcpy(header->magic, magic_4bytes.data(), magic_4bytes.size());
-	_encdec(std::string_view(source.constData(), source.size()), out.data() + sizeof(Header), source.size());
-	header->reserved = 0;
+	KeyGenerator keygen;
+	header->salt = keygen.reset_obfuscator_for_encoder();
+	_encdec(std::string_view(source.constData(), source.size()), out.data() + sizeof(Header), source.size(), &keygen);
 	header->size = source.size();
 	header->crc32 = crc32(0, out.constData() + sizeof(Header), source.size());
 	return out;
@@ -94,7 +124,9 @@ QByteArray obfuscation::decode(QByteArray const &encoded, std::string_view magic
 	}
 	QByteArray out;
 	out.resize(encoded.size() - sizeof(Header));
-	_encdec(std::string_view(encoded.constData() + sizeof(Header), out.size()), out.data(), out.size());
+	KeyGenerator keygen;
+	keygen.reset_obfuscator_for_decoder(header->salt);
+	_encdec(std::string_view(encoded.constData() + sizeof(Header), out.size()), out.data(), out.size(), &keygen);
 	uint32_t crc = crc32(0, encoded.constData() + sizeof(Header), header->size);
 	if (crc != header->crc32) {
 		return {};

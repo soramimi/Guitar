@@ -118,6 +118,7 @@ void ChaCha20::seed_random()
 
 void ChaCha20::init_state()
 {
+	index_ = 0;
 	chacha20_init_state(state_, key_, nonce_, 0);
 }
 

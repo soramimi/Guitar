@@ -42,12 +42,21 @@ public:
 	struct Item {
 		KeyFrom from = KeyFrom::Default;
 		std::string api_key;
+		bool operator == (const Item &other) const
+		{
+			return from == other.from && api_key == other.api_key;
+		}
 	};
 
 	std::map<std::string, AiApiKeys::Item> map; // key is env_name
 
 	bool load(MySettings *s);
 	bool save(MySettings *s) const;
+
+	bool operator == (const AiApiKeys &other) const
+	{
+		return map == other.map;
+	}
 };
 
 class ApplicationSettings {
@@ -67,7 +76,10 @@ public:
 	QString proxy_server;
 
 	bool generate_commit_message_with_ai = false;
+	
 	AiApiKeys ai_api_keys;
+	bool ai_api_keys_changed = false;
+	
 	std::shared_ptr<GenerativeAI::Model> ai_model;
 	std::tuple<std::vector<GenerativeAI::Model const *>, int> ai_models() const;
 
