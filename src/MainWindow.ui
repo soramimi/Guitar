@@ -1813,9 +1813,6 @@
    <property name="text">
     <string>Sort by commit time</string>
    </property>
-   <property name="shortcut">
-    <string>Ctrl+R</string>
-   </property>
   </action>
   <action name="action_ssh">
    <property name="text">
@@ -1849,6 +1846,9 @@
   <action name="action_reset_and_clean">
    <property name="text">
     <string>Reset and &amp;clean...</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+R</string>
    </property>
   </action>
  </widget>
