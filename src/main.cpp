@@ -146,9 +146,11 @@ int main(int argc, char *argv[])
 	global->application_name = APPLICATION_NAME;
 	global->application_file_path = QCoreApplication::applicationFilePath();
 	global->generic_config_dir = QStandardPaths::writableLocation(QStandardPaths::GenericConfigLocation);
-	global->app_config_dir = global->generic_config_dir / global->organization_name / global->application_name;
-	global->log_dir = global->app_config_dir / "log";
-	global->config_file_path = joinpath(global->app_config_dir, global->application_name + ".ini");
+	global->app_org_config_dir = global->generic_config_dir / global->organization_name;
+	global->app_app_config_dir = global->app_org_config_dir / global->application_name;
+	global->app_secret_config_dir = global->app_org_config_dir / ".secret";
+	global->log_dir = global->app_app_config_dir / "log";
+	global->config_file_path = joinpath(global->app_app_config_dir, global->application_name + ".ini");
 
 	auto MKPATH = [&](const QString &path) {
 		if (!QFileInfo(path).isDir()) {
@@ -158,7 +160,7 @@ int main(int argc, char *argv[])
 		}
 	};
 
-	MKPATH(global->app_config_dir);
+	MKPATH(global->app_app_config_dir);
 	MKPATH(global->log_dir);
 
 	global->appsettings = ApplicationSettings::loadSettings();
@@ -182,7 +184,7 @@ int main(int argc, char *argv[])
 		global->open_trace_logger();
 	}
 
-	global->profiles_xml_path = joinpath(global->app_config_dir, "profiles.xml");
+	global->profiles_xml_path = joinpath(global->app_app_config_dir, "profiles.xml");
 	
 	// load plugins
 	{
@@ -237,7 +239,7 @@ int main(int argc, char *argv[])
 		global->start_with_shift_key = true;
 	}
 
-	if (global->app_config_dir.isEmpty()) {
+	if (global->app_app_config_dir.isEmpty()) {
 		QMessageBox::warning(nullptr, qApp->applicationName(), "Preparation of data storage folder failed.");
 		return 1;
 	}

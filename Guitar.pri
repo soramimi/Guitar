@@ -64,6 +64,12 @@ macx:INCLUDEPATH += /opt/homebrew/include
 macx:LIBS += /opt/homebrew/lib/libssl.a /opt/homebrew/lib/libcrypto.a
 win32:LIBS += -llibcrypto -llibssl
 
+win32:LIBS += -lbcrypt
+
+# libsodium
+
+LIBS += -lsodium
+
 # network library
 
 # CONFIG += use_libcurl
@@ -117,9 +123,12 @@ macx {
 #
 
 SOURCES += \
-	$$PWD/src/GitDiff.cpp \
-	$$PWD/src/MyProcess.cpp \
-	$$PWD/src/inet/httpstatus.cpp \
+	$$PWD/src/common/ChaCha20.cpp \
+	$$PWD/src/common/uuid.cpp \
+	$$PWD/src/easycrypto/easycrypto.cpp \
+	$$SRC/GitDiff.cpp \
+	$$SRC/MyProcess.cpp \
+	$$SRC/inet/httpstatus.cpp \
 	$$SRC/CommitRecord.cpp \
 	$$SRC/IncrementalSearchHelper.cpp \
 	$$SRC/LoadPlugin.cpp \
@@ -301,25 +310,30 @@ SOURCES += \
 	$$SRC/zip/zip.cpp \
 	$$SRC/zip/ziparchive.cpp \
 	$$SRC/zip/zipextract.cpp \
-	$$SRC/ResetAndCleanDialog.cpp
+	$$SRC/ResetAndCleanDialog.cpp \
+	$$SRC/SelectAiModelDialog.cpp \
+	$$SRC/SelectAiModelPresetDialog.cpp
 
 HEADERS += \
-	$$PWD/src/GitCloneData.h \
-	$$PWD/src/GitCommitItem.h \
-	$$PWD/src/GitDiff.h \
-	$$PWD/src/GitHash.h \
-	$$PWD/src/GitObject.h \
-	$$PWD/src/GitObjectData.h \
-	$$PWD/src/GitRemote.h \
-	$$PWD/src/GitResult.h \
-	$$PWD/src/GitSubmodule.h \
-	$$PWD/src/GitUser.h \
-	$$PWD/src/MainWindowTypes.h \
-	$$PWD/src/ProcessStatus.h \
-	$$PWD/src/TraceEventItem.h \
-	$$PWD/src/inet/httpstatus.h \
-	$$PWD/src/main.h \
-	$$PWD/src/texteditor/LineIndexMap/LineIndexMap.h \
+	$$PWD/src/common/ChaCha20.h \
+	$$PWD/src/common/uuid.h \
+	$$PWD/src/easycrypto/easycrypto.h \
+	$$SRC/GitCloneData.h \
+	$$SRC/GitCommitItem.h \
+	$$SRC/GitDiff.h \
+	$$SRC/GitHash.h \
+	$$SRC/GitObject.h \
+	$$SRC/GitObjectData.h \
+	$$SRC/GitRemote.h \
+	$$SRC/GitResult.h \
+	$$SRC/GitSubmodule.h \
+	$$SRC/GitUser.h \
+	$$SRC/MainWindowTypes.h \
+	$$SRC/ProcessStatus.h \
+	$$SRC/TraceEventItem.h \
+	$$SRC/inet/httpstatus.h \
+	$$SRC/main.h \
+	$$SRC/texteditor/LineIndexMap/LineIndexMap.h \
 	$$SRC/CommitRecord.h \
 	$$SRC/IncrementalSearchHelper.h \
 	$$SRC/LoadPlugin.h \
@@ -518,7 +532,9 @@ HEADERS += \
 	$$SRC/texteditor/unicode.h \
 	$$SRC/zip/zip.h \
 	$$SRC/zip/zipinternal.h \
-	$$SRC/ResetAndCleanDialog.h
+	$$SRC/ResetAndCleanDialog.h \
+	$$SRC/SelectAiModelDialog.h \
+	$$SRC/SelectAiModelPresetDialog.h
 
 FORMS += \
 	$$SRC/AboutDialog.ui \
@@ -589,7 +605,9 @@ FORMS += \
 	$$SRC/WelcomeWizardDialog.ui \
 	$$SRC/coloredit/ColorDialog.ui \
 	$$SRC/coloredit/ColorEditWidget.ui \
-	$$SRC/ResetAndCleanDialog.ui
+	$$SRC/ResetAndCleanDialog.ui \
+	$$SRC/SelectAiModelDialog.ui \
+	$$SRC/SelectAiModelPresetDialog.ui
 
 RESOURCES += \
 	$$SRC/resources/resources.qrc
@@ -602,9 +620,9 @@ unix {
 }
 
 win32 {
-	SOURCES += $$PWD/src/SettingWindowsForm.cpp
-	HEADERS += $$PWD/src/SettingWindowsForm.h
-	FORMS += $$PWD/src/SettingWindowsForm.ui
+	SOURCES += $$SRC/SettingWindowsForm.cpp
+	HEADERS += $$SRC/SettingWindowsForm.h
+	FORMS += $$SRC/SettingWindowsForm.ui
 	SOURCES += $$SRC/win32/Win32Util.cpp $$SRC/common/wstring.cpp
 	HEADERS += $$SRC/win32/Win32Util.h $$SRC/common/wstring.h
 	LIBS += -lole32

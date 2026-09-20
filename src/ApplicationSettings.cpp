@@ -10,13 +10,17 @@
 #include <common/fmt.h>
 #include <common/joinpath.h>
 #include <common/misc.h>
+#include <easycrypto/easycrypto.h>
 #include <common/q/helper.h>
+#include <QBuffer>
 #include <vector>
+#include "MemoryReader.h"
 
 namespace {
 
 constexpr static char const secret_sub_dir[] = ".secret";
-constexpr static char const api_keys_ini[] = "apikeys.ini";
+constexpr static char const api_keys_bin[] = "apikeys.bin";
+constexpr std::string_view obfuscation_key = "obfuscation key qwerty123";
 
 template <typename T> class GetValue {
 private:
@@ -100,13 +104,6 @@ ApplicationSettings::ApplicationSettings()
 	ai_model = std::make_shared<GenerativeAI::Model>();
 }
 
-#if 0
-static inline QString UPPER(QString const &s)
-{
-	return s.toUpper();
-}
-#endif
-
 ApplicationSettings ApplicationSettings::loadSettings()
 {
 	ApplicationSettings as(defaultSettings());
@@ -114,8 +111,8 @@ ApplicationSettings ApplicationSettings::loadSettings()
 	MySettings s;
 
 	// load api keys
-
-	if (!as.ai_api_keys.load(&s)) {
+	
+	if (!as.ai_api_keys.load(std::string(obfuscation_key), &s)) {
 		logprintf(LOG_DEFAULT, "Failed to load AI API keys\n");
 	}
 
@@ -207,8 +204,10 @@ void ApplicationSettings::saveSettings() const
 
 	// save api keys
 
-	if (!ai_api_keys.save(&s)) {
-		logprintf(LOG_DEFAULT, "Failed to save AI API keys\n");
+	if (ai_api_keys_changed) {
+		if (!ai_api_keys.save(std::string(obfuscation_key), &s)) {
+			logprintf(LOG_DEFAULT, "Failed to save AI API keys\n");
+		}
 	}
 
 	//
@@ -285,17 +284,33 @@ AiApiKeys::KeyFrom AiApiKeys::parseKeyFrom(QString const &symbol)
 	return KeyFrom::Default;
 }
 
-bool AiApiKeys::load(MySettings *s)
+bool AiApiKeys::load(std::string const &key, MySettings *s)
 {
 	map.clear();
-
-	QString secret_dir = global->app_config_dir / secret_sub_dir;
+	
+	constexpr bool READ_INI = false;
+	
+	QString secret_dir = global->app_secret_config_dir;
 	if (QFileInfo(secret_dir).isDir()) {
-		QString ini_file = secret_dir / api_keys_ini;
-		QFile file(ini_file);
-		if (file.open(QIODevice::ReadOnly | QIODevice::Text)) {
-			while (!file.atEnd()) {
-				QByteArray line = file.readLine().trimmed();
+		QString in_file = secret_dir / api_keys_bin;
+		if (READ_INI) {
+			in_file = secret_dir / "apikeys.ini";
+		}
+		QFile file(in_file);
+		if (file.open(QIODevice::ReadOnly)) {
+			QByteArray ba = file.readAll();
+			
+			std::vector<char> vec;
+			if (READ_INI) {
+				vec = std::vector<char>(ba.constData(), ba.constData() + ba.size());
+			} else {
+				vec = easycrypto::decrypt(key, std::string_view(ba.constData(), ba.size()));
+			}
+			
+			MemoryReader buffer(vec.data(), vec.size());
+			buffer.open(QIODevice::ReadOnly);
+			while (!buffer.atEnd()) {
+				QByteArray line = buffer.readLine().trimmed();
 				int eq = line.indexOf('=');
 				if (eq > 0) {
 					std::string envname = line.left(eq).trimmed().toStdString();
@@ -322,7 +337,7 @@ bool AiApiKeys::load(MySettings *s)
 }
 
 
-bool AiApiKeys::save(MySettings *s) const
+bool AiApiKeys::save(std::string const &key, MySettings *s) const
 {
 	auto MKPATH = [&](const QString &path) {
 		if (!QFileInfo(path).isDir()) {
@@ -334,21 +349,32 @@ bool AiApiKeys::save(MySettings *s) const
 	};
 
 	bool ret = false;
-
-	QString secret_dir = global->app_config_dir / secret_sub_dir;
+	
+	QString secret_dir = global->app_secret_config_dir;
 	if (MKPATH(secret_dir)) {
-		QString ini_file = secret_dir / api_keys_ini;
-		QFile file(ini_file);
-		if (file.open(QIODevice::WriteOnly | QIODevice::Truncate | QIODevice::Text)) {
-			for (auto const &pair : map) {
-				std::string line = fmt("%s=%s\n")(pair.first)(misc::trimmed(pair.second.api_key));
-				file.write(line.c_str(), line.size());
+		QString in_file = secret_dir / api_keys_bin;
+		QFile file(in_file);
+		if (file.open(QIODevice::WriteOnly | QIODevice::Truncate)) {
+			QByteArray ba;
+			{
+				QBuffer buffer;
+				buffer.open(QIODevice::WriteOnly);
+				for (auto const &pair : map) {
+					std::string line = fmt("%s=%s\n")(pair.first)(misc::trimmed(pair.second.api_key));
+					buffer.write(line.c_str(), line.size());
+				}
+				ba = buffer.buffer();
 			}
+			
+			std::vector<char> vec = easycrypto::encrypt(key, std::string_view(ba.constData(), ba.size()));
+			
+			file.write(vec.data(), vec.size());
 			file.close();
 			ret = true;
 		}
+		
 		QFile(secret_dir).setPermissions(QFile::ReadOwner | QFile::WriteOwner | QFile::ExeOwner); // 所有者のみ読み書きと実行可
-		QFile(ini_file).setPermissions(QFile::ReadOwner | QFile::WriteOwner); // 所有者のみ読み書き可
+		QFile(in_file).setPermissions(QFile::ReadOwner | QFile::WriteOwner); // 所有者のみ読み書き可
 
 		{
 			s->beginGroup("AI");

@@ -55,6 +55,7 @@
 #include "common/qmisc.h"
 #include "GitObjectData.h"
 #include "ResetAndCleanDialog.h"
+#include "SelectAiModelDialog.h"
 #include "gpg.h"
 #include "main.h"
 #include "platform.h"
@@ -3667,7 +3668,7 @@ void MainWindow::changeRepositoryBookmarkName(RepositoryInfo item, QString new_n
 
 QString MainWindow::getBookmarksFilePath() const
 {
-	return global->app_config_dir / "bookmarks.xml";
+	return global->app_app_config_dir / "bookmarks.xml";
 }
 
 void MainWindow::setupConsoleBackend(ApplicationSettings const *as)
@@ -7573,10 +7574,6 @@ void MainWindow::on_action_reset_and_clean_triggered()
 
 void MainWindow::test()
 {
-	if (global->onepassword) {
-		QString apikey = global->onepassword->getapikey("SHINICHI FUCHITA", "op://API_KEY/ANTHROPIC_API_KEY/credential");
-		qDebug() << apikey;
-	}
+	SelectAiModelDialog dlg(this);
+	dlg.exec();
 }
-
-

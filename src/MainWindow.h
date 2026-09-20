@@ -527,6 +527,7 @@ private slots:
 	void on_toolButton_addrepo_clicked();
 
 	void test();
+	
 	void toggleMaximized();
 
 	void onRemoteInfoChanged();

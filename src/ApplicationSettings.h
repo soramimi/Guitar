@@ -24,7 +24,9 @@ public:
 	QString application_name = APPLICATION_NAME;
 	QString application_file_path;
 	QString generic_config_dir;
-	QString app_config_dir;
+	QString app_org_config_dir;
+	QString app_app_config_dir;
+	QString app_secret_config_dir;
 	QString log_dir;
 	QString config_file_path;
 };
@@ -42,12 +44,21 @@ public:
 	struct Item {
 		KeyFrom from = KeyFrom::Default;
 		std::string api_key;
+		bool operator == (const Item &other) const
+		{
+			return from == other.from && api_key == other.api_key;
+		}
 	};
 
 	std::map<std::string, AiApiKeys::Item> map; // key is env_name
+	
+	bool load(const std::string &key, MySettings *s);
+	bool save(const std::string &key, MySettings *s) const;
 
-	bool load(MySettings *s);
-	bool save(MySettings *s) const;
+	bool operator == (const AiApiKeys &other) const
+	{
+		return map == other.map;
+	}
 };
 
 class ApplicationSettings {
@@ -67,7 +78,10 @@ public:
 	QString proxy_server;
 
 	bool generate_commit_message_with_ai = false;
+	
 	AiApiKeys ai_api_keys;
+	bool ai_api_keys_changed = false;
+	
 	std::shared_ptr<GenerativeAI::Model> ai_model;
 	std::tuple<std::vector<GenerativeAI::Model const *>, int> ai_models() const;
 

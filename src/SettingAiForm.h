@@ -31,10 +31,12 @@ private:
 	AiApiKeys::Item *currentKeyItem();
 	AiApiKeys::KeyFrom keyFrom(GenerativeAI::ProviderID id) const;
 	GenerativeAI::ModelURI currentModelURI() const;
+	void setCurrentApiKey(const std::string &apikey);
 public:
 	explicit SettingAiForm(QWidget *parent = nullptr);
 	~SettingAiForm();
 	void exchange(bool save) override;
+	bool isApiKeyChanged() const;
 private slots:
 	void on_groupBox_generate_commit_message_by_ai_clicked(bool checked);
 	void on_lineEdit_api_key_textChanged(const QString &arg1);

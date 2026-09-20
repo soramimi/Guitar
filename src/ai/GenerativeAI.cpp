@@ -13,7 +13,7 @@ namespace GenerativeAI {
  */
 std::string Model::default_model()
 {
-	return "claude-sonnet-4-6";
+	return "claude-sonnet-5";
 }
 
 /**
@@ -26,23 +26,24 @@ const std::vector<ProviderInfo> &complete_provider_table()
 {
 	static const std::vector<ProviderInfo> provider_info = {
 		// id                                      tag                                description                       env_name
-		{ProviderID::Unknown,                      "",                                "-",                              ""},
-		{ProviderID::OpenAI,                       "",                                "OpenAI",                         "OPENAI_API_KEY"}, // placeholder
-		{ProviderID::OpenAI_responses,             "openai-responses",                "OpenAI",                         "OPENAI_API_KEY"},
-		{ProviderID::OpenAI_chat_completions,      "openai-chat-completions",         "OpenAI (legacy)",                "OPENAI_API_KEY"},
-		{ProviderID::Anthropic,                    "anthropic",                       "Anthropic; Claude",              "ANTHROPIC_API_KEY"},
-		{ProviderID::Google,                       "google",                          "Google; Gemini",                 "GOOGLE_API_KEY"},
-		{ProviderID::XAI,                          "xai",                             "xAI; Grok",                      "XAI_API_KEY"},
-		{ProviderID::PFN,                          "pfn",                             "Preferred Networks",             "PFN_API_KEY"},
-		{ProviderID::Moonshot,                     "moonshot",                        "Moonshot AI",                    "MOONSHOT_API_KEY"},
-		{ProviderID::Sakura,                       "sakura",                          "Sakura AI Engine",               "SAKURA_AI_API_KEY"},
-		{ProviderID::DeepSeek,                     "deepseek",                        "DeepSeek",                       "DEEPSEEK_API_KEY"},
-		{ProviderID::OpenRouter,                   "openrouter",                      "OpenRouter",                     "OPENROUTER_API_KEY"},
-		{ProviderID::Requesty,                     "requesty",                        "Requesty",                       "REQUESTY_API_KEY"},
-		{ProviderID::OrcaRouter,                   "orcarouter",                      "OrcaRouter",                     "ORCAROUTER_API_KEY"},
-		{ProviderID::Ollama,                       "ollama",                          "Ollama (experimental)",          ""},
-		{ProviderID::LMStudio,                     "lmstudio",                        "LM Studio (experimental)",       ""},
-		{ProviderID::LLAMACPP,                     "llamacpp",                        "llama.cpp (experimental)",       "LLAMACPP_API_KEY"},
+		{ProviderID::Unknown,                      "other",                           "Other",                            ""},
+		{ProviderID::OpenAI,                       "",                                "OpenAI",                           "OPENAI_API_KEY"}, // placeholder
+		{ProviderID::OpenAI_responses,             "openai-responses",                "OpenAI / GPT (responses)",         "OPENAI_API_KEY"},
+		{ProviderID::OpenAI_chat_completions,      "openai-chat-completions",         "OpenAI / GPT (chat completions)",  "OPENAI_API_KEY"},
+		{ProviderID::Anthropic,                    "anthropic",                       "Anthropic / Claude",               "ANTHROPIC_API_KEY"},
+		{ProviderID::Google,                       "google",                          "Google / Gemini",                  "GEMINI_API_KEY"},
+		{ProviderID::DeepSeek,                     "deepseek",                        "DeepSeek",                         "DEEPSEEK_API_KEY"},
+		{ProviderID::MoonshotAI,                   "moonshot",                        "Moonshot AI / Kimi",               "MOONSHOT_API_KEY"},
+		{ProviderID::XAI,                          "xai",                             "xAI / Grok",                       "XAI_API_KEY"},
+		{ProviderID::PFN,                          "pfn",                             "Preferred Networks / PLaMo",       "PFN_API_KEY"},
+		{ProviderID::Sakura,                       "sakura",                          "Sakura AI Engine",                 "SAKURA_AI_API_KEY"},
+		{ProviderID::OpenRouter,                   "openrouter",                      "OpenRouter",                       "OPENROUTER_API_KEY"},
+		{ProviderID::OrcaRouter,                   "orcarouter",                      "OrcaRouter",                       "ORCAROUTER_API_KEY"},
+		{ProviderID::Requesty,                     "requesty",                        "Requesty",                         "REQUESTY_API_KEY"},
+		{ProviderID::Merge,                        "merge",                           "Merge Gateway",                    "MERGE_API_KEY"},
+		{ProviderID::Ollama,                       "ollama",                          "Ollama",                           "OLLAMA_API_KEY"},
+		{ProviderID::LMStudio,                     "lmstudio",                        "LM Studio",                        "LMSTUDIO_API_KEY"},
+		{ProviderID::LLAMACPP,                     "llamacpp",                        "llama.cpp",                        "LLAMACPP_API_KEY"},
 	};
 	return provider_info;
 }
@@ -50,6 +51,7 @@ const std::vector<ProviderInfo> &complete_provider_table()
 ProviderID api_compatibility(ProviderID pid)
 {
 	switch (pid) {
+	case ProviderID::OpenAI:
 	case ProviderID::OpenAI_responses:
 	case ProviderID::Anthropic:
 	case ProviderID::Google:
@@ -69,15 +71,15 @@ std::vector<Model> const &ai_model_presets()
 		{ProviderID::OpenAI_responses, "gpt-5.6-luna"},
 		{ProviderID::Anthropic,        "claude-sonnet-5"},
 		{ProviderID::Google,           "gemini-3.6-flash"},
+		{ProviderID::DeepSeek,         "deepseek-v4-flash"},
+		{ProviderID::MoonshotAI,       "kimi-k2.7-code"},
 		{ProviderID::XAI,              "grok-latest"},
 		{ProviderID::PFN,              "plamo-3.0-prime"},
-		{ProviderID::Moonshot,         "kimi-k2.7-code"},
-		{ProviderID::Moonshot,         "kimi-k2.6"},
 		{ProviderID::Sakura,           "sakura:gpt-oss-120b"},
-		{ProviderID::DeepSeek,         "deepseek-v4-flash"},
-		{ProviderID::OpenRouter,       "openrouter:///anthropic/claude-4.6-sonnet"},
-		{ProviderID::Requesty,         "requesty:///google/gemma-4-31b-it"},
-		{ProviderID::OrcaRouter,       "orcarouter:///deepseek/deepseek-v4-pro-free"},
+		{ProviderID::OpenRouter,       "openrouter:anthropic/claude-4.6-sonnet"},
+		{ProviderID::OrcaRouter,       "orcarouter:deepseek/deepseek-v4-pro-free"},
+		{ProviderID::Requesty,         "requesty:google/gemma-4-31b-it"},
+		{ProviderID::Merge,            "merge:openai/gpt-5.6-luna"},
 		{ProviderID::Ollama,           "ollama:///gemma4"},
 		{ProviderID::LMStudio,         "lmstudio:///meta-llama-3-8b-instruct"},
 		{ProviderID::LLAMACPP,         "llamacpp://localhost:8080/"},
@@ -98,14 +100,15 @@ std::vector<ProviderID> const &ai_provider_id_list_for_present_to_users()
 		ProviderID::OpenAI_chat_completions,
 		ProviderID::Anthropic,
 		ProviderID::Google,
+		ProviderID::DeepSeek,
+		ProviderID::MoonshotAI,
 		ProviderID::XAI,
 		ProviderID::PFN,
-		ProviderID::Moonshot,
 		ProviderID::Sakura,
-		ProviderID::DeepSeek,
 		ProviderID::OpenRouter,
-		ProviderID::Requesty,
 		ProviderID::OrcaRouter,
+		ProviderID::Requesty,
+		ProviderID::Merge,
 		ProviderID::Ollama,
 		ProviderID::LMStudio,
 		ProviderID::LLAMACPP,
@@ -131,16 +134,17 @@ Model Model::from_name(std::string const &name)
 		{ProviderID::OpenAI_responses, "^gpt-"},
 		{ProviderID::Anthropic, "^claude-"},
 		{ProviderID::Google, "^gemini-"},
+		{ProviderID::DeepSeek, "^deepseek-"},
+		{ProviderID::MoonshotAI, "^kimi-"},
 		{ProviderID::XAI, "^grok-"},
 		{ProviderID::PFN, "^plamo-"},
-		{ProviderID::Moonshot, "^kimi-"},
 		{ProviderID::Sakura, "^sakura:"},
-		{ProviderID::DeepSeek, "^deepseek-"},
+		{ProviderID::OpenRouter, "^openrouter:"},
+		{ProviderID::OrcaRouter, "^orcarouter:"},
+		{ProviderID::Requesty, "^requesty:"},
+		{ProviderID::Requesty, "^merge:"},
 		{ProviderID::Ollama, "^ollama://"},
 		{ProviderID::LMStudio, "^lmstudio://"},
-		{ProviderID::OpenRouter, "^openrouter://"},
-		{ProviderID::Requesty, "^requesty://"},
-		{ProviderID::OrcaRouter, "^orcarouter://"},
 		{ProviderID::LLAMACPP, "^llamacpp://"},
 	};
 	for (auto const &item : items) {
@@ -192,11 +196,12 @@ void Model::parse_model(const std::string &model_uri)
 		return false;
 	};
 
+	if (Parse("openrouter:", 443)) return;
+	if (Parse("orcarouter:", 443)) return;
+	if (Parse("requesty:", 443)) return;
+	if (Parse("merge:", 443)) return;
 	if (Parse("ollama://", 11434)) return;
 	if (Parse("lmstudio://", 1234)) return;
-	if (Parse("openrouter://", 443)) return;
-	if (Parse("requesty://", 443)) return;
-	if (Parse("orcarouter://", 443)) return;
 	if (Parse("llamacpp://", 8080)) return;
 }
 
@@ -311,7 +316,7 @@ struct _MakeRequest : public AbstractVisitor<Request> {
 		return r;
 	}
 	
-	Request case_Kimi()
+	Request case_MoonshotAI()
 	{
 		Request r;
 		r.model_name = model_.model_name();
@@ -354,15 +359,6 @@ struct _MakeRequest : public AbstractVisitor<Request> {
 		return r;
 	}
 	
-	Request case_Requesty()
-	{
-		Request r;
-		r.endpoint = "https://router.requesty.ai/v1/chat/completions";
-		r.model_name = model_.model_name();
-		set_authorization_bearer_cred(&r, cred_);
-		return r;
-	}
-	
 	Request case_OrcaRouter()
 	{
 		Request r;
@@ -373,11 +369,34 @@ struct _MakeRequest : public AbstractVisitor<Request> {
 		return r;
 	}
 	
+	Request case_Requesty()
+	{
+		Request r;
+		r.endpoint = "https://router.requesty.ai/v1/chat/completions";
+		r.model_name = model_.model_name();
+		set_authorization_bearer_cred(&r, cred_);
+		return r;
+	}
+	
+	Request case_Merge()
+	{
+		Request r;
+		r.endpoint = "https://api-gateway.merge.dev/v1/responses";
+		r.model_name = model_.model_name();
+		set_authorization_bearer_cred(&r, cred_);
+		return r;
+	}
+	
 	Request case_Ollama()
 	{
 		Request r;
 		r.model_name = model_.model_name();
-		r.endpoint = fmt("http://%s:%d/api/generate")(model_.host())(model_.port()); // experimental
+		std::string host = model_.host();
+		if (host.empty()) {
+			host = "localhost";
+		}
+		int port = model_.port();
+		r.endpoint = fmt("http://%s:%d/api/generate")(host)(port); // experimental
 		set_authorization_bearer_cred(&r, cred_);
 		return r;
 	}
@@ -386,7 +405,12 @@ struct _MakeRequest : public AbstractVisitor<Request> {
 	{
 		Request r;
 		r.model_name = model_.model_name();
-		r.endpoint = fmt("http://%s:%d/v1/completions")(model_.host())(model_.port()); // experimental
+		std::string host = model_.host();
+		if (host.empty()) {
+			host = "localhost";
+		}
+		int port = model_.port();
+		r.endpoint = fmt("http://%s:%d/v1/completions")(host)(port); // experimental
 		return r;
 	}
 
@@ -397,12 +421,17 @@ struct _MakeRequest : public AbstractVisitor<Request> {
 		if (r.model_name.empty())  {
 			r.model_name = "default";
 		}
+		std::string host = model_.host();
+		if (host.empty()) {
+			host = "localhost";
+		}
+		int port = model_.port();
 		switch (model_.api_compatibility()) {
 		case ProviderID::Anthropic:
-			r.endpoint = fmt("http://%s:%d/v1/messages")(model_.host())(model_.port());
+			r.endpoint = fmt("http://%s:%d/v1/messages")(host)(port);
 			break;
 		default:
-			r.endpoint = fmt("http://%s:%d/v1/chat/completions")(model_.host())(model_.port()); // experimental
+			r.endpoint = fmt("http://%s:%d/v1/chat/completions")(host)(port); // experimental
 			break;
 		}
 		set_authorization_bearer_cred(&r, cred_);
@@ -419,7 +448,11 @@ struct _MakeRequest : public AbstractVisitor<Request> {
  */
 Request make_request(ProviderID provider, const Model &model, Credential const &cred)
 {
-	return _MakeRequest(model, cred).visit(provider);
+	Request ret = _MakeRequest(model, cred).visit(provider);
+	if (model.endpoint_url_override) {
+		ret.endpoint = *model.endpoint_url_override;
+	}
+	return ret;
 }
 
 /**

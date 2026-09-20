@@ -335,6 +335,7 @@ private:
 	void close();
 public:
 	AiApiBridge();
+	AiApiBridge(GenerativeAI::Model model);
 	~AiApiBridge();
 	
 	AiResult Error(std::string const &status, std::string const &message) const

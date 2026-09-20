@@ -22,7 +22,7 @@ struct AiApiBridge::Private {
 	std::string system_role;
 	std::shared_ptr<AbstractInetClient> http_;
 	
-	bool save_log = false; // リクエスト/レスポンスをログに記録するか
+	bool save_log = true; // リクエスト/レスポンスをログに記録するか
 };
 
 /**
@@ -41,8 +41,15 @@ std::shared_ptr<AbstractInetClient> global_inet_client()
 AiApiBridge::AiApiBridge()
 	: m(new Private)
 {
-	set_ai_model(*global->appsettings.ai_model);
 }
+
+AiApiBridge::AiApiBridge(GenerativeAI::Model model)
+	: m(new Private)
+{
+	set_ai_model(*global->appsettings.ai_model);
+	
+}
+
 #else
 GenerativeAI::Model global_appsettings_ai_model();
 GenerativeAI::Credential global_get_ai_credential(GenerativeAI::Model const &model);
@@ -229,6 +236,8 @@ struct AiChatResponseParser : public GenerativeAI::AbstractVisitor<AiResult> {
 						item.name = reader.string();
 					} else if (reader.match("{output[{content[{text")) {
 						item.content.push_back({ reader.string() });
+					} else if (reader.match("{output[{finish_reason")) {
+						ret.d.stop_reason = reader.string();
 					}
 				} while (reader.next());
 				ret.d.ex.openai.output.push_back(std::move(item));
@@ -274,6 +283,17 @@ struct AiChatResponseParser : public GenerativeAI::AbstractVisitor<AiResult> {
 			if (!ret.d.ex.openai.output.empty()) {
 				for (AiResponseEx::OpenAiOutputItem const &item1 : ret.d.ex.openai.output) {
 					if (item1.status == "completed") {
+						for (AiResponseEx::OpenAiOutputItem::Content const &item2 : item1.content) {
+							ret.d.content += item2.text;
+						}
+					}
+				}
+			}
+		} else if (ret.d.ex.api_id == GenerativeAI::ProviderID::Merge) {
+			if (ret.d.stop_reason == "stop") {
+				ret.d.completed = true;
+				if (!ret.d.ex.openai.output.empty()) {
+					for (AiResponseEx::OpenAiOutputItem const &item1 : ret.d.ex.openai.output) {
 						for (AiResponseEx::OpenAiOutputItem::Content const &item2 : item1.content) {
 							ret.d.content += item2.text;
 						}
@@ -350,7 +370,7 @@ struct AiChatResponseParser : public GenerativeAI::AbstractVisitor<AiResult> {
 		return parse_openai_chat_completions_format();
 	}
 	
-	AiResult case_Kimi()
+	AiResult case_MoonshotAI()
 	{
 		switch (model.api_compatibility()) {
 		case GenerativeAI::ProviderID::Anthropic:
@@ -378,18 +398,25 @@ struct AiChatResponseParser : public GenerativeAI::AbstractVisitor<AiResult> {
 		return parse_openai_chat_completions_format();
 	}
 	
-	/// Requesty：OpenAI Chat Completions 互換形式
-	AiResult case_Requesty()
-	{
-		return parse_openai_chat_completions_format();
-	}
-	
 	/// OrcaRouter：OrcaAI Chat Completions 互換形式
 	AiResult case_OrcaRouter()
 	{
 		return parse_openai_chat_completions_format();
 	}
 
+	/// Requesty：OpenAI Chat Completions 互換形式
+	AiResult case_Requesty()
+	{
+		return parse_openai_chat_completions_format();
+	}
+	
+	AiResult case_Merge()
+	{
+		AiResult ret(model.api_compatibility());
+		ret = parse_responses(GenerativeAI::ProviderID::Merge);
+		return ret;
+	}
+	
 	/**
 	 * @brief Ollama のレスポンスを解析する。
 	 *
@@ -506,7 +533,7 @@ struct _PromptJsonGenerator : public GenerativeAI::AbstractVisitor<std::string> 
 		jstream::Writer w;
 		w.object({}, [&](){
 			w.string("model", modelname());
-			if (model.provider_id() == GenerativeAI::ProviderID::Moonshot) {
+			if (model.provider_id() == GenerativeAI::ProviderID::MoonshotAI) {
 				// pass
 			} else {
 				w.number("temperature", temperature_);
@@ -596,7 +623,7 @@ struct _PromptJsonGenerator : public GenerativeAI::AbstractVisitor<std::string> 
 	}
 	
 	/// Kimi
-	std::string case_Kimi()
+	std::string case_MoonshotAI()
 	{
 		switch (model.api_compatibility()) {
 		case GenerativeAI::ProviderID::Anthropic:
@@ -647,18 +674,36 @@ struct _PromptJsonGenerator : public GenerativeAI::AbstractVisitor<std::string> 
 		return case_OpenAI_chat_completions();
 	}
 	
-	/// Requesty：OpenAI Chat Completions 互換形式
-	std::string case_Requesty()
-	{
-		return case_OpenAI_chat_completions();
-	}
-	
 	/// OrcaRouter：OrcaAI Chat Completions 互換形式
 	std::string case_OrcaRouter()
 	{
 		return case_OpenAI_chat_completions();
 	}
 
+	/// Requesty：OpenAI Chat Completions 互換形式
+	std::string case_Requesty()
+	{
+		return case_OpenAI_chat_completions();
+	}
+	
+	std::string case_Merge()
+	{
+		// return case_OpenAI_responses();
+		jstream::Writer w;
+		w.object({}, [&](){
+			w.array("input", [&](){
+				w.object({}, [&](){
+					w.string("type", "message");
+					w.string("role", "user");
+					w.string("content", prompt);
+				});
+			});
+			w.boolean("stream", false);
+			
+		});
+		return w;
+	}
+	
 	/// LM Studio：Ollama 互換形式
 	std::string case_LMStudio()
 	{

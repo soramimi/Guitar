@@ -25,7 +25,7 @@ SettingWorkingFolderForm::~SettingWorkingFolderForm()
 
 static QString favoriteDirsIni()
 {
-	return global->app_config_dir / "favoritedirs.ini";
+	return global->app_app_config_dir / "favoritedirs.ini";
 }
 
 bool SettingWorkingFolderForm::saveFavoliteDirs(QStringList const &favdirs)
