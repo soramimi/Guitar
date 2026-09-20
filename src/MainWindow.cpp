@@ -7565,7 +7565,9 @@ void MainWindow::on_action_reset_and_clean_triggered()
 {
 	ResetAndCleanDialog dlg(this);
 	if (dlg.exec() == QDialog::Accepted) {
-		dlg.perform(this);
+		if (dlg.perform(this)) {
+			reopenRepository(false, { });
+		}
 	}
 }
 

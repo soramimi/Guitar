@@ -16,7 +16,7 @@ class ResetAndCleanDialog : public QDialog
 public:
 	explicit ResetAndCleanDialog(QWidget *parent = nullptr);
 	~ResetAndCleanDialog();
-	void perform(MainWindow *mainwindow);
+	bool perform(MainWindow *mainwindow);
 private:
 	Ui::ResetAndCleanDialog *ui;
 };
