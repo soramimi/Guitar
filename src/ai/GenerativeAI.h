@@ -206,7 +206,7 @@ struct EndPoint {
 	std::string url_;
 	std::string suffix_;
 	EndPoint() = default;
-	void operator = (std::string const &url);
+	void set_chat_endpoint_url(std::string const &url);
 	std::string url_chat() const;
 	std::string url_models() const;
 	std::string url(Type type)
@@ -231,8 +231,6 @@ Request make_request(ProviderID provider, Model const &model, Credential const &
 
 std::vector<Model> const &ai_model_presets();
 std::vector<GenerativeAI::ProviderID> const &ai_provider_id_list_for_present_to_users();
-
-std::string makeEnvName(GenerativeAI::ModelURI const &model_uri);
 
 } // namespace GenerativeAI
 

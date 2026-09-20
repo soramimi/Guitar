@@ -232,8 +232,102 @@ Model::Model(ProviderID provider, std::string const &model_uri)
 	parse_model(model_uri);
 }
 
-struct _MakeRequest : public AbstractVisitor<Request> {
+struct _ApiBaseUrl : public AbstractVisitor<std::string> {
+	Model model_;
 
+	_ApiBaseUrl(Model const &model)
+		: model_(model)
+	{}
+
+	std::string _open_ai()
+	{
+		return "https://api.openai.com/v1/";
+	}
+	std::string _generic_host_and_port()
+	{
+		std::string host = model_.host();
+		if (host.empty()) {
+			host = "localhost";
+		}
+		int port = model_.port();
+		return fmt("http://%s:%d/")(host)(port);
+	}
+
+	std::string case_Unknown()
+	{
+		return {};
+	}
+	std::string case_OpenAI()
+	{
+		return _open_ai();
+	}
+	std::string case_OpenAI_responses()
+	{
+		return _open_ai();
+	}
+	std::string case_OpenAI_chat_completions()
+	{
+		return _open_ai();
+	}
+	std::string case_Anthropic()
+	{
+		return "https://api.anthropic.com/v1/";
+	}
+	std::string case_Google()
+	{
+		return "https://generativelanguage.googleapis.com/v1beta/";
+	}
+	std::string case_XAI()
+	{
+		return "https://api.x.ai/v1/";
+	}
+	std::string case_PFN()
+	{
+		return "https://api.platform.preferredai.jp/v1/";
+	}
+	std::string case_MoonshotAI()
+	{
+		return "https://api.moonshot.ai/v1/";
+	}
+	std::string case_Sakura()
+	{
+		return "https://api.ai.sakura.ad.jp/v1/";
+	}
+	std::string case_DeepSeek()
+	{
+		return "https://api.deepseek.com/";
+	}
+	std::string case_OpenRouter()
+	{
+		return "https://openrouter.ai/api/v1/";
+	}
+	std::string case_OrcaRouter()
+	{
+		return "https://api.orcarouter.ai/v1/";
+	}
+	std::string case_Requesty()
+	{
+		return "https://router.requesty.ai/v1/";
+	}
+	std::string case_Merge()
+	{
+		return "https://api-gateway.merge.dev/v1/";
+	}
+	std::string case_Ollama()
+	{
+		return _generic_host_and_port();
+	}
+	std::string case_LMStudio()
+	{
+		return _generic_host_and_port();
+	}
+	std::string case_LLAMACPP()
+	{
+		return _generic_host_and_port();
+	}
+};
+
+struct _MakeRequest : public AbstractVisitor<Request> {
 	Model model_;
 	Credential cred_;
 
@@ -249,6 +343,29 @@ struct _MakeRequest : public AbstractVisitor<Request> {
 		}
 	}
 
+	std::string _endpoint_base_url()
+	{
+		return _ApiBaseUrl(model_).visit(model_.provider_id());
+	}
+
+	std::string _standard_api_suffix()
+	{
+		switch (model_.api_compatibility()) {
+		case ProviderID::OpenAI_responses:
+			return "responses";
+		case ProviderID::OpenAI_chat_completions:
+			return "chat/completions";
+		case ProviderID::Anthropic:
+			return "messages";
+		}
+		return {};
+	}
+	std::string _generic_endpoint_url()
+	{
+		return _endpoint_base_url() / _standard_api_suffix();
+	}
+	
+	
 	Request case_Unknown()
 	{
 		return {};
@@ -259,15 +376,8 @@ struct _MakeRequest : public AbstractVisitor<Request> {
 		Request r;
 		r.model_name = model_.model_name();
 		set_authorization_bearer_cred(&r, cred_);
-		switch (model_.api_compatibility()) {
-		case ProviderID::OpenAI_responses:
-			r.endpoint = "https://api.openai.com/v1/responses";
-			return r;
-		case ProviderID::OpenAI_chat_completions:
-			r.endpoint = "https://api.openai.com/v1/chat/completions";
-			return r;
-		}
-		return {};
+		r.endpoint.set_chat_endpoint_url(_generic_endpoint_url());
+		return r;
 	}
 
 	Request case_OpenAI_responses()
@@ -284,7 +394,7 @@ struct _MakeRequest : public AbstractVisitor<Request> {
 	{
 		Request r;
 		r.model_name = model_.model_name();
-		r.endpoint = "https://api.anthropic.com/v1/messages";
+		r.endpoint.set_chat_endpoint_url(_generic_endpoint_url());
 		r.header.push_back("x-api-key: " + cred_.api_key);
 		r.header.push_back("anthropic-version: 2023-06-01"); // ref. https://docs.anthropic.com/en/api/versioning
 		return r;
@@ -294,7 +404,8 @@ struct _MakeRequest : public AbstractVisitor<Request> {
 	{
 		Request r;
 		r.model_name = model_.model_name();
-		r.endpoint = "https://generativelanguage.googleapis.com/v1beta/models/" + url_encode(model_.model_name()) + ":generateContent?key=" + cred_.api_key;;
+		r.endpoint.url_ = _endpoint_base_url();
+		r.endpoint.suffix_ = "/models/" + url_encode(model_.model_name()) + ":generateContent?key=" + cred_.api_key;
 		return r;
 	}
 
@@ -302,7 +413,7 @@ struct _MakeRequest : public AbstractVisitor<Request> {
 	{
 		Request r;
 		r.model_name = model_.model_name();
-		r.endpoint = "https://api.x.ai/v1/chat/completions";
+		r.endpoint.set_chat_endpoint_url(_generic_endpoint_url());
 		set_authorization_bearer_cred(&r, cred_);
 		return r;
 	}
@@ -311,7 +422,7 @@ struct _MakeRequest : public AbstractVisitor<Request> {
 	{
 		Request r;
 		r.model_name = model_.model_name();
-		r.endpoint = "https://api.platform.preferredai.jp/v1/chat/completions";
+		r.endpoint.set_chat_endpoint_url(_generic_endpoint_url());
 		set_authorization_bearer_cred(&r, cred_);
 		return r;
 	}
@@ -320,14 +431,7 @@ struct _MakeRequest : public AbstractVisitor<Request> {
 	{
 		Request r;
 		r.model_name = model_.model_name();
-		switch (model_.api_compatibility()) {
-		case ProviderID::OpenAI_chat_completions:
-			r.endpoint = "https://api.moonshot.ai/v1/chat/completions";
-			break;
-		case ProviderID::Anthropic:
-			r.endpoint = "https://api.moonshot.ai/v1/responses";
-			break;
-		}
+		r.endpoint.set_chat_endpoint_url(_generic_endpoint_url());
 		set_authorization_bearer_cred(&r, cred_);
 		return r;
 	}
@@ -336,7 +440,7 @@ struct _MakeRequest : public AbstractVisitor<Request> {
 	{
 		Request r;
 		r.model_name = model_.model_name();
-		r.endpoint = "https://api.ai.sakura.ad.jp/v1/chat/completions";
+		r.endpoint.set_chat_endpoint_url(_generic_endpoint_url());
 		set_authorization_bearer_cred(&r, cred_);
 		return r;
 	}
@@ -345,7 +449,7 @@ struct _MakeRequest : public AbstractVisitor<Request> {
 	{
 		Request r;
 		r.model_name = model_.model_name();
-		r.endpoint = "https://api.deepseek.com/chat/completions";
+		r.endpoint.set_chat_endpoint_url(_generic_endpoint_url());
 		set_authorization_bearer_cred(&r, cred_);
 		return r;
 	}
@@ -353,8 +457,8 @@ struct _MakeRequest : public AbstractVisitor<Request> {
 	Request case_OpenRouter()
 	{
 		Request r;
-		r.endpoint = "https://openrouter.ai/api/v1/chat/completions";
 		r.model_name = model_.model_name();
+		r.endpoint.set_chat_endpoint_url(_generic_endpoint_url());
 		set_authorization_bearer_cred(&r, cred_);
 		return r;
 	}
@@ -362,9 +466,8 @@ struct _MakeRequest : public AbstractVisitor<Request> {
 	Request case_OrcaRouter()
 	{
 		Request r;
-		r.endpoint = "https://api.orcarouter.ai/v1/chat/completions";
-		// r.endpoint = "https://api.orcarouter.ai/v1/messages";
 		r.model_name = model_.model_name();
+		r.endpoint.set_chat_endpoint_url(_generic_endpoint_url());
 		set_authorization_bearer_cred(&r, cred_);
 		return r;
 	}
@@ -372,8 +475,8 @@ struct _MakeRequest : public AbstractVisitor<Request> {
 	Request case_Requesty()
 	{
 		Request r;
-		r.endpoint = "https://router.requesty.ai/v1/chat/completions";
 		r.model_name = model_.model_name();
+		r.endpoint.set_chat_endpoint_url(_generic_endpoint_url());
 		set_authorization_bearer_cred(&r, cred_);
 		return r;
 	}
@@ -381,8 +484,8 @@ struct _MakeRequest : public AbstractVisitor<Request> {
 	Request case_Merge()
 	{
 		Request r;
-		r.endpoint = "https://api-gateway.merge.dev/v1/responses";
 		r.model_name = model_.model_name();
+		r.endpoint.set_chat_endpoint_url(_generic_endpoint_url());
 		set_authorization_bearer_cred(&r, cred_);
 		return r;
 	}
@@ -391,12 +494,8 @@ struct _MakeRequest : public AbstractVisitor<Request> {
 	{
 		Request r;
 		r.model_name = model_.model_name();
-		std::string host = model_.host();
-		if (host.empty()) {
-			host = "localhost";
-		}
-		int port = model_.port();
-		r.endpoint = fmt("http://%s:%d/api/generate")(host)(port); // experimental
+		r.endpoint.url_ = _endpoint_base_url();
+		r.endpoint.suffix_ = "api/generate";
 		set_authorization_bearer_cred(&r, cred_);
 		return r;
 	}
@@ -405,12 +504,8 @@ struct _MakeRequest : public AbstractVisitor<Request> {
 	{
 		Request r;
 		r.model_name = model_.model_name();
-		std::string host = model_.host();
-		if (host.empty()) {
-			host = "localhost";
-		}
-		int port = model_.port();
-		r.endpoint = fmt("http://%s:%d/v1/completions")(host)(port); // experimental
+		r.endpoint.url_ = _endpoint_base_url();
+		r.endpoint.suffix_ = "v1/completions";
 		return r;
 	}
 
@@ -421,19 +516,8 @@ struct _MakeRequest : public AbstractVisitor<Request> {
 		if (r.model_name.empty())  {
 			r.model_name = "default";
 		}
-		std::string host = model_.host();
-		if (host.empty()) {
-			host = "localhost";
-		}
-		int port = model_.port();
-		switch (model_.api_compatibility()) {
-		case ProviderID::Anthropic:
-			r.endpoint = fmt("http://%s:%d/v1/messages")(host)(port);
-			break;
-		default:
-			r.endpoint = fmt("http://%s:%d/v1/chat/completions")(host)(port); // experimental
-			break;
-		}
+		r.endpoint.url_ = _endpoint_base_url() / "v1";
+		r.endpoint.suffix_ = _standard_api_suffix();
 		set_authorization_bearer_cred(&r, cred_);
 		return r;
 	}
@@ -450,45 +534,12 @@ Request make_request(ProviderID provider, const Model &model, Credential const &
 {
 	Request ret = _MakeRequest(model, cred).visit(provider);
 	if (model.endpoint_url_override) {
-		ret.endpoint = *model.endpoint_url_override;
+		ret.endpoint.set_chat_endpoint_url(*model.endpoint_url_override);
 	}
 	return ret;
 }
 
-/**
- * @brief モデルURLから環境変数名を生成する。
- *
- * 生成ルールは以下の通り：
- * - 英数字は大文字に変換する。
- * - その他の文字はアンダースコアに置換する。
- * - 連続する非英数字は単一のアンダースコアにまとめる。
- *
- * 例：
- * - "sakura:gpt-oss-120b" -> "SAKURA_GPT_OSS_120B"
- *
- * @param model_uri モデルURI
- * @return 環境変数名
- */
-std::string makeEnvName(const ModelURI &model_uri)
-{
-	std::string ret;
-	std::string const &s = model_uri.string;
-	char last = 0;
-	for (char c : s) {
-		if (std::isalnum(c)) {
-			ret += std::toupper(c);
-		} else {
-			c = '_';
-			if (c != last) {
-				ret += c;
-			}
-		}
-		last = c;
-	}
-	return ret;
-}
-
-void EndPoint::operator = (const std::string &url)
+void EndPoint::set_chat_endpoint_url(const std::string &url)
 {
 	url_ = url;
 	static constexpr std::string_view suffix_chat_completions = "/chat/completions";

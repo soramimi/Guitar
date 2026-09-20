@@ -15,13 +15,15 @@ private:
 	struct Private;
 	Private *m;	
 	void on_cred_key_source_changed();
+	void setLineEditEndpointUrl(const std::string &url);
+	void setLineEditApiKey(const std::string &apikey);
 public:
 	explicit SelectAiModelDialog(QWidget *parent = nullptr);
 	~SelectAiModelDialog();
 	
 private slots:
 	void on_pushButton_load_preset_clicked();
-	void on_pushButton_fetch_model_clicked();
+	void on_pushButton_query_model_clicked();
 	void on_comboBox_api_type_currentIndexChanged(int index);
 	void on_comboBox_provider_currentIndexChanged(int index);
 	void on_radioButton_cred_environ_clicked();

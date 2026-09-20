@@ -79,7 +79,7 @@
        </item>
       </layout>
      </widget>
-     <widget class="QWidget" name="">
+     <widget class="QWidget" name="layoutWidget">
       <layout class="QHBoxLayout" name="horizontalLayout_6">
        <item>
         <widget class="Line" name="line">
@@ -197,9 +197,9 @@
             </widget>
            </item>
            <item row="6" column="2">
-            <widget class="QPushButton" name="pushButton_fetch_model">
+            <widget class="QPushButton" name="pushButton_query_model">
              <property name="text">
-              <string>Fetch model...</string>
+              <string>Query model...</string>
              </property>
             </widget>
            </item>
@@ -377,7 +377,7 @@
   <tabstop>radioButton_cred_custom</tabstop>
   <tabstop>lineEdit_cred_api_key</tabstop>
   <tabstop>comboBox_model</tabstop>
-  <tabstop>pushButton_fetch_model</tabstop>
+  <tabstop>pushButton_query_model</tabstop>
   <tabstop>checkBox_show_api_key</tabstop>
   <tabstop>pushButton_new</tabstop>
   <tabstop>toolButton</tabstop>

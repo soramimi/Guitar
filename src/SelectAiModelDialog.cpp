@@ -15,6 +15,18 @@ enum {
 	ModelIndexRole = Qt::UserRole,
 };
 
+void deselectLineEdit(QLineEdit *le)
+{
+	le->setCursorPosition(0);
+	le->deselect();	
+}
+
+void setTextAndDeselect(QLineEdit *le, std::string const &text)
+{
+	le->setText(QString::fromStdString(text));
+	deselectLineEdit(le);
+}
+
 }
 
 struct SelectAiModelDialog::Private {
@@ -58,6 +70,16 @@ SelectAiModelDialog::~SelectAiModelDialog()
 	delete ui;
 }
 
+void SelectAiModelDialog::setLineEditEndpointUrl(std::string const &url)
+{
+	setTextAndDeselect(ui->lineEdit_endpoint_url, url);
+}
+
+void SelectAiModelDialog::setLineEditApiKey(std::string const &apikey)
+{
+	setTextAndDeselect(ui->lineEdit_cred_api_key, apikey);
+}
+
 void SelectAiModelDialog::on_pushButton_load_preset_clicked()
 {
 	SelectAiModelPresetDialog dlg(this);
@@ -66,17 +88,15 @@ void SelectAiModelDialog::on_pushButton_load_preset_clicked()
 		Model const &model = m->model;
 		
 		ui->lineEdit_name->setText(QString::fromStdString(m->model.model_name()));
-		
 		ui->comboBox_provider->setCurrentIndex(ui->comboBox_provider->findData((int)model.provider_id()));
-		
 		ui->comboBox_api_type->setCurrentIndex(ui->comboBox_api_type->findData((int)model.api_compatibility()));
 		
 		Request req = make_request(model.provider_id(), model, {});
-		ui->lineEdit_endpoint_url->setText(QString::fromStdString(req.endpoint.url_chat()));
+		setLineEditEndpointUrl(req.endpoint.url_chat());
 	}
 }
 
-void SelectAiModelDialog::on_pushButton_fetch_model_clicked()
+void SelectAiModelDialog::on_pushButton_query_model_clicked()
 {
 	ui->comboBox_model->clear();
 	
@@ -115,7 +135,7 @@ void SelectAiModelDialog::on_comboBox_provider_currentIndexChanged(int index)
 		ui->comboBox_api_type->setCurrentIndex(ui->comboBox_api_type->findData((int)m->model.api_compatibility()));
 		
 		Request req = GenerativeAI::make_request(provider.id, m->model, cred);
-		ui->lineEdit_endpoint_url->setText(req.endpoint.url_chat().c_str());
+		setLineEditEndpointUrl(req.endpoint.url_chat());
 		
 		ui->lineEdit_cred_symbol->setText(QString::fromStdString(provider.env_name));
 
@@ -129,9 +149,7 @@ void SelectAiModelDialog::on_comboBox_provider_currentIndexChanged(int index)
 			}
 			
 		}
-		ui->lineEdit_cred_api_key->setText(QString::fromStdString(cred.api_key));
-		ui->lineEdit_cred_api_key->setCursorPosition(0);
-		ui->lineEdit_cred_api_key->deselect();
+		setLineEditApiKey(cred.api_key);
 	}
 }
 
@@ -142,7 +160,7 @@ void SelectAiModelDialog::on_comboBox_api_type_currentIndexChanged(int index)
 		m->model.api_compatibility_override = api_type_id;
 		
 		Request req = make_request(m->model.provider_id(), m->model, {});
-		ui->lineEdit_endpoint_url->setText(QString::fromStdString(req.endpoint.url_chat()));
+		setLineEditEndpointUrl(req.endpoint.url_chat());
 	}
 }
 
@@ -152,6 +170,7 @@ void SelectAiModelDialog::on_cred_key_source_changed()
 
 	std::string symbol = ui->lineEdit_cred_symbol->text().toStdString();
 	if (ui->radioButton_cred_environ->isChecked()) {
+		ui->lineEdit_cred_api_key->setEnabled(false);
 		auto GetEnvironmentApiKey = [this](std::string const &symbol)-> std::string {
 			char const *env = std::getenv(symbol.c_str());
 			if (env) {
@@ -161,6 +180,7 @@ void SelectAiModelDialog::on_cred_key_source_changed()
 		};
 		cred.api_key = GetEnvironmentApiKey(symbol);
 	} else if (ui->radioButton_cred_custom->isChecked()) {
+		ui->lineEdit_cred_api_key->setEnabled(true);
 		auto GetCustomApiKey = [this](std::string const &symbol)-> std::string {
 			ApplicationSettings const &s = global->appsettings;
 			int i = ui->comboBox_provider->currentIndex();
@@ -174,21 +194,19 @@ void SelectAiModelDialog::on_cred_key_source_changed()
 		};
 		cred.api_key = GetCustomApiKey(symbol);
 	}
-	ui->lineEdit_cred_api_key->setText(QString::fromStdString(cred.api_key));
+	setLineEditApiKey(cred.api_key);
 }
 
 void SelectAiModelDialog::on_checkBox_show_api_key_clicked()
 {
 	bool show = ui->checkBox_show_api_key->isChecked();
 	ui->lineEdit_cred_api_key->setEchoMode(show ? QLineEdit::Normal : QLineEdit::Password);
-	
 }
 
 void SelectAiModelDialog::on_radioButton_cred_environ_clicked()
 {
 	on_cred_key_source_changed();
 }
-
 
 void SelectAiModelDialog::on_radioButton_cred_custom_clicked()
 {

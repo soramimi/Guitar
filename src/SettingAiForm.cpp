@@ -201,10 +201,6 @@ AiApiKeys::Item *SettingAiForm::currentKeyItem()
 	SettingAiForm::ProviderFormData const *p = formdata(m->current_provider_id());
 	if (p) {
 		envname = p->env_name();
-		// if (envname.empty()) {
-		// 	auto uri = currentModelURI();
-		// 	envname = GenerativeAI::makeEnvName(uri);
-		// }
 	}
 	if (!envname.empty()) {
 		auto it = m->api_keys.map.find(envname);
@@ -377,11 +373,7 @@ void SettingAiForm::reflectSettingsToUI()
 			break;
 		case ApiKeyFrom::LocalSecret:
 			if (!envname.empty()) {
-				// if (envname.empty()) {
-				// 	auto uri = currentModelURI();
-				// 	envname = GenerativeAI::makeEnvName(uri);
-				// }
-				auto it = m->api_keys.map.find(envname);
+			auto it = m->api_keys.map.find(envname);
 				if (it != m->api_keys.map.end()) {
 					apikey = it->second.api_key;
 				}
@@ -565,4 +557,3 @@ void SettingAiForm::on_comboBox_ai_model_currentTextChanged(const QString &arg1)
 {
 	guessProviderFromModelName(arg1.toStdString());
 }
-
