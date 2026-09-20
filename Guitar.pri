@@ -68,7 +68,8 @@ win32:LIBS += -lbcrypt
 
 # libsodium
 
-LIBS += -lsodium
+!win32:LIBS += -lsodium
+win32:LIBS += -llibsodium
 
 # network library
 
