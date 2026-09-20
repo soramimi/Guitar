@@ -8,12 +8,14 @@
 #include <cassert>
 #include <cctype>
 #include <charconv>
+#include <climits>
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
 #include <cstdlib>
 #include <cstring>
 #include <functional>
+#include <optional>
 #include <string>
 #include <string_view>
 #include <variant>
@@ -113,166 +115,159 @@ static std::vector<char> encode_json_string(std::string_view in)
 	return ret;
 }
 
-namespace detail {
+/**
+ * @brief Return 10 raised to an integer power.
+ *
+ * A small lookup table is used for the most common range to avoid
+ * calling the comparatively expensive `pow()` routine.  Values outside
+ * the table range fall back to `pow(10.0, exp)`.
+ *
+ * @param exp Decimal exponent (positive or negative).
+ * @return The value 10^exp as a double.
+ */
+static double pow10_int(int exp)
+{
+	// Pre‑computed powers for |exp| ≤ 16
+	static const double tbl[] = {
+		1e+00, 1e+01, 1e+02, 1e+03, 1e+04, 1e+05, 1e+06,
+		1e+07, 1e+08, 1e+09, 1e+10, 1e+11, 1e+12, 1e+13,
+		1e+14, 1e+15, 1e+16
+	};
+	if (exp >= 0 && exp < static_cast<int>(sizeof tbl / sizeof *tbl))
+		return tbl[exp];
+	if (exp <= 0 && exp > -static_cast<int>(sizeof tbl / sizeof *tbl))
+		return 1.0 / tbl[-exp];
+	// Rare case: delegate to libm
+	return std::pow(10.0, exp);
+}
 
-class misc {
-private:
-	/**
-	 * @brief Return 10 raised to an integer power.
-	 *
-	 * A small lookup table is used for the most common range to avoid
-	 * calling the comparatively expensive `pow()` routine.  Values outside
-	 * the table range fall back to `pow(10.0, exp)`.
-	 *
-	 * @param exp Decimal exponent (positive or negative).
-	 * @return The value 10^exp as a double.
-	 */
-	static double pow10_int(int exp)
-	{
-		// Pre‑computed powers for |exp| ≤ 16
-		static const double tbl[] = {
-			1e+00, 1e+01, 1e+02, 1e+03, 1e+04, 1e+05, 1e+06,
-			1e+07, 1e+08, 1e+09, 1e+10, 1e+11, 1e+12, 1e+13,
-			1e+14, 1e+15, 1e+16
-		};
-		if (exp >= 0 && exp < static_cast<int>(sizeof tbl / sizeof *tbl))
-			return tbl[exp];
-		if (exp <= 0 && exp > -static_cast<int>(sizeof tbl / sizeof *tbl))
-			return 1.0 / tbl[-exp];
-		// Rare case: delegate to libm
-		return std::pow(10.0, exp);
+/**
+ * @brief Locale‑independent `strtod` clone.
+ *
+ * Parses a floating‑point literal from a C‑string.  Leading white‑space,
+ * an optional sign, fractional part (with a mandatory '.' as the decimal
+ * separator), and an optional exponent (`e`/`E`) are recognised.
+ *
+ * The implementation **ignores the current locale**; the decimal point
+ * must be `'.'` and no thousands separators are accepted.
+ *
+ * @param nptr   Pointer to NUL‑terminated text to parse.
+ * @param endptr If non‑NULL, receives a pointer to the first character
+ *               following the parsed number (or `nptr` on failure).
+ * @return The parsed value.
+ */
+static double my_strtod(const char *nptr, char **endptr)
+{
+	const char *s = nptr;
+	bool sign = false;
+	bool saw_digit = false;
+	int frac_digits = 0;
+	long exp_val = 0;
+	bool exp_sign = false;
+	double value = 0.0;
+	
+	// Skip leading white‑space
+	while (std::isspace(static_cast<unsigned char>(*s))) ++s;
+	
+	// Parse optional sign
+	if (*s == '+' || *s == '-') {
+		if (*s == '-') sign = true;
+		s++;
 	}
-public:
-	/**
-	 * @brief Locale‑independent `strtod` clone.
-	 *
-	 * Parses a floating‑point literal from a C‑string.  Leading white‑space,
-	 * an optional sign, fractional part (with a mandatory '.' as the decimal
-	 * separator), and an optional exponent (`e`/`E`) are recognised.
-	 *
-	 * The implementation **ignores the current locale**; the decimal point
-	 * must be `'.'` and no thousands separators are accepted.
-	 *
-	 * @param nptr   Pointer to NUL‑terminated text to parse.
-	 * @param endptr If non‑NULL, receives a pointer to the first character
-	 *               following the parsed number (or `nptr` on failure).
-	 * @return The parsed value.
-	 */
-	static double my_strtod(const char *nptr, char **endptr)
-	{
-		const char *s = nptr;
-		bool sign = false;
-		bool saw_digit = false;
-		int frac_digits = 0;
-		long exp_val = 0;
-		bool exp_sign = false;
-		double value = 0.0;
-
-		// Skip leading white‑space
-		while (std::isspace(static_cast<unsigned char>(*s))) ++s;
-
-		// Parse optional sign
-		if (*s == '+' || *s == '-') {
-			if (*s == '-') sign = true;
-			s++;
-		}
-
-		// Integer part
+	
+	// Integer part
+	while (std::isdigit(static_cast<unsigned char>(*s))) {
+		saw_digit = true;
+		value = value * 10.0 + (*s - '0');
+		s++;
+	}
+	
+	// Fractional part
+	if (*s == '.') {
+		s++;
 		while (std::isdigit(static_cast<unsigned char>(*s))) {
 			saw_digit = true;
 			value = value * 10.0 + (*s - '0');
 			s++;
+			frac_digits++;
 		}
-
-		// Fractional part
-		if (*s == '.') {
+	}
+	
+	// No digits at all -> conversion failure
+	if (!saw_digit) {
+		if (endptr) *endptr = const_cast<char *>(nptr);
+		return 0.0;
+	}
+	
+	// Exponent part
+	if (*s == 'e' || *s == 'E') {
+		s++;
+		const char *exp_start = s;
+		if (*s == '+' || *s == '-') {
+			if (*s == '-') exp_sign = true;
 			s++;
+		}
+		if (std::isdigit(static_cast<unsigned char>(*s))) {
 			while (std::isdigit(static_cast<unsigned char>(*s))) {
-				saw_digit = true;
-				value = value * 10.0 + (*s - '0');
-				s++;
-				frac_digits++;
-			}
-		}
-
-		// No digits at all -> conversion failure
-		if (!saw_digit) {
-			if (endptr) *endptr = const_cast<char *>(nptr);
-			return 0.0;
-		}
-
-		// Exponent part
-		if (*s == 'e' || *s == 'E') {
-			s++;
-			const char *exp_start = s;
-			if (*s == '+' || *s == '-') {
-				if (*s == '-') exp_sign = true;
+				exp_val = exp_val * 10 + (*s - '0');
 				s++;
 			}
-			if (std::isdigit(static_cast<unsigned char>(*s))) {
-				while (std::isdigit(static_cast<unsigned char>(*s))) {
-					exp_val = exp_val * 10 + (*s - '0');
-					s++;
-				}
-				if (exp_sign) {
-					exp_val = -exp_val;
-				}
-			} else {
-				// Roll back if 'e' is not followed by a valid exponent
-				s = exp_start - 1;
+			if (exp_sign) {
+				exp_val = -exp_val;
 			}
+		} else {
+			// Roll back if 'e' is not followed by a valid exponent
+			s = exp_start - 1;
 		}
-
-		// Scale by 10^(exponent − #fractional‑digits)
-		int total_exp = exp_val - frac_digits;
-		if (total_exp != 0) {
-			value *= pow10_int(total_exp);
-		}
-
-		// Apply sign
-		if (sign) {
-			value = -value;
-		}
-
-		// Set errno on overflow/underflow
-		if (!std::isfinite(value)) {
-			// errno = ERANGE;
-			value = sign ? -HUGE_VAL : HUGE_VAL;
-		} else if (value == 0.0 && saw_digit && total_exp != 0) {
-			// errno = ERANGE;  // underflow
-		}
-
-		// Report where parsing stopped
-		if (endptr) *endptr = const_cast<char *>(s);
-		return value;
 	}
-
-	static std::string format_double(double val, bool allow_nan)
-	{
-		if (std::isnan(val)) {
-			if (allow_nan) {
-				return "NaN";
-			}
-			return {};
-		}
-		if (std::isinf(val)) {
-			if (allow_nan) {
-				return std::signbit(val) ? "-Infinity" : "Infinity";
-			}
-			return {};
-		}
-
-		// std::to_chars produces the shortest round-trip representation without locale dependency
-		char buf[32];
-		auto [ptr, ec] = std::to_chars(buf, buf + sizeof(buf), val);
-		if (ec != std::errc{}) {
-			return {};
-		}
-		return std::string(buf, ptr);
+	
+	// Scale by 10^(exponent − #fractional‑digits)
+	int total_exp = exp_val - frac_digits;
+	if (total_exp != 0) {
+		value *= pow10_int(total_exp);
 	}
-};
+	
+	// Apply sign
+	if (sign) {
+		value = -value;
+	}
+	
+	// Set errno on overflow/underflow
+	if (!std::isfinite(value)) {
+		// errno = ERANGE;
+		value = sign ? -HUGE_VAL : HUGE_VAL;
+	} else if (value == 0.0 && saw_digit && total_exp != 0) {
+		// errno = ERANGE;  // underflow
+	}
+	
+	// Report where parsing stopped
+	if (endptr) *endptr = const_cast<char *>(s);
+	return value;
+}
 
-} // namespace detail
+static std::string format_double(double val, bool allow_nan)
+{
+	if (std::isnan(val)) {
+		if (allow_nan) {
+			return "NaN";
+		}
+		return {};
+	}
+	if (std::isinf(val)) {
+		if (allow_nan) {
+			return std::signbit(val) ? "-Infinity" : "Infinity";
+		}
+		return {};
+	}
+	
+	// std::to_chars produces the shortest round-trip representation without locale dependency
+	char buf[32];
+	auto [ptr, ec] = std::to_chars(buf, buf + sizeof(buf), val);
+	if (ec != std::errc{}) {
+		return {};
+	}
+	return std::string(buf, ptr);
+}
 
 enum StateType {
 	// Symbols
@@ -289,6 +284,8 @@ enum StateType {
 	EndArray,
 	String,
 	Number,
+	//
+	EndDocument,
 };
 
 class Reader {
@@ -301,6 +298,29 @@ public:
 		std::string what() const { return what_; }
 	};
 private:
+	bool is_streaming_input_mode() const
+	{
+		return (bool)d.fn_input_calback;
+	}
+	void need_input() const
+	{
+		if (is_streaming_input_mode()) {
+			d.fn_input_calback();
+		}
+	}
+	
+	int peek_next_char() const
+	{
+		if (d.ptr && d.end && d.ptr < d.end) {
+			return (unsigned char)*d.ptr;
+		}
+		need_input();
+		if (d.ptr && d.end && d.ptr < d.end) {
+			return (unsigned char)*d.ptr;
+		}
+		return -1;
+	}
+	
 	int scan_space(char const *begin, char const *end)
 	{
 		char const *ptr = begin;
@@ -333,6 +353,50 @@ private:
 		}
 		return int(ptr - begin);
 	}
+	
+	bool skip_space()
+	{
+		bool ret = false;
+		while (1) {
+			int c = peek_next_char();
+			if (c < 0) {
+				if (d.comment_state != 0) {
+					d.not_enough_input = true;
+				}
+				break;
+			}
+			if (d.comment_state != 0) {
+				if (d.comment_state == '*') {
+					if (c == '/') {
+						d.comment_state = 0;
+					}
+				} else if (d.comment_state == '/') {
+					if (c == '\n' || c == '\r') {
+						d.comment_state = 0;
+					}
+				}
+			} else if (!std::isspace(c)) {
+				if (d.allow_comment && c == '/') {
+					if (d.ptr + 1 >= d.end) {
+						need_input();
+					}
+					if (d.ptr + 1 < d.end) {
+						char t = d.ptr[1];
+						if (t == '*' || t == '/') {
+							d.comment_state = t;
+							d.ptr += 2;
+							ret = true;
+							continue;
+						}
+					}
+				}
+				break;
+			}
+			d.ptr++;
+			ret = true;
+		}
+		return ret;
+	}
 
 	int parse_symbol(char const *begin, char const *end, std::string *out)
 	{
@@ -349,6 +413,50 @@ private:
 		}
 		out->clear();
 		return 0;
+	}
+
+	static bool validate_json_number(char const *start, char const *end, char const **out_end)
+	{
+		char const *p = start;
+		if (p < end && *p == '-') {
+			p++;
+		}
+		if (p >= end) {
+			return false;
+		}
+		if (*p == '0') {
+			p++;
+		} else if (*p >= '1' && *p <= '9') {
+			p++;
+			while (p < end && std::isdigit(static_cast<unsigned char>(*p))) {
+				p++;
+			}
+		} else {
+			return false;
+		}
+		if (p < end && *p == '.') {
+			p++;
+			if (p >= end || !std::isdigit(static_cast<unsigned char>(*p))) {
+				return false;
+			}
+			while (p < end && std::isdigit(static_cast<unsigned char>(*p))) {
+				p++;
+			}
+		}
+		if (p < end && (*p == 'e' || *p == 'E')) {
+			p++;
+			if (p < end && (*p == '+' || *p == '-')) {
+				p++;
+			}
+			if (p >= end || !std::isdigit(static_cast<unsigned char>(*p))) {
+				return false;
+			}
+			while (p < end && std::isdigit(static_cast<unsigned char>(*p))) {
+				p++;
+			}
+		}
+		*out_end = p;
+		return true;
 	}
 
 	int parse_number(char const *begin, char const *end, double *out)
@@ -378,6 +486,10 @@ private:
 						if (c >= '0' && c <= '9') digit = c - '0';
 						else if (c >= 'a' && c <= 'f') digit = c - 'a' + 10;
 						else if (c >= 'A' && c <= 'F') digit = c - 'A' + 10;
+						if (v > (LLONG_MAX - digit) / 16) {
+							push_error("hexadecimal integer overflow");
+							return 0;
+						}
 						v = v * 16 + digit;
 					}
 					*out = double(sign ? -v : v);
@@ -409,15 +521,11 @@ private:
 		}
 
 		char const *start = ptr;
-		while (ptr < end) {
-			char c = *ptr;
-			if (std::isdigit(static_cast<unsigned char>(c)) || c == '.' || c == '+' || c == '-' || c == 'e' || c == 'E') {
-				ptr++;
-			} else {
-				break;
-			}
+		char const *num_end = nullptr;
+		if (!validate_json_number(start, end, &num_end)) {
+			return 0;
 		}
-		if (start == ptr) return 0;
+		ptr = num_end;
 
 #if defined(__cpp_lib_to_chars) && __cpp_lib_to_chars >= 201611L
 		// std::from_chars for double is available: parse without copying.
@@ -431,7 +539,7 @@ private:
 		// Fallback: copy to a null-terminated buffer for locale-independent strtod.
 		std::vector<char> vec(start, ptr);
 		vec.push_back(0);
-		*out = detail::misc::my_strtod(vec.data(), nullptr);
+		*out = my_strtod(vec.data(), nullptr);
 
 		return int(ptr - begin);
 	}
@@ -534,7 +642,7 @@ private:
 				}
 			}
 		}
-		return 0;
+		return 0; // unexpected end of string
 	}
 private:
 	struct StateItem {
@@ -548,6 +656,10 @@ private:
 		}
 	};
 	struct ParserData {
+		bool not_enough_input = false;
+		std::optional<std::vector<char>> input_buffer;
+		std::function<void ()> fn_input_calback;
+		
 		char const *begin = nullptr;
 		char const *end = nullptr;
 		char const *ptr = nullptr;
@@ -557,6 +669,7 @@ private:
 		std::string string;
 		double number = 0;
 		bool is_array = false;
+		char comment_state = 0; // 0=none, '/'=line comment, '*'=block comment
 		bool allow_comment = false;
 		bool allow_ambiguous_comma = false;
 		bool allow_unquoted_key = false;
@@ -564,9 +677,14 @@ private:
 		bool allow_special_constant = false;
 		bool allow_key_in_array = false;
 		std::vector<std::string> depth;
-		std::vector<int> depth_stack;
+		struct NestItem {
+			int depth;
+			std::string path;
+		};
+		std::vector<NestItem> nest_stack;
 		StateItem last_state;
 		std::vector<Error> errors;
+		bool extraction_support = true;
 	};
 	ParserData d;
 
@@ -649,8 +767,8 @@ private:
 		reset();
 		d = {};
 		d.begin = begin;
+		d.ptr = begin;
 		d.end = end;
-		d.ptr = d.begin;
 	}
 
 	void parse(std::string_view sv)
@@ -665,17 +783,15 @@ private:
 		}
 		parse(ptr, ptr + len);
 	}
-
+	
 	bool _internal_next()
 	{
+		bool not_enough_input = true;
 		while (d.ptr < d.end) {
-			{
-				auto n = scan_space(d.ptr, d.end);;
-				if (n > 0) {
-					d.ptr += n;
-					continue;
-				}
-			}
+			not_enough_input = false;
+			
+			if (skip_space()) continue;
+			
 			if (*d.ptr == '}') {
 				d.ptr++;
 				d.string.clear();
@@ -730,7 +846,7 @@ private:
 					push_state(Null);
 					return true;
 				}
-				d.ptr += scan_space(d.ptr, d.end);
+				skip_space();
 				if (is_value()) {
 					pop_state();
 				}
@@ -777,26 +893,37 @@ private:
 					push_error("unexpected double quote");
 					return false;
 				}
-
+				
 				auto n = parse_string(d.ptr, d.end, &d.string);
+				if (n == 0 || d.ptr + n == d.end) {
+					not_enough_input = true;
+					break;
+				}
 				if (n > 0) {
 					d.ptr += n;
-					d.ptr += scan_space(d.ptr, d.end);
+					skip_space();
 					if (state() == Key) {
 						//
-					} else if (d.ptr < d.end && *d.ptr == ':') {
-						if (isarray()) {
-							// unusual syntax; "key":"value" in array
-							// e.g. [ "key": "value" ]
-							if (!d.allow_key_in_array) {
-								push_error("unexpected key in array");
-								return false;
-							}
+					} else {
+						int c = peek_next_char();
+						if (c < 0) {
+							not_enough_input = true;
+							break;
 						}
-						d.ptr++;
-						d.key = d.string;
-						push_state(Key);
-						return true;
+						if (c == ':') {
+							if (isarray()) {
+								// unusual syntax; "key":"value" in array
+								// e.g. [ "key": "value" ]
+								if (!d.allow_key_in_array) {
+									push_error("unexpected key in array");
+									return false;
+								}
+							}
+							d.ptr++;
+							d.key = d.string;
+							push_state(Key);
+							return true;
+						}
 					}
 					push_state(String);
 					return true;
@@ -805,48 +932,74 @@ private:
 			if (state() == Key || isarray()) {
 				auto n = parse_number(d.ptr, d.end, &d.number);
 				if (n > 0) {
+					if (n == 0 || d.ptr + n == d.end) {
+						not_enough_input = true;
+						break;
+					}
 					d.string.assign(d.ptr, n);
 					d.ptr += n;
 					push_state(Number);
 					return true;
 				}
-			if (std::isalpha(static_cast<unsigned char>(*d.ptr))) {
-				auto n = parse_symbol(d.ptr, d.end, &d.string);
-				if (n > 0) {
-					if (state() == Key || state() == Comma || state() == StartArray) {
-						d.ptr += n;
-						if (d.string == "false") {
-							push_state(False);
-							return true;
-						}
-						if (d.string == "true") {
-							push_state(True);
-							return true;
-						}
-						if (d.string == "null") {
-							push_state(Null);
-							return true;
+				if (std::isalpha(static_cast<unsigned char>(*d.ptr))) {
+					auto n = parse_symbol(d.ptr, d.end, &d.string);
+					if (n == 0 || d.ptr + n == d.end) {
+						not_enough_input = true;
+						break;
+					}
+					if (n > 0) {
+						if (state() == Key || state() == Comma || state() == StartArray) {
+							d.ptr += n;
+							if (d.string == "false") {
+								push_state(False);
+								return true;
+							}
+							if (d.string == "true") {
+								push_state(True);
+								return true;
+							}
+							if (d.string == "null") {
+								push_state(Null);
+								return true;
+							}
 						}
 					}
 				}
-			}
 		} else if (d.allow_unquoted_key) {
 			auto n = parse_symbol(d.ptr, d.end, &d.string);
+			if (n == 0 || d.ptr + n == d.end) {
+				not_enough_input = true;
+				break;
+			}
 			if (n > 0) {
-				n += scan_space(d.ptr + n, d.end);
-				if (d.ptr[n] == ':') {
-					d.ptr += n + 1;
+				d.ptr += n;
+				skip_space();
+				if (d.ptr < d.end && *d.ptr == ':') {
+					d.ptr++;
 					d.key = d.string;
 					push_state(Key);
 					return true;
 				}
 			}
 		}
-		if (!has_error()) {
-			push_error("syntax error");
+			if (!has_error()) {
+				push_error("syntax error");
+			}
+			d.not_enough_input = true;
+			return false;
 		}
-		break;
+		
+		if ((state() == EndObject || state() == EndArray) && d.depth.empty()) {
+			push_state(EndDocument);
+			return false;
 		}
+		
+		if (not_enough_input) {
+			d.not_enough_input = true;
+			need_input();
+			return false;
+		}
+		
 		return false;
 	}
 	static void _init(ParserData *d)
@@ -856,6 +1009,7 @@ private:
 		d->ptr = nullptr;
 	}
 public:
+	Reader() = default;
 	Reader(std::string_view sv)
 	{
 		parse(sv);
@@ -883,7 +1037,49 @@ public:
 	}
 	Reader(Reader const &r) = delete;
 	Reader &operator=(Reader const &r) = delete;
-
+	
+	Reader(std::function<void ()> fn_input_calback)
+	{
+		d.fn_input_calback = fn_input_calback;
+		d.extraction_support = false;
+	}
+	
+	void input(std::string_view in)
+	{
+		if (in.empty()) return;
+		
+		static constexpr size_t EXTRA_ROOM = 200; // reserve extra room to avoid frequent reallocations
+		
+		d.not_enough_input = false;
+		d.extraction_support = false;
+		
+		if (d.input_buffer && (d.input_buffer->capacity() - d.input_buffer->size()) >= in.size()) {
+			if (d.ptr && d.end && d.ptr == d.end) {
+				// all previous input has been consumed, reuse the buffer
+				d.input_buffer->assign(in.begin(), in.end());
+				d.begin = d.ptr = d.input_buffer->data();
+			} else {
+				// append new input to the existing buffer
+				d.input_buffer->insert(d.input_buffer->end(), in.begin(), in.end());
+				if (!d.begin) d.begin = d.input_buffer->data();
+				if (!d.ptr)   d.ptr = d.input_buffer->data();
+			}
+			d.end = d.input_buffer->data() + d.input_buffer->size();
+		} else {
+			std::vector<char> newbuf;
+			size_t curr = (d.ptr && d.end) ? (d.end - d.ptr) : 0;
+			newbuf.reserve(curr + in.size() + EXTRA_ROOM);
+			if (curr > 0) {
+				newbuf.assign(d.ptr, d.end); // copy remaining unprocessed data to the new buffer
+			}
+			newbuf.insert(newbuf.end(), in.begin(), in.end()); // append new input data
+			d.input_buffer = std::move(newbuf);
+			d.begin = d.input_buffer->data();
+			d.ptr = d.begin;
+			d.end = d.begin + d.input_buffer->size();
+		}
+	}
+	
 	void allow_comment(bool allow)
 	{
 		d.allow_comment = allow;
@@ -899,12 +1095,6 @@ public:
 	void allow_hexadecimal(bool allow)
 	{
 		d.allow_hexadecimal = allow;
-	}
-
-	[[deprecated("use allow_hexadecimal instead")]]
-	void allow_hexadicimal(bool allow)
-	{
-		allow_hexadecimal(allow);
 	}
 	void allow_special_constant(bool allow)
 	{
@@ -924,7 +1114,10 @@ public:
 	}
 	void nest()
 	{
-		d.depth_stack.push_back(depth());
+		ParserData::NestItem item;
+		item.depth = depth();
+		item.path = path();
+		d.nest_stack.push_back(item);
 	}
 	void nest(std::function<void ()> callback_fn)
 	{
@@ -940,14 +1133,25 @@ public:
 			return true;
 		}
 		if (_internal_next()) {
-			if (d.depth_stack.empty()) return true;
-			if (this->depth() >= d.depth_stack.back()) {
+			if (d.nest_stack.empty()) return true;
+			if (this->depth() >= d.nest_stack.back().depth) {
 				return true;
 			}
-			d.depth_stack.pop_back();
+			d.nest_stack.pop_back();
 			hold();
 		}
+		if (is_streaming_input_mode() && !is_not_enough_input()) {
+			if (state() != EndDocument) {
+				return true;
+			}
+		}
 		return false;
+	}
+	void next_document()
+	{
+		if (state() == EndDocument) {
+			d.states.clear();
+		}
 	}
 
 	StateType state() const
@@ -964,7 +1168,12 @@ public:
 	{
 		return d.errors;
 	}
-
+	
+	bool is_not_enough_input() const
+	{
+		return d.not_enough_input;
+	}
+	
 	bool is_start_object() const
 	{
 		return state() == StartObject;
@@ -1121,7 +1330,15 @@ public:
 	bool match(std::string_view path, bool match_end_structure = false) const
 	{
 		if (!is_value()) return false;
-
+		
+		std::string at;
+		if (!path.empty() && path.front() == '@') {
+			if (!d.nest_stack.empty()) {
+				at = d.nest_stack.back().path + std::string(path.substr(1));
+				path = at;
+			}
+		}
+		
 		auto Path = [&](size_t i){ return i < path.size() ? path[i] : 0; };
 
 		const auto stat = state();
@@ -1191,8 +1408,14 @@ public:
 	{
 		return (uintptr_t)d.ptr;
 	}
+	
 	std::string_view extract(uintptr_t begin, uintptr_t end)
 	{
+		if (!d.extraction_support) {
+			push_error("extract() is not supported in streaming input mode");
+			return {};
+		}
+		
 		if (begin >= (uintptr_t)d.begin && end <= (uintptr_t)d.end && begin <= end) {
 			return std::string_view((char *)begin, end - begin);
 		}
@@ -1254,7 +1477,7 @@ private:
 
 	bool print_number(double v)
 	{
-		std::string s = detail::misc::format_double(v, allow_nan_);
+		std::string s = format_double(v, allow_nan_);
 		if (s.empty()) {
 			print("null");
 			return false;
@@ -1506,6 +1729,9 @@ struct Array;
 struct KeyValue;
 typedef std::vector<KeyValue> _Object;
 typedef std::variant<null_t, bool, double, std::string, _Object, Array> Variant;
+
+inline bool operator == (jstream::Variant const &lhs, jstream::Variant const &rhs);
+
 struct Array {
 	std::vector<Variant> a;
 	size_t size() const
@@ -1549,6 +1775,7 @@ struct KeyValue {
 		: key(k), value(v)
 	{
 	}
+	bool operator == (jstream::KeyValue const &rhs) const;
 };
 inline void Array::push_back(const Variant &v)
 {
@@ -1569,6 +1796,7 @@ struct VariantRef {
 		return *var;
 	}
 };
+
 struct Object {
 	_Object *p;
 	Object() : p(nullptr)
@@ -1626,6 +1854,9 @@ struct Object {
 	}
 	VariantRef operator [] (std::string const &key)
 	{
+		if (Variant *v = find(key)) {
+			return VariantRef(*v);
+		}
 		p->emplace_back(key, Variant());
 		return p->back().value;
 	}
@@ -1701,5 +1932,29 @@ static inline Variant var(jstream::Reader const &reader)
 using std::get;
 
 } // namespace jstream
+
+inline bool jstream::KeyValue::operator == (jstream::KeyValue const &rhs) const
+{
+	return this->key == rhs.key && this->value == rhs.value;
+}
+
+inline bool operator == (jstream::KeyValue const &lhs, jstream::KeyValue const &rhs)
+{
+	return lhs.operator == (rhs);
+}
+
+inline bool operator == (jstream::Variant const &lhs, jstream::Variant const &rhs)
+{
+	if (lhs.index() != rhs.index()) return false;
+	switch (lhs.index()) {
+	case 0: return true; // null
+	case 1: return std::get<bool>(lhs) == std::get<bool>(rhs);
+	case 2: return std::get<double>(lhs) == std::get<double>(rhs);
+	case 3: return std::get<std::string>(lhs) == std::get<std::string>(rhs);
+	case 4: return std::get<jstream::_Object>(lhs) == std::get<jstream::_Object>(rhs);
+	case 5: return std::get<jstream::Array>(lhs).a == std::get<jstream::Array>(rhs).a;
+	}
+	return false;
+}
 
 #endif // JSTREAM_H_
