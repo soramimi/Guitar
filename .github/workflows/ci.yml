@@ -28,6 +28,7 @@ jobs:
           libzstd-dev \
           libgl1-mesa-dev \
           libssl-dev \
+          libsodium-dev \
           qt6-base-dev \
           qt6-svg-dev \
           libcurl4-openssl-dev \

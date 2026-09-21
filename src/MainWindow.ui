@@ -1527,7 +1527,7 @@
   </action>
   <action name="action_reset_HEAD_1">
    <property name="text">
-    <string>&amp;Reset HEAD~1</string>
+    <string>Reset HEAD~&amp;1</string>
    </property>
    <property name="toolTip">
     <string>Reset HEAD~1</string>
@@ -1845,7 +1845,7 @@
   </action>
   <action name="action_reset_and_clean">
    <property name="text">
-    <string>Reset and &amp;clean...</string>
+    <string>&amp;Reset and clean...</string>
    </property>
    <property name="shortcut">
     <string>Ctrl+R</string>
