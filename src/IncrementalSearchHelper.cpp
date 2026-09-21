@@ -2,8 +2,9 @@
 #include <QColor>
 #include <QPainter>
 #include <QStyleOptionViewItem>
-#include "ApplicationGlobal.h"
 
+#ifdef APP_GUITAR
+#include "ApplicationGlobal.h"
 static inline QColor incremental_search_filtered_bg_color()
 {
 	return global->appsettings.incremental_search_color.filtered_bg;
@@ -13,10 +14,21 @@ static inline QColor incremental_search_highlight_bg_color()
 {
 	return global->appsettings.incremental_search_color.highlight_bg;
 }
+#else
+static inline QColor incremental_search_filtered_bg_color()
+{
+	return QColor(128, 128, 128, 64);
+}
 
-// incrementalsearch
+static inline QColor incremental_search_highlight_bg_color()
+{
+	return QColor(240, 64, 255, 128);
+}
+#endif
 
-QString incrementalsearch::normalizeText(QString s)
+namespace incrementalsearch {
+
+QString normalizeText(QString s)
 {
 	for (QChar &c : s) {
 		if (c >= 'A' && c <= 'Z') { // 大文字を小文字に
@@ -34,13 +46,13 @@ QString incrementalsearch::normalizeText(QString s)
 	return s;
 }
 
-void incrementalsearch::drawText(QPainter *painter, const QStyleOptionViewItem &opt, QRect r, const QString &text)
+void drawText(QPainter *painter, const QStyleOptionViewItem &opt, QRect r, const QString &text)
 {
 	painter->setPen(opt.palette.color(QPalette::Text));
 	painter->drawText(r, opt.displayAlignment, text); // テキストを描画
 }
 
-void incrementalsearch::drawText_filtered(QPainter *painter, const QStyleOptionViewItem &opt, const QRect &rect, IncrementalSearchFilter const &filter)
+void drawText_filtered(QPainter *painter, const QStyleOptionViewItem &opt, const QRect &rect, IncrementalSearchFilter const &filter)
 {
 	if (!filter) {
 		drawText(painter, opt, rect, opt.text);
@@ -49,10 +61,10 @@ void incrementalsearch::drawText_filtered(QPainter *painter, const QStyleOptionV
 
 	QString text = opt.text;
 
-	incrementalsearch::Result match = global->incremental_search->match(text.toStdString(), filter);
+	Result match = global->incremental_search->match(text.toStdString(), filter);
 	if (match) {
 		int x = rect.x();
-		for (incrementalsearch::Result::Part const &part : match.parts) {
+		for (Result::Part const &part : match.parts) {
 			QString s = QString::fromStdString(part.text);
 			int w = painter->fontMetrics().horizontalAdvance(s);
 			QRect r = rect;
@@ -69,12 +81,12 @@ void incrementalsearch::drawText_filtered(QPainter *painter, const QStyleOptionV
 	}
 }
 
-void incrementalsearch::fillFilteredBG(QPainter *painter, const QRect &rect)
+void fillFilteredBG(QPainter *painter, const QRect &rect)
 {
 	painter->fillRect(rect, incremental_search_filtered_bg_color());
 }
 
-QString incrementalsearch::appendCharToFilterText(QString filter, const QString &add)
+QString appendCharToFilterText(QString filter, const QString &add)
 {
 	uchar c = *add.utf16();
 	if (c == ASCII_BACKSPACE) {
@@ -89,3 +101,5 @@ QString incrementalsearch::appendCharToFilterText(QString filter, const QString 
 	}	
 	return filter;
 }
+
+} // namespace incrementalsearch
