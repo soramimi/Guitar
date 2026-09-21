@@ -27,7 +27,7 @@ void setTextAndDeselect(QLineEdit *le, std::string const &text)
 	deselectLineEdit(le);
 }
 
-}
+} // namespace
 
 struct SelectAiModelDialog::Private {
 	std::vector<ProviderInfo> providers;
@@ -132,6 +132,36 @@ void SelectAiModelDialog::on_comboBox_provider_currentIndexChanged(int index)
 		m->model.api_compatibility_override = std::nullopt;
 		Credential cred = global->get_ai_credential(m->model);
 		
+		{
+			static constexpr std::string_view api_openai_chat_completions_v1 = "openai_chat_completions_v1";
+			static constexpr std::string_view api_openai_responses_v1 = "openai_responses_v1";
+			static constexpr std::string_view api_anthropic_messages_v1 = "anthropic_messages_v1";
+			static constexpr std::string_view api_google_gemini_v1 = "google_gemini_v1";
+
+			ui->comboBox_api_type->clear();
+			auto Add = [&](std::string_view api, ProviderID api_id) {
+				ui->comboBox_api_type->addItem(QString::fromStdString(std::string(api)), QVariant((int)api_id));
+			};
+			switch (provider.id) {
+			case ProviderID::OpenAI:
+			case ProviderID::OpenAI_responses:
+			case ProviderID::OpenAI_chat_completions:
+				Add(api_openai_responses_v1, ProviderID::OpenAI_responses);
+				Add(api_openai_chat_completions_v1, ProviderID::OpenAI_chat_completions);
+				break;
+			case ProviderID::Anthropic:
+				Add(api_anthropic_messages_v1, ProviderID::Anthropic);
+				break;
+			case ProviderID::Google:
+				Add(api_google_gemini_v1, ProviderID::Google);
+				break;
+			default:
+				Add(api_openai_responses_v1, ProviderID::OpenAI_responses);
+				Add(api_openai_chat_completions_v1, ProviderID::OpenAI_chat_completions);
+				Add(api_anthropic_messages_v1, ProviderID::Anthropic);
+				break;
+			}
+		}
 		ui->comboBox_api_type->setCurrentIndex(ui->comboBox_api_type->findData((int)m->model.api_compatibility()));
 		
 		Request req = GenerativeAI::make_request(provider.id, m->model, cred);

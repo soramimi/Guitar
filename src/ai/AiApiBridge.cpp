@@ -482,6 +482,20 @@ struct _PromptJsonGenerator : public GenerativeAI::AbstractVisitor<std::string> 
 		return model.model_name();
 	}
 
+	std::string _generic_provider()
+	{
+		switch (model.api_compatibility()) {
+		case GenerativeAI::ProviderID::Anthropic:
+			return case_Anthropic();
+		case GenerativeAI::ProviderID::OpenAI_responses:
+			return case_OpenAI_responses();
+		case GenerativeAI::ProviderID::Google:
+			return case_Google();
+		default:
+			return case_OpenAI_chat_completions();
+		}
+	}
+	
 	/// 未知プロバイダー：空文字列を返す
 	std::string case_Unknown()
 	{
@@ -628,6 +642,8 @@ struct _PromptJsonGenerator : public GenerativeAI::AbstractVisitor<std::string> 
 		switch (model.api_compatibility()) {
 		case GenerativeAI::ProviderID::Anthropic:
 			return case_Anthropic();
+		case GenerativeAI::ProviderID::OpenAI_responses:
+			return case_OpenAI_responses();
 		default:
 			return case_OpenAI_chat_completions();
 		}

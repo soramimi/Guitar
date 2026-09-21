@@ -24,8 +24,8 @@ public:
 private slots:
 	void on_pushButton_load_preset_clicked();
 	void on_pushButton_query_model_clicked();
-	void on_comboBox_api_type_currentIndexChanged(int index);
 	void on_comboBox_provider_currentIndexChanged(int index);
+	void on_comboBox_api_type_currentIndexChanged(int index);
 	void on_radioButton_cred_environ_clicked();
 	void on_radioButton_cred_custom_clicked();
 	void on_checkBox_show_api_key_clicked();
