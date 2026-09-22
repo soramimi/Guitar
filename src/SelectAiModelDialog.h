@@ -20,6 +20,8 @@ private:
 	void setLineEditEndpointUrl(const std::string &url);
 	void setLineEditApiKey(const std::string &apikey);
 	GenerativeAI::Credential credential() const;
+	void updateListWidget();
+	void selectItem(int i);
 public:
 	explicit SelectAiModelDialog(QWidget *parent = nullptr);
 	~SelectAiModelDialog();
@@ -35,6 +37,13 @@ private slots:
 	void on_lineEdit_cred_symbol_textChanged(const QString &arg1);
 	void on_pushButton_test_hello_clicked();
 	void on_comboBox_model_currentTextChanged(const QString &arg1);
+	void on_toolButton_clicked();
+	void on_pushButton_new_clicked();
+	void on_pushButton_delete_clicked();
+	void on_pushButton_up_clicked();
+	void on_pushButton_down_clicked();
+	void on_lineEdit_name_textChanged(const QString &arg1);
+	void on_listWidget_currentRowChanged(int currentRow);
 };
 
 #endif // SELECTAIMODELDIALOG_H

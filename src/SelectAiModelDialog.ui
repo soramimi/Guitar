@@ -48,7 +48,7 @@
           </layout>
          </item>
          <item>
-          <widget class="QListView" name="listView"/>
+          <widget class="QListWidget" name="listWidget"/>
          </item>
          <item>
           <layout class="QHBoxLayout" name="horizontalLayout_4">
@@ -402,7 +402,6 @@
   <tabstop>checkBox_show_api_key</tabstop>
   <tabstop>pushButton_new</tabstop>
   <tabstop>toolButton</tabstop>
-  <tabstop>listView</tabstop>
   <tabstop>pushButton_up</tabstop>
   <tabstop>pushButton_down</tabstop>
   <tabstop>pushButton_3</tabstop>

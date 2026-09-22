@@ -7,6 +7,7 @@
 #include <ai/AiApiBridge.h>
 #include <ai/GenerativeAI.h>
 #include <QListWidgetItem>
+#include <QMenu>
 #include <QMessageBox>
 
 using namespace GenerativeAI;
@@ -35,6 +36,12 @@ void setTextAndDeselect(QLineEdit *le, std::string const &text)
 
 // ダイアログの内部状態を保持する Private 構造体
 struct SelectAiModelDialog::Private {
+	struct Item {
+		std::string guid;
+		std::string name;
+	};
+	std::vector<Item> items;
+	
 	std::vector<ProviderInfo> providers;
 	GenerativeAI::Model model;
 };
@@ -335,5 +342,106 @@ void SelectAiModelDialog::on_pushButton_test_hello_clicked()
 void SelectAiModelDialog::on_comboBox_model_currentTextChanged(const QString &arg1)
 {
 	m->model.model_name_ = arg1.toStdString();
+}
+
+void SelectAiModelDialog::on_toolButton_clicked()
+{
+	QMenu menu;
+
+	QAction *a_test = menu.addAction(tr("&Delete"), this, &SelectAiModelDialog::on_pushButton_delete_clicked);
+	
+	menu.show(); // 横幅を取得するために一旦表示する
+	QPoint pt = ui->toolButton->mapToGlobal(QPoint(ui->toolButton->width() - menu.width(), ui->toolButton->height()));
+	QAction *a = menu.exec(pt);
+	
+	(void)a;
+}
+
+#include "common/uuid.h"
+
+void SelectAiModelDialog::updateListWidget()
+{
+	ui->listWidget->clear();
+	for (Private::Item const &item : m->items) {
+		QListWidgetItem *list_item = new QListWidgetItem(QString::fromStdString(item.name));
+		ui->listWidget->addItem(list_item);
+	}
+}
+
+void SelectAiModelDialog::on_pushButton_new_clicked()
+{
+	int row = ui->listWidget->count();
+	Private::Item item;
+	{
+		char tmp[37];
+		auto uuid = uuidv7();
+		uuid_to_string(uuid.first, uuid.second, tmp);
+		item.guid = tmp;
+	}
+	item.name = "New Model";
+	m->items.push_back(item);
+	updateListWidget();
+	ui->listWidget->setCurrentRow(row);
+}
+
+void SelectAiModelDialog::on_pushButton_delete_clicked()
+{
+	int i = ui->listWidget->currentRow();
+	if (i >= 0 && i < (int)m->items.size()) {
+		m->items.erase(m->items.begin() + i);
+		updateListWidget();
+		if (i < ui->listWidget->count()) {
+			ui->listWidget->setCurrentRow(i);
+		} else if (i > 0) {
+			ui->listWidget->setCurrentRow(i - 1);
+		}
+	}
+}
+
+void SelectAiModelDialog::on_pushButton_up_clicked()
+{
+	int i = ui->listWidget->currentRow();
+	if (i > 0 && i < (int)m->items.size()) {
+		std::swap(m->items[i], m->items[i - 1]);
+		updateListWidget();
+		ui->listWidget->setCurrentRow(i - 1);
+	}
+}
+
+void SelectAiModelDialog::on_pushButton_down_clicked()
+{
+	int i = ui->listWidget->currentRow();
+	if (i >= 0 && i + 1 < (int)m->items.size()) {
+		std::swap(m->items[i], m->items[i + 1]);
+		updateListWidget();
+		ui->listWidget->setCurrentRow(i + 1);
+	}
+}
+
+
+void SelectAiModelDialog::on_lineEdit_name_textChanged(const QString &arg1)
+{
+	int i = ui->listWidget->currentRow();
+	if (i >= 0 && i < (int)m->items.size()) {
+		m->items[i].name = arg1.toStdString();
+		ui->listWidget->item(i)->setText(QString::fromStdString(m->items[i].name));
+	}
+}
+
+void SelectAiModelDialog::selectItem(int i)
+{
+	QString name;
+	QString guid;
+	if (i >= 0 && i < (int)m->items.size()) {
+		name = QString::fromStdString(m->items[i].name);
+		guid = QString::fromStdString(m->items[i].guid);
+	}
+	ui->label_id->setText(guid);
+	ui->lineEdit_name->setText(name);
+}
+
+void SelectAiModelDialog::on_listWidget_currentRowChanged(int currentRow)
+{
+	selectItem(currentRow);
 }
 
