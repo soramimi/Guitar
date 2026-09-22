@@ -22,6 +22,7 @@ private:
 	GenerativeAI::Credential credential() const;
 	void updateListWidget();
 	void selectItem(int i);
+	void enableSettingsFrame(bool f);
 public:
 	explicit SelectAiModelDialog(QWidget *parent = nullptr);
 	~SelectAiModelDialog();

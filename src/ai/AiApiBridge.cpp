@@ -23,7 +23,7 @@ struct AiApiBridge::Private {
 	std::string system_role;
 	std::shared_ptr<AbstractInetClient> http_;
 	
-	bool save_log = true; // リクエスト/レスポンスをログに記録するか
+	bool save_log = false; // リクエスト/レスポンスをログに記録するか
 };
 
 /**
@@ -929,7 +929,10 @@ AiResult AiApiBridge::request(GenerativeAI::EndPoint::Type eptype, std::string c
 			}
 		}
 		
-		qDebug() << QString::fromStdString(web_req.url().full_request());
+		if (m->save_log) {
+			logprintf(LOG_DEFAULT, "%s\n", web_req.url().full_request().c_str());
+		}
+		
 		{
 			std::shared_ptr<AbstractInetClient> http = global_inet_client();
 			
