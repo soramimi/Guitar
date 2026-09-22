@@ -313,7 +313,9 @@ SOURCES += \
 	$$SRC/zip/zipextract.cpp \
 	$$SRC/ResetAndCleanDialog.cpp \
 	$$SRC/SelectAiModelDialog.cpp \
-	$$SRC/SelectAiModelPresetDialog.cpp
+	$$SRC/SelectAiModelPresetDialog.cpp \
+	$$SRC/QueryAiModelDialog.cpp
+	
 
 HEADERS += \
 	$$PWD/src/common/ChaCha20.h \
@@ -535,7 +537,8 @@ HEADERS += \
 	$$SRC/zip/zipinternal.h \
 	$$SRC/ResetAndCleanDialog.h \
 	$$SRC/SelectAiModelDialog.h \
-	$$SRC/SelectAiModelPresetDialog.h
+	$$SRC/SelectAiModelPresetDialog.h \
+	$$SRC/QueryAiModelDialog.h
 
 FORMS += \
 	$$SRC/AboutDialog.ui \
@@ -608,7 +611,8 @@ FORMS += \
 	$$SRC/coloredit/ColorEditWidget.ui \
 	$$SRC/ResetAndCleanDialog.ui \
 	$$SRC/SelectAiModelDialog.ui \
-	$$SRC/SelectAiModelPresetDialog.ui
+	$$SRC/SelectAiModelPresetDialog.ui \
+	$$SRC/QueryAiModelDialog.ui
 
 RESOURCES += \
 	$$SRC/resources/resources.qrc

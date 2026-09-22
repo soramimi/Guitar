@@ -30,6 +30,7 @@ private slots:
 	void on_radioButton_cred_custom_clicked();
 	void on_checkBox_show_api_key_clicked();
 	void on_lineEdit_cred_symbol_textChanged(const QString &arg1);
+	void on_pushButton_test_hello_clicked();
 };
 
 #endif // SELECTAIMODELDIALOG_H

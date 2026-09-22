@@ -262,15 +262,15 @@ struct AiResult {
 	{
 		return d.completed && d.error_status.empty() && d.error_message.empty();
 	}
-	std::string const &content() const
+	std::string content() const
 	{
 		return d.content;
 	}
-	std::string const &error_status() const
+	std::string error_status() const
 	{
 		return d.error_status;
 	}
-	std::string const &error_message() const
+	std::string error_message() const
 	{
 		return d.error_message;
 	}

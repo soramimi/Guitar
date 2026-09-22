@@ -660,6 +660,7 @@ private:
 		std::optional<std::vector<char>> input_buffer;
 		std::function<void ()> fn_input_calback;
 		
+		std::string temporary_buffer;
 		char const *begin = nullptr;
 		char const *end = nullptr;
 		char const *ptr = nullptr;
@@ -1010,9 +1011,15 @@ private:
 	}
 public:
 	Reader() = default;
-	Reader(std::string_view sv)
+	explicit Reader(std::string_view sv)
 	{
 		parse(sv);
+	}
+	explicit Reader(std::string const &s)
+	{
+		d.temporary_buffer = s;
+		d.begin = d.ptr = d.temporary_buffer.c_str();
+		d.end = d.ptr + d.temporary_buffer.size();
 	}
 	Reader(char const *begin, char const *end)
 	{
