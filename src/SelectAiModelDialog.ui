@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>689</width>
-    <height>481</height>
+    <height>513</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -93,7 +93,7 @@
          <item>
           <layout class="QHBoxLayout" name="horizontalLayout_5">
            <item>
-            <spacer name="horizontalSpacer">
+            <spacer name="horizontalSpacer_3">
              <property name="orientation">
               <enum>Qt::Orientation::Horizontal</enum>
              </property>
@@ -114,6 +114,26 @@
            </item>
            <item>
             <spacer name="horizontalSpacer_2">
+             <property name="orientation">
+              <enum>Qt::Orientation::Horizontal</enum>
+             </property>
+             <property name="sizeHint" stdset="0">
+              <size>
+               <width>40</width>
+               <height>20</height>
+              </size>
+             </property>
+            </spacer>
+           </item>
+           <item>
+            <widget class="QPushButton" name="pushButton_test_hello">
+             <property name="text">
+              <string>Test Hello</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <spacer name="horizontalSpacer_4">
              <property name="orientation">
               <enum>Qt::Orientation::Horizontal</enum>
              </property>
@@ -197,9 +217,9 @@
             </widget>
            </item>
            <item row="6" column="2">
-            <widget class="QPushButton" name="pushButton_query_model">
+            <widget class="QPushButton" name="pushButton_query_models">
              <property name="text">
-              <string>Query model...</string>
+              <string>Query models...</string>
              </property>
             </widget>
            </item>
@@ -308,43 +328,6 @@
           </spacer>
          </item>
          <item>
-          <layout class="QHBoxLayout" name="horizontalLayout_7">
-           <item>
-            <spacer name="horizontalSpacer_3">
-             <property name="orientation">
-              <enum>Qt::Orientation::Horizontal</enum>
-             </property>
-             <property name="sizeHint" stdset="0">
-              <size>
-               <width>40</width>
-               <height>20</height>
-              </size>
-             </property>
-            </spacer>
-           </item>
-           <item>
-            <widget class="QPushButton" name="pushButton_test_hello">
-             <property name="text">
-              <string>Test Hello</string>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <spacer name="horizontalSpacer_4">
-             <property name="orientation">
-              <enum>Qt::Orientation::Horizontal</enum>
-             </property>
-             <property name="sizeHint" stdset="0">
-              <size>
-               <width>40</width>
-               <height>20</height>
-              </size>
-             </property>
-            </spacer>
-           </item>
-          </layout>
-         </item>
-         <item>
           <widget class="QCheckBox" name="checkBox_show_api_key">
            <property name="text">
             <string>Show API key</string>
@@ -405,6 +388,7 @@
  </widget>
  <tabstops>
   <tabstop>pushButton_load_preset</tabstop>
+  <tabstop>pushButton_test_hello</tabstop>
   <tabstop>lineEdit_name</tabstop>
   <tabstop>comboBox_provider</tabstop>
   <tabstop>comboBox_api_type</tabstop>
@@ -414,8 +398,7 @@
   <tabstop>radioButton_cred_custom</tabstop>
   <tabstop>lineEdit_cred_api_key</tabstop>
   <tabstop>comboBox_model</tabstop>
-  <tabstop>pushButton_query_model</tabstop>
-  <tabstop>pushButton_test_hello</tabstop>
+  <tabstop>pushButton_query_models</tabstop>
   <tabstop>checkBox_show_api_key</tabstop>
   <tabstop>pushButton_new</tabstop>
   <tabstop>toolButton</tabstop>

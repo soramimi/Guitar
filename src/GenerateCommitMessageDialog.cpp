@@ -92,7 +92,8 @@ void GenerateCommitMessageDialog::_generate(std::string const &diff, std::string
 
 	ui->pushButton_regenerate->setEnabled(false);
 	
-	m->generator.request(ai_model(), diff, status_s_u, hint);
+	GenerativeAI::Credential cred = global->get_ai_credential(ai_model());
+	m->generator.request(ai_model(), cred, diff, status_s_u, hint);
 }
 
 void GenerateCommitMessageDialog::generate()

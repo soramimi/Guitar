@@ -5,6 +5,7 @@
 GenerateCommitMessageThread::GenerateCommitMessageThread()
 {
 	ai_model_ = *global->appsettings.ai_model;
+	ai_cred_ = global->get_ai_credential(ai_model_);
 }
 
 GenerateCommitMessageThread::~GenerateCommitMessageThread()
@@ -28,7 +29,7 @@ void GenerateCommitMessageThread::start()
 			if (requested) {
 				CommitMessageGenerator::Request request(diff_, status_s_u_, hint_);
 				CommitMessageGenerator gen(ai_model_, request);
-				gen.set_ai_model(ai_model_);
+				gen.set_ai_model(ai_model_, ai_cred_);
 				auto r = gen.request();
 				auto r2 = CommitMessageGenerator::parse_response(ai_model_, r);
 				auto result = GeneratedCommitMessage(new CommitMessageGenerator::CommitMessageGenerator::Result(r2));
@@ -47,7 +48,7 @@ void GenerateCommitMessageThread::stop()
 	}
 }
 
-void GenerateCommitMessageThread::request(GenerativeAI::Model ai_model, const std::string &diff, std::string const &status_s_u, std::string const &hint)
+void GenerateCommitMessageThread::request(GenerativeAI::Model ai_model, GenerativeAI::Credential ai_cred, const std::string &diff, std::string const &status_s_u, std::string const &hint)
 {
 	std::lock_guard lock(mutex_);
 	ai_model_ = ai_model;

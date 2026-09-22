@@ -17,6 +17,7 @@ public:
 	bool requested_ = false;
 	bool interrupted_ = false;
 	GenerativeAI::Model ai_model_;
+	GenerativeAI::Credential ai_cred_;
 	std::string diff_;
 	std::string status_s_u_;
 	std::string hint_;
@@ -25,7 +26,7 @@ public:
 	~GenerateCommitMessageThread();
 	void start();
 	void stop();
-	void request(GenerativeAI::Model ai_model, std::string const &diff, const std::string &status_s_u, const std::string &hint);
+	void request(GenerativeAI::Model ai_model, GenerativeAI::Credential ai_cred, std::string const &diff, const std::string &status_s_u, const std::string &hint);
 signals:
 	void ready(GeneratedCommitMessage const &message);
 	

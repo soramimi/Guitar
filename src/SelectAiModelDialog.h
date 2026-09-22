@@ -3,6 +3,8 @@
 
 #include <QDialog>
 
+#include <ai/GenerativeAI.h>
+
 namespace Ui {
 class SelectAiModelDialog;
 }
@@ -17,13 +19,14 @@ private:
 	void on_cred_key_source_changed();
 	void setLineEditEndpointUrl(const std::string &url);
 	void setLineEditApiKey(const std::string &apikey);
+	GenerativeAI::Credential credential() const;
 public:
 	explicit SelectAiModelDialog(QWidget *parent = nullptr);
 	~SelectAiModelDialog();
 	
 private slots:
 	void on_pushButton_load_preset_clicked();
-	void on_pushButton_query_model_clicked();
+	void on_pushButton_query_models_clicked();
 	void on_comboBox_provider_currentIndexChanged(int index);
 	void on_comboBox_api_type_currentIndexChanged(int index);
 	void on_radioButton_cred_environ_clicked();
@@ -31,6 +34,7 @@ private slots:
 	void on_checkBox_show_api_key_clicked();
 	void on_lineEdit_cred_symbol_textChanged(const QString &arg1);
 	void on_pushButton_test_hello_clicked();
+	void on_comboBox_model_currentTextChanged(const QString &arg1);
 };
 
 #endif // SELECTAIMODELDIALOG_H

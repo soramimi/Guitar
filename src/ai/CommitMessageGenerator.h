@@ -4,6 +4,7 @@
 #include "GitRunner.h"
 #include <ai/AiApiBridge.h>
 #include <string>
+#include "ApplicationGlobal.h"
 
 class CommitMessageGenerator {
 private:
@@ -52,12 +53,12 @@ public:
 	CommitMessageGenerator(GenerativeAI::Model const &model, CommitMessageGenerator::Request const &request)
 		: request_(request)
 	{
-		api_.set_ai_model(model);
-		api_.set_system_role("You are an experienced engineer."); ///< システムロールの内容（OpenAI Chat Completions 形式で使用）
+		api_.set_ai_model(model, global->get_ai_credential(model));
+		api_.set_system_role("You are an experienced engineer.");
 	}
-	void set_ai_model(GenerativeAI::Model model)
+	void set_ai_model(GenerativeAI::Model model, GenerativeAI::Credential cred)
 	{
-		api_.set_ai_model(model);
+		api_.set_ai_model(model, cred);
 	}
 	
 	static Result parse_response(GenerativeAI::Model model, const AiResult &result);

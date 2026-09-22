@@ -335,7 +335,7 @@ private:
 	void close();
 public:
 	AiApiBridge();
-	AiApiBridge(GenerativeAI::Model model);
+	AiApiBridge(GenerativeAI::Model model, GenerativeAI::Credential cred);
 	~AiApiBridge();
 	
 	AiResult Error(std::string const &status, std::string const &message) const
@@ -346,7 +346,7 @@ public:
 		return ret;
 	}
 	GenerativeAI::Model model() const;
-	void set_ai_model(GenerativeAI::Model model);
+	void set_ai_model(GenerativeAI::Model model, GenerativeAI::Credential cred);
 	void set_system_role(std::string const &role);
 	AiResult request(GenerativeAI::EndPoint::Type eptype, std::string const &prompt, const Query2Request &req);
 	AiResult request(const std::string &prompt);
@@ -368,9 +368,9 @@ public:
 	{
 		close();
 	}
-	void set_ai_model(GenerativeAI::Model model)
+	void set_ai_model(GenerativeAI::Model model, GenerativeAI::Credential cred)
 	{
-		api_bridge->set_ai_model(model);
+		api_bridge->set_ai_model(model, cred);
 	}
 	bool open()
 	{

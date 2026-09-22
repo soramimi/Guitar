@@ -207,15 +207,15 @@ struct EndPoint {
 	std::string suffix_;
 	EndPoint() = default;
 	void set_chat_endpoint_url(std::string const &url);
-	std::string url_chat() const;
-	std::string url_models() const;
-	std::string url(Type type)
+	std::string url_chat(const Model &model, const Credential &cred) const;
+	std::string url_models(const Credential &cred) const;
+	std::string url(Type type, Model const &model, Credential const &cred) const
 	{
 		switch (type) {
 		case Type::Chat:
-			return url_chat();
+			return url_chat(model, cred);
 		case Type::Models:
-			return url_models();
+			return url_models(cred);
 		}
 		return url_;
 	}

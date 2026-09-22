@@ -70,7 +70,7 @@ std::vector<Model> const &ai_model_presets()
 	static const std::vector<Model> preset_models = {
 		{ProviderID::OpenAI_responses, "gpt-5.6-luna"},
 		{ProviderID::Anthropic,        "claude-sonnet-5"},
-		{ProviderID::Google,           "gemini-3.6-flash"},
+		{ProviderID::Google,           "gemini-3.8-flash"},
 		{ProviderID::DeepSeek,         "deepseek-v4-flash"},
 		{ProviderID::MoonshotAI,       "kimi-k2.7-code"},
 		{ProviderID::XAI,              "grok-latest"},
@@ -405,7 +405,7 @@ struct _MakeRequest : public AbstractVisitor<Request> {
 		Request r;
 		r.model_name = model_.model_name();
 		r.endpoint.url_ = _endpoint_base_url();
-		r.endpoint.suffix_ = "/models/" + url_encode(model_.model_name()) + ":generateContent?key=" + cred_.api_key;
+		// r.endpoint.suffix_ = "/models/" + url_encode(model_.model_name()) + ":generateContent?key=" + cred_.api_key;
 		return r;
 	}
 
@@ -556,16 +556,44 @@ void EndPoint::set_chat_endpoint_url(const std::string &url)
 	if (Split(suffix_chat_completions)) return;
 	if (Split(suffix_responses)) return;
 	if (Split(suffix_messages)) return;
+
+	// google special case
+	if (url_.find(".googleapis.com/") != std::string::npos) {
+		auto i = url_.find("/models/");
+		if (i != std::string::npos) {
+			suffix_ = url_.substr(i);
+			url_ = url_.substr(0, i);
+		}
+	}
 }
 
-std::string EndPoint::url_chat() const
+std::string EndPoint::url_chat(Model const &model, Credential const &cred) const
 {
-	return suffix_.empty() ? url_ : (url_ / suffix_);
+	std::string url = url_;
+
+	// google special case
+	if (url.find(".googleapis.com/") != std::string::npos) {
+		url = url / "models" / url_encode(model.model_name()) + ":generateContent";
+		url += "?key=" + cred.api_key;
+	} else {
+		if (!suffix_.empty()) {
+			url = url / suffix_;
+		}
+	}
+	
+	return url;
 }
 
-std::string EndPoint::url_models() const
+std::string EndPoint::url_models(Credential const &cred) const
 {
-	return url_ / "models";
+	std::string url = url_ / "models";
+	
+	// google special case
+	if (url.find(".googleapis.com/") != std::string::npos) {
+		url += "?key=" + cred.api_key;
+	}
+	
+	return url;
 }
 
 } // namespace GenerativeAI

@@ -19,6 +19,7 @@
 
 struct AiApiBridge::Private {
 	GenerativeAI::Model ai_model;
+	GenerativeAI::Credential ai_credential;
 	std::string system_role;
 	std::shared_ptr<AbstractInetClient> http_;
 	
@@ -43,11 +44,10 @@ AiApiBridge::AiApiBridge()
 {
 }
 
-AiApiBridge::AiApiBridge(GenerativeAI::Model model)
+AiApiBridge::AiApiBridge(GenerativeAI::Model model, GenerativeAI::Credential cred)
 	: m(new Private)
 {
-	set_ai_model(*global->appsettings.ai_model);
-	
+	set_ai_model(model, cred);
 }
 
 #else
@@ -764,9 +764,10 @@ GenerativeAI::Model AiApiBridge::model() const
  * @brief 使用するAIモデルを設定する。
  * @param model AIモデル情報
  */
-void AiApiBridge::set_ai_model(GenerativeAI::Model model)
+void AiApiBridge::set_ai_model(GenerativeAI::Model model, GenerativeAI::Credential cred)
 {
 	m->ai_model = model;
+	m->ai_credential = cred;
 }
 
 void AiApiBridge::set_system_role(const std::string &role)
@@ -826,7 +827,7 @@ AiResult AiApiBridge::x_request(const Query2Request &req)
 			auto cred = global_get_ai_credential(model());
 			auto aireq = GenerativeAI::make_request(model().provider_id(), model(), cred);
 			
-			web_req.set_location(aireq.endpoint.url(GenerativeAI::EndPoint::Type::Chat));
+			web_req.set_location(aireq.endpoint.url(GenerativeAI::EndPoint::Type::Chat, model(), cred));
 			for (std::string const &h : aireq.header) {
 				web_req.add_header(h);
 			}
@@ -883,7 +884,8 @@ AiResult AiApiBridge::request(GenerativeAI::EndPoint::Type eptype, std::string c
 		InetClient::Request web_req;
 		{
 			// APIキーなどの認証情報を取得してリクエストヘッダーを組み立てる
-			GenerativeAI::Credential cred = global_get_ai_credential(model());
+			// GenerativeAI::Credential cred = global_get_ai_credential(model());
+			GenerativeAI::Credential cred = m->ai_credential;
 			
 #ifdef APP_GUITAR
 			{ // experimental: 1Password support
@@ -921,12 +923,13 @@ AiResult AiApiBridge::request(GenerativeAI::EndPoint::Type eptype, std::string c
 			
 			GenerativeAI::Request ai_req = GenerativeAI::make_request(model().provider_id(), model(), cred);
 			
-			web_req.set_location(ai_req.endpoint.url(eptype));
+			web_req.set_location(ai_req.endpoint.url(eptype, model(), cred));
 			for (std::string const &h : ai_req.header) {
 				web_req.add_header(h);
 			}
 		}
 		
+		qDebug() << QString::fromStdString(web_req.url().full_request());
 		{
 			std::shared_ptr<AbstractInetClient> http = global_inet_client();
 			
@@ -992,22 +995,51 @@ std::optional<AiResult::Models> AiApiBridge::queryModels()
 	AiResult::Models models;
 	{
 		jstream::Reader reader(result.content());
-		while (reader.next()) {
-			if (reader.match("{data[{**")) {
-				reader.nest();
-				AiResult::Model model;
-				do {
-					if (reader.match("{data[{id")) {
-						model.id = reader.string();
-					} else if (reader.match("{data[{object")) {
-						model.object = reader.string();
-					} else if (reader.match("{data[{created")) {
-						model.created = reader.string();
-					} else if (reader.match("{data[{owned_by")) {
-						model.owned_by = reader.string();
-					}
-				} while (reader.next());
-				models.list.push_back(model);
+		if (model().api_compatibility() == GenerativeAI::ProviderID::Google) {
+			while (reader.next()) {
+				if (reader.match_start_object("{models[{**")) {
+					AiResult::Model model;
+					static constexpr std::string_view models_prefix = "models/";
+					reader.nest([&](){
+						if (reader.match("@name")) {
+							model.id = reader.string();
+							if (misc::starts_with(model.id, models_prefix)) {
+								model.id = std::string(model.id.substr(models_prefix.size()));
+							}
+						} else if (reader.match("@version")) {
+						} else if (reader.match("@displayName")) {
+						} else if (reader.match("@description")) {
+						} else if (reader.match("@inputTokenLimit")) {
+						} else if (reader.match("@outputTokenLimit")) {
+						} else if (reader.match("@supportedGenerationMethods[**")) {
+						} else if (reader.match("@temperature")) {
+						} else if (reader.match("@topP")) {
+						} else if (reader.match("@topK")) {
+						} else if (reader.match("@maxTemperature")) {
+						} else if (reader.match("@thinking")) {
+						}
+					});
+					// qDebug() << QString::fromStdString(model.id);
+					models.list.push_back(model);
+				}
+			}
+		} else {
+			while (reader.next()) {
+				if (reader.match_start_object("{data[{**")) {
+					AiResult::Model model;
+					reader.nest([&](){
+						if (reader.match("@id")) {
+							model.id = reader.string();
+						} else if (reader.match("@object")) {
+							model.object = reader.string();
+						} else if (reader.match("@created")) {
+							model.created = reader.string();
+						} else if (reader.match("@owned_by")) {
+							model.owned_by = reader.string();
+						}
+					});
+					models.list.push_back(model);
+				}
 			}
 		}
 	}
