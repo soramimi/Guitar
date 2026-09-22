@@ -1049,4 +1049,9 @@ std::optional<AiResult::Models> AiApiBridge::queryModels()
 	return models;
 }
 
+GenerativeAI::Credential AiApiBridge::default_credential(GenerativeAI::Model model)
+{
+	return global_get_ai_credential(model);
+}
+
 

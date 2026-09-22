@@ -150,7 +150,8 @@ static std::vector<std::string_view> split_lines(std::string_view const &str)
 std::string request(Option const &opt)
 {
 	AiApiBridge gen;
-	gen.set_ai_model(ai_model);
+	GenerativeAI::Credential cred = AiApiBridge::default_credential(ai_model);
+	gen.set_ai_model(ai_model, cred);
 	AiResult msg = gen.request(opt.prompt);
 	if (!msg) {
 		fprintf(stderr, "Error generating message: %s - %s\n", msg.error_status().c_str(), msg.error_message().c_str());

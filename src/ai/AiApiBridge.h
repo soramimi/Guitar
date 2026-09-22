@@ -351,6 +351,8 @@ public:
 	AiResult request(GenerativeAI::EndPoint::Type eptype, std::string const &prompt, const Query2Request &req);
 	AiResult request(const std::string &prompt);
 	std::optional<AiResult::Models> queryModels();
+
+	static GenerativeAI::Credential default_credential(GenerativeAI::Model model);
 };
 
 
