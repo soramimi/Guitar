@@ -12,6 +12,8 @@
 #include "common/q/FileInfo.h"
 #include "common/str.h"
 #include <inet/curlclient.h>
+#include "ApplicationSettings.h"
+#include "common/jstream.h"
 
 #ifdef _WIN32
 #include "common/wstring.h"
@@ -21,6 +23,7 @@
 #include <windows.h>
 #else
 #include <BasicProcessPosix.h>
+#include <QSettings>
 #include <fcntl.h>
 #include <unistd.h>
 #include <sys/stat.h>
@@ -282,6 +285,104 @@ int main2(int argc, char **argv)
 	return 0;
 }
 
+int main3jev(int argc, char **argv)
+{
+	std::string state = R"---(
+{
+"state": "Is the Earth a sphere?"
+)---";
+
+	std::string question = R"---(
+{
+  "new_noul_1": {
+    "type": "noul",
+    "instructions": "Ask a yes or no question",
+    "criteria": {
+      "true": "sphere",
+      "false": "flat"
+    }
+  }
+}
+)---";
+
+	GenerativeAI::Request req;
+	req.endpoint.url_ = "https://api.typesafe.ai/v1";
+	req.endpoint.suffix_ = "/systemone";
+	req.model_name = "jev-latest";
+	constexpr std::string_view obfuscation_key = "obfuscation key qwerty123";
+
+	GenerativeAI::Credential cred;
+	{
+		QSettings s("/home/soramimi/.config/soramimi.jp/.secret/jev.ini", QSettings::IniFormat);
+		cred.api_key = s.value("JEV_API_KEY").toString().toStdString();
+		req.header.push_back("Authorization: Bearer " + cred.api_key);
+	}
+	
+	std::string prompt = R"---(
+{
+  "state": "Help! My payouts have been failing for 3 days.",
+  "model": "jev-latest",
+  "questions": {
+    "is_urgent": {
+      "type": "noul",
+      "instructions": "Does this convey urgency?"
+    }
+  }
+})---";
+
+	AiApiBridge api;
+
+	std::string request_json = prompt;
+	InetClient::Request web_req;
+	{
+		web_req.set_location(req.endpoint.url(GenerativeAI::EndPoint::Type::Chat, {}, cred));
+		for (std::string const &h : req.header) {
+			web_req.add_header(h);
+		}
+	}
+	
+	{
+		std::shared_ptr<AbstractInetClient> http = global_inet_client();
+		
+		int ret = -1;
+		{
+			InetClient::Post post;
+			post.content_type = "application/json";
+			post.data.insert(post.data.end(), request_json.begin(), request_json.end());
+			ret = http->post(web_req, &post);
+		}
+		size_t size = http->content_length();
+		char const *data = http->content_data();
+		fwrite(data, 1, size, stdout);
+/*
+{
+	"model":"jev-1.13.0",
+	"answers":{
+		"is_urgent":{
+			"type":"noul",
+			"noul":0.95
+		}
+	},
+	"usage":{
+		"input_tokens":283,
+		"output_tokens":23
+	}
+}
+*/
+		putchar('\n');
+		double noul = 0.0;
+		jstream::Reader r(data, size);
+		while (r.next()) {
+			if (r.match("{answers{is_urgent{noul")) {
+				noul = r.number();
+			}
+		}
+		printf("--- %f\n", noul);
+	}
+	
+	return 0;
+}
+
 #ifdef _WIN32
 static std::string writable_generic_config_location()
 {
@@ -335,5 +436,6 @@ int main(int argc, char **argv)
 			} }, &opt);
 	}
 
-	return main2(argc, argv);
+	// return main2(argc, argv);
+	return main3jev(argc, argv);
 }
