@@ -5,28 +5,31 @@
 
 #ifdef APP_GUITAR
 #include "ApplicationGlobal.h"
-static inline QColor incremental_search_filtered_bg_color()
+#endif
+
+namespace incrementalsearch {
+
+#ifdef APP_GUITAR
+QColor filtered_bg_color()
 {
 	return global->appsettings.incremental_search_color.filtered_bg;
 }
 
-static inline QColor incremental_search_highlight_bg_color()
+QColor highlight_bg_color()
 {
 	return global->appsettings.incremental_search_color.highlight_bg;
 }
 #else
-static inline QColor incremental_search_filtered_bg_color()
+QColor filtered_bg_color()
 {
 	return QColor(128, 128, 128, 64);
 }
 
-static inline QColor incremental_search_highlight_bg_color()
+QColor highlight_bg_color()
 {
 	return QColor(240, 64, 255, 128);
 }
 #endif
-
-namespace incrementalsearch {
 
 QString normalizeText(QString s)
 {
@@ -71,7 +74,7 @@ void drawText_filtered(QPainter *painter, const QStyleOptionViewItem &opt, const
 			r.setLeft(x);
 			r.setWidth(w);
 			if (part.match) { // フィルターの部分の背景をハイライト
-				painter->fillRect(r, incremental_search_highlight_bg_color());
+				painter->fillRect(r, incrementalsearch::highlight_bg_color());
 			}
 			drawText(painter, opt, r, s);
 			x += w;
@@ -83,7 +86,7 @@ void drawText_filtered(QPainter *painter, const QStyleOptionViewItem &opt, const
 
 void fillFilteredBG(QPainter *painter, const QRect &rect)
 {
-	painter->fillRect(rect, incremental_search_filtered_bg_color());
+	painter->fillRect(rect, incrementalsearch::filtered_bg_color());
 }
 
 QString appendCharToFilterText(QString filter, const QString &add)

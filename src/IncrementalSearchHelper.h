@@ -21,6 +21,9 @@ class IncrementalSearchFilter;
 
 namespace incrementalsearch {
 
+QColor filtered_bg_color();
+QColor highlight_bg_color();
+
 QString normalizeText(QString s);
 void drawText(QPainter *painter, const QStyleOptionViewItem &opt, QRect r, const QString &text);
 void drawText_filtered(QPainter *painter, QStyleOptionViewItem const &opt, QRect const &rect, const IncrementalSearchFilter &filter);
