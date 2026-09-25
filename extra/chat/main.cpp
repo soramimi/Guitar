@@ -287,52 +287,64 @@ int main2(int argc, char **argv)
 
 int main3jev(int argc, char **argv)
 {
-	std::string state = R"---(
-{
-"state": "Is the Earth a sphere?"
-)---";
-
-	std::string question = R"---(
-{
-  "new_noul_1": {
-    "type": "noul",
-    "instructions": "Ask a yes or no question",
-    "criteria": {
-      "true": "sphere",
-      "false": "flat"
-    }
-  }
-}
-)---";
-
+	GenerativeAI::Credential cred;
+	{
+		QSettings s("/home/soramimi/.config/soramimi.jp/.secret/jev.ini", QSettings::IniFormat);
+		cred.api_key = s.value("TYPESAFE_API_KEY").toString().toStdString();
+	}
+	
 	GenerativeAI::Request req;
+	req.header.push_back("Authorization: Bearer " + cred.api_key);
+	
 	req.endpoint.url_ = "https://api.typesafe.ai/v1";
 	req.endpoint.suffix_ = "/systemone";
 	req.model_name = "jev-latest";
 	constexpr std::string_view obfuscation_key = "obfuscation key qwerty123";
 
-	GenerativeAI::Credential cred;
+	std::string request;
+	
+	struct Noul {
+		std::string state;
+		struct Question {
+			std::string name;
+			std::string instructions;
+			std::string criteria_true;
+			std::string criteria_false;
+		};
+		std::vector<Question> questions;
+	};
+	
+	Noul noul;
+	noul.state = "About the Earth.";
+	Noul::Question q;
+	q.name = "new_noul_1";
+	q.instructions = "Is the Earth a sphere?";
+	q.criteria_true = "Sphere.";
+	q.criteria_false = "Flat.";
+	noul.questions.push_back(q);
+
 	{
-		QSettings s("/home/soramimi/.config/soramimi.jp/.secret/jev.ini", QSettings::IniFormat);
-		cred.api_key = s.value("JEV_API_KEY").toString().toStdString();
-		req.header.push_back("Authorization: Bearer " + cred.api_key);
+		jstream::Writer w;
+		w.object({}, [&](){
+			w.string("state", noul.state);
+			w.string("model", "jev-latest");
+			w.object("questions", [&](){
+				for (size_t i = 0; i < noul.questions.size(); ++i) {
+					Noul::Question const &q = noul.questions[i];
+					w.object(q.name, [&](){
+						w.string("type", "noul");
+						w.string("instructions", q.instructions);
+						w.object("criteria", [&](){
+							w.string("true", q.criteria_true);
+							w.string("false", q.criteria_false);
+						});
+					});
+				}
+			});
+		});
+		request = w;
 	}
 	
-	std::string prompt = R"---(
-{
-  "state": "Help! My payouts have been failing for 3 days.",
-  "model": "jev-latest",
-  "questions": {
-    "is_urgent": {
-      "type": "noul",
-      "instructions": "Does this convey urgency?"
-    }
-  }
-})---";
-
-	AiApiBridge api;
-
-	std::string request_json = prompt;
 	InetClient::Request web_req;
 	{
 		web_req.set_location(req.endpoint.url(GenerativeAI::EndPoint::Type::Chat, {}, cred));
@@ -348,32 +360,21 @@ int main3jev(int argc, char **argv)
 		{
 			InetClient::Post post;
 			post.content_type = "application/json";
-			post.data.insert(post.data.end(), request_json.begin(), request_json.end());
+			post.data.insert(post.data.end(), request.begin(), request.end());
 			ret = http->post(web_req, &post);
 		}
 		size_t size = http->content_length();
 		char const *data = http->content_data();
-		fwrite(data, 1, size, stdout);
-/*
-{
-	"model":"jev-1.13.0",
-	"answers":{
-		"is_urgent":{
-			"type":"noul",
-			"noul":0.95
-		}
-	},
-	"usage":{
-		"input_tokens":283,
-		"output_tokens":23
-	}
-}
-*/
-		putchar('\n');
+		
+		puts(request.c_str());
+		
+		std::string response(data, size);
+		puts(response.c_str());
+		
 		double noul = 0.0;
 		jstream::Reader r(data, size);
 		while (r.next()) {
-			if (r.match("{answers{is_urgent{noul")) {
+			if (r.match("{answers{new_noul_1{noul")) {
 				noul = r.number();
 			}
 		}
