@@ -385,7 +385,64 @@ struct AiChatResponseParser : public GenerativeAI::AbstractVisitor<AiResult> {
 	{
 		return parse_openai_chat_completions_format();
 	}
-
+	
+	AiResult case_Cloudflare()
+	{
+		AiResult ret(model.api_compatibility());
+		while (reader.next()) {
+			if (reader.match("{result{id")) {
+				ret.d.ex.id = reader.string();
+			} else if (reader.match("{result{model")) {
+				ret.d.ex.model = reader.string();
+			} else if (reader.match("{result{object")) {
+				if (reader.string() == "chat.completion") {
+					ret.d.completed = true;
+				}
+			} else if (reader.match("{result{choices[**")) {
+				reader.nest();
+				AiResponseEx::OpenAiChoice choice;
+				do {
+					if (reader.match("{result{choices[{message{content")) {
+						ret.d.content = reader.string();
+					} else if (reader.match("{result{choices[{index")) {
+						choice.index = reader.number();
+					} else if (reader.match("{result{choices[{message{role")) {
+						choice.message.role = reader.string();
+					} else if (reader.match("{result{choices[{message{content")) {
+						choice.message.content = reader.string();
+					} else if (reader.match("{result{choices[{message{tool_calls[**")) {
+						reader.nest();
+						AiResponseEx::OpenAiChoice::Message::ToolCall toolcall;
+						do {
+							if (reader.match("{result{choices[{message{tool_calls[{id")) {
+								toolcall.id = reader.string();
+							} else if (reader.match("{result{choices[{message{tool_calls[{type")) {
+								toolcall.type = reader.string();
+							} else if (reader.match("{result{choices[{message{tool_calls[{function{name")) {
+								toolcall.function.name = reader.string();
+							} else if (reader.match("{result{choices[{message{tool_calls[{function{arguments")) {
+								toolcall.function.arguments = reader.string();
+							}
+						} while (reader.next());
+						choice.message.tool_calls.push_back(std::move(toolcall));
+					} else if (reader.match("{result{choices[{finish_reason")) {
+						choice.finish_reason = reader.string();
+					}
+				} while (reader.next());
+				ret.d.ex.openai.choices.push_back(std::move(choice));
+			} else if (reader.match("{result{choices[{message{content")) {
+				ret.d.content = reader.string();
+			} else if (reader.match("{result{error{type")) {
+				ret.d.error_status = reader.string();
+				ret.d.completed = false;
+			} else if (reader.match("{result{error{message")) {
+				ret.d.error_message = reader.string();
+				ret.d.completed = false;
+			}
+		}
+		return ret;
+	}
+	
 	/// DeepSeek：OpenAI Chat Completions 互換形式
 	AiResult case_DeepSeek()
 	{
@@ -683,20 +740,37 @@ struct _PromptJsonGenerator : public GenerativeAI::AbstractVisitor<std::string> 
 		});
 		return w;
 	}
-
-	/// OpenRouter：OpenAI Chat Completions 互換形式
+	
+	std::string case_Cloudflare()
+	{
+		jstream::Writer w;
+		w.object({}, [&](){
+			w.string("model", modelname());
+			w.object("input", [&](){
+				w.array("messages", [&](){
+					w.object({}, [&](){
+						w.string("role", "user");
+						w.string("content", prompt);
+					});
+				});
+			});
+			if (0) {
+				w.number("max_tokens", 1000);
+			}
+		});
+		return w;
+	}
+	
 	std::string case_OpenRouter()
 	{
 		return case_OpenAI_chat_completions();
 	}
 	
-	/// OrcaRouter：OrcaAI Chat Completions 互換形式
 	std::string case_OrcaRouter()
 	{
 		return case_OpenAI_chat_completions();
 	}
 
-	/// Requesty：OpenAI Chat Completions 互換形式
 	std::string case_Requesty()
 	{
 		return case_OpenAI_chat_completions();

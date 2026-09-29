@@ -37,6 +37,7 @@ const std::vector<ProviderInfo> &complete_provider_table()
 		{ProviderID::XAI,                          "xai",                             "xAI / Grok",                       "XAI_API_KEY"},
 		{ProviderID::PFN,                          "pfn",                             "Preferred Networks / PLaMo",       "PFN_API_KEY"},
 		{ProviderID::Sakura,                       "sakura",                          "Sakura AI Engine",                 "SAKURA_AI_API_KEY"},
+		// {ProviderID::Cloudflare,                   "cloudflare",                      "Cloudflare",                       "CLOUDFLARE_API_TOKEN"},
 		{ProviderID::OpenRouter,                   "openrouter",                      "OpenRouter",                       "OPENROUTER_API_KEY"},
 		{ProviderID::OrcaRouter,                   "orcarouter",                      "OrcaRouter",                       "ORCAROUTER_API_KEY"},
 		{ProviderID::Requesty,                     "requesty",                        "Requesty",                         "REQUESTY_API_KEY"},
@@ -76,6 +77,7 @@ std::vector<Model> const &ai_model_presets()
 		{ProviderID::XAI,              "grok-latest"},
 		{ProviderID::PFN,              "plamo-3.0-prime"},
 		{ProviderID::Sakura,           "sakura:gpt-oss-120b"},
+		// {ProviderID::Cloudflare,       "cloudflare:openai/gpt-6-luna"},
 		{ProviderID::OpenRouter,       "openrouter:anthropic/claude-4.6-sonnet"},
 		{ProviderID::OrcaRouter,       "orcarouter:deepseek/deepseek-v4.1-flash"},
 		{ProviderID::Requesty,         "requesty:google/gemma-4-31b-it"},
@@ -105,6 +107,7 @@ std::vector<ProviderID> const &ai_provider_id_list_for_present_to_users()
 		ProviderID::XAI,
 		ProviderID::PFN,
 		ProviderID::Sakura,
+		// ProviderID::Cloudflare,
 		ProviderID::OpenRouter,
 		ProviderID::OrcaRouter,
 		ProviderID::Requesty,
@@ -139,6 +142,7 @@ Model Model::from_name(std::string const &name)
 		{ProviderID::XAI, "^grok-"},
 		{ProviderID::PFN, "^plamo-"},
 		{ProviderID::Sakura, "^sakura:"},
+		// {ProviderID::Cloudflare, "^cloudflare:"},
 		{ProviderID::OpenRouter, "^openrouter:"},
 		{ProviderID::OrcaRouter, "^orcarouter:"},
 		{ProviderID::Requesty, "^requesty:"},
@@ -195,7 +199,8 @@ void Model::parse_model(const std::string &model_uri)
 		}
 		return false;
 	};
-
+	
+	// if (Parse("cloudflare:", 443)) return;
 	if (Parse("openrouter:", 443)) return;
 	if (Parse("orcarouter:", 443)) return;
 	if (Parse("requesty:", 443)) return;
@@ -292,6 +297,10 @@ struct _ApiBaseUrl : public AbstractVisitor<std::string> {
 	std::string case_Sakura()
 	{
 		return "https://api.ai.sakura.ad.jp/v1/";
+	}
+	std::string case_Cloudflare()
+	{
+		return "https://api.cloudflare.com/client/v4/accounts/00000000000000000000000000000000/ai/run";
 	}
 	std::string case_DeepSeek()
 	{
@@ -436,6 +445,15 @@ struct _MakeRequest : public AbstractVisitor<Request> {
 		return r;
 	}
 	
+	Request case_DeepSeek()
+	{
+		Request r;
+		r.model_name = model_.model_name();
+		r.endpoint.set_chat_endpoint_url(_generic_endpoint_url());
+		set_authorization_bearer_cred(&r, cred_);
+		return r;
+	}
+	
 	Request case_Sakura()
 	{
 		Request r;
@@ -445,11 +463,12 @@ struct _MakeRequest : public AbstractVisitor<Request> {
 		return r;
 	}
 
-	Request case_DeepSeek()
+	Request case_Cloudflare()
 	{
 		Request r;
 		r.model_name = model_.model_name();
-		r.endpoint.set_chat_endpoint_url(_generic_endpoint_url());
+		r.endpoint.url_ = _endpoint_base_url();
+		// r.endpoint.suffix_ = "v1/completions";
 		set_authorization_bearer_cred(&r, cred_);
 		return r;
 	}

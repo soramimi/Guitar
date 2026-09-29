@@ -18,7 +18,8 @@ enum class ProviderID {
 	MoonshotAI,
 	XAI,
 	PFN,
-	Sakura, // さくらの AI Engine（OpenAI chat completions 互換）
+	Sakura,
+	Cloudflare, // experimental
 	OpenRouter,
 	OrcaRouter,
 	Requesty,
@@ -43,6 +44,7 @@ public:
 	virtual T case_XAI() = 0;
 	virtual T case_PFN() = 0;
 	virtual T case_Sakura() = 0;
+	virtual T case_Cloudflare() = 0;
 	virtual T case_OpenRouter() = 0;
 	virtual T case_OrcaRouter() = 0;
 	virtual T case_Requesty() = 0;
@@ -61,14 +63,15 @@ public:
 		case ProviderID::Anthropic:               return case_Anthropic();
 		case ProviderID::Google:                  return case_Google();
 		case ProviderID::DeepSeek:                return case_DeepSeek();
-		case ProviderID::MoonshotAI:                return case_MoonshotAI();
+		case ProviderID::MoonshotAI:              return case_MoonshotAI();
 		case ProviderID::XAI:                     return case_XAI();
 		case ProviderID::PFN:                     return case_PFN();
 		case ProviderID::Sakura:                  return case_Sakura();
+		case ProviderID::Cloudflare:              return case_Cloudflare();
 		case ProviderID::OpenRouter:              return case_OpenRouter();
 		case ProviderID::OrcaRouter:              return case_OrcaRouter();
 		case ProviderID::Requesty:                return case_Requesty();
-		case ProviderID::Merge:                return case_Merge();
+		case ProviderID::Merge:                  return case_Merge();
 		case ProviderID::Ollama:                  return case_Ollama();
 		case ProviderID::LMStudio:                return case_LMStudio();
 		case ProviderID::LLAMACPP:                return case_LLAMACPP();
