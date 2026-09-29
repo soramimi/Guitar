@@ -7574,6 +7574,10 @@ void MainWindow::on_action_reset_and_clean_triggered()
 
 void MainWindow::test()
 {
-	SelectAiModelDialog dlg(this);
-	dlg.exec();
+	SelectAiModelDialog dlg(this, "/tmp/generative_ai.json");
+	if (dlg.exec() == QDialog::Accepted) {
+		// QString model = dlg.selectedModel();
+		// qDebug() << "Selected AI model:" << model;
+		dlg.save_generative_ai_models_json();
+	}
 }

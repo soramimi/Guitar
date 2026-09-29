@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>529</width>
-    <height>450</height>
+    <width>540</width>
+    <height>482</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -69,7 +69,7 @@
           </layout>
          </item>
          <item>
-          <widget class="QListWidget" name="listWidget"/>
+          <widget class="QListWidget" name="listWidget_items"/>
          </item>
          <item>
           <layout class="QHBoxLayout" name="horizontalLayout_4">
@@ -421,7 +421,7 @@
  <tabstops>
   <tabstop>pushButton_new</tabstop>
   <tabstop>toolButton</tabstop>
-  <tabstop>listWidget</tabstop>
+  <tabstop>listWidget_items</tabstop>
   <tabstop>pushButton_up</tabstop>
   <tabstop>pushButton_down</tabstop>
   <tabstop>lineEdit_name</tabstop>

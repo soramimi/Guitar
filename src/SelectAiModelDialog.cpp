@@ -1,3 +1,4 @@
+#include "MySettings.h"
 #include "SelectAiModelDialog.h"
 
 #include "ApplicationGlobal.h"
@@ -10,6 +11,7 @@
 #include <QMessageBox>
 #include <ai/AiApiBridge.h>
 #include <ai/GenerativeAI.h>
+#include <common/jstream.h>
 
 using namespace GenerativeAI;
 
@@ -39,22 +41,20 @@ constexpr char const *NEW_MODEL_NAME = "(New Model)";
 
 // ダイアログの内部状態を保持する Private 構造体
 struct SelectAiModelDialog::Private {
-	struct Item {
-		std::string guid;
-		std::string name;
-	};
-	std::vector<Item> items;
+	QString generative_ai_ini_path;
+	std::vector<SelectAiModelDialog::ModelConf> items;
 	
 	std::vector<ProviderInfo> providers;
-	GenerativeAI::Model model;
 };
 
-SelectAiModelDialog::SelectAiModelDialog(QWidget *parent)
+SelectAiModelDialog::SelectAiModelDialog(QWidget *parent, QString generative_ai_ini_path)
 	: QDialog(parent)
 	, ui(new Ui::SelectAiModelDialog)
 	, m(new Private)
 {
 	ui->setupUi(this);
+	
+	m->generative_ai_ini_path = generative_ai_ini_path;
 
 	// スプリッターの初期サイズを設定（左:右 = 100:300）
 	ui->splitter->setSizes({100, 300});
@@ -68,11 +68,62 @@ SelectAiModelDialog::SelectAiModelDialog(QWidget *parent)
 	enableSettingsFrame(false);
 }
 
+void SelectAiModelDialog::set_generative_ai_model(ModelConf const &item)
+{
+	Q_ASSERT(ui->listWidget_items->count() == (int)m->items.size());
+	int row = ui->listWidget_items->currentRow();
+	if (row >= 0 && row < (int)m->items.size()) {
+		m->items[row] = std::move(item);
+	}
+}
+
+std::optional<SelectAiModelDialog::ModelConf> SelectAiModelDialog::current_generative_ai_model()
+{
+	Q_ASSERT(ui->listWidget_items->count() == (int)m->items.size());
+	int row = ui->listWidget_items->currentRow();
+	if (row >= 0 && row < (int)m->items.size()) {
+		return m->items[row];
+	}
+	return {};
+}
+
 SelectAiModelDialog::~SelectAiModelDialog()
 {
 	// Private データと UI オブジェクトを解放
 	delete m;
 	delete ui;
+}
+
+void SelectAiModelDialog::save_generative_ai_models_json()
+{
+	std::string json;
+	
+	jstream::Writer w;
+	w.object({}, [&](){
+		w.array("items", [&](){
+			for (ModelConf const &item : m->items) {
+				w.object("item", [&](){
+					w.string("guid", item.guid);
+					w.string("name", item.name);
+					w.string("model", "gpt-6-luna");
+					w.string("api_type", "openai_responses_v1");
+					w.string("credential", "sk-qwerty123");
+				});
+			}
+		});
+	});
+	FILE *fp = fopen(m->generative_ai_ini_path.toStdString().c_str(), "w");
+	if (fp) {
+		std::string json = w;
+		fwrite(json.c_str(), 1, json.size(), fp);
+		fclose(fp);
+	}
+	
+#if 1
+	MySettings s;
+	s.beginGroup("Options");
+	s.endGroup();
+#endif
 }
 
 void SelectAiModelDialog::enableSettingsFrame(bool f)
@@ -104,22 +155,36 @@ void SelectAiModelDialog::on_pushButton_load_preset_clicked()
 {
 	SelectAiModelPresetDialog dlg(this);
 	if (dlg.exec() == QDialog::Accepted) {
-		m->model = dlg.selectedModel();
-		Model const &model = m->model;
+		{
+			ModelConf modelconf;
+			char tmp[37];
+			{
+				auto [hi, lo] = uuidv7();
+				uuid_to_string(hi, lo, tmp);
+			}
+			modelconf.guid = tmp;
+			modelconf.name = QString::fromStdString(dlg.selectedModel().model_name()).toStdString();
+			modelconf.model = dlg.selectedModel();
+			set_generative_ai_model(modelconf);
+		}
 		
 		// 選択したモデル情報を各 UI に反映
-		ui->lineEdit_name->setText(QString::fromStdString(m->model.model_name()));
-		ui->comboBox_provider->setCurrentIndex(ui->comboBox_provider->findData((int)model.provider_id()));
-		ui->comboBox_api_type->setCurrentIndex(ui->comboBox_api_type->findData((int)model.api_compatibility()));
-		
-		// エンドポイント URL を生成して表示
-		m->model.endpoint_url_override = {};
-		Request req = make_request(model.provider_id(), model, {});
-		Credential cred = credential();
-		setLineEditEndpointUrl(req.endpoint.url_chat(m->model, cred));
-		
-		// モデル名も comboBox_model に設定
-		ui->comboBox_model->setCurrentText(QString::fromStdString(model.model_name()));
+		auto opt = current_generative_ai_model();
+		if (opt) {
+			ModelConf modelconf = *opt;
+			ui->lineEdit_name->setText(QString::fromStdString(modelconf.name));
+			ui->comboBox_provider->setCurrentIndex(ui->comboBox_provider->findData((int)modelconf.model.provider_id()));
+			ui->comboBox_api_type->setCurrentIndex(ui->comboBox_api_type->findData((int)modelconf.model.api_compatibility()));
+			
+			// エンドポイント URL を生成して表示
+			modelconf.model.endpoint_url_override = {};
+			Request req = make_request(modelconf.model.provider_id(), modelconf.model, {});
+			Credential cred = credential();
+			setLineEditEndpointUrl(req.endpoint.url_chat(modelconf.model, cred));
+			
+			// モデル名も comboBox_model に設定
+			ui->comboBox_model->setCurrentText(QString::fromStdString(modelconf.model.model_name()));
+		}
 	}
 }
 
@@ -130,8 +195,11 @@ void SelectAiModelDialog::on_pushButton_query_models_clicked()
 	ui->comboBox_model->clear();
 	
 	// 現在のプロバイダー情報とエンドポイント上書きをモデルに反映
-	m->model.provider_info_ = provider_info(m->model.provider_id());
-	m->model.endpoint_url_override = ui->lineEdit_endpoint_url->text().toStdString();
+	auto opt = current_generative_ai_model();
+	if (!opt) return;
+	ModelConf modelconf = *opt;
+	modelconf.model.provider_info_ = provider_info(modelconf.model.provider_id());
+	modelconf.model.endpoint_url_override = ui->lineEdit_endpoint_url->text().toStdString();
 	
 	// API 経由でモデル一覧を問い合わせ（待機カーソルを表示）
 	std::optional<AiResult::Models> models;
@@ -142,7 +210,7 @@ void SelectAiModelDialog::on_pushButton_query_models_clicked()
 		} defer_override_cursor;
 		
 		AiApiBridge api;
-		api.set_ai_model(m->model, credential());
+		api.set_ai_model(modelconf.model, credential());
 		models = api.queryModels();
 	}
 	if (models == std::nullopt) {
@@ -179,10 +247,13 @@ void SelectAiModelDialog::on_comboBox_provider_currentIndexChanged(int index)
 	if (index >= 0 && index < ui->comboBox_provider->count()) {
 		int i = ui->comboBox_provider->itemData(index).toInt();
 		ProviderInfo const &provider = complete_provider_table()[i];
-		m->model.provider_info_ = &provider;
-		m->model.api_compatibility_override = std::nullopt;
-		m->model.endpoint_url_override = {};
-		Credential cred = global->get_ai_credential(m->model);
+		auto opt = current_generative_ai_model();
+		if (!opt) return;
+		ModelConf modelconf = *opt;
+		modelconf.model.provider_info_ = &provider;
+		modelconf.model.api_compatibility_override = std::nullopt;
+		modelconf.model.endpoint_url_override = {};
+		Credential cred = global->get_ai_credential(modelconf.model);
 		
 		// 選択したプロバイダーに応じて利用可能な API タイプを再構築
 		int index = -1;
@@ -217,7 +288,7 @@ void SelectAiModelDialog::on_comboBox_provider_currentIndexChanged(int index)
 				Add(api_anthropic_messages_v1, ProviderID::Anthropic);
 				break;
 			}
-			index = ui->comboBox_api_type->findData((int)m->model.api_compatibility());
+			index = ui->comboBox_api_type->findData((int)modelconf.model.api_compatibility());
 			ui->comboBox_api_type->setCurrentIndex(index);
 			ui->comboBox_api_type->blockSignals(b1);
 		}
@@ -246,16 +317,19 @@ void SelectAiModelDialog::on_comboBox_api_type_currentIndexChanged(int index)
 {
 	if (index >= 0 && index < ui->comboBox_api_type->count()) {
 		ProviderID api_type_id = (ProviderID)ui->comboBox_api_type->itemData(index).toInt();
-		m->model.api_compatibility_override = api_type_id;
+		auto opt = current_generative_ai_model();
+		if (!opt) return;
+		ModelConf modelconf = *opt;
+		modelconf.model.api_compatibility_override = api_type_id;
 		
 		// API タイプに合わせてエンドポイント URL を再生成
 		std::string url;
-		Request req = make_request(m->model.provider_id(), m->model, {});
-		if (m->model.provider_id() == ProviderID::Google) {
+		Request req = make_request(modelconf.model.provider_id(), modelconf.model, {});
+		if (modelconf.model.provider_id() == ProviderID::Google) {
 			url = req.endpoint.url_;
 		} else {
-			Credential cred = global->get_ai_credential(m->model);
-			url = req.endpoint.url_chat(m->model, cred);
+			Credential cred = global->get_ai_credential(modelconf.model);
+			url = req.endpoint.url_chat(modelconf.model, cred);
 		}
 		setLineEditEndpointUrl(url);
 	}
@@ -264,7 +338,10 @@ void SelectAiModelDialog::on_comboBox_api_type_currentIndexChanged(int index)
 // 認証情報の取得元（環境変数 / カスタム）が変わったときに API キー入力欄を更新する
 void SelectAiModelDialog::on_cred_key_source_changed()
 {
-	Credential cred = global->get_ai_credential(m->model);
+	auto opt = current_generative_ai_model();
+	if (!opt) return;
+	ModelConf modelconf = *opt;
+	Credential cred = global->get_ai_credential(modelconf.model);
 
 	std::string symbol = ui->lineEdit_cred_symbol->text().toStdString();
 	if (ui->radioButton_cred_environ->isChecked()) {
@@ -328,7 +405,10 @@ void SelectAiModelDialog::on_pushButton_test_hello_clicked()
 	AiResult result;
 	
 	QString prompt = "Hello!";
-	QString model = QString::fromStdString(m->model.model_name());
+	auto opt = current_generative_ai_model();
+	if (!opt) return;
+	ModelConf modelconf = *opt;
+	QString model = QString::fromStdString(modelconf.model.model_name());
 	
 	{
 		struct WaitCursor {
@@ -337,7 +417,7 @@ void SelectAiModelDialog::on_pushButton_test_hello_clicked()
 		} defer_override_cursor;
 		
 		AiApiBridge api;
-		api.set_ai_model(m->model, credential());
+		api.set_ai_model(modelconf.model, credential());
 		result = api.request(prompt.toStdString());
 	}
 	if (result.is_error()) {
@@ -351,7 +431,11 @@ void SelectAiModelDialog::on_pushButton_test_hello_clicked()
 
 void SelectAiModelDialog::on_comboBox_model_currentTextChanged(const QString &arg1)
 {
-	m->model.model_name_ = arg1.toStdString();
+	auto opt = current_generative_ai_model();
+	if (!opt) return;
+	ModelConf modelconf = *opt;
+	modelconf.name = arg1.toStdString();
+	set_generative_ai_model(modelconf);;
 }
 
 void SelectAiModelDialog::on_toolButton_clicked()
@@ -369,27 +453,27 @@ void SelectAiModelDialog::on_toolButton_clicked()
 
 void SelectAiModelDialog::updateListWidget()
 {
-	ui->listWidget->clear();
-	for (Private::Item const &item : m->items) {
+	ui->listWidget_items->clear();
+	for (ModelConf const &item : m->items) {
 		QListWidgetItem *list_item = new QListWidgetItem(QString::fromStdString(item.name));
-		ui->listWidget->addItem(list_item);
+		ui->listWidget_items->addItem(list_item);
 	}
 }
 
-void SelectAiModelDialog::selectItem(int i)
+void SelectAiModelDialog::selectItem(int row)
 {
-	Q_ASSERT(m->items.size() == ui->listWidget->count());
+	Q_ASSERT(m->items.size() == ui->listWidget_items->count());
 	
-	if (i != ui->listWidget->currentRow()) {
-		ui->listWidget->setCurrentRow(i);
+	if (row != ui->listWidget_items->currentRow()) {
+		ui->listWidget_items->setCurrentRow(row);
 	}
 	
 	QString name;
 	QString guid;
-	if (i >= 0 && i < (int)m->items.size()) {
+	if (row >= 0 && row < (int)m->items.size()) {
 		enableSettingsFrame(true);
-		name = QString::fromStdString(m->items[i].name);
-		guid = QString::fromStdString(m->items[i].guid);
+		name = QString::fromStdString(m->items[row].name);
+		guid = QString::fromStdString(m->items[row].guid);
 	} else {
 		enableSettingsFrame(false);
 	}
@@ -399,8 +483,8 @@ void SelectAiModelDialog::selectItem(int i)
 
 void SelectAiModelDialog::on_pushButton_new_clicked()
 {
-	int row = ui->listWidget->count();
-	Private::Item item;
+	int row = ui->listWidget_items->count();
+	ModelConf item;
 	{
 		char tmp[37];
 		auto uuid = uuidv7();
@@ -412,7 +496,7 @@ void SelectAiModelDialog::on_pushButton_new_clicked()
 	
 	// updateListWidget();
 	QListWidgetItem *list_item = new QListWidgetItem(QString::fromStdString(item.name));
-	ui->listWidget->addItem(list_item);
+	ui->listWidget_items->addItem(list_item);
 	
 	selectItem(row);
 	
@@ -421,13 +505,13 @@ void SelectAiModelDialog::on_pushButton_new_clicked()
 
 void SelectAiModelDialog::on_pushButton_delete_clicked()
 {
-	int row = ui->listWidget->currentRow();
+	int row = ui->listWidget_items->currentRow();
 	if (row >= 0 && row < (int)m->items.size()) {
 		m->items.erase(m->items.begin() + row);
 		
-		delete ui->listWidget->takeItem(row);
+		delete ui->listWidget_items->takeItem(row);
 		
-		if (row < ui->listWidget->count()) {
+		if (row < ui->listWidget_items->count()) {
 			selectItem(row);
 		} else if (row > 0) {
 			selectItem(row - 1);
@@ -439,14 +523,14 @@ void SelectAiModelDialog::on_pushButton_delete_clicked()
 
 void SelectAiModelDialog::on_pushButton_up_clicked()
 {
-	int row = ui->listWidget->currentRow();
+	int row = ui->listWidget_items->currentRow();
 	if (row > 0 && row < (int)m->items.size()) {
 		std::swap(m->items[row], m->items[row - 1]);
 		
-		bool b1 = ui->listWidget->blockSignals(true);
-		auto item = ui->listWidget->takeItem(row);
-		ui->listWidget->insertItem(row - 1, item);
-		ui->listWidget->blockSignals(b1);
+		bool b1 = ui->listWidget_items->blockSignals(true);
+		auto item = ui->listWidget_items->takeItem(row);
+		ui->listWidget_items->insertItem(row - 1, item);
+		ui->listWidget_items->blockSignals(b1);
 		
 		selectItem(row - 1);
 	}
@@ -454,14 +538,14 @@ void SelectAiModelDialog::on_pushButton_up_clicked()
 
 void SelectAiModelDialog::on_pushButton_down_clicked()
 {
-	int row = ui->listWidget->currentRow();
+	int row = ui->listWidget_items->currentRow();
 	if (row >= 0 && row + 1 < (int)m->items.size()) {
 		std::swap(m->items[row], m->items[row + 1]);
 		
-		bool b1 = ui->listWidget->blockSignals(true);
-		auto item = ui->listWidget->takeItem(row);
-		ui->listWidget->insertItem(row + 1, item);
-		ui->listWidget->blockSignals(b1);
+		bool b1 = ui->listWidget_items->blockSignals(true);
+		auto item = ui->listWidget_items->takeItem(row);
+		ui->listWidget_items->insertItem(row + 1, item);
+		ui->listWidget_items->blockSignals(b1);
 		
 		selectItem(row + 1);
 	}
@@ -469,10 +553,10 @@ void SelectAiModelDialog::on_pushButton_down_clicked()
 
 void SelectAiModelDialog::on_lineEdit_name_textChanged(const QString &arg1)
 {
-	int row = ui->listWidget->currentRow();
+	int row = ui->listWidget_items->currentRow();
 	if (row >= 0 && row < (int)m->items.size()) {
 		m->items[row].name = arg1.toStdString();
-		ui->listWidget->item(row)->setText(QString::fromStdString(m->items[row].name));
+		ui->listWidget_items->item(row)->setText(QString::fromStdString(m->items[row].name));
 	}
 }
 

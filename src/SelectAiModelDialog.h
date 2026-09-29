@@ -23,10 +23,19 @@ private:
 	void updateListWidget();
 	void selectItem(int i);
 	void enableSettingsFrame(bool f);
+
+	struct ModelConf {
+		std::string guid;
+		std::string name;
+		GenerativeAI::Model model;
+	};
+	void set_generative_ai_model(const ModelConf &item);
+	std::optional<ModelConf> current_generative_ai_model();
 public:
-	explicit SelectAiModelDialog(QWidget *parent = nullptr);
+	explicit SelectAiModelDialog(QWidget *parent, QString generative_ai_ini_path);
 	~SelectAiModelDialog();
-	
+
+	void save_generative_ai_models_json();
 private slots:
 	void on_pushButton_load_preset_clicked();
 	void on_pushButton_query_models_clicked();
