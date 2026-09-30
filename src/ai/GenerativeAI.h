@@ -80,6 +80,16 @@ public:
 	}
 };
 
+static constexpr std::string_view api_openai_chat_completions_v1 = "openai_chat_completions_v1";
+static constexpr std::string_view api_openai_responses_v1 = "openai_responses_v1";
+static constexpr std::string_view api_anthropic_messages_v1 = "anthropic_messages_v1";
+static constexpr std::string_view api_google_gemini_v1 = "google_gemini_v1";
+static constexpr std::string_view api_cloudflare_gateway_v4 = "cloudflare_gateway_v4";
+
+static constexpr std::string_view key_store_environment = "environment";
+static constexpr std::string_view key_store_obfuscated = "obfuscation";
+static constexpr std::string_view key_store_encryption = "encryption";
+
 struct ProviderInfo {
 	ProviderID id; // 識別ID (整数)
 	std::string tag; // 識別用タグ (小文字、ハイフン区切り)

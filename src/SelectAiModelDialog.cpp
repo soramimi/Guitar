@@ -96,18 +96,17 @@ SelectAiModelDialog::~SelectAiModelDialog()
 
 void SelectAiModelDialog::save_generative_ai_models_json()
 {
-	std::string json;
-	
 	jstream::Writer w;
 	w.object({}, [&](){
 		w.array("items", [&](){
-			for (ModelConf const &item : m->items) {
+			for (ModelConf const &mc : m->items) {
 				w.object("item", [&](){
-					w.string("guid", item.guid);
-					w.string("name", item.name);
-					w.string("model", "gpt-6-luna");
-					w.string("api_type", "openai_responses_v1");
-					w.string("credential", "sk-qwerty123");
+					w.string("guid", mc.guid);
+					w.string("name", mc.name);
+					w.string("model", mc.model.model_name());
+					w.string("api_type", mc.api_type);
+					w.string("key_symbol", mc.api_key_symbol);
+					w.string("key_store", mc.api_key_store);
 				});
 			}
 		});
@@ -157,12 +156,7 @@ void SelectAiModelDialog::on_pushButton_load_preset_clicked()
 	if (dlg.exec() == QDialog::Accepted) {
 		{
 			ModelConf modelconf;
-			char tmp[37];
-			{
-				auto [hi, lo] = uuidv7();
-				uuid_to_string(hi, lo, tmp);
-			}
-			modelconf.guid = tmp;
+			modelconf.guid = generate_uuidv7();
 			modelconf.name = QString::fromStdString(dlg.selectedModel().model_name()).toStdString();
 			modelconf.model = dlg.selectedModel();
 			set_generative_ai_model(modelconf);
@@ -258,11 +252,6 @@ void SelectAiModelDialog::on_comboBox_provider_currentIndexChanged(int index)
 		// 選択したプロバイダーに応じて利用可能な API タイプを再構築
 		int index = -1;
 		{
-			static constexpr std::string_view api_openai_chat_completions_v1 = "openai_chat_completions_v1";
-			static constexpr std::string_view api_openai_responses_v1 = "openai_responses_v1";
-			static constexpr std::string_view api_anthropic_messages_v1 = "anthropic_messages_v1";
-			static constexpr std::string_view api_google_gemini_v1 = "google_gemini_v1";
-
 			bool b1 = ui->comboBox_api_type->blockSignals(true);
 			ui->comboBox_api_type->clear();
 			ui->comboBox_api_type->setCurrentIndex(-1);
@@ -316,11 +305,14 @@ void SelectAiModelDialog::on_comboBox_provider_currentIndexChanged(int index)
 void SelectAiModelDialog::on_comboBox_api_type_currentIndexChanged(int index)
 {
 	if (index >= 0 && index < ui->comboBox_api_type->count()) {
+		QString api_type = ui->comboBox_api_type->itemText(index);
 		ProviderID api_type_id = (ProviderID)ui->comboBox_api_type->itemData(index).toInt();
 		auto opt = current_generative_ai_model();
 		if (!opt) return;
 		ModelConf modelconf = *opt;
-		modelconf.model.api_compatibility_override = api_type_id;
+		modelconf.api_type = api_type.toStdString();
+		// modelconf.model.api_compatibility_override = api_type_id;
+		set_generative_ai_model(modelconf);
 		
 		// API タイプに合わせてエンドポイント URL を再生成
 		std::string url;
@@ -336,7 +328,7 @@ void SelectAiModelDialog::on_comboBox_api_type_currentIndexChanged(int index)
 }
 
 // 認証情報の取得元（環境変数 / カスタム）が変わったときに API キー入力欄を更新する
-void SelectAiModelDialog::on_cred_key_source_changed()
+void SelectAiModelDialog::on_cred_key_store_changed()
 {
 	auto opt = current_generative_ai_model();
 	if (!opt) return;
@@ -344,6 +336,7 @@ void SelectAiModelDialog::on_cred_key_source_changed()
 	Credential cred = global->get_ai_credential(modelconf.model);
 
 	std::string symbol = ui->lineEdit_cred_symbol->text().toStdString();
+	modelconf.api_key_symbol = symbol;
 	if (ui->radioButton_cred_environ->isChecked()) {
 		// 環境変数から API キーを取得するモード
 		ui->lineEdit_cred_api_key->setEnabled(false);
@@ -355,6 +348,7 @@ void SelectAiModelDialog::on_cred_key_source_changed()
 			return {};
 		};
 		cred.api_key = GetEnvironmentApiKey(symbol);
+		modelconf.api_key_store = key_store_environment;
 	} else if (ui->radioButton_cred_custom->isChecked()) {
 		// アプリ設定から API キーを取得するモード（手動入力も可能）
 		ui->lineEdit_cred_api_key->setEnabled(true);
@@ -370,8 +364,11 @@ void SelectAiModelDialog::on_cred_key_source_changed()
 			return {};
 		};
 		cred.api_key = GetCustomApiKey(symbol);
+		modelconf.api_key_store = key_store_obfuscated;
 	}
 	setLineEditApiKey(cred.api_key);
+	
+	set_generative_ai_model(modelconf);
 }
 
 // API キー表示切替チェックボックス: 入力モードを通常表示 / パスワード表示に切り替える
@@ -384,19 +381,19 @@ void SelectAiModelDialog::on_checkBox_show_api_key_clicked()
 // 「環境変数」ラジオボタン選択時: 取得元を切り替えて API キー欄を更新
 void SelectAiModelDialog::on_radioButton_cred_environ_clicked()
 {
-	on_cred_key_source_changed();
+	on_cred_key_store_changed();
 }
 
 // 「カスタム」ラジオボタン選択時: 取得元を切り替えて API キー欄を更新
 void SelectAiModelDialog::on_radioButton_cred_custom_clicked()
 {
-	on_cred_key_source_changed();
+	on_cred_key_store_changed();
 }
 
 // 認証シンボル（環境変数名）変更時: API キーを再取得して表示
 void SelectAiModelDialog::on_lineEdit_cred_symbol_textChanged(const QString &arg1)
 {
-	on_cred_key_source_changed();
+	on_cred_key_store_changed();
 }
 
 // 「Hello! テスト」ボタン押下時: 現在の設定で AI に問い合わせ、結果をメッセージボックスに表示する

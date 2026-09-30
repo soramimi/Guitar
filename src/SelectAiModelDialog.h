@@ -9,14 +9,13 @@ namespace Ui {
 class SelectAiModelDialog;
 }
 
-class SelectAiModelDialog : public QDialog
-{
+class SelectAiModelDialog : public QDialog {
 	Q_OBJECT
 private:
 	Ui::SelectAiModelDialog *ui;
 	struct Private;
 	Private *m;	
-	void on_cred_key_source_changed();
+	void on_cred_key_store_changed();
 	void setLineEditEndpointUrl(const std::string &url);
 	void setLineEditApiKey(const std::string &apikey);
 	GenerativeAI::Credential credential() const;
@@ -27,6 +26,9 @@ private:
 	struct ModelConf {
 		std::string guid;
 		std::string name;
+		std::string api_type;
+		std::string api_key_symbol;
+		std::string api_key_store;
 		GenerativeAI::Model model;
 	};
 	void set_generative_ai_model(const ModelConf &item);
