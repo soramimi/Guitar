@@ -27,6 +27,7 @@ private:
 		std::string guid;
 		std::string name;
 		std::string api_type;
+		std::string endpoint_url;
 		std::string api_key_symbol;
 		std::string api_key_store;
 		GenerativeAI::Model model;
@@ -37,6 +38,7 @@ public:
 	explicit SelectAiModelDialog(QWidget *parent, QString generative_ai_ini_path);
 	~SelectAiModelDialog();
 
+	void load_generative_ai_models_json();
 	void save_generative_ai_models_json();
 private slots:
 	void on_pushButton_load_preset_clicked();
@@ -55,7 +57,13 @@ private slots:
 	void on_pushButton_up_clicked();
 	void on_pushButton_down_clicked();
 	void on_lineEdit_name_textChanged(const QString &arg1);
-	void on_listWidget_currentRowChanged(int currentRow);
+	void on_listWidget_items_currentRowChanged(int currentRow);
+	
+	// QDialog interface
+	void on_lineEdit_endpoint_url_textChanged(const QString &arg1);
+	
+public slots:
+	int exec();
 };
 
 #endif // SELECTAIMODELDIALOG_H
