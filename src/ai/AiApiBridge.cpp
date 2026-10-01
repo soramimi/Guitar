@@ -22,8 +22,9 @@ struct AiApiBridge::Private {
 	GenerativeAI::Credential ai_credential;
 	std::string system_role;
 	std::shared_ptr<AbstractInetClient> http_;
-	
-	bool save_log = false; // リクエスト/レスポンスをログに記録するか
+
+	// bool save_log = false; // リクエスト/レスポンスをログに記録するか
+	bool save_log = true;
 };
 
 /**
@@ -148,7 +149,11 @@ struct AiChatResponseParser : public GenerativeAI::AbstractVisitor<AiResult> {
 	/// 未知プロバイダー：空の結果を返す
 	AiResult case_Unknown()
 	{
-		return {model.api_compatibility()};
+		// return {model.api_compatibility()};
+		auto api = model.api_compatibility();
+		AiResult ret(api);
+		ret = parse_responses(api);
+		return ret;
 	}
 
 	/**
@@ -822,7 +827,7 @@ std::string AiApiBridge::generate_prompt_json(GenerativeAI::Model const &model, 
 {
 	_PromptJsonGenerator generator(model, prompt);
 	generator.system_role = system_role;
-	return generator.visit(model.provider_id());
+	return generator.visit(model.api_compatibility());
 }
 
 /**
@@ -853,9 +858,9 @@ AiResult AiApiBridge::open()
 {
 	// constexpr GenerativeAI::EndPoint::Type eptype = GenerativeAI::EndPoint::Type::Chat;
 	
-	if (model().provider_id() == GenerativeAI::ProviderID::Unknown) {
-		return Error("error", "AI model is not defined.");
-	}
+	// if (model().provider_id() == GenerativeAI::ProviderID::Unknown) {
+	// 	return Error("error", "AI model is not defined.");
+	// }
 	
 	m->http_ = global_inet_client();
 	
@@ -943,9 +948,9 @@ AiResult AiApiBridge::x_request(const Query2Request &req)
  */
 AiResult AiApiBridge::request(GenerativeAI::EndPoint::Type eptype, std::string const &prompt, Query2Request const &req)
 {
-	if (model().provider_id() == GenerativeAI::ProviderID::Unknown) {
-		return Error("error", "AI model is not defined.");
-	}
+	// if (model().provider_id() == GenerativeAI::ProviderID::Unknown) {
+	// 	return Error("error", "AI model is not defined.");
+	// }
 	
 	std::string response_json;
 	{
@@ -1000,6 +1005,7 @@ AiResult AiApiBridge::request(GenerativeAI::EndPoint::Type eptype, std::string c
 			web_req.set_location(ai_req.endpoint.url(eptype, model(), cred));
 			for (std::string const &h : ai_req.header) {
 				web_req.add_header(h);
+				logprintf(LOG_DEFAULT, "%s\n", h.c_str());
 			}
 		}
 		
@@ -1021,6 +1027,7 @@ AiResult AiApiBridge::request(GenerativeAI::EndPoint::Type eptype, std::string c
 			} else {
 				assert(0);
 			}
+			logprintf(LOG_DEFAULT, "%d\n", ret);
 			
 			std::string_view httpstat = http_status_text(ret);
 			
@@ -1029,7 +1036,7 @@ AiResult AiApiBridge::request(GenerativeAI::EndPoint::Type eptype, std::string c
 				size_t size = http->content_length();
 				response_json.assign(data, size);
 				if (m->save_log) {
-					logprintf(LOG_RAW, "%s\n", response_json.c_str());
+					// logprintf(LOG_RAW, "%s\n", response_json.c_str());
 				}
 				// fprintf(stderr, "%s\n", response_json.c_str());
 			} else {

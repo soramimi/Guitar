@@ -377,7 +377,11 @@ struct _MakeRequest : public AbstractVisitor<Request> {
 	
 	Request case_Unknown()
 	{
-		return {};
+		Request r;
+		r.model_name = model_.model_name();
+		set_authorization_bearer_cred(&r, cred_);
+		r.endpoint.set_chat_endpoint_url(_generic_endpoint_url());
+		return r;
 	}
 
 	Request case_OpenAI()

@@ -27,6 +27,7 @@ private:
 		std::string guid;
 		std::string name;
 		std::string api_type;
+		GenerativeAI::ProviderID api_compatibility_id;
 		std::string endpoint_url;
 		std::string api_key_symbol;
 		std::string api_key_store;
@@ -34,6 +35,7 @@ private:
 	};
 	void set_generative_ai_model(const ModelConf &item);
 	std::optional<ModelConf> current_generative_ai_model();
+	void update_api_endpoint_url();
 public:
 	explicit SelectAiModelDialog(QWidget *parent, QString generative_ai_ini_path);
 	~SelectAiModelDialog();
@@ -42,6 +44,7 @@ public:
 	void save_generative_ai_models_json();
 private slots:
 	void on_pushButton_load_preset_clicked();
+	void on_pushButton_test_hello_clicked();
 	void on_pushButton_query_models_clicked();
 	void on_comboBox_provider_currentIndexChanged(int index);
 	void on_comboBox_api_type_currentIndexChanged(int index);
@@ -49,7 +52,6 @@ private slots:
 	void on_radioButton_cred_custom_clicked();
 	void on_checkBox_show_api_key_clicked();
 	void on_lineEdit_cred_symbol_textChanged(const QString &arg1);
-	void on_pushButton_test_hello_clicked();
 	void on_comboBox_model_currentTextChanged(const QString &arg1);
 	void on_toolButton_clicked();
 	void on_pushButton_new_clicked();
