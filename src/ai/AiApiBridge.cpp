@@ -147,7 +147,7 @@ struct AiChatResponseParser : public GenerativeAI::AbstractVisitor<AiResult> {
 	}
 
 	/// 未知プロバイダー：空の結果を返す
-	AiResult case_Unknown()
+	AiResult case_Custom()
 	{
 		// return {model.api_compatibility()};
 		auto api = model.api_compatibility();
@@ -559,7 +559,7 @@ struct _PromptJsonGenerator : public GenerativeAI::AbstractVisitor<std::string> 
 	}
 	
 	/// 未知プロバイダー：空文字列を返す
-	std::string case_Unknown()
+	std::string case_Custom()
 	{
 		return {};
 	}

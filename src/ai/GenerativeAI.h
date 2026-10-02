@@ -8,7 +8,7 @@
 namespace GenerativeAI {
 
 enum class ProviderID {
-	Unknown,
+	Custom,
 	OpenAI,
 	OpenAI_responses,
 	OpenAI_chat_completions,
@@ -33,7 +33,7 @@ template <typename T> class AbstractVisitor {
 public:
 	virtual ~AbstractVisitor() = default;
 
-	virtual T case_Unknown() = 0;
+	virtual T case_Custom() = 0;
 	virtual T case_OpenAI() {return {};} // placeholder
 	virtual T case_OpenAI_responses() = 0;
 	virtual T case_OpenAI_chat_completions() = 0;
@@ -56,7 +56,7 @@ public:
 	T visit(ProviderID provider)
 	{
 		switch (provider) {
-		case ProviderID::Unknown:                 return case_Unknown();
+		case ProviderID::Custom:                  return case_Custom();
 		case ProviderID::OpenAI:                  return case_OpenAI();
 		case ProviderID::OpenAI_responses:        return case_OpenAI_responses();
 		case ProviderID::OpenAI_chat_completions: return case_OpenAI_chat_completions();
@@ -71,12 +71,12 @@ public:
 		case ProviderID::OpenRouter:              return case_OpenRouter();
 		case ProviderID::OrcaRouter:              return case_OrcaRouter();
 		case ProviderID::Requesty:                return case_Requesty();
-		case ProviderID::Merge:                  return case_Merge();
+		case ProviderID::Merge:                   return case_Merge();
 		case ProviderID::Ollama:                  return case_Ollama();
 		case ProviderID::LMStudio:                return case_LMStudio();
 		case ProviderID::LLAMACPP:                return case_LLAMACPP();
 		}
-		return case_Unknown();
+		return case_Custom();
 	}
 };
 
@@ -127,14 +127,14 @@ struct Model {
 	std::optional<std::string> endpoint_url_override;
 	
 	Model()
-		: provider_info_(provider_info(ProviderID::Unknown))
+		: provider_info_(provider_info(ProviderID::Custom))
 	{}
 	Model(ProviderID provider, const std::string &model_uri);
 	void operator = (std::string const &) = delete;
 
 	explicit operator bool () const
 	{
-		return provider_info_ && provider_info_->id != ProviderID::Unknown;
+		return provider_info_ && provider_info_->id != ProviderID::Custom;
 	}
 
 	void parse_model(std::string const &model_uri);
@@ -156,7 +156,7 @@ struct Model {
 
 	ProviderID provider_id() const
 	{
-		return provider_info_ ? provider_info_->id : ProviderID::Unknown;
+		return provider_info_ ? provider_info_->id : ProviderID::Custom;
 	}
 	
 	std::string provider_description() const

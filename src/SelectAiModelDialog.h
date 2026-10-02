@@ -27,21 +27,27 @@ private:
 		std::string guid;
 		std::string name;
 		std::string api_type;
-		GenerativeAI::ProviderID api_compatibility_id;
 		std::string endpoint_url;
 		std::string api_key_symbol;
 		std::string api_key_store;
 		GenerativeAI::Model model;
 	};
-	void set_generative_ai_model(const ModelConf &item);
-	std::optional<ModelConf> current_generative_ai_model();
+	ModelConf *modelconf(int row);
+	ModelConf *current_modelconf();
+	bool set_current_modelconf(const ModelConf &newconf);
 	void update_api_endpoint_url();
+	static std::string query_api_key(const std::string &symbol);
+	
+	std::string model_json_path() const;
+	static std::optional<std::vector<ModelConf> > load_models_json(char const *path);
+	static void save_models_json(const char *path, std::vector<ModelConf> const &items);
+	static void save_api_keys(std::string const &key, std::vector<ModelConf> const &items, const std::map<QString, QString> &api_key_map);
 public:
 	explicit SelectAiModelDialog(QWidget *parent, QString generative_ai_ini_path);
 	~SelectAiModelDialog();
 
-	void load_generative_ai_models_json();
-	void save_generative_ai_models_json();
+	void load();
+	void save();
 private slots:
 	void on_pushButton_load_preset_clicked();
 	void on_pushButton_test_hello_clicked();
@@ -63,6 +69,8 @@ private slots:
 	
 	// QDialog interface
 	void on_lineEdit_endpoint_url_textChanged(const QString &arg1);
+	
+	void on_lineEdit_cred_api_key_textChanged(const QString &arg1);
 	
 public slots:
 	int exec();

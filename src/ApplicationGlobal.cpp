@@ -235,20 +235,14 @@ void GlobalRestoreOverrideCursor()
 GenerativeAI::Credential ApplicationGlobal::get_ai_credential(GenerativeAI::Model const &model)
 {
 	GenerativeAI::Credential cred;
-	AiApiKeys::Item *apikey = nullptr;
 	GenerativeAI::ProviderInfo const *provider = GenerativeAI::provider_info(model.provider_id()); // 絶対に非nullptrを返す
 	Q_ASSERT(provider);
 	std::string envname = provider->env_name;
 	if (envname.empty()) return {};
-
-	auto it = global->appsettings.ai_api_keys.map.find(envname);
-	if (it != global->appsettings.ai_api_keys.map.end()) {
-		apikey = &it->second;
-	}
-	if (apikey && apikey->from == AiApiKeys::KeyFrom::LocalSecret) {
-		if (apikey) {
-			cred.api_key = misc::trimmed(apikey->api_key);
-		}
+	
+	auto opt = global->appsettings.ai_api_keys.get_api_key(envname);
+	if (opt && opt->from == AiApiKeys::KeyFrom::LocalSecret) {
+		cred.api_key = misc::trimmed(opt->api_key);
 	} else if (!envname.empty()) {
 		char const *env = std::getenv(envname.c_str());
 		if (env) {

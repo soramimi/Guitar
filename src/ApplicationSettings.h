@@ -5,6 +5,7 @@
 #include <QString>
 #include <map>
 #include <memory>
+#include <optional>
 
 #define ORGANIZATION_NAME "soramimi.jp"
 #define APPLICATION_NAME "Guitar"
@@ -18,6 +19,7 @@ struct Credential;
 class ModelURI;
 }
 
+
 class ApplicationBasicData {
 public:
 	QString organization_name = ORGANIZATION_NAME;
@@ -30,6 +32,8 @@ public:
 	QString log_dir;
 	QString config_file_path;
 };
+
+static constexpr std::string_view api_key_obfuscation_key = "obfuscation key qwerty123";
 
 class AiApiKeys {
 public:
@@ -50,11 +54,25 @@ public:
 		}
 	};
 
-	std::map<std::string, AiApiKeys::Item> map; // key is env_name
-	
+	std::map<std::string, Item> map; // key is env_name
+
 	bool load(const std::string &key, MySettings *s);
 	bool save(const std::string &key, MySettings *s) const;
-
+	
+	std::optional<Item> get_api_key(const std::string &env_name) const
+	{
+		auto it = map.find(env_name);
+		if (it != map.end()) {
+			return it->second;
+		}
+		return std::nullopt;
+	}
+	
+	void emplace(std::string const &symbol, Item const &item)
+	{
+		map[symbol] = item;
+	}
+	
 	bool operator == (const AiApiKeys &other) const
 	{
 		return map == other.map;

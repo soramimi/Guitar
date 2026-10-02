@@ -26,7 +26,7 @@ const std::vector<ProviderInfo> &complete_provider_table()
 {
 	static const std::vector<ProviderInfo> provider_info = {
 		// id                                      tag                                description                       env_name
-		{ProviderID::Unknown,                      "other",                           "Other",                            ""},
+		{ProviderID::Custom,                      "other",                           "Other",                            ""},
 		{ProviderID::OpenAI,                       "",                                "OpenAI",                           "OPENAI_API_KEY"}, // placeholder
 		{ProviderID::OpenAI_responses,             "openai-responses",                "OpenAI / GPT (responses)",         "OPENAI_API_KEY"},
 		{ProviderID::OpenAI_chat_completions,      "openai-chat-completions",         "OpenAI / GPT (chat completions)",  "OPENAI_API_KEY"},
@@ -97,7 +97,7 @@ std::vector<Model> const &ai_model_presets()
 std::vector<ProviderID> const &ai_provider_id_list_for_present_to_users()
 {
 	static std::vector<ProviderID> providers = { // Unknownは必要。placeholderを含まない。
-		ProviderID::Unknown,
+		ProviderID::Custom,
 		ProviderID::OpenAI_responses,
 		ProviderID::OpenAI_chat_completions,
 		ProviderID::Anthropic,
@@ -258,7 +258,7 @@ struct _ApiBaseUrl : public AbstractVisitor<std::string> {
 		return fmt("http://%s:%d/")(host)(port);
 	}
 
-	std::string case_Unknown()
+	std::string case_Custom()
 	{
 		return {};
 	}
@@ -375,7 +375,7 @@ struct _MakeRequest : public AbstractVisitor<Request> {
 	}
 	
 	
-	Request case_Unknown()
+	Request case_Custom()
 	{
 		Request r;
 		r.model_name = model_.model_name();

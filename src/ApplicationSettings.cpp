@@ -20,7 +20,6 @@ namespace {
 
 constexpr static char const secret_sub_dir[] = ".secret";
 constexpr static char const api_keys_bin[] = "apikeys.bin";
-constexpr std::string_view obfuscation_key = "obfuscation key qwerty123";
 
 template <typename T> class GetValue {
 private:
@@ -112,7 +111,7 @@ ApplicationSettings ApplicationSettings::loadSettings()
 
 	// load api keys
 	
-	if (!as.ai_api_keys.load(std::string(obfuscation_key), &s)) {
+	if (!as.ai_api_keys.load(std::string(api_key_obfuscation_key), &s)) {
 		logprintf(LOG_DEFAULT, "Failed to load AI API keys\n");
 	}
 
@@ -205,7 +204,7 @@ void ApplicationSettings::saveSettings() const
 	// save api keys
 
 	if (ai_api_keys_changed) {
-		if (!ai_api_keys.save(std::string(obfuscation_key), &s)) {
+		if (!ai_api_keys.save(std::string(api_key_obfuscation_key), &s)) {
 			logprintf(LOG_DEFAULT, "Failed to save AI API keys\n");
 		}
 	}
@@ -318,8 +317,8 @@ bool AiApiKeys::load(std::string const &key, MySettings *s)
 					map[envname].api_key = api_key;
 				}
 			}
-
-			{
+			
+			if (s) {
 				s->beginGroup("AI");
 				for (auto &pair : map) {
 					std::string const &env_name = pair.first;
@@ -375,8 +374,8 @@ bool AiApiKeys::save(std::string const &key, MySettings *s) const
 		
 		QFile(secret_dir).setPermissions(QFile::ReadOwner | QFile::WriteOwner | QFile::ExeOwner); // 所有者のみ読み書きと実行可
 		QFile(in_file).setPermissions(QFile::ReadOwner | QFile::WriteOwner); // 所有者のみ読み書き可
-
-		{
+		
+		if (s) {
 			s->beginGroup("AI");
 			for (auto const &pair : map) {
 				std::string const &envname = pair.first;

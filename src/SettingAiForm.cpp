@@ -11,7 +11,7 @@ using ApiKeyFrom = AiApiKeys::KeyFrom;
 // ApplicationSettings には exchange() が呼ばれたときにのみ読み書きするため、
 // 直接設定を書き換えず、このバッファ経由で操作する。
 struct SettingAiForm::ProviderFormData {
-	GenerativeAI::ProviderID id = GenerativeAI::ProviderID::Unknown;
+	GenerativeAI::ProviderID id = GenerativeAI::ProviderID::Custom;
 	GenerativeAI::ProviderInfo const *info = nullptr;
 	ProviderFormData(GenerativeAI::ProviderID provider)
 		: id(provider)
@@ -30,7 +30,7 @@ struct SettingAiForm::ProviderFormData {
 
 struct SettingAiForm::Private {
 	GenerativeAI::Model current_model;
-	GenerativeAI::ProviderID current_provider_id_ = GenerativeAI::ProviderID::Unknown;
+	GenerativeAI::ProviderID current_provider_id_ = GenerativeAI::ProviderID::Custom;
 	std::vector<SettingAiForm::ProviderFormData> provider_formdata_;
 	AiApiKeys api_keys;
 
@@ -73,7 +73,7 @@ SettingAiForm::SettingAiForm(QWidget *parent)
 		m->provider_formdata_.emplace_back(id);
 	}
 
-	m->set_current_provider(GenerativeAI::ProviderID::Unknown);
+	m->set_current_provider(GenerativeAI::ProviderID::Custom);
 
 	for (size_t i = 0; i < m->provider_formdata_.size(); i++) {
 		int id = static_cast<int>(m->provider_formdata_[i].info->id);
@@ -168,7 +168,7 @@ struct ExchangePointers {
 		{}
 	};
 
-	GenerativeAI::ProviderID id = GenerativeAI::ProviderID::Unknown; // for debug
+	GenerativeAI::ProviderID id = GenerativeAI::ProviderID::Custom; // for debug
 	Pointers conf; // 設定ファイルの値を保存するためのポインタ
 	Pointers form; // 設定フォームの値を保存するためのポインタ
 
@@ -472,7 +472,7 @@ void SettingAiForm::on_groupBox_generate_commit_message_by_ai_clicked(bool check
  */
 void SettingAiForm::on_comboBox_provider_currentIndexChanged(int index)
 {
-	GenerativeAI::ProviderID id = GenerativeAI::ProviderID::Unknown;
+	GenerativeAI::ProviderID id = GenerativeAI::ProviderID::Custom;
 	if (index >= 0 && index < ui->comboBox_provider->count()) {
 		QVariant v = ui->comboBox_provider->itemData(index);
 		if (v.isValid()) {
@@ -529,7 +529,7 @@ void SettingAiForm::configureModelByString(std::string const &model_uri)
 void SettingAiForm::configureModel(GenerativeAI::Model const &model)
 {
 	GenerativeAI::ProviderID id = model.provider_id();
-	if (id == GenerativeAI::ProviderID::Unknown) {
+	if (id == GenerativeAI::ProviderID::Custom) {
 		// モデルからプロバイダを推定できない場合は、モデル名文字列から推定させる。
 		configureModelByString(model.model_uri().string);
 		return;
