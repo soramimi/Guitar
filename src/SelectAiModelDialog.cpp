@@ -1,3 +1,4 @@
+#include "ManageApiKeysDialog.h"
 #include "MySettings.h"
 #include "SelectAiModelDialog.h"
 
@@ -107,76 +108,6 @@ bool SelectAiModelDialog::set_current_modelconf(ModelConf const &newconf)
 		return true;
 	}
 	return false;
-}
-
-std::optional<std::vector<SelectAiModelDialog::ModelConf>> SelectAiModelDialog::load_models_json(char const *path)
-{
-	std::vector<ModelConf> items;
-	
-	FILE *fp = fopen(path, "r");
-	if (!fp) return std::nullopt;
-	
-	struct stat st;
-	if (fstat(fileno(fp), &st) == 0) {
-		std::vector<char> buf(st.st_size);
-		fread(buf.data(), 1, buf.size(), fp);
-		jstream::Reader r(buf.data(), buf.size());
-		while (r.next()) {
-			if (r.match_start_object("{items{item{**")) {
-				ModelConf mc;
-				r.nest([&](){
-					if (r.match("{items{item{guid")) {
-						mc.guid = r.string();
-					} if (r.match("{items{item{name")) {
-						mc.name = r.string();
-					} if (r.match("{items{item{model")) {
-						mc.model = GenerativeAI::Model::from_name(r.string());
-					} if (r.match("{items{item{api_type")) {
-						mc.api_type = r.string();
-					} if (r.match("{items{item{endpoint_url")) {
-						mc.endpoint_url = r.string();
-					} if (r.match("{items{item{credential{symbol")) {
-						mc.api_key_symbol = r.string();
-					} if (r.match("{items{item{credential{method")) {
-						mc.api_key_store = r.string();
-					}
-				});
-				items.push_back(mc);
-			}
-		}
-	}
-	fclose(fp);
-	
-	return items;
-}
-
-void SelectAiModelDialog::save_models_json(char const *path, const std::vector<ModelConf> &items)
-{
-	jstream::Writer w;
-	w.object({}, [&](){
-		w.object("items", [&](){
-			for (ModelConf const &mc : items) {
-				w.object("item", [&](){
-					w.string("guid", mc.guid);
-					w.string("name", mc.name);
-					w.string("provider", mc.model.provider_info_->tag);
-					w.string("api_type", mc.api_type);
-					w.string("endpoint_url", mc.endpoint_url);
-					w.string("model", mc.model.model_name());
-					w.object("credential", [&](){
-						w.string("symbol", mc.api_key_symbol);
-						w.string("method", mc.api_key_store);
-					});
-				});
-			}
-		});
-	});
-	FILE *fp = fopen(path, "w");
-	if (fp) {
-		std::string json = w;
-		fwrite(json.c_str(), 1, json.size(), fp);
-		fclose(fp);
-	}
 }
 
 void SelectAiModelDialog::enableSettingsFrame(bool f)
@@ -315,7 +246,8 @@ void SelectAiModelDialog::on_comboBox_provider_currentIndexChanged(int index)
 		ui->lineEdit_cred_symbol->setText(QString::fromStdString(provider.env_name));
 
 		Credential cred = global->get_ai_credential(conf->model);
-		cred.api_key = query_api_key(provider.env_name);
+		bool use_env = conf->api_key_method == key_store_environment;
+		cred.api_key = query_api_key(provider.env_name, use_env);
 		setLineEditApiKey(cred.api_key);
 	}
 }
@@ -347,7 +279,7 @@ void SelectAiModelDialog::on_lineEdit_endpoint_url_textChanged(const QString &ar
 
 
 // 認証情報の取得元（環境変数 / カスタム）が変わったときに API キー入力欄を更新する
-void SelectAiModelDialog::on_cred_key_store_changed()
+void SelectAiModelDialog::on_cred_key_method_changed()
 {
 	ModelConf *conf = current_modelconf();
 	if (!conf) return;
@@ -355,40 +287,18 @@ void SelectAiModelDialog::on_cred_key_store_changed()
 	std::string symbol = ui->lineEdit_cred_symbol->text().toStdString();
 	conf->api_key_symbol = symbol;
 	if (ui->radioButton_cred_environ->isChecked()) {
-		conf->api_key_store = key_store_environment;
+		conf->api_key_method = key_store_environment;
 	} else if (ui->radioButton_cred_custom->isChecked()) {
-		conf->api_key_store = key_store_obfuscated;
+		conf->api_key_method = key_store_obfuscated;
 	}
 	
 	Credential cred = global->get_ai_credential(conf->model);
 	
-	if (ui->radioButton_cred_environ->isChecked()) {
-		// 環境変数から API キーを取得するモード
-		ui->lineEdit_cred_api_key->setEnabled(false);
-		auto GetEnvironmentApiKey = [this](std::string const &symbol)-> std::string {
-			char const *env = std::getenv(symbol.c_str());
-			if (env) {
-				return env;
-			}
-			return {};
-		};
-		cred.api_key = GetEnvironmentApiKey(symbol);
-	} else if (ui->radioButton_cred_custom->isChecked()) {
-		// アプリ設定から API キーを取得するモード（手動入力も可能）
-		ui->lineEdit_cred_api_key->setEnabled(true);
-		auto GetCustomApiKey = [this](std::string const &symbol)-> std::string {
-			ApplicationSettings const &s = global->appsettings;
-			int i = ui->comboBox_provider->currentIndex();
-			if (i >= 0 && i < ui->comboBox_provider->count()) {
-				auto it = s.ai_api_keys.map.find(symbol);
-				if (it != s.ai_api_keys.map.end()) {
-					return it->second.api_key;
-				}
-			}
-			return {};
-		};
-		cred.api_key = GetCustomApiKey(symbol);
-	}
+	bool use_env = conf->api_key_method == key_store_environment;
+	
+	ui->lineEdit_cred_api_key->setEnabled(!use_env);
+	cred.api_key = query_api_key(symbol, use_env);
+	
 	setLineEditApiKey(cred.api_key);
 }
 
@@ -402,19 +312,19 @@ void SelectAiModelDialog::on_checkBox_show_api_key_clicked()
 // 「環境変数」ラジオボタン選択時: 取得元を切り替えて API キー欄を更新
 void SelectAiModelDialog::on_radioButton_cred_environ_clicked()
 {
-	on_cred_key_store_changed();
+	on_cred_key_method_changed();
 }
 
 // 「カスタム」ラジオボタン選択時: 取得元を切り替えて API キー欄を更新
 void SelectAiModelDialog::on_radioButton_cred_custom_clicked()
 {
-	on_cred_key_store_changed();
+	on_cred_key_method_changed();
 }
 
 // 認証シンボル（環境変数名）変更時: API キーを再取得して表示
 void SelectAiModelDialog::on_lineEdit_cred_symbol_textChanged(const QString &arg1)
 {
-	on_cred_key_store_changed();
+	on_cred_key_method_changed();
 }
 
 // 「Hello! テスト」ボタン押下時: 現在の設定で AI に問い合わせ、結果をメッセージボックスに表示する
@@ -548,29 +458,42 @@ void SelectAiModelDialog::selectItem(int row)
 		ui->listWidget_items->setCurrentRow(row);
 	}
 	
-	QString name;
-	QString guid;
-	if (row >= 0 && row < (int)m->items.size()) {
-		enableSettingsFrame(true);
-		name = QString::fromStdString(m->items[row].name);
-		guid = QString::fromStdString(m->items[row].guid);
-	} else {
-		enableSettingsFrame(false);
+	ModelConf conf;
+	{
+		QString name;
+		QString guid;
+		
+		ModelConf const *confp = modelconf(row);
+		if (confp) {
+			conf = *confp; // この時点での設定を取得（下のsetTextなどのイベントで、ポインタの先が書き換えられるので）
+			
+			enableSettingsFrame(true);
+			name = QString::fromStdString(conf.name);
+			guid = QString::fromStdString(conf.guid);
+		} else {
+			enableSettingsFrame(false);
+		}
+		
+		ui->label_id->setText(guid);
+		ui->lineEdit_name->setText(name);
 	}
-	ui->label_id->setText(guid);
-	ui->lineEdit_name->setText(name);
 	
-	ui->comboBox_provider->setCurrentText(QString::fromStdString(m->items[row].model.provider_description()));
-	ui->comboBox_api_type->setCurrentText(QString::fromStdString(m->items[row].api_type));
-	ui->lineEdit_endpoint_url->setText(QString::fromStdString(m->items[row].endpoint_url));
-	setTextAndDeselect(ui->lineEdit_cred_symbol, m->items[row].api_key_symbol);
-	if (m->items[row].api_key_store == key_store_environment) {
+	ui->comboBox_provider->setCurrentText(QString::fromStdString(conf.model.provider_description()));
+	ui->comboBox_api_type->setCurrentText(QString::fromStdString(conf.api_type));
+	ui->lineEdit_endpoint_url->setText(QString::fromStdString(conf.endpoint_url));
+	
+	setTextAndDeselect(ui->lineEdit_cred_symbol, conf.api_key_symbol);
+	ui->lineEdit_cred_symbol->setText(QString::fromStdString(conf.api_key_symbol));
+	
+	if (conf.api_key_method == key_store_environment) {
 		ui->radioButton_cred_environ->setChecked(true);
 	} else {
 		ui->radioButton_cred_custom->setChecked(true);
 	}
-	ui->comboBox_model->setCurrentText(QString::fromStdString(m->items[row].model.model_name()));
 	
+	ui->comboBox_model->setCurrentText(QString::fromStdString(conf.model.model_name()));
+	
+	on_cred_key_method_changed();
 }
 
 void SelectAiModelDialog::on_pushButton_new_clicked()
@@ -657,24 +580,39 @@ void SelectAiModelDialog::on_listWidget_items_currentRowChanged(int currentRow)
 	selectItem(currentRow);
 }
 
+void SelectAiModelDialog::on_lineEdit_cred_symbol_textEdited(const QString &arg1)
+{
+	// qDebug() << Q_FUNC_INFO << arg1;
+	ModelConf *conf = current_modelconf();
+	if (conf) {
+		conf->api_key_symbol = arg1.toStdString();
+		on_cred_key_method_changed();
+	}
+}
+
 void SelectAiModelDialog::on_lineEdit_cred_api_key_textChanged(const QString &arg1)
 {
 	ModelConf *conf = current_modelconf();
 	if (conf) {
-		if (conf->api_key_store != key_store_environment) {
+		if (conf->api_key_method != key_store_environment) {
 			QString symbol = QString::fromStdString(conf->api_key_symbol);
 			m->api_key_map[symbol] = arg1;
 		}
 	}
 }
 
-std::string SelectAiModelDialog::query_api_key(std::string const &symbol)
+std::string SelectAiModelDialog::query_api_key(std::string const &symbol, bool env)
 {
-	AiApiKeys ai_api_keys;
-	ai_api_keys.load((std::string)api_key_obfuscation_key, nullptr);
-	
-	auto opt = ai_api_keys.get_api_key(symbol);
-	return opt ? opt->api_key : std::string();
+	if (env) {
+		char const *e = std::getenv(symbol.c_str());
+		if (e) return e;
+	} else {
+		AiApiKeys ai_api_keys;
+		ai_api_keys.load((std::string)api_key_obfuscation_key, nullptr);
+		auto opt = ai_api_keys.get_api_key(symbol);
+		if (opt) return opt->api_key;
+	}
+	return {};
 }
 
 void SelectAiModelDialog::save_api_keys(std::string const &key, std::vector<ModelConf> const &items, std::map<QString, QString> const &api_key_map)
@@ -683,7 +621,7 @@ void SelectAiModelDialog::save_api_keys(std::string const &key, std::vector<Mode
 	ai_api_keys.load(key, nullptr);
 	
 	for (SelectAiModelDialog::ModelConf const &conf : items) {
-		if (conf.api_key_store == key_store_environment) {
+		if (conf.api_key_method == key_store_environment) {
 			// nop: 環境変数から取得する場合は保存しない
 		} else {
 			QString symbol = QString::fromStdString(conf.api_key_symbol);
@@ -708,7 +646,7 @@ std::string SelectAiModelDialog::model_json_path() const
 
 void SelectAiModelDialog::load()
 {
-	auto opt = load_models_json(model_json_path().c_str());
+	auto opt = GenerativeAI::ModelConf::load(model_json_path().c_str());
 	if (opt) {
 		m->items = *opt;
 	}
@@ -716,7 +654,7 @@ void SelectAiModelDialog::load()
 
 void SelectAiModelDialog::save()
 {
-	save_models_json(model_json_path().c_str(), m->items);
+	GenerativeAI::ModelConf::save(model_json_path().c_str(), m->items);
 	save_api_keys((std::string)api_key_obfuscation_key, m->items, m->api_key_map);
 }
 
@@ -739,5 +677,21 @@ int SelectAiModelDialog::exec()
 	}
 	
 	return ret;
+}
+
+
+
+void SelectAiModelDialog::on_pushButton_clicked()
+{
+	std::string key = (std::string)api_key_obfuscation_key;
+	
+	AiApiKeys ai_api_keys;
+	ai_api_keys.load(key, nullptr);
+	
+	ManageApiKeysDialog dlg(this, ai_api_keys);
+	if (dlg.exec() == QDialog::Accepted) {
+		ai_api_keys = dlg.api_keys();
+		ai_api_keys.save(key, nullptr);
+	}
 }
 

@@ -16,7 +16,7 @@ unsafe {
 
 win32:INCLUDEPATH += C:/vcpkg/installed/x64-windows/include
 
-SRC = $$PWD/src/
+SRC = $$PWD/src
 
 TRANSLATIONS = $$SRC/resources/translations/Guitar_ja.ts
 TRANSLATIONS += $$SRC/resources/translations/Guitar_ru.ts
@@ -124,9 +124,9 @@ macx {
 #
 
 SOURCES += \
-	$$PWD/src/common/ChaCha20.cpp \
-	$$PWD/src/common/uuid.cpp \
-	$$PWD/src/easycrypto/easycrypto.cpp \
+	$$SRC/common/ChaCha20.cpp \
+	$$SRC/common/uuid.cpp \
+	$$SRC/easycrypto/easycrypto.cpp \
 	$$SRC/GitDiff.cpp \
 	$$SRC/MyProcess.cpp \
 	$$SRC/inet/httpstatus.cpp \
@@ -314,13 +314,15 @@ SOURCES += \
 	$$SRC/ResetAndCleanDialog.cpp \
 	$$SRC/SelectAiModelDialog.cpp \
 	$$SRC/SelectAiModelPresetDialog.cpp \
-	$$SRC/QueryAiModelDialog.cpp
+	$$SRC/QueryAiModelDialog.cpp \
+	$$SRC/ManageApiKeysDialog.cpp \
+	$$SRC/EditApiKeyDialog.cpp
 	
 
 HEADERS += \
-	$$PWD/src/common/ChaCha20.h \
-	$$PWD/src/common/uuid.h \
-	$$PWD/src/easycrypto/easycrypto.h \
+	$$SRC/common/ChaCha20.h \
+	$$SRC/common/uuid.h \
+	$$SRC/easycrypto/easycrypto.h \
 	$$SRC/GitCloneData.h \
 	$$SRC/GitCommitItem.h \
 	$$SRC/GitDiff.h \
@@ -538,7 +540,9 @@ HEADERS += \
 	$$SRC/ResetAndCleanDialog.h \
 	$$SRC/SelectAiModelDialog.h \
 	$$SRC/SelectAiModelPresetDialog.h \
-	$$SRC/QueryAiModelDialog.h
+	$$SRC/QueryAiModelDialog.h \
+	$$SRC/ManageApiKeysDialog.h \
+	$$SRC/EditApiKeyDialog.h
 
 FORMS += \
 	$$SRC/AboutDialog.ui \
@@ -612,7 +616,9 @@ FORMS += \
 	$$SRC/ResetAndCleanDialog.ui \
 	$$SRC/SelectAiModelDialog.ui \
 	$$SRC/SelectAiModelPresetDialog.ui \
-	$$SRC/QueryAiModelDialog.ui
+	$$SRC/QueryAiModelDialog.ui \
+	$$SRC/ManageApiKeysDialog.ui \
+	$$SRC/EditApiKeyDialog.ui
 
 RESOURCES += \
 	$$SRC/resources/resources.qrc

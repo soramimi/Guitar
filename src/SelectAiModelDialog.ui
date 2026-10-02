@@ -363,11 +363,35 @@
           </spacer>
          </item>
          <item>
-          <widget class="QCheckBox" name="checkBox_show_api_key">
-           <property name="text">
-            <string>Show API key</string>
-           </property>
-          </widget>
+          <layout class="QHBoxLayout" name="horizontalLayout_8">
+           <item>
+            <widget class="QCheckBox" name="checkBox_show_api_key">
+             <property name="text">
+              <string>Show API key</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <spacer name="horizontalSpacer">
+             <property name="orientation">
+              <enum>Qt::Orientation::Horizontal</enum>
+             </property>
+             <property name="sizeHint" stdset="0">
+              <size>
+               <width>40</width>
+               <height>20</height>
+              </size>
+             </property>
+            </spacer>
+           </item>
+           <item>
+            <widget class="QPushButton" name="pushButton">
+             <property name="text">
+              <string>Manage API keys...</string>
+             </property>
+            </widget>
+           </item>
+          </layout>
          </item>
         </layout>
        </item>
@@ -440,6 +464,7 @@
   <tabstop>comboBox_model</tabstop>
   <tabstop>pushButton_query_models</tabstop>
   <tabstop>checkBox_show_api_key</tabstop>
+  <tabstop>pushButton</tabstop>
   <tabstop>pushButton_3</tabstop>
   <tabstop>pushButton_4</tabstop>
  </tabstops>

@@ -3,6 +3,8 @@
 #include <common/fmt.h>
 #include <common/joinpath.h>
 #include <common/misc.h>
+#include <sys/stat.h>
+#include <common/jstream.h>
 #include <regex>
 
 namespace GenerativeAI {
@@ -617,6 +619,77 @@ std::string EndPoint::url_models(Credential const &cred) const
 	}
 	
 	return url;
+}
+
+std::optional<std::vector<ModelConf>> ModelConf::load(char const *path)
+{
+	std::vector<ModelConf> items;
+	
+	FILE *fp = fopen(path, "r");
+	if (fp) {
+		struct stat st;
+		if (fstat(fileno(fp), &st) == 0) {
+			std::vector<char> buf(st.st_size);
+			fread(buf.data(), 1, buf.size(), fp);
+			jstream::Reader r(buf.data(), buf.size());
+			while (r.next()) {
+				if (r.match_start_object("{items{item{**")) {
+					ModelConf mc;
+					r.nest([&](){
+						if (r.match("@guid")) {
+							mc.guid = r.string();
+						} if (r.match("@name")) {
+							mc.name = r.string();
+						} if (r.match("@model")) {
+							mc.model = GenerativeAI::Model::from_name(r.string());
+						} if (r.match("@api_type")) {
+							mc.api_type = r.string();
+						} if (r.match("@endpoint_url")) {
+							mc.endpoint_url = r.string();
+						} if (r.match("@credential{symbol")) {
+							mc.api_key_symbol = r.string();
+						} if (r.match("@credential{method")) {
+							mc.api_key_method = r.string();
+						}
+					});
+					items.push_back(mc);
+				}
+			}
+		}
+		fclose(fp);
+		return items;
+	}
+	
+	return std::nullopt;
+}
+
+void ModelConf::save(char const *path, const std::vector<ModelConf> &items)
+{
+	jstream::Writer w;
+	w.object({}, [&](){
+		w.object("items", [&](){
+			for (ModelConf const &conf : items) {
+				w.object("item", [&](){
+					w.string("guid", conf.guid);
+					w.string("name", conf.name);
+					w.string("provider", conf.model.provider_info_->tag);
+					w.string("api_type", conf.api_type);
+					w.string("endpoint_url", conf.endpoint_url);
+					w.string("model", conf.model.model_name());
+					w.object("credential", [&](){
+						w.string("symbol", conf.api_key_symbol);
+						w.string("method", conf.api_key_method);
+					});
+				});
+			}
+		});
+	});
+	FILE *fp = fopen(path, "w");
+	if (fp) {
+		std::string json = w;
+		fwrite(json.c_str(), 1, json.size(), fp);
+		fclose(fp);
+	}
 }
 
 } // namespace GenerativeAI

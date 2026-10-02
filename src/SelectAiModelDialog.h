@@ -14,33 +14,25 @@ class SelectAiModelDialog : public QDialog {
 private:
 	Ui::SelectAiModelDialog *ui;
 	struct Private;
-	Private *m;	
-	void on_cred_key_store_changed();
+	Private *m;
+	void on_cred_key_method_changed();
 	void setLineEditEndpointUrl(const std::string &url);
 	void setLineEditApiKey(const std::string &apikey);
 	GenerativeAI::Credential credential() const;
 	void updateListWidget();
 	void selectItem(int i);
 	void enableSettingsFrame(bool f);
-
-	struct ModelConf {
-		std::string guid;
-		std::string name;
-		std::string api_type;
-		std::string endpoint_url;
-		std::string api_key_symbol;
-		std::string api_key_store;
-		GenerativeAI::Model model;
-	};
+	
+	using ModelConf = GenerativeAI::ModelConf;
+	
 	ModelConf *modelconf(int row);
 	ModelConf *current_modelconf();
 	bool set_current_modelconf(const ModelConf &newconf);
 	void update_api_endpoint_url();
-	static std::string query_api_key(const std::string &symbol);
+	static std::string query_api_key(const std::string &symbol, bool env);
 	
 	std::string model_json_path() const;
-	static std::optional<std::vector<ModelConf> > load_models_json(char const *path);
-	static void save_models_json(const char *path, std::vector<ModelConf> const &items);
+	
 	static void save_api_keys(std::string const &key, std::vector<ModelConf> const &items, const std::map<QString, QString> &api_key_map);
 public:
 	explicit SelectAiModelDialog(QWidget *parent, QString generative_ai_ini_path);
@@ -66,11 +58,12 @@ private slots:
 	void on_pushButton_down_clicked();
 	void on_lineEdit_name_textChanged(const QString &arg1);
 	void on_listWidget_items_currentRowChanged(int currentRow);
-	
-	// QDialog interface
 	void on_lineEdit_endpoint_url_textChanged(const QString &arg1);
-	
 	void on_lineEdit_cred_api_key_textChanged(const QString &arg1);
+	
+	void on_lineEdit_cred_symbol_textEdited(const QString &arg1);
+	
+	void on_pushButton_clicked();
 	
 public slots:
 	int exec();

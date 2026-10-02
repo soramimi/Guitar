@@ -210,6 +210,19 @@ static inline bool operator == (ModelURI const &a, ModelURI const &b)
 	return a.string == b.string;
 }
 
+struct ModelConf {
+	std::string guid;
+	std::string name;
+	std::string api_type;
+	std::string endpoint_url;
+	std::string api_key_symbol;
+	std::string api_key_method;
+	GenerativeAI::Model model;
+	
+	static std::optional<std::vector<ModelConf>> load(char const *path);
+	static void save(const char *path, std::vector<ModelConf> const &items);
+};
+
 struct EndPoint {
 	enum class Type {
 		None,
