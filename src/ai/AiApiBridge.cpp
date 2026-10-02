@@ -23,8 +23,8 @@ struct AiApiBridge::Private {
 	std::string system_role;
 	std::shared_ptr<AbstractInetClient> http_;
 
-	// bool save_log = false; // リクエスト/レスポンスをログに記録するか
-	bool save_log = true;
+	bool save_log = false; // リクエスト/レスポンスをログに記録するか
+	// bool save_log = true;
 };
 
 /**
