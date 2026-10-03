@@ -28,7 +28,7 @@ const std::vector<ProviderInfo> &complete_provider_table()
 {
 	static const std::vector<ProviderInfo> provider_info = {
 		// id                                      tag                                description                       env_name
-		{ProviderID::Custom,                      "other",                           "Other",                            ""},
+		{ProviderID::Custom,                       "custom",                          "Custom",                           ""},
 		{ProviderID::OpenAI,                       "",                                "OpenAI",                           "OPENAI_API_KEY"}, // placeholder
 		{ProviderID::OpenAI_responses,             "openai-responses",                "OpenAI / GPT (responses)",         "OPENAI_API_KEY"},
 		{ProviderID::OpenAI_chat_completions,      "openai-chat-completions",         "OpenAI / GPT (chat completions)",  "OPENAI_API_KEY"},
@@ -38,7 +38,7 @@ const std::vector<ProviderInfo> &complete_provider_table()
 		{ProviderID::MoonshotAI,                   "moonshot",                        "Moonshot AI / Kimi",               "MOONSHOT_API_KEY"},
 		{ProviderID::XAI,                          "xai",                             "xAI / Grok",                       "XAI_API_KEY"},
 		{ProviderID::PFN,                          "pfn",                             "Preferred Networks / PLaMo",       "PFN_API_KEY"},
-		{ProviderID::Sakura,                       "sakura",                          "Sakura AI Engine",                 "SAKURA_AI_API_KEY"},
+		{ProviderID::Sakura,                       "sakura",                          "Sakura AI Engine",                 "SAKURAAI_API_KEY"},
 		// {ProviderID::Cloudflare,                   "cloudflare",                      "Cloudflare",                       "CLOUDFLARE_API_TOKEN"},
 		{ProviderID::OpenRouter,                   "openrouter",                      "OpenRouter",                       "OPENROUTER_API_KEY"},
 		{ProviderID::OrcaRouter,                   "orcarouter",                      "OrcaRouter",                       "ORCAROUTER_API_KEY"},
@@ -49,6 +49,16 @@ const std::vector<ProviderInfo> &complete_provider_table()
 		{ProviderID::LLAMACPP,                     "llamacpp",                        "llama.cpp",                        "LLAMACPP_API_KEY"},
 	};
 	return provider_info;
+}
+
+ProviderID provider_id(std::string_view name)
+{
+	for (auto const &info : complete_provider_table()) {
+		if (info.tag == name) {
+			return info.id;
+		}
+	}
+	return ProviderID::Custom;
 }
 
 ProviderID api_compatibility(ProviderID pid)
@@ -71,8 +81,8 @@ ProviderID api_compatibility(ProviderID pid)
 std::vector<Model> const &ai_model_presets()
 {
 	static const std::vector<Model> preset_models = {
-		{ProviderID::OpenAI_responses, "gpt-5.6-luna"},
-		{ProviderID::Anthropic,        "claude-sonnet-5"},
+		{ProviderID::OpenAI_responses, "gpt-5.6-terra"},
+		{ProviderID::Anthropic,        "claude-sonnet-5-5"},
 		{ProviderID::Google,           "gemini-3.8-flash"},
 		{ProviderID::DeepSeek,         "deepseek-flash"},
 		{ProviderID::MoonshotAI,       "kimi-k2.7-code"},
@@ -80,10 +90,10 @@ std::vector<Model> const &ai_model_presets()
 		{ProviderID::PFN,              "plamo-3.0-prime"},
 		{ProviderID::Sakura,           "sakura:gpt-oss-120b"},
 		// {ProviderID::Cloudflare,       "cloudflare:openai/gpt-6-luna"},
-		{ProviderID::OpenRouter,       "openrouter:anthropic/claude-4.6-sonnet"},
-		{ProviderID::OrcaRouter,       "orcarouter:deepseek/deepseek-v4.1-flash"},
-		{ProviderID::Requesty,         "requesty:google/gemma-4-31b-it"},
-		{ProviderID::Merge,            "merge:openai/gpt-5.6-luna"},
+		{ProviderID::OpenRouter,       "openrouter:anthropic/claude-5.5-sonnet"},
+		{ProviderID::OrcaRouter,       "orcarouter:anthropic/claude-sonnet-5.5"},
+		{ProviderID::Requesty,         "requesty:anthropic/claude-sonnet-5-5"},
+		{ProviderID::Merge,            "merge:openai/gpt-5.6-terra"},
 		{ProviderID::Ollama,           "ollama:///gemma4"},
 		{ProviderID::LMStudio,         "lmstudio:///meta-llama-3-8b-instruct"},
 		{ProviderID::LLAMACPP,         "llamacpp://localhost:8080/"},
@@ -183,10 +193,10 @@ void Model::parse_model(const std::string &model_uri)
 		if (misc::starts_with(model_name_, prefix)) {
 			port_ = port;
 			model_name_ = model_name_.substr(prefix.size());
-			auto i = model_name_.find('/');
-			if (i != std::string::npos) {
-				std::string addr = model_name_.substr(0, i);
-				model_name_ = model_name_.substr(i + 1);
+			if (auto i = model_name_.find("://"); i != std::string::npos) {
+				std::string addr = model_name_.substr(0, i + 3);
+				auto j = model_name_.find('/', i + 3);
+				model_name_ = model_name_.substr(j + 1);
 				if (addr.empty()) {
 					host_ = "localhost";
 				} else {
@@ -197,7 +207,10 @@ void Model::parse_model(const std::string &model_uri)
 					}
 				}
 				return true;
+			// } else if (auto j = model_name_.find('/'); i != std::string::npos) {
+			// 	model_name_ = model_name_.substr(j + 1);
 			}
+			return true;
 		}
 		return false;
 	};
@@ -632,26 +645,43 @@ std::optional<std::vector<ModelConf>> ModelConf::load(char const *path)
 			std::vector<char> buf(st.st_size);
 			fread(buf.data(), 1, buf.size(), fp);
 			jstream::Reader r(buf.data(), buf.size());
+			std::string provider;
+			std::string model;
 			while (r.next()) {
 				if (r.match_start_object("{items{item{**")) {
 					ModelConf mc;
 					r.nest([&](){
 						if (r.match("@guid")) {
 							mc.guid = r.string();
-						} if (r.match("@name")) {
+						} else if (r.match("@name")) {
 							mc.name = r.string();
-						} if (r.match("@model")) {
-							mc.model = GenerativeAI::Model::from_name(r.string());
-						} if (r.match("@api_type")) {
+						} else if (r.match("@provider")) {
+							provider = r.string();
+							// mc.model.provider_info_ = provider_info(provider_id(a_provider));
+						} else if (r.match("@api_type")) {
 							mc.api_type = r.string();
-						} if (r.match("@endpoint_url")) {
+						} else if (r.match("@model")) {
+							model = r.string();
+							// mc.model = GenerativeAI::Model::from_name(r.string());
+						} else if (r.match("@api_type")) {
+							mc.api_type = r.string();
+						} else if (r.match("@endpoint_url")) {
 							mc.endpoint_url = r.string();
-						} if (r.match("@credential{symbol")) {
+						} else if (r.match("@credential{symbol")) {
 							mc.api_key_symbol = r.string();
-						} if (r.match("@credential{method")) {
+						} else if (r.match("@credential{method")) {
 							mc.api_key_method = r.string();
 						}
 					});
+					{
+						ProviderID pid = provider_id(provider);
+						mc.model = Model(pid, model);
+						ProviderID at = parse_api_type(mc.api_type);
+						if (at != ProviderID::Custom) {
+							mc.model.api_compatibility_override = at;
+							// mc.model.provider_info_ = provider_info(at);
+						}
+					}
 					items.push_back(mc);
 				}
 			}

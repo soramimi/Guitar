@@ -86,6 +86,22 @@ static constexpr std::string_view api_anthropic_messages_v1 = "anthropic_message
 static constexpr std::string_view api_google_gemini_v1 = "google_gemini_v1";
 static constexpr std::string_view api_cloudflare_gateway_v4 = "cloudflare_gateway_v4";
 
+static inline ProviderID parse_api_type(std::string_view at)
+{
+	if (at == api_openai_chat_completions_v1) {
+		return ProviderID::OpenAI_chat_completions;
+	} else if (at == api_openai_responses_v1) {
+		return ProviderID::OpenAI_responses;
+	} else if (at == api_anthropic_messages_v1) {
+		return ProviderID::Anthropic;
+	} else if (at == api_google_gemini_v1) {
+		return ProviderID::Google;
+	} else if (at == api_cloudflare_gateway_v4) {
+		return ProviderID::Cloudflare;
+	}
+	return ProviderID::Custom;
+}
+
 static constexpr std::string_view key_store_environment = "environment";
 static constexpr std::string_view key_store_obfuscated = "obfuscation";
 static constexpr std::string_view key_store_encryption = "encryption";

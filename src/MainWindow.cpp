@@ -7574,6 +7574,7 @@ void MainWindow::on_action_reset_and_clean_triggered()
 
 void MainWindow::test()
 {
-	SelectAiModelDialog dlg(this, "/tmp/generative_ai.json");
+	QString path = global->app_secret_config_dir / "ai.json";
+	SelectAiModelDialog dlg(this, path);
 	dlg.exec();
 }

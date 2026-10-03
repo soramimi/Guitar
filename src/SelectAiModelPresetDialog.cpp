@@ -18,7 +18,7 @@ enum class Column {
 }
 
 struct SelectAiModelPresetDialog::Private {
-	std::vector<Model> models;
+	std::vector<Model> preset_models;
 };
 
 SelectAiModelPresetDialog::SelectAiModelPresetDialog(QWidget *parent)
@@ -28,7 +28,7 @@ SelectAiModelPresetDialog::SelectAiModelPresetDialog(QWidget *parent)
 {
 	ui->setupUi(this);
 	
-	m->models = ai_model_presets();
+	m->preset_models = ai_model_presets();
 	
 	QStringList cols = {
 		tr("Provider"),
@@ -45,11 +45,11 @@ SelectAiModelPresetDialog::SelectAiModelPresetDialog(QWidget *parent)
 		ui->tableWidget->setHorizontalHeaderItem(i, new QTableWidgetItem(cols[i]));
 	}
 	
-	ui->tableWidget->setRowCount(m->models.size());
-	for (size_t i = 0; i < m->models.size(); i++) {
+	ui->tableWidget->setRowCount(m->preset_models.size());
+	for (size_t i = 0; i < m->preset_models.size(); i++) {
 		ui->tableWidget->setRowHeight(i, 24);
-		QString provider = QString::fromStdString(m->models[i].provider_description());
-		QString model_name = QString::fromStdString(m->models[i].model_name());
+		QString provider = QString::fromStdString(m->preset_models[i].provider_description());
+		QString model_name = QString::fromStdString(m->preset_models[i].model_name());
 		if (model_name.isEmpty()) {
 			model_name = tr("(unknown)");
 		}
@@ -76,8 +76,8 @@ int SelectAiModelPresetDialog::selectedModelIndex() const
 Model SelectAiModelPresetDialog::selectedModel() const
 {
 	int index = selectedModelIndex();
-	if (index >= 0 && index < (int)m->models.size()) {
-		return m->models[index];
+	if (index >= 0 && index < (int)m->preset_models.size()) {
+		return m->preset_models[index];
 	}
 	return {};
 }

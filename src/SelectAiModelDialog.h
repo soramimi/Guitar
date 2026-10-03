@@ -65,6 +65,8 @@ private slots:
 	
 	void on_pushButton_clicked();
 	
+	void on_comboBox_api_type_currentTextChanged(const QString &arg1);
+	
 public slots:
 	int exec();
 };

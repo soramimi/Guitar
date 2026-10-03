@@ -189,13 +189,22 @@ void SelectAiModelDialog::update_api_endpoint_url()
 void SelectAiModelDialog::on_comboBox_provider_currentIndexChanged(int index)
 {
 	if (index >= 0 && index < ui->comboBox_provider->count()) {
-		int i = ui->comboBox_provider->itemData(index).toInt();
-		ProviderInfo const &provider = complete_provider_table()[i];
+		GenerativeAI::ProviderID pid = (GenerativeAI::ProviderID)ui->comboBox_provider->itemData(index).toInt();
+		ProviderInfo const *provider = nullptr;
+		for (GenerativeAI::ProviderInfo const &info : GenerativeAI::complete_provider_table()) {
+			if (info.id == pid) {
+				provider = &info;
+				break;
+			}
+		}
+		if (!provider) return;
 		
 		ModelConf *conf = current_modelconf();
 		if (!conf) return;
 		
-		conf->model.provider_info_ = &provider;
+		ProviderID apitype = GenerativeAI::parse_api_type(conf->api_type);
+		
+		conf->model.provider_info_ = provider;
 		conf->model.api_compatibility_override = std::nullopt;
 		conf->model.endpoint_url_override = {};
 		
@@ -209,7 +218,7 @@ void SelectAiModelDialog::on_comboBox_provider_currentIndexChanged(int index)
 				auto Add = [&](std::string_view api, ProviderID api_id) {
 					ui->comboBox_api_type->addItem(QString::fromStdString(std::string(api)), QVariant((int)api_id));
 				};
-				switch (provider.id) {
+				switch (provider->id) {
 				case ProviderID::OpenAI:
 				case ProviderID::OpenAI_responses:
 					Add(api_openai_responses_v1, ProviderID::OpenAI_responses);
@@ -232,22 +241,22 @@ void SelectAiModelDialog::on_comboBox_provider_currentIndexChanged(int index)
 					Add(api_anthropic_messages_v1, ProviderID::Anthropic);
 					break;
 				}
-				index = ui->comboBox_api_type->findData((int)conf->model.api_compatibility());
+				index = ui->comboBox_api_type->findData((int)apitype);
 				ui->comboBox_api_type->setCurrentIndex(index);
 				ui->comboBox_api_type->blockSignals(b1);
 			}
 		}
 		
-		on_comboBox_api_type_currentIndexChanged(index);
+		// on_comboBox_api_type_currentIndexChanged(index);
 		
 		update_api_endpoint_url();
 		
 		// 認証情報のシンボル（環境変数名など）を表示
-		ui->lineEdit_cred_symbol->setText(QString::fromStdString(provider.env_name));
+		ui->lineEdit_cred_symbol->setText(QString::fromStdString(provider->env_name));
 
 		Credential cred = global->get_ai_credential(conf->model);
 		bool use_env = conf->api_key_method == key_store_environment;
-		cred.api_key = query_api_key(provider.env_name, use_env);
+		cred.api_key = query_api_key(provider->env_name, use_env);
 		setLineEditApiKey(cred.api_key);
 	}
 }
@@ -267,6 +276,11 @@ void SelectAiModelDialog::on_comboBox_api_type_currentIndexChanged(int index)
 		
 		update_api_endpoint_url();
 	}
+}
+
+void SelectAiModelDialog::on_comboBox_api_type_currentTextChanged(const QString &arg1)
+{
+	
 }
 
 void SelectAiModelDialog::on_lineEdit_endpoint_url_textChanged(const QString &arg1)
@@ -337,8 +351,6 @@ void SelectAiModelDialog::on_pushButton_test_hello_clicked()
 	ModelConf *conf = current_modelconf();
 	if (!conf) return;
 	
-	QString model = QString::fromStdString(conf->model.model_name());
-	
 	QElapsedTimer timer;
 	timer.start();
 	
@@ -361,6 +373,7 @@ void SelectAiModelDialog::on_pushButton_test_hello_clicked()
 		QMessageBox::warning(this, tr("Test AI Model"), tr("Error: %1").arg(QString::fromStdString(result.d.error_message)));
 	} else {
 		auto ms = timer.elapsed();
+		QString model = QString::fromStdString(conf->model.model_name());
 		std::string text = result.content();
 		QMessageBox::information(this, tr("Test AI Model"), QString("--- You ---\n\n%1\n\n--- %2 ---\n\n%3\n\n--- success in %4 ms ---").arg(prompt).arg(model).arg(QString::fromStdString(text)).arg((int)ms));
 	}
@@ -382,11 +395,12 @@ void SelectAiModelDialog::on_pushButton_query_models_clicked()
 	ui->comboBox_model->clear();
 	
 	// 現在のプロバイダー情報とエンドポイント上書きをモデルに反映
-	ModelConf *conf = current_modelconf();
-	if (!conf) return;
+	ModelConf *p = current_modelconf();
+	if (!p) return;
 	
-	conf->model.provider_info_ = provider_info(conf->model.provider_id());
-	conf->model.endpoint_url_override = ui->lineEdit_endpoint_url->text().toStdString();
+	ModelConf conf = *p;
+	conf.model.provider_info_ = provider_info(conf.model.provider_id());
+	conf.model.endpoint_url_override = ui->lineEdit_endpoint_url->text().toStdString();
 	
 	// API 経由でモデル一覧を問い合わせ（待機カーソルを表示）
 	std::optional<AiResult::Models> models;
@@ -397,7 +411,7 @@ void SelectAiModelDialog::on_pushButton_query_models_clicked()
 		} defer_override_cursor;
 		
 		AiApiBridge api;
-		api.set_ai_model(conf->model, credential());
+		api.set_ai_model(conf.model, credential());
 		models = api.queryModels();
 	}
 	if (models == std::nullopt) {
@@ -424,6 +438,7 @@ void SelectAiModelDialog::on_pushButton_query_models_clicked()
 		int index = ui->comboBox_model->findText(selected_model_name);
 		if (index >= 0) {
 			ui->comboBox_model->setCurrentIndex(index);
+			*p = conf;
 		}
 	}
 }
@@ -478,8 +493,14 @@ void SelectAiModelDialog::selectItem(int row)
 		ui->lineEdit_name->setText(name);
 	}
 	
+	// bool b1 = ui->comboBox_provider->blockSignals(true);
 	ui->comboBox_provider->setCurrentText(QString::fromStdString(conf.model.provider_description()));
+	// ui->comboBox_provider->blockSignals(b1);
+	
+	// bool b2 = ui->comboBox_api_type->blockSignals(true);
 	ui->comboBox_api_type->setCurrentText(QString::fromStdString(conf.api_type));
+	// ui->comboBox_api_type->blockSignals(b2);
+	
 	ui->lineEdit_endpoint_url->setText(QString::fromStdString(conf.endpoint_url));
 	
 	setTextAndDeselect(ui->lineEdit_cred_symbol, conf.api_key_symbol);
@@ -679,8 +700,6 @@ int SelectAiModelDialog::exec()
 	return ret;
 }
 
-
-
 void SelectAiModelDialog::on_pushButton_clicked()
 {
 	std::string key = (std::string)api_key_obfuscation_key;
@@ -694,4 +713,3 @@ void SelectAiModelDialog::on_pushButton_clicked()
 		ai_api_keys.save(key, nullptr);
 	}
 }
-

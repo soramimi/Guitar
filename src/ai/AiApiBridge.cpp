@@ -23,7 +23,11 @@ struct AiApiBridge::Private {
 	std::string system_role;
 	std::shared_ptr<AbstractInetClient> http_;
 
+#ifdef QT_NO_DEBUG
 	bool save_log = false; // リクエスト/レスポンスをログに記録するか
+#else
+	bool save_log = true;
+#endif
 	// bool save_log = true;
 };
 
@@ -149,10 +153,16 @@ struct AiChatResponseParser : public GenerativeAI::AbstractVisitor<AiResult> {
 	/// 未知プロバイダー：空の結果を返す
 	AiResult case_Custom()
 	{
-		// return {model.api_compatibility()};
 		auto api = model.api_compatibility();
-		AiResult ret(api);
-		ret = parse_responses(api);
+		AiResult ret;
+		switch (api) {
+		case GenerativeAI::ProviderID::OpenAI_responses:
+			ret = parse_responses(api);
+			break;
+		default:
+			ret = parse_openai_chat_completions_format();
+			break;
+		}
 		return ret;
 	}
 
@@ -474,9 +484,7 @@ struct AiChatResponseParser : public GenerativeAI::AbstractVisitor<AiResult> {
 	
 	AiResult case_Merge()
 	{
-		AiResult ret(model.api_compatibility());
-		ret = parse_responses(GenerativeAI::ProviderID::Merge);
-		return ret;
+		return case_Custom();
 	}
 	
 	/**

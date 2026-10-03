@@ -300,12 +300,12 @@ public:
 private:
 	bool is_streaming_input_mode() const
 	{
-		return (bool)d.fn_input_calback;
+		return (bool)d.streaming.fn_input_calback;
 	}
 	void need_input() const
 	{
 		if (is_streaming_input_mode()) {
-			d.fn_input_calback();
+			d.streaming.fn_input_calback();
 		}
 	}
 	
@@ -361,7 +361,7 @@ private:
 			int c = peek_next_char();
 			if (c < 0) {
 				if (d.comment_state != 0) {
-					d.not_enough_input = true;
+					d.streaming.not_enough_input = true;
 				}
 				break;
 			}
@@ -656,11 +656,13 @@ private:
 		}
 	};
 	struct ParserData {
-		bool not_enough_input = false;
-		std::optional<std::vector<char>> input_buffer;
-		std::function<void ()> fn_input_calback;
+		struct Streaming {
+			bool not_enough_input = false;
+			std::optional<std::vector<char>> input_buffer;
+			std::function<void ()> fn_input_calback;
+		} streaming;
 		
-		std::string temporary_buffer;
+		std::string temporary_input;
 		char const *begin = nullptr;
 		char const *end = nullptr;
 		char const *ptr = nullptr;
@@ -776,7 +778,7 @@ private:
 	{
 		parse(sv.data(), sv.data() + sv.size());
 	}
-
+	
 	void parse(char const *ptr, int len = -1)
 	{
 		if (len < 0) {
@@ -986,7 +988,7 @@ private:
 			if (!has_error()) {
 				push_error("syntax error");
 			}
-			d.not_enough_input = true;
+			d.streaming.not_enough_input = true;
 			return false;
 		}
 		
@@ -996,7 +998,7 @@ private:
 		}
 		
 		if (not_enough_input) {
-			d.not_enough_input = true;
+			d.streaming.not_enough_input = true;
 			need_input();
 			return false;
 		}
@@ -1015,11 +1017,11 @@ public:
 	{
 		parse(sv);
 	}
-	explicit Reader(std::string const &s)
+	explicit Reader(std::string &&s)
 	{
-		d.temporary_buffer = s;
-		d.begin = d.ptr = d.temporary_buffer.c_str();
-		d.end = d.ptr + d.temporary_buffer.size();
+		d.temporary_input = std::move(s);
+		d.begin = d.ptr = d.temporary_input.data();
+		d.end = d.begin + d.temporary_input.size();
 	}
 	Reader(char const *begin, char const *end)
 	{
@@ -1045,10 +1047,16 @@ public:
 	Reader(Reader const &r) = delete;
 	Reader &operator=(Reader const &r) = delete;
 	
+	void parse(std::function<void ()> fn_input_calback)
+	{
+		d = {};
+		d.streaming.fn_input_calback = fn_input_calback;
+		d.extraction_support = false;
+	}
+	
 	Reader(std::function<void ()> fn_input_calback)
 	{
-		d.fn_input_calback = fn_input_calback;
-		d.extraction_support = false;
+		parse(fn_input_calback);
 	}
 	
 	void input(std::string_view in)
@@ -1057,21 +1065,21 @@ public:
 		
 		static constexpr size_t EXTRA_ROOM = 200; // reserve extra room to avoid frequent reallocations
 		
-		d.not_enough_input = false;
+		d.streaming.not_enough_input = false;
 		d.extraction_support = false;
 		
-		if (d.input_buffer && (d.input_buffer->capacity() - d.input_buffer->size()) >= in.size()) {
+		if (d.streaming.input_buffer && (d.streaming.input_buffer->capacity() - d.streaming.input_buffer->size()) >= in.size()) {
 			if (d.ptr && d.end && d.ptr == d.end) {
 				// all previous input has been consumed, reuse the buffer
-				d.input_buffer->assign(in.begin(), in.end());
-				d.begin = d.ptr = d.input_buffer->data();
+				d.streaming.input_buffer->assign(in.begin(), in.end());
+				d.begin = d.ptr = d.streaming.input_buffer->data();
 			} else {
 				// append new input to the existing buffer
-				d.input_buffer->insert(d.input_buffer->end(), in.begin(), in.end());
-				if (!d.begin) d.begin = d.input_buffer->data();
-				if (!d.ptr)   d.ptr = d.input_buffer->data();
+				d.streaming.input_buffer->insert(d.streaming.input_buffer->end(), in.begin(), in.end());
+				if (!d.begin) d.begin = d.streaming.input_buffer->data();
+				if (!d.ptr)   d.ptr = d.streaming.input_buffer->data();
 			}
-			d.end = d.input_buffer->data() + d.input_buffer->size();
+			d.end = d.streaming.input_buffer->data() + d.streaming.input_buffer->size();
 		} else {
 			std::vector<char> newbuf;
 			size_t curr = (d.ptr && d.end) ? (d.end - d.ptr) : 0;
@@ -1080,10 +1088,10 @@ public:
 				newbuf.assign(d.ptr, d.end); // copy remaining unprocessed data to the new buffer
 			}
 			newbuf.insert(newbuf.end(), in.begin(), in.end()); // append new input data
-			d.input_buffer = std::move(newbuf);
-			d.begin = d.input_buffer->data();
+			d.streaming.input_buffer = std::move(newbuf);
+			d.begin = d.streaming.input_buffer->data();
 			d.ptr = d.begin;
-			d.end = d.begin + d.input_buffer->size();
+			d.end = d.begin + d.streaming.input_buffer->size();
 		}
 	}
 	
@@ -1178,7 +1186,7 @@ public:
 	
 	bool is_not_enough_input() const
 	{
-		return d.not_enough_input;
+		return d.streaming.not_enough_input;
 	}
 	
 	bool is_start_object() const
