@@ -81,22 +81,22 @@ template <> void operator << (SetValue<std::string> &&l, std::string const &r)
 
 } // namespace
 
-std::tuple<std::vector<GenerativeAI::Model const *>, int> ApplicationSettings::ai_models() const
-{
-	std::vector<GenerativeAI::Model> const &list = GenerativeAI::ai_model_presets();
-	std::vector<GenerativeAI::Model const *> newlist;
-	for (GenerativeAI::Model const &item : list) {
-		newlist.push_back(&item);
-	}
-	int index;
-	for (index = 0; index < (int)list.size(); index++) {
-		if (list[index].model_uri() == ai_model->model_uri()) {
-			return {newlist, index};
-		}
-	}
-	newlist.push_back(ai_model.get());
-	return {newlist, index};
-}
+// std::tuple<std::vector<GenerativeAI::Model const *>, int> ApplicationSettings::ai_models() const
+// {
+// 	std::vector<GenerativeAI::Model> const &list = GenerativeAI::ai_model_presets();
+// 	std::vector<GenerativeAI::Model const *> newlist;
+// 	for (GenerativeAI::Model const &item : list) {
+// 		newlist.push_back(&item);
+// 	}
+// 	int index;
+// 	for (index = 0; index < (int)list.size(); index++) {
+// 		if (list[index].model_uri() == ai_model->model_uri()) {
+// 			return {newlist, index};
+// 		}
+// 	}
+// 	newlist.push_back(ai_model.get());
+// 	return {newlist, index};
+// }
 
 ApplicationSettings::ApplicationSettings()
 {
@@ -149,14 +149,14 @@ ApplicationSettings ApplicationSettings::loadSettings()
 	GetValue<QColor>(s, "LabelColorTag")                     >> as.branch_label_color.tag;
 	s.endGroup();
 
-	std::string ai_provider_name;
-	std::string ai_model_uri;
+	// std::string ai_provider_name;
+	// std::string ai_model_uri;
 
 	s.beginGroup("AI");
 	GetValue<bool>(s, "GenerateCommitMessageWithAI")         >> as.generate_commit_message_with_ai;
 	// GetValue<std::string>(s, "Provider")                     >> ai_provider_name;
 	// GetValue<std::string>(s, "ModelURI")                     >> ai_model_uri;
-	GetValue<std::string>(s, "FirstChoiceGUID")                    >> as.ai_model_guid;
+	GetValue<std::string>(s, "DefaultModelGUID")             >> as.ai_default_model_guid;
 	s.endGroup();
 
 #ifdef Q_OS_WIN
@@ -173,29 +173,29 @@ ApplicationSettings ApplicationSettings::loadSettings()
 	}
 #endif
 
-#if 0
-	// 選択されたモデルを取得
+// #if 0
+// 	// 選択されたモデルを取得
 
-	auto Info = [&](std::string const &name)-> GenerativeAI::ProviderInfo const * {
-		std::vector<GenerativeAI::ProviderInfo> const &infos = GenerativeAI::complete_provider_table();
-		for (auto const &info : infos) {
-			if (info.tag == name) {
-				return &info;
-			}
-		}
-		return nullptr;
-	};
-	GenerativeAI::ProviderInfo const *info = Info(ai_provider_name);
+// 	auto Info = [&](std::string const &name)-> GenerativeAI::ProviderInfo const * {
+// 		std::vector<GenerativeAI::ProviderInfo> const &infos = GenerativeAI::complete_provider_table();
+// 		for (auto const &info : infos) {
+// 			if (info.tag == name) {
+// 				return &info;
+// 			}
+// 		}
+// 		return nullptr;
+// 	};
+// 	GenerativeAI::ProviderInfo const *info = Info(ai_provider_name);
 
-	if (info) {
-		*as.ai_model = GenerativeAI::Model(info->id, ai_model_uri);
-	} else {
-		if (ai_provider_name.empty() && ai_model_uri.empty()) {
-			ai_model_uri = GenerativeAI::Model::default_model();
-		}
-		*as.ai_model = GenerativeAI::Model::from_name(ai_model_uri);
-	}
-#endif
+// 	if (info) {
+// 		*as.ai_model = GenerativeAI::Model(info->id, ai_model_uri);
+// 	} else {
+// 		if (ai_provider_name.empty() && ai_model_uri.empty()) {
+// 			ai_model_uri = GenerativeAI::Model::default_model();
+// 		}
+// 		*as.ai_model = GenerativeAI::Model::from_name(ai_model_uri);
+// 	}
+// #endif
 	
 	return as;
 }
@@ -260,7 +260,7 @@ void ApplicationSettings::saveSettings() const
 	SetValue<bool>(s, "GenerateCommitMessageWithAI")         << this->generate_commit_message_with_ai;
 	// SetValue<std::string>(s, "Provider")                     << this->ai_model->provider_info_->tag;
 	// SetValue<std::string>(s, "ModelURI")                     << this->ai_model->model_uri().string;
-	SetValue<std::string>(s, "FirstChoiceGUID")                    << this->ai_model_guid;
+	SetValue<std::string>(s, "DefaultModelGUID")             << this->ai_default_model_guid;
 	s.endGroup();
 
 #ifdef Q_OS_WIN

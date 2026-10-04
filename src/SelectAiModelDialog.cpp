@@ -66,11 +66,11 @@ public:
 		QColor badge_fgcolor = Qt::white;
 		constexpr int space = 8;
 		
-		std::string primary_model_guid = dlg->first_choice_guid();
+		std::string default_model_guid = dlg->default_model_guid();
 		
 		GenerativeAI::ModelConf const *conf = dlg->modelconf(index.row());
-		if (conf->guid == primary_model_guid) {
-			QString label = "1st";
+		if (conf->guid == default_model_guid) {
+			QString label = "def";
 			int view_width = listWidget->viewport()->width();
 			int label_width = painter->fontMetrics().horizontalAdvance(label) + space * 2;
 			int x = view_width - label_width;
@@ -87,7 +87,7 @@ struct SelectAiModelDialog::Private {
 	std::vector<SelectAiModelDialog::ModelConf> items;
 	std::map<QString, QString> api_key_map;
 	SelectAiModelDelegate *item_delegate = nullptr;
-	std::string first_choice_guid;
+	std::string default_model_guid;
 };
 
 SelectAiModelDialog::SelectAiModelDialog(QWidget *parent)
@@ -147,9 +147,9 @@ bool SelectAiModelDialog::set_current_modelconf(ModelConf const &newconf)
 	return false;
 }
 
-std::string SelectAiModelDialog::first_choice_guid() const
+std::string SelectAiModelDialog::default_model_guid() const
 {
-	return m->first_choice_guid;
+	return m->default_model_guid;
 }
 
 void SelectAiModelDialog::enableSettingsFrame(bool f)
@@ -577,8 +577,8 @@ void SelectAiModelDialog::on_pushButton_new_clicked()
 	
 	selectItem(row);
 
-	if (m->first_choice_guid.empty()) {
-		on_pushButton_set_as_the_1st_choice_clicked();
+	if (m->default_model_guid.empty()) {
+		on_pushButton_set_as_default_clicked();
 	}
 	
 	enableSettingsFrame(true);
@@ -728,19 +728,19 @@ void SelectAiModelDialog::save()
 	save_api_keys((std::string)api_key_obfuscation_key, m->items, m->api_key_map);
 }
 
-void SelectAiModelDialog::updateListWidget(std::string const &fav)
+void SelectAiModelDialog::updateListWidget(std::string const &def)
 {
 	const bool set_current = true;
 
-	m->first_choice_guid = {};
+	m->default_model_guid = {};
 	
 	int current = 0;
 	
 	ui->listWidget_items->clear();
 	for (size_t i = 0; i < m->items.size(); i++) {
 		ModelConf const &item = m->items[i];
-		if (item.guid == fav) {
-			m->first_choice_guid = fav;
+		if (item.guid == def) {
+			m->default_model_guid = def;
 			if (set_current) {
 				current = (int)i;
 			}
@@ -761,7 +761,7 @@ int SelectAiModelDialog::exec()
 	{
 		MySettings s;
 		s.beginGroup("AI");
-		fav = s.value("FirstChoiceGUID").toString().toStdString();
+		fav = s.value("DefaultModelGUID").toString().toStdString();
 		s.endGroup();
 	}
 	
@@ -778,7 +778,7 @@ int SelectAiModelDialog::exec()
 
 		MySettings s;
 		s.beginGroup("AI");
-		s.setValue("FirstChoiceGUID", QString::fromStdString(m->first_choice_guid));
+		s.setValue("DefaultModelGUID", QString::fromStdString(m->default_model_guid));
 		s.endGroup();
 	}
 	
@@ -800,11 +800,11 @@ void SelectAiModelDialog::on_pushButton_manage_api_keys_clicked()
 	}
 }
 
-void SelectAiModelDialog::on_pushButton_set_as_the_1st_choice_clicked()
+void SelectAiModelDialog::on_pushButton_set_as_default_clicked()
 {
 	ModelConf *conf = current_modelconf();
 	if (conf) {
-		m->first_choice_guid = conf->guid;
+		m->default_model_guid = conf->guid;
 		ui->listWidget_items->viewport()->update();
 	}
 }

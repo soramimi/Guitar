@@ -43,7 +43,7 @@ GenerateCommitMessageDialog::GenerateCommitMessageDialog(QWidget *parent)
 		{
 			MySettings s;
 			s.beginGroup("AI");
-			guid = s.value("FirstChoiceGUID").toString().toStdString();
+			guid = s.value("DefaultModelGUID").toString().toStdString();
 			s.endGroup();
 		}
 		models = std::move(*opt);
@@ -115,7 +115,7 @@ std::tuple<GenerativeAI::Model, GenerativeAI::Credential> GenerateCommitMessageD
 		{
 			MySettings s;
 			s.beginGroup("AI");
-			guid = s.value("FirstChoiceGUID").toString();
+			guid = s.value("DefaultModelGUID").toString();
 			s.endGroup();
 		}
 		

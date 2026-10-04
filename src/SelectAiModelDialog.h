@@ -21,7 +21,7 @@ private:
 	void setLineEditEndpointUrl(const std::string &url);
 	void setLineEditApiKey(const std::string &apikey);
 	GenerativeAI::Credential credential() const;
-	void updateListWidget(const std::string &fav);
+	void updateListWidget(const std::string &def);
 	void selectItem(int i);
 	void enableSettingsFrame(bool f);
 	
@@ -40,7 +40,7 @@ private:
 	QString aimodels_json_path() const;
 	
 	static void save_api_keys(std::string const &key, std::vector<ModelConf> const &items, const std::map<QString, QString> &api_key_map);
-	std::string first_choice_guid() const;
+	std::string default_model_guid() const;
 public:
 	explicit SelectAiModelDialog(QWidget *parent);
 	~SelectAiModelDialog();
@@ -69,7 +69,7 @@ private slots:
 	void on_radioButton_cred_environ_clicked();
 	void on_toolButton_clicked();
 	void on_pushButton_manage_api_keys_clicked();
-	void on_pushButton_set_as_the_1st_choice_clicked();
+	void on_pushButton_set_as_default_clicked();
 	
 public slots:
 	int exec();

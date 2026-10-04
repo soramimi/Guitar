@@ -72,9 +72,9 @@
           <widget class="QListWidget" name="listWidget_items"/>
          </item>
          <item>
-          <widget class="QPushButton" name="pushButton_set_as_the_1st_choice">
+          <widget class="QPushButton" name="pushButton_set_as_default">
            <property name="text">
-            <string>Set as the first choice</string>
+            <string>Set as default</string>
            </property>
           </widget>
          </item>
@@ -456,7 +456,7 @@
   <tabstop>pushButton_new</tabstop>
   <tabstop>toolButton</tabstop>
   <tabstop>listWidget_items</tabstop>
-  <tabstop>pushButton_set_as_the_1st_choice</tabstop>
+  <tabstop>pushButton_set_as_default</tabstop>
   <tabstop>pushButton_up</tabstop>
   <tabstop>pushButton_down</tabstop>
   <tabstop>pushButton_load_preset</tabstop>

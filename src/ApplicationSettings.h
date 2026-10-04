@@ -100,9 +100,9 @@ public:
 	AiApiKeys ai_api_keys;
 	bool ai_api_keys_changed = false;
 	
-	std::string ai_model_guid;	
+	std::string ai_default_model_guid;	
 	std::shared_ptr<GenerativeAI::Model> ai_model;
-	std::tuple<std::vector<GenerativeAI::Model const *>, int> ai_models() const;
+	// std::tuple<std::vector<GenerativeAI::Model const *>, int> ai_models() const;
 
 	bool get_avatar_icon_from_network_enabled = true;
 	struct {
