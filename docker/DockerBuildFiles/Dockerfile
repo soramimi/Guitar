@@ -13,6 +13,7 @@ RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y apt-util
 	qt6-base-dev libqt6svg6-dev libglu1-mesa-dev libbsd-dev libssl-dev \
 	libcurl4-openssl-dev \
 	mecab-utils \
+	libsodium-dev \
 	&& rm -rf /var/lib/apt/lists/*
 
 ARG UID

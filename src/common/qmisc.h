@@ -2,8 +2,8 @@
 #define QMISC_H
 
 #include <QColor>
-// #include <QDateTime>
 #include <QPoint>
+#include <QRect>
 
 class QPainter;
 class QWidget;
