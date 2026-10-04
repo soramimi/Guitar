@@ -20,7 +20,6 @@ namespace {
 
 constexpr static char const secret_sub_dir[] = ".secret";
 constexpr static char const api_keys_bin[] = "apikeys.bin";
-constexpr std::string_view obfuscation_key = "obfuscation key qwerty123";
 
 template <typename T> class GetValue {
 private:
@@ -112,7 +111,7 @@ ApplicationSettings ApplicationSettings::loadSettings()
 
 	// load api keys
 	
-	if (!as.ai_api_keys.load(std::string(obfuscation_key), &s)) {
+	if (!as.ai_api_keys.load(std::string(api_key_obfuscation_key), &s)) {
 		logprintf(LOG_DEFAULT, "Failed to load AI API keys\n");
 	}
 
@@ -155,8 +154,9 @@ ApplicationSettings ApplicationSettings::loadSettings()
 
 	s.beginGroup("AI");
 	GetValue<bool>(s, "GenerateCommitMessageWithAI")         >> as.generate_commit_message_with_ai;
-	GetValue<std::string>(s, "Provider")                     >> ai_provider_name;
-	GetValue<std::string>(s, "ModelURI")                     >> ai_model_uri;
+	// GetValue<std::string>(s, "Provider")                     >> ai_provider_name;
+	// GetValue<std::string>(s, "ModelURI")                     >> ai_model_uri;
+	GetValue<std::string>(s, "FirstChoiceGUID")                    >> as.ai_model_guid;
 	s.endGroup();
 
 #ifdef Q_OS_WIN
@@ -173,6 +173,7 @@ ApplicationSettings ApplicationSettings::loadSettings()
 	}
 #endif
 
+#if 0
 	// 選択されたモデルを取得
 
 	auto Info = [&](std::string const &name)-> GenerativeAI::ProviderInfo const * {
@@ -194,7 +195,8 @@ ApplicationSettings ApplicationSettings::loadSettings()
 		}
 		*as.ai_model = GenerativeAI::Model::from_name(ai_model_uri);
 	}
-
+#endif
+	
 	return as;
 }
 
@@ -204,11 +206,13 @@ void ApplicationSettings::saveSettings() const
 
 	// save api keys
 
+#if 0
 	if (ai_api_keys_changed) {
-		if (!ai_api_keys.save(std::string(obfuscation_key), &s)) {
+		if (!ai_api_keys.save(std::string(api_key_obfuscation_key), &s)) {
 			logprintf(LOG_DEFAULT, "Failed to save AI API keys\n");
 		}
 	}
+#endif
 
 	//
 
@@ -245,9 +249,18 @@ void ApplicationSettings::saveSettings() const
 	s.endGroup();
 
 	s.beginGroup("AI");
+	if (1) {
+		QStringList keys = s.allKeys();
+		for (QString const &key : keys) {
+			// if (key.startsWith("Use_")) {
+			// }
+			s.remove(key);
+		}
+	}
 	SetValue<bool>(s, "GenerateCommitMessageWithAI")         << this->generate_commit_message_with_ai;
-	SetValue<std::string>(s, "Provider")                     << this->ai_model->provider_info_->tag;
-	SetValue<std::string>(s, "ModelURI")                     << this->ai_model->model_uri().string;
+	// SetValue<std::string>(s, "Provider")                     << this->ai_model->provider_info_->tag;
+	// SetValue<std::string>(s, "ModelURI")                     << this->ai_model->model_uri().string;
+	SetValue<std::string>(s, "FirstChoiceGUID")                    << this->ai_model_guid;
 	s.endGroup();
 
 #ifdef Q_OS_WIN
@@ -318,8 +331,8 @@ bool AiApiKeys::load(std::string const &key, MySettings *s)
 					map[envname].api_key = api_key;
 				}
 			}
-
-			{
+			
+			if (s) {
 				s->beginGroup("AI");
 				for (auto &pair : map) {
 					std::string const &env_name = pair.first;
@@ -375,8 +388,8 @@ bool AiApiKeys::save(std::string const &key, MySettings *s) const
 		
 		QFile(secret_dir).setPermissions(QFile::ReadOwner | QFile::WriteOwner | QFile::ExeOwner); // 所有者のみ読み書きと実行可
 		QFile(in_file).setPermissions(QFile::ReadOwner | QFile::WriteOwner); // 所有者のみ読み書き可
-
-		{
+		
+		if (s) {
 			s->beginGroup("AI");
 			for (auto const &pair : map) {
 				std::string const &envname = pair.first;

@@ -102,6 +102,15 @@ bool isValidDir(QString const &dir)
 #include <QProcess>
 #endif
 
+namespace {
+QListWidgetItem *new_QListWidgetItem(QString const &text = {})
+{
+	auto *p = new QListWidgetItem(text);
+	p->setSizeHint({20, 20});
+	return p;
+}
+}
+
 struct EventItem {
 	QObject *receiver = nullptr;
 	QEvent *event = nullptr;

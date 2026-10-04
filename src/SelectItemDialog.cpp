@@ -2,6 +2,15 @@
 #include "ui_SelectItemDialog.h"
 #include "ApplicationGlobal.h"
 
+namespace {
+QListWidgetItem *new_QListWidgetItem(QString const &text = {})
+{
+	auto *p = new QListWidgetItem(text);
+	p->setSizeHint({20, 20});
+	return p;
+}
+}
+
 SelectItemDialog::SelectItemDialog(QWidget *parent) :
 	QDialog(parent),
 	ui(new Ui::SelectItemDialog)

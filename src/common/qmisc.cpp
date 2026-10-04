@@ -4,6 +4,7 @@
 #include <QDateTime>
 #include <QPainter>
 #include <QWidget>
+#include <QStyle>
 #include <QContextMenuEvent>
 
 /**
@@ -243,3 +244,48 @@ QString misc::collapseWhitespace(const QString &source)
 	return QString(p);
 }
 
+void misc::drawTextBadge(QPainter *painter, QPalette const &palette, QRect r, int space, QString const &text, QColor bgcolor, QColor fgcolor, bool bold)
+{
+	painter->save();
+
+	// フォントの設定
+	QFont font = painter->font();
+	font.setBold(bold);
+	painter->setFont(font);
+
+	// ラベル枠の描画
+	auto DrawLabelFrame = [&](int dx, int dy, QColor const &color){
+		painter->setBrush(color);
+		painter->drawRoundedRect(r.adjusted((int)lround(dx + 3), (int)lround(dy + 3), (int)lround(dx - 3), (int)lround(dy - 3)), 3, 3);
+	};
+
+	auto HiliteColor = [](QColor const &color) {
+		int r = color.red();
+		int g = color.green();
+		int b = color.blue();
+		r = 255 - (255 - r) / 2;
+		g = 255 - (255 - g) / 2;
+		b = 255 - (255 - b) / 2;
+		return QColor(r, g, b);
+	};
+
+	auto ShadowColor = [](QColor const &color) {
+		return QColor(color.red() / 2, color.green() / 2, color.blue() / 2);
+	};
+	
+	QColor hilite = HiliteColor(bgcolor); // ハイライトの色
+	QColor shadow = ShadowColor(bgcolor); // 陰の色
+
+	painter->setPen(Qt::NoPen);
+	DrawLabelFrame(-1, -1, hilite);
+	DrawLabelFrame(1, 1, shadow);
+	DrawLabelFrame(0, 0, bgcolor);
+
+	// ラベルテキストの描画
+	painter->setPen(fgcolor);
+	painter->setBrush(Qt::NoBrush);
+	int flags = Qt::AlignLeft | Qt::AlignVCenter | Qt::TextSingleLine;
+	QApplication::style()->drawItemText(painter, r.adjusted(space, 0, 0, 0), flags, palette, true, text);
+	
+	painter->restore();
+}

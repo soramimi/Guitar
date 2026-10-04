@@ -2,6 +2,15 @@
 #include "ui_AddRepositoriesCollectivelyDialog.h"
 #include "ApplicationGlobal.h"
 
+namespace {
+QListWidgetItem *new_QListWidgetItem(QString const &text)
+{
+	auto *p = new QListWidgetItem(text);
+	p->setSizeHint({20, 20});
+	return p;
+}
+}
+
 AddRepositoriesCollectivelyDialog::AddRepositoriesCollectivelyDialog(QWidget *parent, QStringList const &dirs)
 	: QDialog(parent)
 	, ui(new Ui::AddRepositoriesCollectivelyDialog)

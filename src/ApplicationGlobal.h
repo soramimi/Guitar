@@ -146,12 +146,12 @@ public:
 	{
 		return appsettings.generate_commit_message_with_ai;
 	}
+
+	QString aimodels_json_path() const;
 };
 
 void GlobalSetOverrideWaitCursor();
 void GlobalRestoreOverrideCursor();
-
-QListWidgetItem *new_QListWidgetItem(QString const &text = {});
 
 #define ASSERT_MAIN_THREAD() Q_ASSERT(ApplicationGlobal::isMainThread())
 

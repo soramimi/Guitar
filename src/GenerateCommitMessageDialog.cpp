@@ -2,12 +2,24 @@
 #include "ui_GenerateCommitMessageDialog.h"
 #include "GenerateCommitMessageThread.h"
 #include "MainWindow.h"
-#include <common/q/helper.h>
+#include "MySettings.h"
 #include <QMessageBox>
 #include <ai/CommitMessageGenerator.h>
+#include <ai/GenerativeAI.h>
+#include <common/joinpath.h>
+#include <common/q/helper.h>
+
+namespace {
+QListWidgetItem *new_QListWidgetItem(QString const &text)
+{
+	auto *p = new QListWidgetItem(text);
+	p->setSizeHint({20, 20});
+	return p;
+}
+}
 
 struct GenerateCommitMessageDialog::Private {
-	std::vector<GenerativeAI::Model const *> ai_models;
+	std::vector<GenerativeAI::Model> ai_models;
 	CommitMessageGenerator::CommitPair commits;
 	GenerateCommitMessageThread generator;
 	QStringList checked_items;
@@ -15,14 +27,35 @@ struct GenerateCommitMessageDialog::Private {
 	std::string status_s_u;
 };
 
-GenerateCommitMessageDialog::GenerateCommitMessageDialog(QWidget *parent, const std::vector<GenerativeAI::Model const *> &models, int default_index)
+GenerateCommitMessageDialog::GenerateCommitMessageDialog(QWidget *parent)
 	: QDialog(parent)
 	, ui(new Ui::GenerateCommitMessageDialog)
 	, m(new Private)
 {
 	ui->setupUi(this);
 
-	init_ai_models(models, default_index);
+	int default_index;
+	std::vector<GenerativeAI::ModelConf> models;
+	QString path = global->aimodels_json_path();
+	auto opt = GenerativeAI::ModelConf::load(path.toStdString().c_str());
+	if (opt) {
+		std::string guid;
+		{
+			MySettings s;
+			s.beginGroup("AI");
+			guid = s.value("FirstChoiceGUID").toString().toStdString();
+			s.endGroup();
+		}
+		models = std::move(*opt);
+		for (size_t i = 0; i < models.size(); i++) {
+			GenerativeAI::ModelConf const &conf = models[i];
+			if (conf.guid == guid) {
+				default_index = (int)i;
+			}
+		}
+	}
+	
+	updateModels(models, default_index);
 
 	m->generator.start();
 	
@@ -47,24 +80,58 @@ void GenerateCommitMessageDialog::setCommitIDs(CommitMessageGenerator::CommitPai
 	m->commits = commits;
 }
 
-void GenerateCommitMessageDialog::init_ai_models(std::vector<GenerativeAI::Model const *> const &models, int default_index)
+void GenerateCommitMessageDialog::updateModels(std::vector<GenerativeAI::ModelConf> const &models, int default_index)
 {
-	m->ai_models = models;
+	m->ai_models.clear();
+	m->ai_models.reserve(models.size());
 	ui->comboBox_ai_models->clear();
-	for (size_t i = 0; i < m->ai_models.size(); i++) {
-		GenerativeAI::Model const *model = m->ai_models[i];
-		ui->comboBox_ai_models->addItem((QS)model->model_uri().string);
+	for (size_t i = 0; i < models.size(); i++) {
+		GenerativeAI::ModelConf const &conf = models[i];
+		m->ai_models.push_back(conf.model);
+		ui->comboBox_ai_models->addItem((QS)conf.name);
 	}
 	ui->comboBox_ai_models->setCurrentIndex(default_index);
 }
 
-GenerativeAI::Model const &GenerateCommitMessageDialog::ai_model() const
+std::tuple<GenerativeAI::Model, GenerativeAI::Credential> GenerateCommitMessageDialog::ai_model() const
 {
 	int index = ui->comboBox_ai_models->currentIndex();
-	if (index >= 0 && (size_t)index < m->ai_models.size()) {
-		return *m->ai_models[index];
+
+	auto QueryApiKey = [](std::string const &symbol, bool env)-> std::string {
+		if (env) {
+			char const *e = std::getenv(symbol.c_str());
+			if (e) return e;
+		} else {
+			AiApiKeys ai_api_keys;
+			ai_api_keys.load((std::string)api_key_obfuscation_key, nullptr);
+			auto opt = ai_api_keys.get_api_key(symbol);
+			if (opt) return opt->api_key;
+		}
+		return {};
+	};
+	
+	{
+		QString guid;
+		{
+			MySettings s;
+			s.beginGroup("AI");
+			guid = s.value("FirstChoiceGUID").toString();
+			s.endGroup();
+		}
+		
+		QString path = global->aimodels_json_path();
+		std::optional<std::vector<GenerativeAI::ModelConf>> opt = GenerativeAI::ModelConf::load(path.toStdString().c_str());
+		if (opt) {
+			if (index >= 0 && (size_t)index < opt->size()) {
+				GenerativeAI::ModelConf const &conf = (*opt)[index];
+				GenerativeAI::Credential cred;
+				cred.api_key = QueryApiKey(conf.api_key_symbol, conf.api_key_method == GenerativeAI::key_store_environment);
+				return {conf.model, cred};
+			}
+		}
 	}
-	return *global->appsettings.ai_model;
+
+	return {*global->appsettings.ai_model, {}};
 }
 
 void GenerateCommitMessageDialog::_generate(std::string const &diff, std::string const &status_s_u)
@@ -92,8 +159,8 @@ void GenerateCommitMessageDialog::_generate(std::string const &diff, std::string
 
 	ui->pushButton_regenerate->setEnabled(false);
 	
-	GenerativeAI::Credential cred = global->get_ai_credential(ai_model());
-	m->generator.request(ai_model(), cred, diff, status_s_u, hint);
+	auto [model, cred] = ai_model();
+	m->generator.request(model, cred, diff, status_s_u, hint);
 }
 
 void GenerateCommitMessageDialog::generate()
@@ -166,7 +233,6 @@ void GenerateCommitMessageDialog::done(int stat)
 	}
 	QDialog::done(stat);
 }
-
 
 void GenerateCommitMessageDialog::on_checkBox_hint_checkStateChanged(const Qt::CheckState &arg1)
 {

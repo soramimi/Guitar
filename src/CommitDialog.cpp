@@ -160,10 +160,7 @@ void CommitDialog::on_pushButton_generate_with_ai_clicked()
 {
 	diff_ = CommitMessageGenerator::make_diff(global->mainwindow->git(), commits_);
 	
-	auto [models, index] = global->appsettings.ai_models();
-	assert(index >= 0 && (size_t)index < models.size());
-
-	GenerateCommitMessageDialog dlg(this, models, index);
+	GenerateCommitMessageDialog dlg(this);
 	dlg.setCommitIDs(commits_);
 	dlg.show();
 	dlg.generate();

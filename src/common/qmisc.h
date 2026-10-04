@@ -8,6 +8,7 @@
 class QPainter;
 class QWidget;
 class QDateTime;
+class QPalette;
 class QContextMenuEvent;
 
 namespace misc {
@@ -22,6 +23,8 @@ QPoint contextMenuPos(QWidget *w, QContextMenuEvent *e);
 QString abbrevBranchName(QString const &name);
 QString makeProxyServerURL(QString text);
 QString collapseWhitespace(QString const &source);
+
+void drawTextBadge(QPainter *painter, QPalette const &palette, QRect r, int space, QString const &text, QColor bgcolor, QColor fgcolor, bool bold);
 
 } // namespace misc
 

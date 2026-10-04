@@ -2,6 +2,15 @@
 #include "ui_DeleteBranchDialog.h"
 #include "ApplicationGlobal.h"
 
+namespace {
+QListWidgetItem *new_QListWidgetItem(QString const &text = {})
+{
+	auto *p = new QListWidgetItem(text);
+	p->setSizeHint({20, 20});
+	return p;
+}
+}
+
 struct DeleteBranchDialog::Private {
 	QStringList all_local_branch_names;
 	QStringList current_local_branch_names;

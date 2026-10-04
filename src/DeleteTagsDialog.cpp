@@ -3,6 +3,15 @@
 #include "ApplicationGlobal.h"
 #include <common/q/helper.h>
 
+namespace {
+QListWidgetItem *new_QListWidgetItem(QString const &text)
+{
+	auto *p = new QListWidgetItem(text);
+	p->setSizeHint({20, 20});
+	return p;
+}
+}
+
 DeleteTagsDialog::DeleteTagsDialog(QWidget *parent, const TagList &list)
 	: QDialog(parent)
 	, ui(new Ui::DeleteTagsDialog)

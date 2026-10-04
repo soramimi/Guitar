@@ -12,11 +12,20 @@
 #include <common/q/helper.h>
 #include <memory>
 
-static QTreeWidgetItem *newQTreeWidgetItem()
+namespace {
+QListWidgetItem *new_QListWidgetItem(QString const &text = {})
+{
+	auto *p = new QListWidgetItem(text);
+	p->setSizeHint({20, 20});
+	return p;
+}
+
+QTreeWidgetItem *new_QTreeWidgetItem()
 {
 	auto *item = new QTreeWidgetItem;
 	item->setSizeHint(0, QSize(20, 20));
 	return item;
+}
 }
 
 enum {
@@ -73,7 +82,7 @@ CommitExploreWindow::CommitExploreWindow(QWidget *parent, GitObjectCache *objcac
 	}
 
 	{
-		QTreeWidgetItem *rootitem = newQTreeWidgetItem();
+		QTreeWidgetItem *rootitem = new_QTreeWidgetItem();
 		rootitem->setText(0, tr("Commit"));
 		rootitem->setData(0, ItemTypeRole, (int)GitTreeItem::TREE);
 		rootitem->setData(0, ObjectIdRole, (QS)m->root_tree_id);
@@ -126,13 +135,13 @@ void CommitExploreWindow::expandTreeItem_(GitRunner g, QTreeWidgetItem *item)
 		for (GitTreeItem const &ti : m->tree_item_list) {
 			if (ti.type == GitTreeItem::TREE) {
 				QString name = (QS)ti.name;
-				QTreeWidgetItem *child = newQTreeWidgetItem();
+				QTreeWidgetItem *child = new_QTreeWidgetItem();
 				child->setIcon(0, icons.icon(QFileIconProvider::Folder));
 				child->setText(0, name);
 				child->setData(0, ItemTypeRole, (int)ti.type);
 				child->setData(0, ObjectIdRole, (QS)ti.id);
 				child->setData(0, FilePathRole, path / name);
-				QTreeWidgetItem *placeholder = newQTreeWidgetItem();
+				QTreeWidgetItem *placeholder = new_QTreeWidgetItem();
 				child->addChild(placeholder);
 				item->addChild(child);
 			}

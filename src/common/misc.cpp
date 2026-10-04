@@ -811,4 +811,3 @@ std::string_view misc::getProgram(std::string_view cmdline)
 	return std::string_view(left, right - left);
 }
 
-

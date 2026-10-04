@@ -3,6 +3,8 @@
 #include <common/fmt.h>
 #include <common/joinpath.h>
 #include <common/misc.h>
+#include <sys/stat.h>
+#include <common/jstream.h>
 #include <regex>
 
 namespace GenerativeAI {
@@ -26,7 +28,7 @@ const std::vector<ProviderInfo> &complete_provider_table()
 {
 	static const std::vector<ProviderInfo> provider_info = {
 		// id                                      tag                                description                       env_name
-		{ProviderID::Unknown,                      "other",                           "Other",                            ""},
+		{ProviderID::Custom,                       "custom",                          "Custom",                           ""},
 		{ProviderID::OpenAI,                       "",                                "OpenAI",                           "OPENAI_API_KEY"}, // placeholder
 		{ProviderID::OpenAI_responses,             "openai-responses",                "OpenAI / GPT (responses)",         "OPENAI_API_KEY"},
 		{ProviderID::OpenAI_chat_completions,      "openai-chat-completions",         "OpenAI / GPT (chat completions)",  "OPENAI_API_KEY"},
@@ -36,7 +38,7 @@ const std::vector<ProviderInfo> &complete_provider_table()
 		{ProviderID::MoonshotAI,                   "moonshot",                        "Moonshot AI / Kimi",               "MOONSHOT_API_KEY"},
 		{ProviderID::XAI,                          "xai",                             "xAI / Grok",                       "XAI_API_KEY"},
 		{ProviderID::PFN,                          "pfn",                             "Preferred Networks / PLaMo",       "PFN_API_KEY"},
-		{ProviderID::Sakura,                       "sakura",                          "Sakura AI Engine",                 "SAKURA_AI_API_KEY"},
+		{ProviderID::Sakura,                       "sakura",                          "Sakura AI Engine",                 "SAKURAAI_API_KEY"},
 		// {ProviderID::Cloudflare,                   "cloudflare",                      "Cloudflare",                       "CLOUDFLARE_API_TOKEN"},
 		{ProviderID::OpenRouter,                   "openrouter",                      "OpenRouter",                       "OPENROUTER_API_KEY"},
 		{ProviderID::OrcaRouter,                   "orcarouter",                      "OrcaRouter",                       "ORCAROUTER_API_KEY"},
@@ -47,6 +49,16 @@ const std::vector<ProviderInfo> &complete_provider_table()
 		{ProviderID::LLAMACPP,                     "llamacpp",                        "llama.cpp",                        "LLAMACPP_API_KEY"},
 	};
 	return provider_info;
+}
+
+ProviderID provider_id(std::string_view name)
+{
+	for (auto const &info : complete_provider_table()) {
+		if (info.tag == name) {
+			return info.id;
+		}
+	}
+	return ProviderID::Custom;
 }
 
 ProviderID api_compatibility(ProviderID pid)
@@ -62,6 +74,18 @@ ProviderID api_compatibility(ProviderID pid)
 	}
 }
 
+bool is_endpoint_customizable(ProviderID pid)
+{
+	switch (pid) {
+	case ProviderID::Custom:
+	case ProviderID::Ollama:
+	case ProviderID::LMStudio:
+	case ProviderID::LLAMACPP:
+		return true;
+	}
+	return false;
+}
+
 /**
  * @brief ユーザー向けに提示するAIモデルのプリセットリストを返す。
  * @return プリセットモデルのベクタへの参照。
@@ -69,8 +93,8 @@ ProviderID api_compatibility(ProviderID pid)
 std::vector<Model> const &ai_model_presets()
 {
 	static const std::vector<Model> preset_models = {
-		{ProviderID::OpenAI_responses, "gpt-5.6-luna"},
-		{ProviderID::Anthropic,        "claude-sonnet-5"},
+		{ProviderID::OpenAI_responses, "gpt-5.6-terra"},
+		{ProviderID::Anthropic,        "claude-sonnet-5-5"},
 		{ProviderID::Google,           "gemini-3.8-flash"},
 		{ProviderID::DeepSeek,         "deepseek-flash"},
 		{ProviderID::MoonshotAI,       "kimi-k2.7-code"},
@@ -78,10 +102,10 @@ std::vector<Model> const &ai_model_presets()
 		{ProviderID::PFN,              "plamo-3.0-prime"},
 		{ProviderID::Sakura,           "sakura:gpt-oss-120b"},
 		// {ProviderID::Cloudflare,       "cloudflare:openai/gpt-6-luna"},
-		{ProviderID::OpenRouter,       "openrouter:anthropic/claude-4.6-sonnet"},
-		{ProviderID::OrcaRouter,       "orcarouter:deepseek/deepseek-v4.1-flash"},
-		{ProviderID::Requesty,         "requesty:google/gemma-4-31b-it"},
-		{ProviderID::Merge,            "merge:openai/gpt-5.6-luna"},
+		{ProviderID::OpenRouter,       "openrouter:anthropic/claude-5.5-sonnet"},
+		{ProviderID::OrcaRouter,       "orcarouter:anthropic/claude-sonnet-5.5"},
+		{ProviderID::Requesty,         "requesty:anthropic/claude-sonnet-5-5"},
+		{ProviderID::Merge,            "merge:openai/gpt-5.6-terra"},
 		{ProviderID::Ollama,           "ollama:///gemma4"},
 		{ProviderID::LMStudio,         "lmstudio:///meta-llama-3-8b-instruct"},
 		{ProviderID::LLAMACPP,         "llamacpp://localhost:8080/"},
@@ -97,7 +121,7 @@ std::vector<Model> const &ai_model_presets()
 std::vector<ProviderID> const &ai_provider_id_list_for_present_to_users()
 {
 	static std::vector<ProviderID> providers = { // Unknownは必要。placeholderを含まない。
-		ProviderID::Unknown,
+		ProviderID::Custom,
 		ProviderID::OpenAI_responses,
 		ProviderID::OpenAI_chat_completions,
 		ProviderID::Anthropic,
@@ -179,23 +203,26 @@ void Model::parse_model(const std::string &model_uri)
 
 	auto Parse = [&](std::string const &prefix, int port){
 		if (misc::starts_with(model_name_, prefix)) {
-			port_ = port;
+			hostport_.port = port;
 			model_name_ = model_name_.substr(prefix.size());
-			auto i = model_name_.find('/');
-			if (i != std::string::npos) {
-				std::string addr = model_name_.substr(0, i);
-				model_name_ = model_name_.substr(i + 1);
+			if (auto i = model_name_.find("://"); i != std::string::npos) {
+				std::string addr = model_name_.substr(0, i + 3);
+				auto j = model_name_.find('/', i + 3);
+				model_name_ = model_name_.substr(j + 1);
 				if (addr.empty()) {
-					host_ = "localhost";
+					hostport_.host = "localhost";
 				} else {
 					auto j = addr.find(':');
 					if (j != std::string::npos) {
-						host_ = addr.substr(0, j);
-						port_ = misc::toi<int>(addr.substr(j + 1));
+						hostport_.host = addr.substr(0, j);
+						hostport_.port = misc::toi<int>(addr.substr(j + 1));
 					}
 				}
 				return true;
+			// } else if (auto j = model_name_.find('/'); i != std::string::npos) {
+			// 	model_name_ = model_name_.substr(j + 1);
 			}
+			return true;
 		}
 		return false;
 	};
@@ -208,6 +235,33 @@ void Model::parse_model(const std::string &model_uri)
 	if (Parse("ollama://", 11434)) return;
 	if (Parse("lmstudio://", 1234)) return;
 	if (Parse("llamacpp://", 8080)) return;
+}
+
+HostPort parse_host_port(const std::string &url)
+{
+	HostPort ret;
+	auto i = url.find("://");
+	if (i != std::string::npos) {
+		auto j = url.find('/', i + 3);
+		if (j == std::string::npos) {
+			j = url.size();
+		}
+		std::string sub = url.substr(i + 3, j - (i + 3));
+		auto k = sub.find(':');
+		if (k != std::string::npos) {
+			ret.host = sub.substr(0, k);
+			ret.port = misc::toi<int>(sub.substr(k + 1));
+		} else {
+			ret.host = sub;
+		}
+	}
+	return ret;
+}
+
+void Model::set_endpoint_url(const std::string &url)
+{
+	endpoint_url_ = url;
+	hostport_ = parse_host_port(url);
 }
 
 /**
@@ -258,7 +312,7 @@ struct _ApiBaseUrl : public AbstractVisitor<std::string> {
 		return fmt("http://%s:%d/")(host)(port);
 	}
 
-	std::string case_Unknown()
+	std::string case_Custom()
 	{
 		return {};
 	}
@@ -375,9 +429,13 @@ struct _MakeRequest : public AbstractVisitor<Request> {
 	}
 	
 	
-	Request case_Unknown()
+	Request case_Custom()
 	{
-		return {};
+		Request r;
+		r.model_name = model_.model_name();
+		set_authorization_bearer_cred(&r, cred_);
+		r.endpoint.set_chat_endpoint_url(_generic_endpoint_url());
+		return r;
 	}
 
 	Request case_OpenAI()
@@ -414,7 +472,6 @@ struct _MakeRequest : public AbstractVisitor<Request> {
 		Request r;
 		r.model_name = model_.model_name();
 		r.endpoint.url_ = _endpoint_base_url();
-		// r.endpoint.suffix_ = "/models/" + url_encode(model_.model_name()) + ":generateContent?key=" + cred_.api_key;
 		return r;
 	}
 
@@ -468,7 +525,6 @@ struct _MakeRequest : public AbstractVisitor<Request> {
 		Request r;
 		r.model_name = model_.model_name();
 		r.endpoint.url_ = _endpoint_base_url();
-		// r.endpoint.suffix_ = "v1/completions";
 		set_authorization_bearer_cred(&r, cred_);
 		return r;
 	}
@@ -552,8 +608,8 @@ struct _MakeRequest : public AbstractVisitor<Request> {
 Request make_request(ProviderID provider, const Model &model, Credential const &cred)
 {
 	Request ret = _MakeRequest(model, cred).visit(provider);
-	if (model.endpoint_url_override) {
-		ret.endpoint.set_chat_endpoint_url(*model.endpoint_url_override);
+	if (!model.endpoint_url().empty()) {
+		ret.endpoint.set_chat_endpoint_url(model.endpoint_url());
 	}
 	return ret;
 }
@@ -586,7 +642,7 @@ void EndPoint::set_chat_endpoint_url(const std::string &url)
 	}
 }
 
-std::string EndPoint::url_chat(Model const &model, Credential const &cred) const
+std::string EndPoint::url_chat(Model const &model, Credential const &cred, std::optional<HostPort> hostport) const
 {
 	std::string url = url_;
 
@@ -599,13 +655,42 @@ std::string EndPoint::url_chat(Model const &model, Credential const &cred) const
 			url = url / suffix_;
 		}
 	}
-	
+
+	if (hostport) {
+		auto i = url.find("://");
+		if (i != std::string::npos) {
+			auto j = url.find('/', i + 3);
+			if (j != std::string::npos) {
+				// rewrite host and port
+				std::string before = url.substr(0, i + 3);
+				std::string middle = url.substr(i + 3, j - (i + 3));
+				std::string after = url.substr(j);
+				auto k = middle.find(':');
+				if (k != std::string::npos) {
+					middle = middle.substr(0, k);
+				}
+				if (!hostport->host.empty()) {
+					middle = hostport->host;
+				}
+				std::string port_str;
+				if (hostport->port > 0) {
+					port_str = ":" + std::to_string(hostport->port);
+				}
+				url = before + middle + port_str + after;
+			}
+		}
+	}
+
 	return url;
 }
 
-std::string EndPoint::url_models(Credential const &cred) const
+std::string EndPoint::url_models(Credential const &cred, std::string const &cursor) const
 {
 	std::string url = url_ / "models";
+	
+	if (!cursor.empty()) {
+		url += "?cursor=" + url_encode(cursor);
+	}
 	
 	// google special case
 	if (url.find(".googleapis.com/") != std::string::npos) {
@@ -613,6 +698,92 @@ std::string EndPoint::url_models(Credential const &cred) const
 	}
 	
 	return url;
+}
+
+std::optional<std::vector<ModelConf>> ModelConf::load(char const *path)
+{
+	std::vector<ModelConf> items;
+	
+	FILE *fp = fopen(path, "r");
+	if (fp) {
+		struct stat st;
+		if (fstat(fileno(fp), &st) == 0) {
+			std::vector<char> buf(st.st_size);
+			fread(buf.data(), 1, buf.size(), fp);
+			jstream::Reader r(buf.data(), buf.size());
+			std::string provider;
+			std::string model;
+			std::string ep_url;
+			while (r.next()) {
+				if (r.match_start_object("{items{item{**")) {
+					ModelConf mc;
+					r.nest([&](){
+						if (r.match("@guid")) {
+							mc.guid = r.string();
+						} else if (r.match("@name")) {
+							mc.name = r.string();
+						} else if (r.match("@provider")) {
+							provider = r.string();
+						} else if (r.match("@api_type")) {
+							mc.api_type = r.string();
+						} else if (r.match("@model")) {
+							model = r.string();
+						} else if (r.match("@api_type")) {
+							mc.api_type = r.string();
+						} else if (r.match("@endpoint_url")) {
+							ep_url = r.string();
+						} else if (r.match("@credential{symbol")) {
+							mc.api_key_symbol = r.string();
+						} else if (r.match("@credential{method")) {
+							mc.api_key_method = r.string();
+						}
+					});
+					{
+						mc.model = Model(provider_id(provider), model);
+						mc.model.set_endpoint_url(ep_url);
+						ProviderID at = parse_api_type(mc.api_type);
+						if (at != ProviderID::Custom) {
+							mc.model.api_compatibility_override = at;
+						}
+					}
+					items.push_back(mc);
+				}
+			}
+		}
+		fclose(fp);
+		return items;
+	}
+	
+	return std::nullopt;
+}
+
+void ModelConf::save(char const *path, const std::vector<ModelConf> &items)
+{
+	jstream::Writer w;
+	w.object({}, [&](){
+		w.object("items", [&](){
+			for (ModelConf const &conf : items) {
+				w.object("item", [&](){
+					w.string("guid", conf.guid);
+					w.string("name", conf.name);
+					w.string("provider", conf.model.provider_info_->tag);
+					w.string("api_type", conf.api_type);
+					w.string("endpoint_url", conf.model.endpoint_url());
+					w.string("model", conf.model.model_name());
+					w.object("credential", [&](){
+						w.string("symbol", conf.api_key_symbol);
+						w.string("method", conf.api_key_method);
+					});
+				});
+			}
+		});
+	});
+	FILE *fp = fopen(path, "w");
+	if (fp) {
+		std::string json = w;
+		fwrite(json.c_str(), 1, json.size(), fp);
+		fclose(fp);
+	}
 }
 
 } // namespace GenerativeAI

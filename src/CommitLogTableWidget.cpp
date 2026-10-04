@@ -194,22 +194,6 @@ private:
 		return static_cast<CommitLogTableWidget *>(parent())->mainwindow();
 	}
 
-	static QColor hiliteColor(QColor const &color)
-	{
-		int r = color.red();
-		int g = color.green();
-		int b = color.blue();
-		r = 255 - (255 - r) / 2;
-		g = 255 - (255 - g) / 2;
-		b = 255 - (255 - b) / 2;
-		return QColor(r, g, b);
-	}
-
-	static QColor shadowColor(QColor const &color)
-	{
-		return QColor(color.red() / 2, color.green() / 2, color.blue() / 2);
-	}
-
 	void drawSignatureIcon(QPainter *painter, const QStyleOptionViewItem &opt, GitCommitItem const &commit) const
 	{
 		if (!opt.widget->isEnabled()) return;
@@ -273,36 +257,15 @@ private:
 						bold = true;
 					}
 				}
-
-				// フォントの設定
-				QFont font = painter->font();
-				font.setBold(bold);
-				painter->setFont(font);
-
+				
 				// ラベルの矩形
 				int w = painter->fontMetrics().horizontalAdvance(text) + space * 2; // 幅
 				int x0 = x1 - w;
 				QRect r(x0, y0, x1 - x0, y1 - y0);
-
-				// ラベル枠の描画
-				auto DrawLabelFrame = [&](int dx, int dy, QColor const &color){
-					painter->setBrush(color);
-					painter->drawRoundedRect(r.adjusted((int)lround(dx + 3), (int)lround(dy + 3), (int)lround(dx - 3), (int)lround(dy - 3)), 3, 3);
-				};
-
+								
 				QColor color = BranchLabel::color(label.kind); // ラベル表面の色
-				QColor hilite = hiliteColor(color); // ハイライトの色
-				QColor shadow = shadowColor(color); // 陰の色
-
-				painter->setPen(Qt::NoPen);
-				DrawLabelFrame(-1, -1, hilite);
-				DrawLabelFrame(1, 1, shadow);
-				DrawLabelFrame(0, 0, color);
-
-				// ラベルテキストの描画
-				painter->setPen(Qt::black);
-				painter->setBrush(Qt::NoBrush);
-				QApplication::style()->drawItemText(painter, r.adjusted(space, 0, 0, 0), opt.displayAlignment, opt.palette, true, text);
+				misc::drawTextBadge(painter, opt.palette, r, space, text, color, Qt::black, bold);
+				
 				x1 = x0;
 			}
 			painter->restore();

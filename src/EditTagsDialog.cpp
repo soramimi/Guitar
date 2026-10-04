@@ -4,6 +4,15 @@
 #include "MainWindow.h"
 #include <common/q/helper.h>
 
+namespace {
+QListWidgetItem *new_QListWidgetItem(QString const &text)
+{
+	auto *p = new QListWidgetItem(text);
+	p->setSizeHint({20, 20});
+	return p;
+}
+}
+
 EditTagsDialog::EditTagsDialog(MainWindow *parent, GitCommitItem const *commit) :
 	QDialog(parent),
 	ui(new Ui::EditTagsDialog)

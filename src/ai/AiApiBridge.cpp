@@ -22,8 +22,13 @@ struct AiApiBridge::Private {
 	GenerativeAI::Credential ai_credential;
 	std::string system_role;
 	std::shared_ptr<AbstractInetClient> http_;
-	
+
+#ifdef QT_NO_DEBUG
 	bool save_log = false; // リクエスト/レスポンスをログに記録するか
+#else
+	bool save_log = true;
+#endif
+	// bool save_log = true;
 };
 
 /**
@@ -146,9 +151,18 @@ struct AiChatResponseParser : public GenerativeAI::AbstractVisitor<AiResult> {
 	}
 
 	/// 未知プロバイダー：空の結果を返す
-	AiResult case_Unknown()
+	AiResult case_Custom()
 	{
-		return {model.api_compatibility()};
+		auto api = model.api_compatibility();
+		switch (api) {
+		case GenerativeAI::ProviderID::OpenAI_responses:
+			return parse_responses(api);
+		case GenerativeAI::ProviderID::Anthropic:
+			return case_Anthropic();
+		default:
+			return parse_openai_chat_completions_format();
+		}
+		return {};
 	}
 
 	/**
@@ -443,35 +457,29 @@ struct AiChatResponseParser : public GenerativeAI::AbstractVisitor<AiResult> {
 		return ret;
 	}
 	
-	/// DeepSeek：OpenAI Chat Completions 互換形式
 	AiResult case_DeepSeek()
 	{
-		return parse_openai_chat_completions_format();
+		return case_Custom();
 	}
 
-	/// OpenRouter：OpenAI Chat Completions 互換形式
 	AiResult case_OpenRouter()
 	{
-		return parse_openai_chat_completions_format();
+		return case_Custom();
 	}
 	
-	/// OrcaRouter：OrcaAI Chat Completions 互換形式
 	AiResult case_OrcaRouter()
 	{
-		return parse_openai_chat_completions_format();
+		return case_Custom();
 	}
 
-	/// Requesty：OpenAI Chat Completions 互換形式
 	AiResult case_Requesty()
 	{
-		return parse_openai_chat_completions_format();
+		return case_Custom();
 	}
 	
 	AiResult case_Merge()
 	{
-		AiResult ret(model.api_compatibility());
-		ret = parse_responses(GenerativeAI::ProviderID::Merge);
-		return ret;
+		return case_Custom();
 	}
 	
 	/**
@@ -509,12 +517,7 @@ struct AiChatResponseParser : public GenerativeAI::AbstractVisitor<AiResult> {
 	/// llama.cpp：OpenAI Chat Completions 互換形式
 	AiResult case_LLAMACPP()
 	{
-		switch (model.api_compatibility()) {
-		case GenerativeAI::ProviderID::Anthropic:
-			return case_Anthropic();
-		default:
-			return parse_openai_chat_completions_format();
-		}
+		return case_Custom();
 	}
 };
 
@@ -554,7 +557,7 @@ struct _PromptJsonGenerator : public GenerativeAI::AbstractVisitor<std::string> 
 	}
 	
 	/// 未知プロバイダー：空文字列を返す
-	std::string case_Unknown()
+	std::string case_Custom()
 	{
 		return {};
 	}
@@ -822,7 +825,7 @@ std::string AiApiBridge::generate_prompt_json(GenerativeAI::Model const &model, 
 {
 	_PromptJsonGenerator generator(model, prompt);
 	generator.system_role = system_role;
-	return generator.visit(model.provider_id());
+	return generator.visit(model.api_compatibility());
 }
 
 /**
@@ -853,9 +856,9 @@ AiResult AiApiBridge::open()
 {
 	// constexpr GenerativeAI::EndPoint::Type eptype = GenerativeAI::EndPoint::Type::Chat;
 	
-	if (model().provider_id() == GenerativeAI::ProviderID::Unknown) {
-		return Error("error", "AI model is not defined.");
-	}
+	// if (model().provider_id() == GenerativeAI::ProviderID::Unknown) {
+	// 	return Error("error", "AI model is not defined.");
+	// }
 	
 	m->http_ = global_inet_client();
 	
@@ -901,7 +904,7 @@ AiResult AiApiBridge::x_request(const Query2Request &req)
 			auto cred = global_get_ai_credential(model());
 			auto aireq = GenerativeAI::make_request(model().provider_id(), model(), cred);
 			
-			web_req.set_location(aireq.endpoint.url(GenerativeAI::EndPoint::Type::Chat, model(), cred));
+			web_req.set_location(aireq.endpoint.url(GenerativeAI::EndPoint::Type::Chat, model(), cred, {}));
 			for (std::string const &h : aireq.header) {
 				web_req.add_header(h);
 			}
@@ -943,16 +946,18 @@ AiResult AiApiBridge::x_request(const Query2Request &req)
  */
 AiResult AiApiBridge::request(GenerativeAI::EndPoint::Type eptype, std::string const &prompt, Query2Request const &req)
 {
-	if (model().provider_id() == GenerativeAI::ProviderID::Unknown) {
-		return Error("error", "AI model is not defined.");
-	}
+	// if (model().provider_id() == GenerativeAI::ProviderID::Unknown) {
+	// 	return Error("error", "AI model is not defined.");
+	// }
 	
 	std::string response_json;
 	{
-		std::string request_json = generate_prompt_json(model(), prompt, m->system_role);
-		
-		if (m->save_log) {
-			logprintf(LOG_RAW, "%s\n", request_json.c_str());
+		std::string request_json;
+		if (eptype == GenerativeAI::EndPoint::Type::Chat) {
+			request_json = generate_prompt_json(model(), prompt, m->system_role);
+			if (m->save_log) {
+				logprintf(LOG_RAW, "%s\n", request_json.c_str());
+			}
 		}
 		
 		InetClient::Request web_req;
@@ -997,9 +1002,10 @@ AiResult AiApiBridge::request(GenerativeAI::EndPoint::Type eptype, std::string c
 			
 			GenerativeAI::Request ai_req = GenerativeAI::make_request(model().provider_id(), model(), cred);
 			
-			web_req.set_location(ai_req.endpoint.url(eptype, model(), cred));
+			web_req.set_location(ai_req.endpoint.url(eptype, model(), cred, req.cursor));
 			for (std::string const &h : ai_req.header) {
 				web_req.add_header(h);
+				logprintf(LOG_DEFAULT, "%s\n", h.c_str());
 			}
 		}
 		
@@ -1021,6 +1027,7 @@ AiResult AiApiBridge::request(GenerativeAI::EndPoint::Type eptype, std::string c
 			} else {
 				assert(0);
 			}
+			logprintf(LOG_DEFAULT, "%d\n", ret);
 			
 			std::string_view httpstat = http_status_text(ret);
 			
@@ -1029,7 +1036,12 @@ AiResult AiApiBridge::request(GenerativeAI::EndPoint::Type eptype, std::string c
 				size_t size = http->content_length();
 				response_json.assign(data, size);
 				if (m->save_log) {
-					logprintf(LOG_RAW, "%s\n", response_json.c_str());
+					// logprintf(LOG_RAW, "%s\n", response_json.c_str());
+					FILE *fp = fopen("/tmp/ai_response.json", "wb");
+					if (fp) {
+						fwrite(response_json.data(), 1, response_json.size(), fp);
+						fclose(fp);
+					}
 				}
 				// fprintf(stderr, "%s\n", response_json.c_str());
 			} else {
@@ -1065,61 +1077,73 @@ AiResult AiApiBridge::request(std::string const &prompt)
 
 std::optional<AiResult::Models> AiApiBridge::queryModels()
 {
-	AiApiBridge::Query2Request req{GenerativeAI::EndPoint::Type::Models};
-	AiResult result = request(GenerativeAI::EndPoint::Type::Models, {}, req);
-	if (!result) return std::nullopt;
-
 	AiResult::Models models;
-	{
-		jstream::Reader reader(result.content());
-		if (model().api_compatibility() == GenerativeAI::ProviderID::Google) {
-			while (reader.next()) {
-				if (reader.match_start_object("{models[{**")) {
-					AiResult::Model model;
-					static constexpr std::string_view models_prefix = "models/";
-					reader.nest([&](){
-						if (reader.match("@name")) {
-							model.id = reader.string();
-							if (misc::starts_with(model.id, models_prefix)) {
-								model.id = std::string(model.id.substr(models_prefix.size()));
+	std::string next_cursor;
+	bool has_more = true;
+	do {
+		AiApiBridge::Query2Request req{GenerativeAI::EndPoint::Type::Models};
+		req.cursor = next_cursor;
+		AiResult result = request(GenerativeAI::EndPoint::Type::Models, {}, req);
+		if (!result) return std::nullopt;
+
+		has_more = false;
+		next_cursor = {};
+		
+		{
+			jstream::Reader reader(result.content());
+			if (model().api_compatibility() == GenerativeAI::ProviderID::Google) {
+				while (reader.next()) {
+					if (reader.match_start_object("{models[{**")) {
+						AiResult::Model model;
+						static constexpr std::string_view models_prefix = "models/";
+						reader.nest([&](){
+							if (reader.match("@name")) {
+								model.id = reader.string();
+								if (misc::starts_with(model.id, models_prefix)) {
+									model.id = std::string(model.id.substr(models_prefix.size()));
+								}
+							} else if (reader.match("@version")) {
+							} else if (reader.match("@displayName")) {
+							} else if (reader.match("@description")) {
+							} else if (reader.match("@inputTokenLimit")) {
+							} else if (reader.match("@outputTokenLimit")) {
+							} else if (reader.match("@supportedGenerationMethods[**")) {
+							} else if (reader.match("@temperature")) {
+							} else if (reader.match("@topP")) {
+							} else if (reader.match("@topK")) {
+							} else if (reader.match("@maxTemperature")) {
+							} else if (reader.match("@thinking")) {
 							}
-						} else if (reader.match("@version")) {
-						} else if (reader.match("@displayName")) {
-						} else if (reader.match("@description")) {
-						} else if (reader.match("@inputTokenLimit")) {
-						} else if (reader.match("@outputTokenLimit")) {
-						} else if (reader.match("@supportedGenerationMethods[**")) {
-						} else if (reader.match("@temperature")) {
-						} else if (reader.match("@topP")) {
-						} else if (reader.match("@topK")) {
-						} else if (reader.match("@maxTemperature")) {
-						} else if (reader.match("@thinking")) {
-						}
-					});
-					// qDebug() << QString::fromStdString(model.id);
-					models.list.push_back(model);
+						});
+						// qDebug() << QString::fromStdString(model.id);
+						models.list.push_back(model);
+					}
 				}
-			}
-		} else {
-			while (reader.next()) {
-				if (reader.match_start_object("{data[{**")) {
-					AiResult::Model model;
-					reader.nest([&](){
-						if (reader.match("@id")) {
-							model.id = reader.string();
-						} else if (reader.match("@object")) {
-							model.object = reader.string();
-						} else if (reader.match("@created")) {
-							model.created = reader.string();
-						} else if (reader.match("@owned_by")) {
-							model.owned_by = reader.string();
-						}
-					});
-					models.list.push_back(model);
+			} else {
+				while (reader.next()) {
+					if (reader.match_start_object("{data[{**")) {
+						AiResult::Model model;
+						reader.nest([&](){
+							if (reader.match("@id") || reader.match("@model")) {
+								model.id = reader.string();
+							} else if (reader.match("@object")) {
+								model.object = reader.string();
+							} else if (reader.match("@created") || reader.match("@created_at")) {
+								model.created = reader.string();
+							} else if (reader.match("@owned_by") || reader.match("@provider")) {
+								model.owned_by = reader.string();
+							}
+						});
+						models.list.push_back(model);
+					} else if (reader.match("{has_more")) {
+						has_more = reader.istrue();
+					} else if (reader.match("{next_cursor")) {
+						next_cursor = reader.string();
+					}
 				}
 			}
 		}
-	}
+	} while (has_more && !next_cursor.empty());
 	return models;
 }
 

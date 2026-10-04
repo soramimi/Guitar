@@ -8,7 +8,7 @@
 namespace GenerativeAI {
 
 enum class ProviderID {
-	Unknown,
+	Custom,
 	OpenAI,
 	OpenAI_responses,
 	OpenAI_chat_completions,
@@ -33,7 +33,7 @@ template <typename T> class AbstractVisitor {
 public:
 	virtual ~AbstractVisitor() = default;
 
-	virtual T case_Unknown() = 0;
+	virtual T case_Custom() = 0;
 	virtual T case_OpenAI() {return {};} // placeholder
 	virtual T case_OpenAI_responses() = 0;
 	virtual T case_OpenAI_chat_completions() = 0;
@@ -56,7 +56,7 @@ public:
 	T visit(ProviderID provider)
 	{
 		switch (provider) {
-		case ProviderID::Unknown:                 return case_Unknown();
+		case ProviderID::Custom:                  return case_Custom();
 		case ProviderID::OpenAI:                  return case_OpenAI();
 		case ProviderID::OpenAI_responses:        return case_OpenAI_responses();
 		case ProviderID::OpenAI_chat_completions: return case_OpenAI_chat_completions();
@@ -71,14 +71,40 @@ public:
 		case ProviderID::OpenRouter:              return case_OpenRouter();
 		case ProviderID::OrcaRouter:              return case_OrcaRouter();
 		case ProviderID::Requesty:                return case_Requesty();
-		case ProviderID::Merge:                  return case_Merge();
+		case ProviderID::Merge:                   return case_Merge();
 		case ProviderID::Ollama:                  return case_Ollama();
 		case ProviderID::LMStudio:                return case_LMStudio();
 		case ProviderID::LLAMACPP:                return case_LLAMACPP();
 		}
-		return case_Unknown();
+		return case_Custom();
 	}
 };
+
+static constexpr std::string_view api_openai_chat_completions_v1 = "openai_chat_completions_v1";
+static constexpr std::string_view api_openai_responses_v1 = "openai_responses_v1";
+static constexpr std::string_view api_anthropic_messages_v1 = "anthropic_messages_v1";
+static constexpr std::string_view api_google_gemini_v1 = "google_gemini_v1";
+static constexpr std::string_view api_cloudflare_gateway_v4 = "cloudflare_gateway_v4";
+
+static inline ProviderID parse_api_type(std::string_view at)
+{
+	if (at == api_openai_chat_completions_v1) {
+		return ProviderID::OpenAI_chat_completions;
+	} else if (at == api_openai_responses_v1) {
+		return ProviderID::OpenAI_responses;
+	} else if (at == api_anthropic_messages_v1) {
+		return ProviderID::Anthropic;
+	} else if (at == api_google_gemini_v1) {
+		return ProviderID::Google;
+	} else if (at == api_cloudflare_gateway_v4) {
+		return ProviderID::Cloudflare;
+	}
+	return ProviderID::Custom;
+}
+
+static constexpr std::string_view key_store_environment = "environment";
+static constexpr std::string_view key_store_obfuscated = "obfuscation";
+static constexpr std::string_view key_store_encryption = "encryption";
 
 struct ProviderInfo {
 	ProviderID id; // 識別ID (整数)
@@ -88,6 +114,7 @@ struct ProviderInfo {
 };
 
 ProviderID api_compatibility(ProviderID pid);
+bool is_endpoint_customizable(ProviderID pid);
 std::vector<ProviderInfo> const &complete_provider_table();
 const ProviderInfo *provider_info(ProviderID id);
 
@@ -105,6 +132,11 @@ public:
 	}
 };
 
+struct HostPort {
+	std::string host;
+	int port = 0;
+};
+
 struct Model {
 	ModelURI model_uri_;
 	ProviderInfo const *provider_info_;
@@ -112,19 +144,18 @@ struct Model {
 	std::string reasoning_effort_;
 	
 	std::string model_name_;
-	std::string host_;
-	int port_ = 80;
-	std::optional<std::string> endpoint_url_override;
+	HostPort hostport_;
+	std::string endpoint_url_;
 	
 	Model()
-		: provider_info_(provider_info(ProviderID::Unknown))
+		: provider_info_(provider_info(ProviderID::Custom))
 	{}
 	Model(ProviderID provider, const std::string &model_uri);
 	void operator = (std::string const &) = delete;
 
 	explicit operator bool () const
 	{
-		return provider_info_ && provider_info_->id != ProviderID::Unknown;
+		return provider_info_ && provider_info_->id != ProviderID::Custom;
 	}
 
 	void parse_model(std::string const &model_uri);
@@ -146,7 +177,7 @@ struct Model {
 
 	ProviderID provider_id() const
 	{
-		return provider_info_ ? provider_info_->id : ProviderID::Unknown;
+		return provider_info_ ? provider_info_->id : ProviderID::Custom;
 	}
 	
 	std::string provider_description() const
@@ -169,12 +200,12 @@ struct Model {
 
 	std::string host() const
 	{
-		return host_;
+		return hostport_.host;
 	}
 
 	int port() const
 	{
-		return port_;
+		return hostport_.port;
 	}
 
 	std::string env_name() const
@@ -191,6 +222,12 @@ struct Model {
 		return GenerativeAI::api_compatibility(pid);
 	}
 
+	std::string const &endpoint_url() const
+	{
+		return endpoint_url_;
+	}
+	void set_endpoint_url(std::string const &url);
+
 	static Model from_name(std::string const &name);
 	static std::string default_model();
 };
@@ -199,6 +236,18 @@ static inline bool operator == (ModelURI const &a, ModelURI const &b)
 {
 	return a.string == b.string;
 }
+
+struct ModelConf {
+	std::string guid;
+	std::string name;
+	std::string api_type;
+	std::string api_key_symbol;
+	std::string api_key_method;
+	GenerativeAI::Model model;
+	
+	static std::optional<std::vector<ModelConf>> load(char const *path);
+	static void save(const char *path, std::vector<ModelConf> const &items);
+};
 
 struct EndPoint {
 	enum class Type {
@@ -210,15 +259,15 @@ struct EndPoint {
 	std::string suffix_;
 	EndPoint() = default;
 	void set_chat_endpoint_url(std::string const &url);
-	std::string url_chat(const Model &model, const Credential &cred) const;
-	std::string url_models(const Credential &cred) const;
-	std::string url(Type type, Model const &model, Credential const &cred) const
+	std::string url_chat(const Model &model, const Credential &cred, std::optional<HostPort> hostport = {}) const;
+	std::string url_models(const Credential &cred, const std::string &cursor) const;
+	std::string url(Type type, Model const &model, Credential const &cred, std::string const &cursor) const
 	{
 		switch (type) {
 		case Type::Chat:
 			return url_chat(model, cred);
 		case Type::Models:
-			return url_models(cred);
+			return url_models(cred, cursor);
 		}
 		return url_;
 	}

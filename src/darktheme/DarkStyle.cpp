@@ -1226,9 +1226,6 @@ int DarkStyle::styleHint(QStyle::StyleHint hint, const QStyleOption *option, con
 
 void DarkStyle::drawItemText(QPainter *painter, const QRect &rect, int flags, const QPalette &pal, bool enabled, const QString &text, QPalette::ColorRole textRole) const
 {
-	if (text == "みみのAlchemiaFleur") {
-		qDebug() << text;
-	}
 	MyCommonStyle<QCommonStyle>::drawItemText(painter, rect, flags, pal, enabled, text, textRole);
 }
 
