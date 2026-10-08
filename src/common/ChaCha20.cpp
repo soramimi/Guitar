@@ -128,6 +128,11 @@ ChaCha20::ChaCha20()
 	init_state();
 }
 
+void ChaCha20::reset()
+{
+	init_state();
+}
+
 uint32_t ChaCha20::next_u32()
 {
 	if (index_ == 0) {

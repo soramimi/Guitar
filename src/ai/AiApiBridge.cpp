@@ -1005,7 +1005,9 @@ AiResult AiApiBridge::request(GenerativeAI::EndPoint::Type eptype, std::string c
 			web_req.set_location(ai_req.endpoint.url(eptype, model(), cred, req.cursor));
 			for (std::string const &h : ai_req.header) {
 				web_req.add_header(h);
-				logprintf(LOG_DEFAULT, "%s\n", h.c_str());
+				if (m->save_log) {
+					logprintf(LOG_DEFAULT, "%s\n", h.c_str());
+				}
 			}
 		}
 		
@@ -1027,7 +1029,9 @@ AiResult AiApiBridge::request(GenerativeAI::EndPoint::Type eptype, std::string c
 			} else {
 				assert(0);
 			}
-			logprintf(LOG_DEFAULT, "%d\n", ret);
+			if (m->save_log) {
+				logprintf(LOG_DEFAULT, "%d\n", ret);
+			}
 			
 			std::string_view httpstat = http_status_text(ret);
 			

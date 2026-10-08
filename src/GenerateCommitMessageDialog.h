@@ -18,14 +18,14 @@ private:
 	Ui::GenerateCommitMessageDialog *ui;
 	struct Private;
 	Private *m;
-	std::tuple<GenerativeAI::Model, GenerativeAI::Credential> ai_model() const;
+	std::tuple<GenerativeAI::Model, GenerativeAI::Credential> ai_model();
 	void updateModels(const std::vector<GenerativeAI::ModelConf> &models, int default_index);
-	void _generate(const std::string &diff, const std::string &status_s);
+	bool _generate(const std::string &diff, const std::string &status_s);
 public:
 	explicit GenerateCommitMessageDialog(QWidget *parent);
 	~GenerateCommitMessageDialog();
 	void generate(std::string const &id_a, std::string const &id_b);
-	void generate();
+	bool generate();
 	std::string diffText() const;
 	QStringList message() const;
 	void setCommitIDs(CommitMessageGenerator::CommitPair const &commits);

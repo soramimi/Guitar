@@ -81,23 +81,6 @@ template <> void operator << (SetValue<std::string> &&l, std::string const &r)
 
 } // namespace
 
-// std::tuple<std::vector<GenerativeAI::Model const *>, int> ApplicationSettings::ai_models() const
-// {
-// 	std::vector<GenerativeAI::Model> const &list = GenerativeAI::ai_model_presets();
-// 	std::vector<GenerativeAI::Model const *> newlist;
-// 	for (GenerativeAI::Model const &item : list) {
-// 		newlist.push_back(&item);
-// 	}
-// 	int index;
-// 	for (index = 0; index < (int)list.size(); index++) {
-// 		if (list[index].model_uri() == ai_model->model_uri()) {
-// 			return {newlist, index};
-// 		}
-// 	}
-// 	newlist.push_back(ai_model.get());
-// 	return {newlist, index};
-// }
-
 ApplicationSettings::ApplicationSettings()
 {
 	ai_model = std::make_shared<GenerativeAI::Model>();
@@ -108,14 +91,6 @@ ApplicationSettings ApplicationSettings::loadSettings()
 	ApplicationSettings as(defaultSettings());
 
 	MySettings s;
-
-	// load api keys
-	
-	if (!as.ai_api_keys.load(std::string(api_key_obfuscation_key), &s)) {
-		logprintf(LOG_DEFAULT, "Failed to load AI API keys\n");
-	}
-
-	//
 
 	s.beginGroup("Global");
 	GetValue<bool>(s, "EnableTraceLog")                      >> as.enable_trace_log;
@@ -149,14 +124,8 @@ ApplicationSettings ApplicationSettings::loadSettings()
 	GetValue<QColor>(s, "LabelColorTag")                     >> as.branch_label_color.tag;
 	s.endGroup();
 
-	// std::string ai_provider_name;
-	// std::string ai_model_uri;
-
 	s.beginGroup("AI");
 	GetValue<bool>(s, "GenerateCommitMessageWithAI")         >> as.generate_commit_message_with_ai;
-	// GetValue<std::string>(s, "Provider")                     >> ai_provider_name;
-	// GetValue<std::string>(s, "ModelURI")                     >> ai_model_uri;
-	GetValue<std::string>(s, "DefaultModelGUID")             >> as.ai_default_model_guid;
 	s.endGroup();
 
 #ifdef Q_OS_WIN
@@ -172,30 +141,6 @@ ApplicationSettings ApplicationSettings::loadSettings()
 		as.console_backend = ConsoleBackend::ConPty;
 	}
 #endif
-
-// #if 0
-// 	// 選択されたモデルを取得
-
-// 	auto Info = [&](std::string const &name)-> GenerativeAI::ProviderInfo const * {
-// 		std::vector<GenerativeAI::ProviderInfo> const &infos = GenerativeAI::complete_provider_table();
-// 		for (auto const &info : infos) {
-// 			if (info.tag == name) {
-// 				return &info;
-// 			}
-// 		}
-// 		return nullptr;
-// 	};
-// 	GenerativeAI::ProviderInfo const *info = Info(ai_provider_name);
-
-// 	if (info) {
-// 		*as.ai_model = GenerativeAI::Model(info->id, ai_model_uri);
-// 	} else {
-// 		if (ai_provider_name.empty() && ai_model_uri.empty()) {
-// 			ai_model_uri = GenerativeAI::Model::default_model();
-// 		}
-// 		*as.ai_model = GenerativeAI::Model::from_name(ai_model_uri);
-// 	}
-// #endif
 	
 	return as;
 }
@@ -249,18 +194,14 @@ void ApplicationSettings::saveSettings() const
 	s.endGroup();
 
 	s.beginGroup("AI");
-	if (1) {
+	if (1) { // remove deplecated settings
 		QStringList keys = s.allKeys();
 		for (QString const &key : keys) {
-			// if (key.startsWith("Use_")) {
-			// }
+			if (key == "DefaultModelGUID") continue; // don't remove
 			s.remove(key);
 		}
 	}
 	SetValue<bool>(s, "GenerateCommitMessageWithAI")         << this->generate_commit_message_with_ai;
-	// SetValue<std::string>(s, "Provider")                     << this->ai_model->provider_info_->tag;
-	// SetValue<std::string>(s, "ModelURI")                     << this->ai_model->model_uri().string;
-	SetValue<std::string>(s, "DefaultModelGUID")             << this->ai_default_model_guid;
 	s.endGroup();
 
 #ifdef Q_OS_WIN
@@ -297,30 +238,23 @@ AiApiKeys::KeyFrom AiApiKeys::parseKeyFrom(QString const &symbol)
 	return KeyFrom::Default;
 }
 
-bool AiApiKeys::load(std::string const &key, MySettings *s)
+static constexpr char const *api_keys_bin_filename = "apikeys.bin";
+
+bool AiApiKeys::load(localvault::Vault *vault)
 {
-	map.clear();
+	QString dir = global->app_secret_config_dir;
 	
-	constexpr bool READ_INI = false;
-	
-	QString secret_dir = global->app_secret_config_dir;
-	if (QFileInfo(secret_dir).isDir()) {
-		QString in_file = secret_dir / api_keys_bin;
-		if (READ_INI) {
-			in_file = secret_dir / "apikeys.ini";
-		}
-		QFile file(in_file);
-		if (file.open(QIODevice::ReadOnly)) {
-			QByteArray ba = file.readAll();
-			
-			std::vector<char> vec;
-			if (READ_INI) {
-				vec = std::vector<char>(ba.constData(), ba.constData() + ba.size());
-			} else {
-				vec = easycrypto::decrypt(key, std::string_view(ba.constData(), ba.size()));
-			}
-			
-			MemoryReader buffer(vec.data(), vec.size());
+	QFile file(dir / api_keys_bin_filename);
+	if (file.open(QIODevice::ReadOnly)) {
+		localvault::Blob encrypted;
+		QByteArray ba = file.readAll();
+		encrypted.assign(ba.constData(), ba.constData() + ba.size());
+		file.close();
+
+		localvault::SecureBuffer decrypted;
+		localvault::VaultError err = vault->decryptToSecureBuffer(encrypted, &decrypted);
+		if (err == localvault::VaultError::None) {
+			MemoryReader buffer((char const *)decrypted.data(), decrypted.size());
 			buffer.open(QIODevice::ReadOnly);
 			while (!buffer.atEnd()) {
 				QByteArray line = buffer.readLine().trimmed();
@@ -331,26 +265,13 @@ bool AiApiKeys::load(std::string const &key, MySettings *s)
 					map[envname].api_key = api_key;
 				}
 			}
-			
-			if (s) {
-				s->beginGroup("AI");
-				for (auto &pair : map) {
-					std::string const &env_name = pair.first;
-					AiApiKeys::Item *aikey = &pair.second;
-					auto keyfrom = s->value((QS)fmt("Use_%s")(env_name)).toString();
-					aikey->from = parseKeyFrom(keyfrom);
-				}
-				s->endGroup();
-			}
-
 			return true;
 		}
 	}
 	return false;
 }
 
-
-bool AiApiKeys::save(std::string const &key, MySettings *s) const
+bool AiApiKeys::save(localvault::Vault *vault)
 {
 	auto MKPATH = [&](const QString &path) {
 		if (!QFileInfo(path).isDir()) {
@@ -363,44 +284,33 @@ bool AiApiKeys::save(std::string const &key, MySettings *s) const
 
 	bool ret = false;
 	
+	QByteArray ba;
+	{
+		QBuffer buffer;
+		buffer.open(QIODevice::WriteOnly);
+		for (auto const &pair : map) {
+			std::string line = fmt("%s=%s\n")(pair.first)(misc::trimmed(pair.second.api_key));
+			buffer.write(line.c_str(), line.size());
+		}
+		ba = buffer.buffer();
+	}
+	
 	QString secret_dir = global->app_secret_config_dir;
-	if (MKPATH(secret_dir)) {
-		QString in_file = secret_dir / api_keys_bin;
-		QFile file(in_file);
-		if (file.open(QIODevice::WriteOnly | QIODevice::Truncate)) {
-			QByteArray ba;
-			{
-				QBuffer buffer;
-				buffer.open(QIODevice::WriteOnly);
-				for (auto const &pair : map) {
-					std::string line = fmt("%s=%s\n")(pair.first)(misc::trimmed(pair.second.api_key));
-					buffer.write(line.c_str(), line.size());
-				}
-				ba = buffer.buffer();
-			}
-			
-			std::vector<char> vec = easycrypto::encrypt(key, std::string_view(ba.constData(), ba.size()));
-			
-			file.write(vec.data(), vec.size());
-			file.close();
+	
+	localvault::SecureBuffer secret((void const *)ba.constData(), ba.size());
+	QFile file(secret_dir / api_keys_bin_filename);
+	if (file.open(QIODevice::WriteOnly | QIODevice::Truncate)) {
+		localvault::Blob encrypted;
+		localvault::VaultError err = vault->encrypt(secret, &encrypted);
+		if (err == localvault::VaultError::None) {
+			file.write(encrypted.data(), encrypted.size());
 			ret = true;
 		}
-		
-		QFile(secret_dir).setPermissions(QFile::ReadOwner | QFile::WriteOwner | QFile::ExeOwner); // 所有者のみ読み書きと実行可
-		QFile(in_file).setPermissions(QFile::ReadOwner | QFile::WriteOwner); // 所有者のみ読み書き可
-		
-		if (s) {
-			s->beginGroup("AI");
-			for (auto const &pair : map) {
-				std::string const &envname = pair.first;
-				AiApiKeys::Item const &aikey = pair.second;
-				QString keyfrom = symbolKeyFrom(aikey.from);
-				s->setValue((QS)fmt("Use_%s")(envname), keyfrom);
-			}
-			s->endGroup();
-		}
+		file.close();
 	}
-
+	
 	return ret;
 }
+
+
 

@@ -352,7 +352,7 @@ void SelectAiModelDialog::on_cred_key_method_changed()
 	if (ui->radioButton_cred_environ->isChecked()) {
 		conf->api_key_method = key_store_environment;
 	} else if (ui->radioButton_cred_custom->isChecked()) {
-		conf->api_key_method = key_store_obfuscated;
+		conf->api_key_method = key_store_encryption;
 	}
 	
 	Credential cred = global->get_ai_credential(conf->model);
@@ -679,17 +679,20 @@ std::string SelectAiModelDialog::query_api_key(std::string const &symbol, bool e
 		if (e) return e;
 	} else {
 		AiApiKeys ai_api_keys;
-		ai_api_keys.load((std::string)api_key_obfuscation_key, nullptr);
+		global->load_api_keys(this, &ai_api_keys);
 		auto opt = ai_api_keys.get_api_key(symbol);
 		if (opt) return opt->api_key;
 	}
 	return {};
 }
 
-void SelectAiModelDialog::save_api_keys(std::string const &key, std::vector<ModelConf> const &items, std::map<QString, QString> const &api_key_map)
+void SelectAiModelDialog::save_api_keys()
 {
+	std::vector<ModelConf> const &items = m->items;
+	std::map<QString, QString> const &api_key_map = m->api_key_map;
+	
 	AiApiKeys ai_api_keys;
-	ai_api_keys.load(key, nullptr);
+	global->load_api_keys(this, &ai_api_keys);
 	
 	for (SelectAiModelDialog::ModelConf const &conf : items) {
 		if (conf.api_key_method == key_store_environment) {
@@ -706,7 +709,7 @@ void SelectAiModelDialog::save_api_keys(std::string const &key, std::vector<Mode
 		}
 	}
 	
-	ai_api_keys.save((std::string)api_key_obfuscation_key, nullptr);
+	global->save_api_keys(this, ai_api_keys);
 }
 
 QString SelectAiModelDialog::aimodels_json_path() const
@@ -714,18 +717,18 @@ QString SelectAiModelDialog::aimodels_json_path() const
 	return global->aimodels_json_path();
 }
 
-void SelectAiModelDialog::load()
+void SelectAiModelDialog::save(QWidget *parent)
 {
-	auto opt = GenerativeAI::ModelConf::load(aimodels_json_path().toStdString().c_str());
+	GenerativeAI::ModelConf::save(parent, aimodels_json_path().toStdString().c_str(), m->items);
+	save_api_keys();
+}
+
+void SelectAiModelDialog::load(QWidget *parent)
+{
+	auto opt = GenerativeAI::ModelConf::load(parent, aimodels_json_path().toStdString().c_str());
 	if (opt) {
 		m->items = *opt;
 	}
-}
-
-void SelectAiModelDialog::save()
-{
-	GenerativeAI::ModelConf::save(aimodels_json_path().toStdString().c_str(), m->items);
-	save_api_keys((std::string)api_key_obfuscation_key, m->items, m->api_key_map);
 }
 
 void SelectAiModelDialog::updateListWidget(std::string const &def)
@@ -755,17 +758,22 @@ void SelectAiModelDialog::updateListWidget(std::string const &def)
 	}
 }
 
-int SelectAiModelDialog::exec()
+int SelectAiModelDialog::exec(QWidget *parent)
 {
+	constexpr char const *kDefaultModelGUID = "DefaultModelGUID";
+	
+	localvault::Vault *vault = global->unlockVault(parent);
+	if (!vault) return QDialog::Rejected;
+	
 	std::string fav;
 	{
 		MySettings s;
 		s.beginGroup("AI");
-		fav = s.value("DefaultModelGUID").toString().toStdString();
+		fav = s.value(kDefaultModelGUID).toString().toStdString();
 		s.endGroup();
 	}
 	
-	load();
+	load(parent);
 
 	updateListWidget(fav);
 	
@@ -774,11 +782,11 @@ int SelectAiModelDialog::exec()
 	auto ret = QDialog::exec();
 	
 	if (ret == QDialog::Accepted) {
-		save();
+		save(parent);
 
 		MySettings s;
 		s.beginGroup("AI");
-		s.setValue("DefaultModelGUID", QString::fromStdString(m->default_model_guid));
+		s.setValue(kDefaultModelGUID, QString::fromStdString(m->default_model_guid));
 		s.endGroup();
 	}
 	
@@ -787,15 +795,15 @@ int SelectAiModelDialog::exec()
 
 void SelectAiModelDialog::on_pushButton_manage_api_keys_clicked()
 {
-	std::string key = (std::string)api_key_obfuscation_key;
+	save_api_keys(); // 現在までの変更を確定
 	
 	AiApiKeys ai_api_keys;
-	ai_api_keys.load(key, nullptr);
+	global->load_api_keys(this, &ai_api_keys);
 	
 	ManageApiKeysDialog dlg(this, ai_api_keys);
 	if (dlg.exec() == QDialog::Accepted) {
 		ai_api_keys = dlg.api_keys();
-		ai_api_keys.save(key, nullptr);
+		global->save_api_keys(this, ai_api_keys);
 		on_cred_key_method_changed();
 	}
 }

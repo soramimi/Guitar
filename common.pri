@@ -13,3 +13,4 @@ msvc:DEFINES += NOMINMAX
 msvc:INCLUDEPATH += C:/vcpkg/installed/x64-windows/include
 msvc:LIBS += -LC:/vcpkg/installed/x64-windows/lib
 
+linux|macx:CONFIG += link_pkgconfig

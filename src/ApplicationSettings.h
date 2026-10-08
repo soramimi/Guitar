@@ -7,9 +7,12 @@
 #include <memory>
 #include <optional>
 
+#include <vault/Vault.h>
+
 #define ORGANIZATION_NAME "soramimi.jp"
 #define APPLICATION_NAME "Guitar"
 
+class QWidget;
 class MySettings;
 
 namespace GenerativeAI {
@@ -33,7 +36,7 @@ public:
 	QString config_file_path;
 };
 
-static constexpr std::string_view api_key_obfuscation_key = "obfuscation key qwerty123";
+// static constexpr std::string_view api_key_obfuscation_key = "obfuscation key qwerty123";
 
 class AiApiKeys {
 public:
@@ -55,9 +58,9 @@ public:
 	};
 
 	std::map<std::string, Item> map; // key is env_name
-
-	bool load(const std::string &key, MySettings *s);
-	bool save(const std::string &key, MySettings *s) const;
+	
+	bool load(localvault::Vault *vault);
+	bool save(localvault::Vault *vault);
 	
 	std::optional<Item> get_api_key(const std::string &env_name) const
 	{

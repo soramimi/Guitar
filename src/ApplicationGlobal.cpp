@@ -16,6 +16,8 @@
 #include <common/misc.h>
 #include <common/joinpath.h>
 #include <QFontDatabase>
+#include <QMessageBox>
+#include <SecureStoreGUI.h>
 #include <memory>
 
 namespace ver {
@@ -221,7 +223,45 @@ QString ApplicationGlobal::aimodels_json_path() const
 	return app_secret_config_dir / "aimodels.json";
 }
 
+//
 
+localvault::Vault *ApplicationGlobal::unlockVault(QWidget *parent)
+{
+	if (!global->vault) {
+		QString confdir = global->app_secret_config_dir;
+		QString schema = "jp.soramimi.GenerativeAI";
+		
+		constexpr bool force_file_backend = true;
+		localvault::SecureStoreGUI store(parent, force_file_backend);
+		
+		global->vault = store.execUnlock(confdir, schema);
+		if (!global->vault) {
+			QMessageBox::critical(parent, QApplication::tr("Vault Error"), QApplication::tr("Failed to unlock the Vault. Please check your Vault configuration."));
+			return nullptr;
+		}
+	}
+	return global->vault.vault.get();
+}
+
+bool ApplicationGlobal::load_api_keys(QWidget *parent, AiApiKeys *apikeys)
+{
+	*apikeys = {};
+	
+	auto *vault = global->unlockVault(parent);
+	if (!vault) return false;
+	
+	return apikeys->load(vault);
+}
+
+bool ApplicationGlobal::save_api_keys(QWidget *parent, const AiApiKeys &apikeys)
+{
+	auto *vault = global->unlockVault(parent);
+	if (!vault) return false;
+	
+	return const_cast<AiApiKeys &>(apikeys).save(vault);
+}
+
+//
 
 void GlobalSetOverrideWaitCursor()
 {

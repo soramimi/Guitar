@@ -163,7 +163,8 @@ void CommitDialog::on_pushButton_generate_with_ai_clicked()
 	GenerateCommitMessageDialog dlg(this);
 	dlg.setCommitIDs(commits_);
 	dlg.show();
-	dlg.generate();
+	if (!dlg.generate()) return; // 初回の推論
+	
 	if (dlg.exec() == QDialog::Accepted) {
 		QStringList list = dlg.message();
 		if (!list.isEmpty()) {

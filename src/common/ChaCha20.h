@@ -16,6 +16,7 @@ protected:
 	void init_state();
 public:
 	ChaCha20();
+	void reset();
 	uint32_t next_u32();
 };
 

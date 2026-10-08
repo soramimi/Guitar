@@ -35,18 +35,18 @@ private:
 	ModelConf *current_modelconf();
 	bool set_current_modelconf(const ModelConf &newconf);
 	void update_api_endpoint_url();
-	static std::string query_api_key(const std::string &symbol, bool env);
+	std::string query_api_key(const std::string &symbol, bool env);
 	
 	QString aimodels_json_path() const;
 	
-	static void save_api_keys(std::string const &key, std::vector<ModelConf> const &items, const std::map<QString, QString> &api_key_map);
+	void save_api_keys();
 	std::string default_model_guid() const;
 public:
 	explicit SelectAiModelDialog(QWidget *parent);
 	~SelectAiModelDialog();
-
-	void load();
-	void save();
+	
+	void load(QWidget *parent);
+	void save(QWidget *parent);
 private slots:
 	void on_checkBox_show_api_key_clicked();
 	void on_comboBox_api_type_currentIndexChanged(int index);
@@ -72,7 +72,7 @@ private slots:
 	void on_pushButton_set_as_default_clicked();
 	
 public slots:
-	int exec();
+	int exec(QWidget *parent);
 };
 
 #endif // SELECTAIMODELDIALOG_H

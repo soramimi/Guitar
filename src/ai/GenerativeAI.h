@@ -5,9 +5,12 @@
 #include <string>
 #include <vector>
 
+class QWidget;
+
 namespace GenerativeAI {
 
 enum class ProviderID {
+	Invalid,
 	Custom,
 	OpenAI,
 	OpenAI_responses,
@@ -103,7 +106,6 @@ static inline ProviderID parse_api_type(std::string_view at)
 }
 
 static constexpr std::string_view key_store_environment = "environment";
-static constexpr std::string_view key_store_obfuscated = "obfuscation";
 static constexpr std::string_view key_store_encryption = "encryption";
 
 struct ProviderInfo {
@@ -148,14 +150,14 @@ struct Model {
 	std::string endpoint_url_;
 	
 	Model()
-		: provider_info_(provider_info(ProviderID::Custom))
+		: provider_info_(provider_info(ProviderID::Invalid))
 	{}
 	Model(ProviderID provider, const std::string &model_uri);
 	void operator = (std::string const &) = delete;
 
 	explicit operator bool () const
 	{
-		return provider_info_ && provider_info_->id != ProviderID::Custom;
+		return provider_info_ && provider_info_->id != ProviderID::Invalid;
 	}
 
 	void parse_model(std::string const &model_uri);
@@ -177,7 +179,7 @@ struct Model {
 
 	ProviderID provider_id() const
 	{
-		return provider_info_ ? provider_info_->id : ProviderID::Custom;
+		return provider_info_ ? provider_info_->id : ProviderID::Invalid;
 	}
 	
 	std::string provider_description() const
@@ -245,8 +247,8 @@ struct ModelConf {
 	std::string api_key_method;
 	GenerativeAI::Model model;
 	
-	static std::optional<std::vector<ModelConf>> load(char const *path);
-	static void save(const char *path, std::vector<ModelConf> const &items);
+	static std::optional<std::vector<ModelConf>> load(QWidget *parent, char const *path);
+	static void save(QWidget *parent, const char *path, std::vector<ModelConf> const &items);
 };
 
 struct EndPoint {

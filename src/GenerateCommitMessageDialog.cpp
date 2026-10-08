@@ -8,6 +8,9 @@
 #include <ai/GenerativeAI.h>
 #include <common/joinpath.h>
 #include <common/q/helper.h>
+#include "vault/Vault.h"
+#include <SecureStoreGUI.h>
+#include <memory>
 
 namespace {
 QListWidgetItem *new_QListWidgetItem(QString const &text)
@@ -37,7 +40,7 @@ GenerateCommitMessageDialog::GenerateCommitMessageDialog(QWidget *parent)
 	int default_index;
 	std::vector<GenerativeAI::ModelConf> models;
 	QString path = global->aimodels_json_path();
-	auto opt = GenerativeAI::ModelConf::load(path.toStdString().c_str());
+	auto opt = GenerativeAI::ModelConf::load(this, path.toStdString().c_str());
 	if (opt) {
 		std::string guid;
 		{
@@ -93,21 +96,29 @@ void GenerateCommitMessageDialog::updateModels(std::vector<GenerativeAI::ModelCo
 	ui->comboBox_ai_models->setCurrentIndex(default_index);
 }
 
-std::tuple<GenerativeAI::Model, GenerativeAI::Credential> GenerateCommitMessageDialog::ai_model() const
+std::tuple<GenerativeAI::Model, GenerativeAI::Credential> GenerateCommitMessageDialog::ai_model()
 {
 	int index = ui->comboBox_ai_models->currentIndex();
+	if (index < 0) {
+		index = 0;
+		ui->comboBox_ai_models->setCurrentIndex(index);
+	}
 
-	auto QueryApiKey = [](std::string const &symbol, bool env)-> std::string {
+	auto QueryApiKey = [&](std::string const &symbol, bool env)-> std::optional<std::string> {
 		if (env) {
 			char const *e = std::getenv(symbol.c_str());
 			if (e) return e;
-		} else {
+		} else if (!symbol.empty()) {
+			auto *vault = global->unlockVault(this); // Vault をアンロックして取得
+			if (!vault) return std::nullopt;
+			
 			AiApiKeys ai_api_keys;
-			ai_api_keys.load((std::string)api_key_obfuscation_key, nullptr);
-			auto opt = ai_api_keys.get_api_key(symbol);
-			if (opt) return opt->api_key;
+			if (ai_api_keys.load(vault)) { // Vault から API キーを読み込む
+				auto opt = ai_api_keys.get_api_key(symbol);
+				if (opt) return opt->api_key;
+			}
 		}
-		return {};
+		return std::string();
 	};
 	
 	{
@@ -120,12 +131,16 @@ std::tuple<GenerativeAI::Model, GenerativeAI::Credential> GenerateCommitMessageD
 		}
 		
 		QString path = global->aimodels_json_path();
-		std::optional<std::vector<GenerativeAI::ModelConf>> opt = GenerativeAI::ModelConf::load(path.toStdString().c_str());
+		std::optional<std::vector<GenerativeAI::ModelConf>> opt = GenerativeAI::ModelConf::load(this, path.toStdString().c_str());
 		if (opt) {
 			if (index >= 0 && (size_t)index < opt->size()) {
 				GenerativeAI::ModelConf const &conf = (*opt)[index];
 				GenerativeAI::Credential cred;
-				cred.api_key = QueryApiKey(conf.api_key_symbol, conf.api_key_method == GenerativeAI::key_store_environment);
+				if (!conf.api_key_symbol.empty()) {
+					auto opt = QueryApiKey(conf.api_key_symbol, conf.api_key_method == GenerativeAI::key_store_environment);
+					if (!opt) return {};
+					cred.api_key = *opt;
+				}
 				return {conf.model, cred};
 			}
 		}
@@ -134,7 +149,7 @@ std::tuple<GenerativeAI::Model, GenerativeAI::Credential> GenerateCommitMessageD
 	return {*global->appsettings.ai_model, {}};
 }
 
-void GenerateCommitMessageDialog::_generate(std::string const &diff, std::string const &status_s_u)
+bool GenerateCommitMessageDialog::_generate(std::string const &diff, std::string const &status_s_u)
 {
 	m->diff = diff;
 	m->status_s_u = status_s_u;
@@ -145,8 +160,6 @@ void GenerateCommitMessageDialog::_generate(std::string const &diff, std::string
 		hint = ui->lineEdit_hint->text().toStdString();
 	}
 	
-	GlobalSetOverrideWaitCursor();
-
 	m->checked_items = message();
 
 	ui->listWidget->clear();
@@ -160,16 +173,20 @@ void GenerateCommitMessageDialog::_generate(std::string const &diff, std::string
 	ui->pushButton_regenerate->setEnabled(false);
 	
 	auto [model, cred] = ai_model();
+	if (!model) return false; // canceled
+	
+	GlobalSetOverrideWaitCursor();
 	m->generator.request(model, cred, diff, status_s_u, hint);
+	return true;
 }
 
-void GenerateCommitMessageDialog::generate()
+bool GenerateCommitMessageDialog::generate()
 {
 	GitRunner g = global->mainwindow->git();
 	std::string diff = CommitMessageGenerator::make_diff(g, m->commits);
 	std::string status_s_u;
 	g.status_s_u(&status_s_u);
-	_generate(diff, status_s_u);
+	return _generate(diff, status_s_u);
 }
 
 std::string GenerateCommitMessageDialog::diffText() const

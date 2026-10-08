@@ -6,9 +6,12 @@
 #include "ApplicationSettings.h"
 #include "AvatarLoader.h"
 #include "Git.h"
+#include "vault/Vault.h"
 #include <QColor>
 #include <QString>
+#include <app/BackendSelector.h>
 #include <inet/webclient.h>
+#include <SecureStoreGUI.h>
 #include <memory>
 #include <subprojects/FileTypePlugin/src/FileType.h>
 #include <subprojects/IncrementalSearchPlugin/src/IncrementalSearch.h>
@@ -19,6 +22,10 @@
 
 class IncrementalSearch;
 class OnePassword;
+
+namespace localvault {
+class Vault;
+}
 
 #ifdef APP_GUITAR
 #include "Theme.h"
@@ -148,6 +155,13 @@ public:
 	}
 
 	QString aimodels_json_path() const;
+	localvault::VaultWithBackend vault;
+	
+	localvault::Vault *unlockVault(QWidget *parent);
+	
+	static bool load_api_keys(QWidget *parent, AiApiKeys *apikeys);
+	static bool save_api_keys(QWidget *parent, const AiApiKeys &apikeys);
+	
 };
 
 void GlobalSetOverrideWaitCursor();

@@ -1,0 +1,15 @@
+.qtcreator/
+build/
+*.o
+.localvault/
+.qmake.stash
+Makefile
+example.decoded.txt
+example.encoded.bin
+localvault
+moc_*
+localvault-review.Makefile
+_bin/
+qmake/Makefile.*
+qmake/release/
+qmake/debug/

@@ -6,6 +6,8 @@
 #include <sys/stat.h>
 #include <common/jstream.h>
 #include <regex>
+#include <vault/SecureBuffer.h>
+#include <gui/SecureStoreGUI.h>
 
 namespace GenerativeAI {
 
@@ -28,10 +30,11 @@ const std::vector<ProviderInfo> &complete_provider_table()
 {
 	static const std::vector<ProviderInfo> provider_info = {
 		// id                                      tag                                description                       env_name
+		{ProviderID::Invalid,                      "invalid",                         "Invalid",                          ""},
 		{ProviderID::Custom,                       "custom",                          "Custom",                           ""},
-		{ProviderID::OpenAI,                       "",                                "OpenAI",                           "OPENAI_API_KEY"}, // placeholder
-		{ProviderID::OpenAI_responses,             "openai-responses",                "OpenAI / GPT (responses)",         "OPENAI_API_KEY"},
-		{ProviderID::OpenAI_chat_completions,      "openai-chat-completions",         "OpenAI / GPT (chat completions)",  "OPENAI_API_KEY"},
+		{ProviderID::OpenAI,                       "openai",                          "OpenAI",                           "OPENAI_API_KEY"},
+		// {ProviderID::OpenAI_responses,             "openai-responses",                "OpenAI / GPT (responses)",         "OPENAI_API_KEY"},
+		// {ProviderID::OpenAI_chat_completions,      "openai-chat-completions",         "OpenAI / GPT (chat completions)",  "OPENAI_API_KEY"},
 		{ProviderID::Anthropic,                    "anthropic",                       "Anthropic / Claude",               "ANTHROPIC_API_KEY"},
 		{ProviderID::Google,                       "google",                          "Google / Gemini",                  "GEMINI_API_KEY"},
 		{ProviderID::DeepSeek,                     "deepseek",                        "DeepSeek",                         "DEEPSEEK_API_KEY"},
@@ -58,7 +61,7 @@ ProviderID provider_id(std::string_view name)
 			return info.id;
 		}
 	}
-	return ProviderID::Custom;
+	return ProviderID::Invalid;
 }
 
 ProviderID api_compatibility(ProviderID pid)
@@ -120,7 +123,7 @@ std::vector<Model> const &ai_model_presets()
  */
 std::vector<ProviderID> const &ai_provider_id_list_for_present_to_users()
 {
-	static std::vector<ProviderID> providers = { // Unknownは必要。placeholderを含まない。
+	static std::vector<ProviderID> providers = {
 		ProviderID::Custom,
 		ProviderID::OpenAI_responses,
 		ProviderID::OpenAI_chat_completions,
@@ -267,7 +270,7 @@ void Model::set_endpoint_url(const std::string &url)
 /**
  * @brief AIプロバイダIDに対応するプロバイダ情報を返す。
  * @param id 検索対象のAIプロバイダID。
- * @return 対応する ProviderInfo へのポインタ。見つからない場合は Unknown エントリを返す。
+ * @return 対応する ProviderInfo へのポインタ。見つからない場合は Invalid エントリを返す。
  */
 ProviderInfo const *provider_info(ProviderID id)
 {
@@ -277,7 +280,7 @@ ProviderInfo const *provider_info(ProviderID id)
 			return &p;
 		}
 	}
-	return &vec[0]; // Unknown
+	return &vec[0]; // Invalid
 }
 
 /**
@@ -314,7 +317,7 @@ struct _ApiBaseUrl : public AbstractVisitor<std::string> {
 
 	std::string case_Custom()
 	{
-		return {};
+		return _generic_host_and_port();
 	}
 	std::string case_OpenAI()
 	{
@@ -700,17 +703,18 @@ std::string EndPoint::url_models(Credential const &cred, std::string const &curs
 	return url;
 }
 
-std::optional<std::vector<ModelConf>> ModelConf::load(char const *path)
+std::optional<std::vector<ModelConf>> ModelConf::load(QWidget *parent, char const *path)
 {
 	std::vector<ModelConf> items;
-	
+
 	FILE *fp = fopen(path, "r");
 	if (fp) {
 		struct stat st;
 		if (fstat(fileno(fp), &st) == 0) {
 			std::vector<char> buf(st.st_size);
 			fread(buf.data(), 1, buf.size(), fp);
-			jstream::Reader r(buf.data(), buf.size());
+			jstream::Reader r((char const *)buf.data(), buf.size());
+			// jstream::Reader r(
 			std::string provider;
 			std::string model;
 			std::string ep_url;
@@ -757,7 +761,7 @@ std::optional<std::vector<ModelConf>> ModelConf::load(char const *path)
 	return std::nullopt;
 }
 
-void ModelConf::save(char const *path, const std::vector<ModelConf> &items)
+void ModelConf::save(QWidget *parent, char const *path, const std::vector<ModelConf> &items)
 {
 	jstream::Writer w;
 	w.object({}, [&](){
@@ -778,9 +782,9 @@ void ModelConf::save(char const *path, const std::vector<ModelConf> &items)
 			}
 		});
 	});
+	std::string json = w;
 	FILE *fp = fopen(path, "w");
 	if (fp) {
-		std::string json = w;
 		fwrite(json.c_str(), 1, json.size(), fp);
 		fclose(fp);
 	}

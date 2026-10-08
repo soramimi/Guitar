@@ -27,73 +27,77 @@
      </property>
      <layout class="QVBoxLayout" name="verticalLayout">
       <item>
-       <layout class="QGridLayout" name="gridLayout">
-        <item row="2" column="1">
-         <widget class="QComboBox" name="comboBox_provider">
-          <property name="sizePolicy">
-           <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
-            <horstretch>0</horstretch>
-            <verstretch>0</verstretch>
-           </sizepolicy>
+       <widget class="QPushButton" name="pushButton_model_config">
+        <property name="text">
+         <string>Model Configuration...</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="Line" name="line">
+        <property name="orientation">
+         <enum>Qt::Orientation::Horizontal</enum>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <layout class="QHBoxLayout" name="horizontalLayout">
+        <item>
+         <spacer name="horizontalSpacer">
+          <property name="orientation">
+           <enum>Qt::Orientation::Horizontal</enum>
           </property>
-         </widget>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>40</width>
+            <height>20</height>
+           </size>
+          </property>
+         </spacer>
         </item>
-        <item row="1" column="1">
-         <widget class="QComboBox" name="comboBox_ai_model">
-          <property name="sizePolicy">
-           <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
-            <horstretch>0</horstretch>
-            <verstretch>0</verstretch>
-           </sizepolicy>
-          </property>
-          <property name="editable">
-           <bool>true</bool>
-          </property>
-         </widget>
-        </item>
-        <item row="2" column="0">
-         <widget class="QLabel" name="label_2">
-          <property name="text">
-           <string>Provider</string>
-          </property>
-         </widget>
-        </item>
-        <item row="1" column="0">
-         <widget class="QLabel" name="label_3">
-          <property name="text">
-           <string>Model</string>
-          </property>
-         </widget>
+        <item>
+         <layout class="QVBoxLayout" name="verticalLayout_3">
+          <item>
+           <widget class="QPushButton" name="pushButton_change_pin">
+            <property name="text">
+             <string>Change PIN...</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="pushButton_lock_vault">
+            <property name="text">
+             <string>Lock the vault</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="Line" name="line_2">
+            <property name="orientation">
+             <enum>Qt::Orientation::Horizontal</enum>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="pushButton_destroy_vault">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
+            <property name="text">
+             <string>Destroy the vault</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QCheckBox" name="checkBox_confirm_destroy_vault">
+            <property name="text">
+             <string>Confirm</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
         </item>
        </layout>
-      </item>
-      <item>
-       <widget class="QLabel" name="label">
-        <property name="text">
-         <string>API Key</string>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QRadioButton" name="radioButton_use_environment_value">
-        <property name="text">
-         <string>Use API_KEY environment value</string>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QRadioButton" name="radioButton_use_custom_api_key">
-        <property name="text">
-         <string>Custom API key</string>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QLineEdit" name="lineEdit_api_key">
-        <property name="echoMode">
-         <enum>QLineEdit::EchoMode::Password</enum>
-        </property>
-       </widget>
       </item>
      </layout>
     </widget>
@@ -115,11 +119,11 @@
  </widget>
  <tabstops>
   <tabstop>groupBox_generate_commit_message_by_ai</tabstop>
-  <tabstop>comboBox_ai_model</tabstop>
-  <tabstop>comboBox_provider</tabstop>
-  <tabstop>radioButton_use_environment_value</tabstop>
-  <tabstop>radioButton_use_custom_api_key</tabstop>
-  <tabstop>lineEdit_api_key</tabstop>
+  <tabstop>pushButton_model_config</tabstop>
+  <tabstop>pushButton_change_pin</tabstop>
+  <tabstop>pushButton_lock_vault</tabstop>
+  <tabstop>pushButton_destroy_vault</tabstop>
+  <tabstop>checkBox_confirm_destroy_vault</tabstop>
  </tabstops>
  <resources/>
  <connections/>

@@ -39,6 +39,7 @@ INCLUDEPATH += $$SRC
 INCLUDEPATH += $$SRC/common
 INCLUDEPATH += $$SRC/coloredit
 INCLUDEPATH += $$SRC/texteditor
+INCLUDEPATH += $$SRC/localvault/src
 
 win32:INCLUDEPATH += $$PWD/misc/winpty/include
 win32:LIBS += $$PWD/misc/winpty/x64/lib/winpty.lib -lshlwapi
@@ -666,3 +667,5 @@ INCLUDEPATH += $$PROCESS_SRC
 DISTFILES += $$PROCESS_PRI
 include($$PROCESS_PRI)
 
+LOCALVAULT_SRC = $$SRC/localvault/src
+include($$SRC/localvault/qmake/localvault.pri)
