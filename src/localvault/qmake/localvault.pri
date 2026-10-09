@@ -4,7 +4,6 @@ INCLUDEPATH += $$LOCALVAULT_SRC/gui/
 
 HEADERS += \
 	$$LOCALVAULT_SRC/app/BackendSelector.h \
-	$$LOCALVAULT_SRC/gui/PinDialog.h \
 	$$LOCALVAULT_SRC/gui/SecurePinEdit.h \
 	$$LOCALVAULT_SRC/vault/ProcessHardening.h \
 	$$LOCALVAULT_SRC/vault/SecretStorage.h \
@@ -20,7 +19,6 @@ HEADERS += \
 
 SOURCES += \
 	$$LOCALVAULT_SRC/app/BackendSelector.cpp \
-	$$LOCALVAULT_SRC/gui/PinDialog.cpp \
 	$$LOCALVAULT_SRC/gui/SecurePinEdit.cpp \
 	$$LOCALVAULT_SRC/vault/ProcessHardening.cpp \
 	$$LOCALVAULT_SRC/vault/SecureBuffer.cpp \

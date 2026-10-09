@@ -75,32 +75,7 @@ void SettingAiForm::on_pushButton_model_config_clicked()
 	dlg.exec(this);
 }
 
-
-// void SettingAiForm::on_pushButton_setup_pin_clicked()
-// {
-// 	localvault::Vault *vault = global->unlockVault(this);
-// 	if (vault) {
-// 		QMessageBox::information(this, tr("Vault Already Unlocked"), tr("The Vault is already unlocked."));
-// 		return;
-// 	}
-	
-	
-// }
-
-
-void SettingAiForm::on_pushButton_change_pin_clicked()
-{
-	// localvault::Vault *vault = global->unlockVault(this);
-	// if (!vault) {
-	// 	QMessageBox::critical(this, tr("Vault Error"), tr("Failed to unlock the Vault. Please check your Vault configuration."));
-	// 	return;
-	// }
-	
-	ChangePinDialog dlg(this);
-	dlg.exec();
-}
-
-void SettingAiForm::on_pushButton_lock_vault_clicked()
+void SettingAiForm::lockVault()
 {
 	if (global->vault && global->vault.vault->isUnlocked()) {
 		global->vault.vault->lock();
@@ -108,24 +83,49 @@ void SettingAiForm::on_pushButton_lock_vault_clicked()
 	}
 }
 
+void SettingAiForm::on_pushButton_change_pin_clicked()
+{
+	lockVault();
+	
+	ChangePinDialog dlg(this, global->vault_schema(), &global->vault);
+	dlg.exec();
+}
+
+void SettingAiForm::on_pushButton_lock_vault_clicked()
+{
+	lockVault();
+}
+
 void SettingAiForm::on_pushButton_destroy_vault_clicked()
 {
-	on_pushButton_lock_vault_clicked();
-	auto vault = global->unlockVault(this);
-	if (vault) {
-		vault->destroy();
-		global->vault.reset();
-		
-		ui->pushButton_destroy_vault->setEnabled(false);
-		ui->checkBox_confirm_destroy_vault->setChecked(false);
+#if 0
+	auto r = QMessageBox::question(this, tr("Destroy Vault"), tr("Are you sure you want to destroy the Vault? This action cannot be undone."), QMessageBox::Yes | QMessageBox::No);
+	if (r != QMessageBox::Yes) {
+		return;
 	}
+#else
+	QMessageBox mb(QMessageBox::Question, tr("Destroy Vault"), tr("Are you sure you want to destroy the Vault? This action cannot be undone."), QMessageBox::Yes | QMessageBox::No, this);
+	mb.setDefaultButton(QMessageBox::No);
+	if (mb.exec() != QMessageBox::Yes) {
+		goto done;
+	}
+#endif
+	
+	on_pushButton_lock_vault_clicked();
+	{
+		auto vault = global->unlockVault(this);
+		if (vault) {
+			vault->destroy();
+			global->vault.reset();
+		}
+	}
+	
+done:;	
+	ui->pushButton_destroy_vault->setEnabled(false);
+	ui->checkBox_confirm_destroy_vault->setChecked(false);
 }
 
 void SettingAiForm::on_checkBox_confirm_destroy_vault_checkStateChanged(const Qt::CheckState &arg1)
 {
 	ui->pushButton_destroy_vault->setEnabled(arg1 == Qt::Checked);
 }
-
-
-
-

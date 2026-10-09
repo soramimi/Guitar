@@ -31,6 +31,7 @@ private:
 
 	std::filesystem::path filePathForKey(std::string const &key) const;
 	static std::string sanitizeKey(std::string const &key);
+public:
 	static std::filesystem::path defaultConfigDirectory();
 };
 

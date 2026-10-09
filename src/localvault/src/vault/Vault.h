@@ -5,7 +5,6 @@
 #include "SecureBuffer.h"
 #include <cstdint>
 #include <string>
-// #include <memory>
 
 namespace localvault {
 
@@ -64,7 +63,6 @@ enum class VaultState {
 class Vault {
 private:
 	ISecretStorageBackend *backend_;
-	// std::unique_ptr<ISecretStorageBackend> backend_;
 	std::string emkKey_;
 	std::string pendingKey_;
 	SecureBuffer mk_;

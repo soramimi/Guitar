@@ -225,11 +225,16 @@ QString ApplicationGlobal::aimodels_json_path() const
 
 //
 
+QString ApplicationGlobal::vault_schema() const
+{
+	return "jp.soramimi.GenerativeAI";
+}
+
 localvault::Vault *ApplicationGlobal::unlockVault(QWidget *parent)
 {
 	if (!global->vault) {
 		QString confdir = global->app_secret_config_dir;
-		QString schema = "jp.soramimi.GenerativeAI";
+		QString schema = global->vault_schema();
 		
 		constexpr bool force_file_backend = true;
 		localvault::SecureStoreGUI store(parent, force_file_backend);

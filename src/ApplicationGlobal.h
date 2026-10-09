@@ -156,6 +156,7 @@ public:
 
 	QString aimodels_json_path() const;
 	localvault::VaultWithBackend vault;
+	QString vault_schema() const;
 	
 	localvault::Vault *unlockVault(QWidget *parent);
 	

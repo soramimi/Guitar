@@ -9,6 +9,8 @@ ResetVaultDialog::ResetVaultDialog(
 	, ui(new Ui::ResetVaultDialog)
 {
 	ui->setupUi(this);
+	
+	ui->label_no_pin->setVisible(localvault::allow_empty_pin);
 }
 
 ResetVaultDialog::~ResetVaultDialog()

@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>311</width>
-    <height>118</height>
+    <height>137</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -81,6 +81,16 @@
       </widget>
      </item>
     </layout>
+   </item>
+   <item>
+    <widget class="QLabel" name="label_no_pin">
+     <property name="text">
+      <string>Leave blank if no PIN is used.</string>
+     </property>
+     <property name="alignment">
+      <set>Qt::AlignmentFlag::AlignRight|Qt::AlignmentFlag::AlignTrailing|Qt::AlignmentFlag::AlignVCenter</set>
+     </property>
+    </widget>
    </item>
    <item>
     <spacer name="verticalSpacer">

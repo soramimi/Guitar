@@ -1,16 +1,35 @@
 #include "ChangePinDialog.h"
 #include "ui_ChangePinDialog.h"
 #include <vault/SecureBuffer.h>
-#include "ApplicationGlobal.h"
+#include <vault/Vault.h>
+#include <storage/FileBackend.h>
 #include "SecureStoreGUI.h"
 #include <QMessageBox>
 
-ChangePinDialog::ChangePinDialog(
-	QWidget *parent)
+#ifdef APP_GUITAR
+#include "ApplicationGlobal.h"
+static QString getConfigDirectory()
+{
+	return global->app_secret_config_dir;
+	
+}
+#else
+static QString getConfigDirectory()
+{
+	auto path = localvault::FileBackend::defaultConfigDirectory();
+	return localvault::SecureStoreGUI::pathToQString(path);
+}
+#endif
+
+ChangePinDialog::ChangePinDialog(QWidget *parent, QString const &schema, localvault::VaultWithBackend *global_vault)
 	: QDialog(parent)
 	, ui(new Ui::ChangePinDialog)
+	, schema_(schema)
+	, global_vault_(global_vault)
 {
 	ui->setupUi(this);
+	
+	ui->label_no_pin->setVisible(localvault::allow_empty_pin);
 }
 
 ChangePinDialog::~ChangePinDialog()
@@ -32,13 +51,13 @@ void ChangePinDialog::accept()
 		return;
 	}
 	
-	QString confdir = global->app_secret_config_dir;
-	QString schema = "jp.soramimi.GenerativeAI";
+	QString confdir = getConfigDirectory();
+	// QString schema_ = global->vault_schema();
 	
 	constexpr bool force_file_backend = true;
 	localvault::SecureStoreGUI store(this, force_file_backend);
 	
-	auto vault = store.execUnlock2(confdir, schema, std::move(oldPin));
+	auto vault = store.execUnlock2(confdir, schema_, oldPin);
 	if (!vault) {
 		QMessageBox::critical(this, tr("Error"), tr("Failed to unlock the vault with the old PIN."));
 		return;
@@ -46,16 +65,14 @@ void ChangePinDialog::accept()
 	
 	auto r = vault.vault->changePin(oldPin, newPin);
 	if (r == localvault::VaultError::None) {
-		if (global->vault) {
-			global->vault.reset();
+		if (global_vault_) {
+			*global_vault_ = std::move(vault);
 		}
-		global->vault = std::move(vault);
 		QMessageBox::information(this, tr("PIN Changed"), tr("The PIN has been changed successfully."));
 		done(QDialog::Accepted);
 		return;
 	}
-	
+
 	QMessageBox::critical(this, tr("Error"), localvault::SecureStoreGUI::vaultErrorMessage(r));
 }
-
 

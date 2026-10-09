@@ -251,22 +251,16 @@ void localvault::SecureStoreGUI::recordBackend(const BackendSelector &selector, 
 }
 
 /** @return 解除できた場合 true。PIN 誤りは再入力を促し、それ以外のエラーで中断する */
-bool localvault::SecureStoreGUI::unlockVault(Vault *vault, SecureBuffer &&pin)
+bool localvault::SecureStoreGUI::unlockVault(Vault *vault, SecureBuffer const &pin)
 {
 	if (!vault) return false;
-	
-	// if (allow_empty_pin) {
-	// 	// nop: 空のPINを許可する場合
-	// } else {
-	// 	if (pin.empty()) return false;
-	// }
+
 	if (!validate_pin(pin)) return false;
-	
+
 	const VaultError err = vault->unlock(pin);
-	pin.clear();
-	
+
 	if (err == VaultError::None) return true;
-	
+
 	if (err == VaultError::WrongPin) {
 		QMessageBox::warning(parent_, QObject::tr("Unlock Failed"), vaultErrorMessage(err));
 	} else {
@@ -303,26 +297,12 @@ localvault::VaultWithBackend localvault::SecureStoreGUI::execUnlock(QString cons
 			ready = true;
 			break;
 		case VaultState::Locked: {
-				UnlockVaultDialog::Result res = UnlockVaultDialog::Cancel;
-				
 				UnlockVaultDialog dlg(parent_);
 				if (dlg.exec() == QDialog::Rejected) return {};
-				res = dlg.result();
-				
-				if (res == UnlockVaultDialog::Unlock) {
+
+				if (dlg.result() == UnlockVaultDialog::Unlock) {
 					if (unlockVault(vault.get(), dlg.pin())) {
 						ready = true;
-					}
-				} else if (res == UnlockVaultDialog::Reset) {
-					if (resetVault(vault.get())) {
-						recordBackend(selector, &selection);
-						ready = true;
-					}
-				} else if (res == UnlockVaultDialog::Destroy) {
-					if (0) { // disabled
-						if (destroyVault(confdir, schema) == 0) {
-							ready = false;
-						}
 					}
 				} else {
 					return {};
@@ -338,14 +318,14 @@ localvault::VaultWithBackend localvault::SecureStoreGUI::execUnlock(QString cons
 	return {std::move(selection), std::move(vault)};
 }
 
-localvault::VaultWithBackend localvault::SecureStoreGUI::execUnlock2(QString const &confdir, QString const &schema, localvault::SecureBuffer &&pin)
+localvault::VaultWithBackend localvault::SecureStoreGUI::execUnlock2(QString const &confdir, QString const &schema, localvault::SecureBuffer const &pin)
 {
 	BackendSelection selection;
 	BackendSelector selector = makeBackendSelector(confdir, schema);
 	if (!selectBackend(selector, &selection, force_file_backend_)) return {};
-	
+
 	std::unique_ptr<localvault::Vault> vault = std::make_unique<localvault::Vault>(selection.backend.get(), EMK_KEY);
-	
+
 	for (bool ready = false; !ready;) {
 		switch (vault->state()) {
 		case VaultState::BackendUnavailable:
@@ -354,8 +334,11 @@ localvault::VaultWithBackend localvault::SecureStoreGUI::execUnlock2(QString con
 		case VaultState::StorageError:
 			QMessageBox::critical(parent_, QObject::tr("Vault Storage Error"), vaultErrorMessage(VaultError::StorageError));
 			return {};
+		case VaultState::NotSetup:
+			QMessageBox::critical(parent_, QObject::tr("Vault Error"), vaultErrorMessage(VaultError::NotSetup));
+			return {};
 		case VaultState::Locked: {
-				if (!unlockVault(vault.get(), std::move(pin))) {
+				if (!unlockVault(vault.get(), pin)) {
 					return {};
 				}
 				ready = true;
@@ -366,19 +349,12 @@ localvault::VaultWithBackend localvault::SecureStoreGUI::execUnlock2(QString con
 			break;
 		}
 	}
-	
+
 	return {std::move(selection), std::move(vault)};
 }
 
 void localvault::SecureStoreGUI::setForceFileBackend(bool force_file_backend)
 {
 	force_file_backend_ = force_file_backend;
-}
-
-static inline void memxor(uint8_t *dst, uint8_t const *src, size_t len)
-{
-	for (size_t i = 0; i < len; i++) {
-		dst[i] ^= src[i];
-	}
 }
 

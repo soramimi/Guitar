@@ -2,11 +2,10 @@
 #define SECURESTOREGUI_H
 
 #include <QPushButton>
-#include <localvault/src/app/BackendSelector.h>
-#include <localvault/src/gui/PinDialog.h>
-#include <localvault/src/storage/FileBackend.h>
-#include <localvault/src/storage/SystemKeychainBackend.h>
-#include <localvault/src/vault/Vault.h>
+#include <app/BackendSelector.h>
+#include <storage/FileBackend.h>
+#include <storage/SystemKeychainBackend.h>
+#include <vault/Vault.h>
 #include <memory>
 
 namespace localvault {
@@ -51,12 +50,12 @@ private:
 	std::filesystem::path appConfigDirectory();
 	bool selectBackend(const BackendSelector &selector, BackendSelection *selection, bool force_file_backend);
 	void recordBackend(const BackendSelector &selector, BackendSelection *selection);
-	bool unlockVault(Vault *vault, SecureBuffer &&pin);
+	bool unlockVault(Vault *vault, const SecureBuffer &pin);
 	localvault::BackendSelector makeBackendSelector(const QString &confdir, const QString &schema);
 public:
 	SecureStoreGUI(QWidget *parent, bool force_file_backend);
 	VaultWithBackend execUnlock(QString const &confdir, QString const &schema);
-	VaultWithBackend execUnlock2(QString const &confdir, QString const &schema, localvault::SecureBuffer &&pin);
+	VaultWithBackend execUnlock2(QString const &confdir, QString const &schema, localvault::SecureBuffer const &pin);
 	void setForceFileBackend(bool force_file_backend);
 };
 

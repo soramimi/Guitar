@@ -10,7 +10,11 @@ class LocalVaultTest;
 
 namespace localvault {
 
+#ifdef VAULT_ALLOW_EMPTY_PIN
 constexpr bool allow_empty_pin = true;
+#else
+constexpr bool allow_empty_pin = false;
+#endif
 
 namespace secure_memory {
 

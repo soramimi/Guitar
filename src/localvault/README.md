@@ -39,7 +39,12 @@
 ```
 ┌─────────────────────────────────────┐
 │ GUI Layer (QtWidgets)               │
-│  - PinDialog                          │
+│  - SetupVaultDialog                   │
+│  - UnlockVaultDialog                  │
+│  - ResetVaultDialog                   │
+│  - ChangePinDialog                    │
+│  - SecurePinEdit                      │
+│  - SecureStoreGUI                     │
 ├─────────────────────────────────────┤
 │ Application Layer                   │
 │  - Vault API                          │
@@ -75,8 +80,21 @@ localvault/
     ├── app/                     # アプリケーション層（Qt 非依存）
     │   └── BackendSelector.h/cpp
     └── gui/                     # GUI レイヤー（QtWidgets）
-        ├── PinDialog.h/cpp
-        └── SecurePinEdit.h/cpp
+        ├── SecurePinEdit.h/cpp
+        ├── SetupVaultDialog.h/cpp/.ui
+        ├── UnlockVaultDialog.h/cpp/.ui
+        ├── ResetVaultDialog.h/cpp/.ui
+        ├── ChangePinDialog.h/cpp/.ui
+        └── SecureStoreGUI.h/cpp
+```
+
+## 他のアプリからの組み込み
+
+`qmake/localvault.pri` を自分のプロジェクトの `.pro` から include することで、必要なソース・フォーム・ライブラリ設定を一括で読み込めます。include 前に `LOCALVAULT_SRC` に `localvault/src` へのパスを設定してください。
+
+```pro
+LOCALVAULT_SRC = /path/to/localvault/src
+include(/path/to/localvault/qmake/localvault.pri)
 ```
 
 ## ビルド手順
@@ -151,8 +169,8 @@ Vault は `ISecretStorageBackend` を通じて EMK を保存する。保存先�
 #include "vault/SecureBuffer.h"
 
 // 保存先の選択：記録済みならその保存先のみ。未記録なら既存Vaultを探し、なければOSストレージを優先
-BackendSelector selector(configDir, "my-app-emk");
-BackendSelection sel = selector.select();
+BackendSelector selector(configDir, "com.example.myapp.Vault", "my-app-emk");
+BackendSelection sel = selector.select(false);
 switch (sel.status) {
 case BackendSelection::Status::Ok: break;
 case BackendSelection::Status::NeedsFileConsent: /* ユーザーの同意を得たら続行 */ break;
@@ -185,9 +203,9 @@ case VaultState::Unlocked:
 SecureBuffer secret;
 secret.assign("API_KEY", 7);
 Blob encrypted;
-if (vault.encrypt(secret, encrypted) == VaultError::None) {
+if (vault.encrypt(secret, &encrypted) == VaultError::None) {
     SecureBuffer decrypted;
-    if (vault.decryptToSecureBuffer(encrypted, decrypted) == VaultError::None) {
+    if (vault.decryptToSecureBuffer(encrypted, &decrypted) == VaultError::None) {
         // 使用後は decrypted.clear() で明示的に消去
     }
 }
@@ -215,24 +233,36 @@ vault.lock();
 | `AuthenticationFailed` | 暗号文の改ざん、または別のMKで暗号化されたデータ |
 | `MemoryLockFailed` | 鍵用メモリのロック失敗（`RLIMIT_MEMLOCK`） |
 
-### PinDialog
+### GUI ダイアログ
 
-QtWidgets の PIN 入力ダイアログ。Vault から独立しており、`SecureBuffer` で PIN を返す。入力欄は `SecurePinEdit` で、入力を `QString` に保持せず `SecureBuffer` に直接格納する（IME・クリップボード・カーソル移動は無効）。
+Vault 操作専用の QtWidgets ダイアログ群。Vault から独立しており、入力欄は `SecurePinEdit` で、入力を `QString` に保持せず `SecureBuffer` に直接格納する（IME・クリップボード・カーソル移動は無効）。
+
+- `SetupVaultDialog`: 新規 Vault セットアップ（2回入力で確認）
+- `UnlockVaultDialog`: Vault 解除
+- `ResetVaultDialog`: Vault リセット（2回入力で確認）
+- `ChangePinDialog`: PIN 変更
 
 ```cpp
-#include "gui/PinDialog.h"
+#include "gui/SetupVaultDialog.h"
 
-// セットアップ時（2回入力で確認）
-bool ok = false;
-SecureBuffer pin = PinDialog::setupPin(parent, &ok);
-if (ok) {
+SetupVaultDialog dlg(parent);
+if (dlg.exec() == QDialog::Accepted) {
+    SecureBuffer pin = dlg.pin();
     VaultError err = vault.setup(pin);
 }
+```
 
-// 解除時
-SecureBuffer pin = PinDialog::requestPin(parent, &ok);
-if (ok) {
-    VaultError err = vault.unlock(pin);
+### SecureStoreGUI
+
+保存先選択・セットアップ・解除・リセットをまとめて行うユーティリティクラス。アプリケーション側で `Vault` と `BackendSelector` の繋ぎ込みを簡略化する用途を想定している。
+
+```cpp
+#include "gui/SecureStoreGUI.h"
+
+localvault::SecureStoreGUI store(parent, false);
+localvault::VaultWithBackend vault = store.execUnlock(configDir, schema);
+if (vault) {
+    // vault.vault を通じて encrypt/decrypt 等を実行
 }
 ```
 
@@ -352,6 +382,7 @@ if (backend.isAvailable()) {
 - アプリケーションの `main()` 冒頭で `hardenProcess()` を呼び、コアダンプを抑止してください（Linux では同一ユーザーからの ptrace アタッチも拒否されます）。
 - `SecureBuffer::unlock()` はロック解除と同時に内容をゼロクリアします。単独で呼ばず、`clear()` かデストラクタに任せてください。
 - PIN 入力欄（`SecurePinEdit`）は IME に対応していません。
+- 空 PIN の許可・禁止はコンパイル時に選択可能です。空 PIN を許可すると KEK が事実上不要になり、Vault の保護が著しく弱まるため、通常は禁止してください。
 - 可能な限りメモリロック（`mlock` / `VirtualLock`）を利用し、スワップファイルへの漏洩を防いでください。
 - Windows ではテスト出力を表示するためコンソールサブシステムでビルドされます。リリース時は必要に応じて `qmake/localvault.pro` の `CONFIG += console` を削除してください。
 

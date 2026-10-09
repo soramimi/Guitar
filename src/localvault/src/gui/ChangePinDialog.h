@@ -3,23 +3,22 @@
 
 #include <QDialog>
 
+namespace localvault {
+class VaultWithBackend;
+}
+
 namespace Ui { class ChangePinDialog; }
 
-class ChangePinDialog : public QDialog
-{
+class ChangePinDialog : public QDialog {
 	Q_OBJECT
-
-public:
-	explicit ChangePinDialog(QWidget *parent = nullptr);
-	~ChangePinDialog();
-
 private:
 	Ui::ChangePinDialog *ui;
-	
-	// QDialog interface
-public slots:
-	
-	// QDialog interface
+	QString schema_;
+	localvault::VaultWithBackend *global_vault_ = nullptr;
+public:
+	explicit ChangePinDialog(QWidget *parent, QString const &schema, localvault::VaultWithBackend *global_vault);
+	~ChangePinDialog();
+
 public slots:
 	void accept();
 };

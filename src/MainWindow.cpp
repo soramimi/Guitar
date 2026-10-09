@@ -7581,19 +7581,6 @@ void MainWindow::on_action_reset_and_clean_triggered()
 	}
 }
 
-// #include "localvault/src/gui/SecureStoreGUI.h"
-// #include "localvault/src/gui/UnlockVaultDialog.h"
-// #include "localvault/src/vault/SecureBuffer.h"
-
 void MainWindow::test()
 {
-	// std::vector<char> plain;
-	
-	// AiApiKeys keys;
-	// keys.load((std::string)api_key_obfuscation_key, nullptr, &plain);
-	
-	// localvault::SecureBuffer secret(plain.size());
-	// memcpy(secret.data(), plain.data(), plain.size());
-	
-	// localvault::save(this, &secret);
 }

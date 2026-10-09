@@ -40,8 +40,13 @@
 | `src/storage/FileBackend.h/cpp` | ファイルベースフォールバックバックエンド（Phase 2 で追加） |
 | `src/storage/AtomicFile.h/cpp` | 0600作成・fsync・置換renameによるアトミック書き込み（Phase 7 で追加） |
 | `src/storage/SystemKeychainBackend.h/cpp` | OSセキュアストレージバックエンド（Phase 3 で追加） |
-| `src/gui/PinDialog.h/cpp` | PIN入力ダイアログ（Phase 4 で追加） |
 | `src/gui/SecurePinEdit.h/cpp` | 入力をQStringに保持せずSecureBufferへ直接格納するPIN入力ウィジェット（Phase 7 で追加） |
+| `src/gui/SetupVaultDialog.h/cpp/.ui` | Vault 新規セットアップダイアログ（Phase 9 で追加） |
+| `src/gui/UnlockVaultDialog.h/cpp/.ui` | Vault 解除ダイアログ（Phase 9 で追加） |
+| `src/gui/ResetVaultDialog.h/cpp/.ui` | Vault リセットダイアログ（Phase 9 で追加） |
+| `src/gui/ChangePinDialog.h/cpp/.ui` | PIN 変更ダイアログ（Phase 9 で追加） |
+| `src/gui/SecureStoreGUI.h/cpp` | 保存先選択・セットアップ・解除・リセットをまとめて行う GUI ヘルパー（Phase 9 で追加） |
+| `qmake/localvault.pri` | 他のアプリから include するための qmake プロジェクト include ファイル（Phase 9 で追加） |
 | `src/app/BackendSelector.h/cpp` | EMK保存先の選択・記録（Qt 非依存、Phase 7 で追加） |
 | `qmake/localvault.pro` | Qt qmake プロジェクトファイル。`QT += core widgets` |
 
@@ -65,6 +70,13 @@
   - `Vault::encrypt(SecureBuffer const &, Blob &)` を追加
   - 全モジュールを `namespace localvault` に移動
   - GUI 層から libsodium の直接呼び出しを除去（`SecureBuffer::equals()` / `secure_memory::zero()` を使用）
+- **Phase 9**: GUI の強化と再利用性の向上
+  - `PinDialog` を廃止し、専用ダイアログ `SetupVaultDialog` / `UnlockVaultDialog` / `ResetVaultDialog` / `ChangePinDialog` を追加
+  - 保存先選択から Vault 操作までをまとめて行う `SecureStoreGUI` を追加
+  - `Vault` / `ISecretStorageBackend::load` / `AtomicFile::read` 等の出力引数をポインタに統一
+  - `SystemKeychainBackend` にスキーマ名・サービス名の設定関数を追加
+  - 空 PIN の許可・禁止をコンパイル時に選択可能にした
+  - 他アプリからの組み込みを容易にする `qmake/localvault.pri` を追加
 
 ### 既知の課題・未決事項
 
@@ -92,6 +104,7 @@
 - Argon2id（約1秒・256 MiB）が呼び出しスレッドで実行される。GUI では画面が固まるため、本番ではワーカースレッド（`QtConcurrent` 等）から呼ぶこと。Vault はスレッドセーフではないので、同時に複数スレッドから操作しないこと
 - `runGuiDemo` は状態エラー時に `vault.state()` を再取得してメッセージを決めており、判定とメッセージが食い違う可能性がある（デモコードのみ）
 - `SecurePinEdit` にはアクセシビリティ情報（ロール・名前）がない
+- `SecurePinEdit` は Qt デザイナーの都合でグローバル名前空間に属している。`namespace localvault` 方針の例外である
 - `--test` は実際の OS キーリングに `localvault-phase3-*` の項目を作成・削除する。CI では SystemKeychainBackend のテストが SKIP されるか、専用のセッションで実行すること
 - Windows DPAPI バックエンドのキー無害化は `/` `\` `:` の置換のみ（FileBackend より緩い）
 - libsecret 0.21 の `secret_password_search_sync` は、呼び出しごとに内部で 8 バイトのリークを起こす（LeakSanitizer で確認。こちらが受け取るオブジェクトはすべて解放済み）。長時間稼働で問題になる量ではない
@@ -165,9 +178,9 @@
      - `VaultError setup(SecureBuffer const &pin)` — 初回セットアップ（既存EMKは上書きしない）
      - `VaultError unlock(SecureBuffer const &pin)` — PIN で Vault を解除
      - `void lock()` — メモリ上の MK を消去
-     - `VaultError encrypt(SecureBuffer const &plain, Blob &cipher)` — データ暗号化（機密データはこちら）
-     - `VaultError encrypt(Blob const &plain, Blob &cipher)` — データ暗号化（通常メモリ上のデータ用）
-     - `VaultError decryptToSecureBuffer(Blob const &cipher, SecureBuffer &plain)` — データ復号API（平文はSecureBufferに返す）
+     - `VaultError encrypt(SecureBuffer const &plain, Blob *cipher)` — データ暗号化（機密データはこちら）
+     - `VaultError encrypt(Blob const &plain, Blob *cipher)` — データ暗号化（通常メモリ上のデータ用）
+     - `VaultError decryptToSecureBuffer(Blob const &cipher, SecureBuffer *plain)` — データ復号API（平文はSecureBufferに返す）
      - `VaultError changePin(SecureBuffer const &oldPin, SecureBuffer const &newPin)` — PIN変更
      - `VaultError reset(SecureBuffer const &newPin)` — 新しいMKでEMKを置き換える不可逆操作
      - `VaultError destroy()` — EMKを削除する不可逆操作
@@ -243,8 +256,12 @@ localvault/
     │   ├── FileBackend.h/cpp           # Phase 2 で追加
     │   └── SystemKeychainBackend.h/cpp # Phase 3 で追加
     └── gui/                            # GUIレイヤー（QtWidgets）
-    │   ├── PinDialog.h/cpp             # Phase 4 で追加
-    │   └── SecurePinEdit.h/cpp
+    │   ├── SecurePinEdit.h/cpp         # Phase 7 で追加
+    │   ├── SetupVaultDialog.h/cpp/.ui  # Phase 9 で追加
+    │   ├── UnlockVaultDialog.h/cpp/.ui # Phase 9 で追加
+    │   ├── ResetVaultDialog.h/cpp/.ui  # Phase 9 で追加
+    │   ├── ChangePinDialog.h/cpp/.ui   # Phase 9 で追加
+    │   └── SecureStoreGUI.h/cpp        # Phase 9 で追加
     └── app/                            # アプリケーション層（Qt 非依存）
         └── BackendSelector.h/cpp
 ```
@@ -302,6 +319,7 @@ nmake  # または mingw32-make
 - OSセキュアストレージが利用できない場合の `FileBackend` は、PINの総当たりリスクをユーザーが承知の上で使う代替手段とし、新規使用時は同意を得ること。保存キーは英数字・`_`・`.`・`-` のみに無害化され、UNIX ではディレクトリ・ファイルのパーミッションを制限する
 - `SecureBuffer` は `sodium_malloc` で確保するため、1 バッファごとにガードページ分のメモリを消費する。大量の小さなバッファを作らないこと
 - PIN 入力には `QLineEdit` ではなく `SecurePinEdit` を使用する（IME・クリップボードは無効）
+- 空 PIN の許可・禁止はコンパイル時に選択可能である。空 PIN を許可すると KEK が事実上不要になりセキュリティが著しく低下するため、通常は禁止して使用すること
 - 全シンボルは `namespace localvault` に属する。GUI 層から libsodium を直接呼ばず、`SecureBuffer` の API を使うこと
 - Linux の libsecret では、ロック中の項目を `NotFound` と扱ってはならない（新規セットアップへ誘導され既存 EMK を上書きする恐れがある）。`load()` は `SECRET_SEARCH_ALL` で列挙し、ロック中なら `Unavailable` を返す
 - `main()` 冒頭で `hardenProcess()` を呼び、コアダンプを抑止する（Linux では ptrace アタッチも拒否される）

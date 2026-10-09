@@ -7,9 +7,7 @@ UnlockVaultDialog::UnlockVaultDialog(QWidget *parent)
 {
 	ui->setupUi(this);
 	
-	// ui->checkBox_confirm_destroy->setChecked(false);
-	// ui->pushButton_destroy->setEnabled(false);
-	// ui->frame_destroy->setVisible(false);
+	ui->label_no_pin->setVisible(localvault::allow_empty_pin);
 }
 
 UnlockVaultDialog::~UnlockVaultDialog()
@@ -26,26 +24,6 @@ localvault::SecureBuffer UnlockVaultDialog::pin() const
 {
 	return ui->widget->pin();
 }
-
-// void UnlockVaultDialog::on_checkBox_confirm_destroy_checkStateChanged(const Qt::CheckState &arg1)
-// {
-// 	ui->pushButton_destroy->setEnabled(ui->checkBox_confirm_destroy->isChecked());
-// }
-
-// void UnlockVaultDialog::on_pushButton_destroy_clicked()
-// {
-// 	if (ui->checkBox_confirm_destroy->isChecked()) {
-// 		result_ = UnlockVaultDialog::Destroy;
-// 		done(QDialog::Accepted);
-// 	}
-// }
-
-// void UnlockVaultDialog::on_pushButton_reset_pin_clicked()
-// {
-// 	result_ = UnlockVaultDialog::Reset;
-// 	done(QDialog::Accepted);
-// }
-
 
 void UnlockVaultDialog::on_pushButton_unlock_clicked()
 {

@@ -17,12 +17,14 @@
 #endif
 
 #include "app/BackendSelector.h"
-#include "gui/PinDialog.h"
 #include "storage/FileBackend.h"
 #include "storage/SystemKeychainBackend.h"
 #include "vault/ProcessHardening.h"
 #include "vault/SecureBuffer.h"
 #include "vault/Vault.h"
+#include "gui/SetupVaultDialog.h"
+#include "gui/ResetVaultDialog.h"
+#include "gui/UnlockVaultDialog.h"
 
 using namespace localvault;
 
@@ -291,7 +293,11 @@ public:
 		check(vault.setup(pin) == VaultError::AlreadySetup, "Vault refuses to overwrite existing setup while locked");
 
 		check(vault.unlock(pinFromUtf8("wrong")) == VaultError::WrongPin, "Vault unlock with wrong PIN returns WrongPin");
-		check(vault.unlock(SecureBuffer()) == VaultError::InvalidArgument, "Vault unlock with empty PIN returns InvalidArgument");
+		if (allow_empty_pin) {
+			check(vault.unlock(SecureBuffer()) == VaultError::WrongPin, "Vault unlock with empty PIN returns WrongPin when empty PIN is allowed");
+		} else {
+			check(vault.unlock(SecureBuffer()) == VaultError::InvalidArgument, "Vault unlock with empty PIN returns InvalidArgument");
+		}
 	}
 
 	void testVaultChangePin()
@@ -486,43 +492,43 @@ public:
 		QTemporaryDir tempDir;
 		const std::filesystem::path dir = QStringToPath(tempDir.path());
 		auto systemState = std::make_shared<MemoryBackend::State>();
-		BackendSelector selector(dir, EMK_KEY, [systemState] { return std::make_unique<MemoryBackend>(systemState); });
+		BackendSelector selector(dir, "com.example.localvault.Vault", EMK_KEY, [systemState] { return std::make_unique<MemoryBackend>(systemState); });
 		using Status = BackendSelection::Status;
 
 		systemState->available = false;
-		BackendSelection sel = selector.select();
+		BackendSelection sel = selector.select(false);
 		check(sel.status == Status::NeedsFileConsent && sel.kind == BackendKind::File && sel.backend, "BackendSelector requires consent for file fallback");
 
 		systemState->available = true;
-		sel = selector.select();
+		sel = selector.select(false);
 		check(sel.status == Status::Ok && sel.kind == BackendKind::System && !sel.recorded, "BackendSelector proposes system backend");
 		check(selector.record(BackendKind::System) == StorageStatus::Ok, "BackendSelector records backend");
 
 		// 記録済みの保存先が使えない場合、既存のファイル Vault があっても切り替えない
 		FileBackend(dir / "emk").store(EMK_KEY, Blob(1));
 		systemState->available = false;
-		sel = selector.select();
+		sel = selector.select(false);
 		check(sel.status == Status::RecordedBackendUnavailable && sel.kind == BackendKind::System && !sel.backend,
 			"BackendSelector does not fall back when recorded backend unavailable");
 
 		// 記録なし + ファイルに既存 Vault（旧バージョン）→ ファイルを採用して記録
 		check(selector.forget() == StorageStatus::Ok, "BackendSelector forget");
 		systemState->available = true;
-		sel = selector.select();
+		sel = selector.select(false);
 		check(sel.status == Status::Ok && sel.kind == BackendKind::File && sel.recorded, "BackendSelector migrates legacy file vault");
 		systemState->available = false;
-		sel = selector.select();
+		sel = selector.select(false);
 		check(sel.status == Status::Ok && sel.kind == BackendKind::File, "BackendSelector uses recorded file backend");
 
 		// 記録なし + システムに既存 Vault → システムを優先
 		selector.forget();
 		systemState->available = true;
 		systemState->items[EMK_KEY] = Blob(1);
-		sel = selector.select();
+		sel = selector.select(false);
 		check(sel.status == Status::Ok && sel.kind == BackendKind::System && sel.recorded, "BackendSelector prefers existing system vault");
 
 		FileBackend(dir).store("storage-backend", QByteArrayToBlob("bogus\n"));
-		check(selector.select().status == Status::ConfigError, "BackendSelector rejects invalid record");
+		check(selector.select(false).status == Status::ConfigError, "BackendSelector rejects invalid record");
 	}
 
 	void testSystemKeychainBackend()
@@ -653,7 +659,7 @@ static bool selectBackendFromGui(const BackendSelector &selector, BackendSelecti
 {
 	if (!selection) return false;
 	for (;;) {
-		*selection = selector.select();
+		*selection = selector.select(false);
 		switch (selection->status) {
 		case BackendSelection::Status::Ok:
 			return true;
@@ -703,20 +709,24 @@ static void recordBackend(const BackendSelector &selector, BackendSelection *sel
 static bool setupVaultFromGui(Vault *vault)
 {
 	if (!vault) return false;
-	bool ok = false;
-	SecureBuffer pin = PinDialog::setupPin(nullptr, &ok);
-	if (!ok || pin.empty()) {
-		QMessageBox::information(nullptr, QObject::tr("Cancelled"), QObject::tr("Vault setup was cancelled."));
-		return false;
+	// SecureBuffer pin = PinDialog::setupPin(nullptr, &ok);
+	SetupVaultDialog dlg(nullptr);
+	if (dlg.exec() == QDialog::Accepted) {
+		SecureBuffer pin = dlg.pin();
+		if (pin.empty()) {
+			QMessageBox::information(nullptr, QObject::tr("Cancelled"), QObject::tr("Vault setup was cancelled."));
+			return false;
+		}
+		const VaultError err = vault->setup(pin);
+		pin.clear();
+		if (err != VaultError::None) {
+			QMessageBox::critical(nullptr, QObject::tr("Setup Failed"), vaultErrorMessage(err));
+			return false;
+		}
+		QMessageBox::information(nullptr, QObject::tr("Vault Setup"), QObject::tr("Vault has been set up successfully."));
+		return true;
 	}
-	const VaultError err = vault->setup(pin);
-	pin.clear();
-	if (err != VaultError::None) {
-		QMessageBox::critical(nullptr, QObject::tr("Setup Failed"), vaultErrorMessage(err));
-		return false;
-	}
-	QMessageBox::information(nullptr, QObject::tr("Vault Setup"), QObject::tr("Vault has been set up successfully."));
-	return true;
+	return false;
 }
 
 static bool resetVaultFromGui(Vault *vault)
@@ -729,16 +739,20 @@ static bool resetVaultFromGui(Vault *vault)
 
 	if (confirmation != QMessageBox::Yes) return false;
 
-	bool ok = false;
-	SecureBuffer newPin = PinDialog::setupPin(nullptr, &ok);
-	if (!ok || newPin.empty()) return false;
-	const VaultError err = vault->reset(newPin);
-	newPin.clear();
-	if (err != VaultError::None) {
-		QMessageBox::critical(nullptr, QObject::tr("Reset Failed"), vaultErrorMessage(err));
-		return false;
+	// SecureBuffer newPin = PinDialog::setupPin(nullptr, &ok);
+	ResetVaultDialog dlg(nullptr);
+	if (dlg.exec() == QDialog::Accepted) {
+		SecureBuffer newPin = dlg.pin();
+		if (newPin.empty()) return false;
+		const VaultError err = vault->reset(newPin);
+		newPin.clear();
+		if (err != VaultError::None) {
+			QMessageBox::critical(nullptr, QObject::tr("Reset Failed"), vaultErrorMessage(err));
+			return false;
+		}
+		return true;
 	}
-	return true;
+	return false;
 }
 
 /** @return 解除できた場合 true。PIN 誤りは再入力を促し、それ以外のエラーで中断する */
@@ -746,22 +760,26 @@ static bool unlockVaultFromGui(Vault *vault)
 {
 	if (!vault) return false;
 	for (;;) {
-		bool ok = false;
-		SecureBuffer pin = PinDialog::requestPin(nullptr, &ok);
-		if (!ok || pin.empty()) return false;
-		const VaultError err = vault->unlock(pin);
-		pin.clear();
-		if (err == VaultError::None) return true;
-		if (err == VaultError::WrongPin) {
-			QMessageBox::warning(nullptr, QObject::tr("Unlock Failed"), vaultErrorMessage(err));
-			continue;
-		}
-		if (err == VaultError::BackendUnavailable) {
-			if (askRetry(QObject::tr("Unlock Failed"), vaultErrorMessage(err))) continue;
+		// SecureBuffer pin = PinDialog::requestPin(nullptr, &ok);
+		UnlockVaultDialog dlg(nullptr);
+		if (dlg.exec() == QDialog::Accepted) {
+			SecureBuffer pin = dlg.pin();
+			if (pin.empty()) return false;
+			const VaultError err = vault->unlock(pin);
+			pin.clear();
+			if (err == VaultError::None) return true;
+			if (err == VaultError::WrongPin) {
+				QMessageBox::warning(nullptr, QObject::tr("Unlock Failed"), vaultErrorMessage(err));
+				continue;
+			}
+			if (err == VaultError::BackendUnavailable) {
+				if (askRetry(QObject::tr("Unlock Failed"), vaultErrorMessage(err))) continue;
+				return false;
+			}
+			QMessageBox::critical(nullptr, QObject::tr("Unlock Failed"), vaultErrorMessage(err));
+		} else {
 			return false;
 		}
-		QMessageBox::critical(nullptr, QObject::tr("Unlock Failed"), vaultErrorMessage(err));
-		return false;
 	}
 }
 
@@ -769,7 +787,7 @@ static int runGuiDemo(int argc, char *argv[])
 {
 	QApplication app(argc, argv);
 
-	BackendSelector selector(appConfigDirectory(), EMK_KEY);
+	BackendSelector selector(appConfigDirectory(), "com.example.localvault.Vault", EMK_KEY);
 	BackendSelection selection;
 	if (!selectBackendFromGui(selector, &selection)) return 1;
 	Vault vault(selection.backend.get(), EMK_KEY);
@@ -844,8 +862,8 @@ static int runGuiDemo(int argc, char *argv[])
 
 static int runCliReset()
 {
-	BackendSelector selector(appConfigDirectory(), EMK_KEY);
-	BackendSelection selection = selector.select();
+	BackendSelector selector(appConfigDirectory(), "com.example.localvault.Vault", EMK_KEY);
+	BackendSelection selection = selector.select(false);
 	switch (selection.status) {
 	case BackendSelection::Status::Ok:
 		break;

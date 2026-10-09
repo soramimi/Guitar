@@ -53,7 +53,7 @@ std::unique_ptr<ISecretStorageBackend> BackendSelector::create(BackendKind kind)
 bool BackendSelector::hasVault(ISecretStorageBackend *backend) const
 {
 	if (!backend) return false;
-	return Vault(std::move(backend), emkKey_).state() == VaultState::Locked;
+	return Vault(backend, emkKey_).state() == VaultState::Locked;
 }
 
 StorageStatus BackendSelector::record(BackendKind kind) const
