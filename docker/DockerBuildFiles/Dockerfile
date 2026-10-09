@@ -14,6 +14,7 @@ RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y apt-util
 	libcurl4-openssl-dev \
 	mecab-utils \
 	libsodium-dev \
+	libsecret-1-dev \
 	&& rm -rf /var/lib/apt/lists/*
 
 ARG UID
