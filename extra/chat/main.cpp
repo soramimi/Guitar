@@ -41,8 +41,9 @@ static CurlContext curlcx;
 static GenerativeAI::Model ai_model;
 
 struct Option {
+	std::string secret_config_dir;
 	std::string config_file_path;
-	std::string model_name;
+	// std::string model_name;
 	std::string prompt;
 };
 
@@ -265,15 +266,35 @@ int main2(int argc, char **argv)
 		return 1;
 	}
 
-	std::string model_name = opt.model_name;
-	if (model_name.empty()) {
-		model_name = GenerativeAI::Model::default_model();
+	{
+		std::string path = opt.secret_config_dir / "aimodels.json";
+		std::optional<std::vector<GenerativeAI::ModelConf>> opt = GenerativeAI::ModelConf::load(nullptr, path.c_str());
+		if (opt) {
+			QString guid;
+			{
+				QSettings s("/home/soramimi/.config/soramimi.jp/chat/chat.ini", QSettings::IniFormat);
+				s.beginGroup("AI");
+				guid = s.value("DefaultModelGUID").toString();
+				s.endGroup();
+			}
+			for (GenerativeAI::ModelConf const &mc : *opt) {
+				if (mc.guid == guid) {
+					ai_model = mc.model;
+					break;
+				}
+			}
+		}
+		
 	}
-	ai_model = GenerativeAI::Model::from_name(model_name);
-	if (!ai_model) {
-		fprintf(stderr, "error: Invalid model name: %s\n", model_name.c_str());
-		return 1;
-	}
+	// std::string model_name = opt.model_name;
+	// if (model_name.empty()) {
+	// 	model_name = GenerativeAI::Model::default_model();
+	// }
+	// ai_model = GenerativeAI::Model::from_name(model_name);
+	// if (!ai_model) {
+	// 	fprintf(stderr, "error: Invalid model name: %s\n", model_name.c_str());
+	// 	return 1;
+	// }
 	
 	// ai_model.reasoning_effort_ = "low";
 
@@ -347,7 +368,7 @@ int main3jev(int argc, char **argv)
 	
 	InetClient::Request web_req;
 	{
-		web_req.set_location(req.endpoint.url(GenerativeAI::EndPoint::Type::Chat, {}, cred));
+		web_req.set_location(req.endpoint.url(GenerativeAI::EndPoint::Type::Chat, {}, cred, {}));
 		for (std::string const &h : req.header) {
 			web_req.add_header(h);
 		}
@@ -421,22 +442,25 @@ int main(int argc, char **argv)
 	std::string application_name = "chat";
 	// std::string this_executive_program = FileInfo(argv[0]).absoluteFilePath();
 	std::string generic_config_dir = writable_generic_config_location();
+	std::string app_org_config_dir = generic_config_dir / organization_name;
 	std::string app_config_dir = generic_config_dir / organization_name / application_name;
+	std::string app_secret_config_dir = app_org_config_dir / ".secret";
 	// std::string log_dir = app_config_dir / "log";
+	opt.secret_config_dir = app_secret_config_dir;
 	opt.config_file_path = app_config_dir / application_name + ".ini";
 	opt.config_file_path = misc::realpath(opt.config_file_path);
 
-	{
-		ConfigParser parser;
-		parser.parse(opt.config_file_path.c_str(), [](std::string const &section, std::string const &key, std::string const &value, void *cookie) {
-			Option *opt = static_cast<Option *>(cookie);
-			if (section == "AI") {
-				if (key == "model") {
-					opt->model_name = value;
-				}
-			} }, &opt);
-	}
+	// {
+	// 	ConfigParser parser;
+	// 	parser.parse(opt.config_file_path.c_str(), [](std::string const &section, std::string const &key, std::string const &value, void *cookie) {
+	// 		Option *opt = static_cast<Option *>(cookie);
+	// 		if (section == "AI") {
+	// 			if (key == "model") {
+	// 				opt->model_name = value;
+	// 			}
+	// 		} }, &opt);
+	// }
 
-	// return main2(argc, argv);
-	return main3jev(argc, argv);
+	return main2(argc, argv);
+	// return main3jev(argc, argv);
 }

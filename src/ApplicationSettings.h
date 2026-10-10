@@ -7,7 +7,7 @@
 #include <memory>
 #include <optional>
 
-#include <vault/Vault.h>
+#include <localvault/src/vault/Vault.h>
 
 #define ORGANIZATION_NAME "soramimi.jp"
 #define APPLICATION_NAME "Guitar"

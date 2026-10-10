@@ -6,8 +6,8 @@
 #include <sys/stat.h>
 #include <common/jstream.h>
 #include <regex>
-#include <vault/SecureBuffer.h>
-#include <gui/SecureStoreGUI.h>
+#include <localvault/src/vault/SecureBuffer.h>
+#include <localvault/src/gui/SecureStoreGUI.h>
 
 namespace GenerativeAI {
 

@@ -8,11 +8,16 @@ gcc:QMAKE_CXXFLAGS += -std=c++17 -Wall -Wextra -Werror=return-type -Werror=trigr
 !win32:DEFINES += HAVE_STRCASESTR
 win32:QMAKE_CXXFLAGS += /FI $$PWD/../../subprojects/FileTypePlugin/file-msvc/unistd.h
 
+DEFINES += VAULT_ALLOW_EMPTY_PIN
+LOCALVAULT_SRC = ../../src/localvault/src
+
 INCLUDEPATH += $$PWD/../../
 INCLUDEPATH += $$PWD/../../src
 INCLUDEPATH += $$PWD/../../src/common
 INCLUDEPATH += $$PWD/../../src/process/src
 INCLUDEPATH += $$PWD/../../subprojects/FileTypePlugin
+# INCLUDEPATH += $$LOCALVAULT_SRC
+# INCLUDEPATH += $$LOCALVAULT_SRC
 win32:INCLUDEPATH += $$PWD/../../subprojects/FileTypePlugin/file-msvc
 
 DEFINES += NO_LOGGER

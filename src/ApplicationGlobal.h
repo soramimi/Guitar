@@ -6,12 +6,13 @@
 #include "ApplicationSettings.h"
 #include "AvatarLoader.h"
 #include "Git.h"
-#include "vault/Vault.h"
 #include <QColor>
 #include <QString>
-#include <app/BackendSelector.h>
 #include <inet/webclient.h>
-#include <SecureStoreGUI.h>
+#include <localvault/src/app/BackendSelector.h>
+#include <localvault/src/app/SecretVault.h>
+#include <localvault/src/gui/SecureStoreGUI.h>
+#include <localvault/src/vault/Vault.h>
 #include <memory>
 #include <subprojects/FileTypePlugin/src/FileType.h>
 #include <subprojects/IncrementalSearchPlugin/src/IncrementalSearch.h>

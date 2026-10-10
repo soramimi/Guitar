@@ -1,28 +1,17 @@
 #ifndef SECURESTOREGUI_H
 #define SECURESTOREGUI_H
 
-#include <QPushButton>
-#include <app/BackendSelector.h>
-#include <storage/FileBackend.h>
-#include <storage/SystemKeychainBackend.h>
-#include <vault/Vault.h>
+#include "../app/BackendSelector.h"
+#include "../app/SecretVault.h"
+#include "../storage/FileBackend.h"
+#include "../storage/SystemKeychainBackend.h"
+#include "../vault/Vault.h"
+#include <QString>
 #include <memory>
 
-namespace localvault {
+class QWidget;
 
-struct VaultWithBackend {
-	BackendSelection backend;
-	std::unique_ptr<Vault> vault;
-	operator bool () const
-	{
-		return (bool)vault;
-	}
-	void reset()
-	{
-		vault.reset();
-		backend = {};
-	}
-};
+namespace localvault {
 
 class SecureStoreGUI {
 private:
