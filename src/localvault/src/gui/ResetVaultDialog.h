@@ -15,7 +15,7 @@ public:
 	explicit ResetVaultDialog(QWidget *parent = nullptr);
 	~ResetVaultDialog();
 	
-	localvault::SecureBuffer pin() const;
+	bool pin(localvault::SecureBuffer *out) const;
 	
 private:
 	Ui::ResetVaultDialog *ui;

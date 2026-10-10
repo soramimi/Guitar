@@ -73,6 +73,7 @@
 - **Phase 9**: GUI の強化と再利用性の向上
   - `PinDialog` を廃止し、専用ダイアログ `SetupVaultDialog` / `UnlockVaultDialog` / `ResetVaultDialog` / `ChangePinDialog` を追加
   - 保存先選択から Vault 操作までをまとめて行う `SecureStoreGUI` を追加
+   - `StoragePreference::FileOnly` により、アプリケーションの永続設定として FileBackend を常用できるようにした
   - `Vault` / `ISecretStorageBackend::load` / `AtomicFile::read` 等の出力引数をポインタに統一
   - `SystemKeychainBackend` にスキーマ名・サービス名の設定関数を追加
   - 空 PIN の許可・禁止をコンパイル時に選択可能にした
@@ -316,9 +317,10 @@ nmake  # または mingw32-make
 - スワップファイルへの漏洩を防ぐため、可能な限りメモリロックを行うこと
 - EMK を書き換える処理は必ず `Vault` 内のステージング経由（`writeEmk()`）で行い、バックエンドに「削除してから追加」する実装を追加しないこと。本キーの置換に失敗した場合は旧PIN・新PINのどちらでも解除でき、新PINで解除するとステージングが本キーへ昇格する
 - 保存先は `BackendSelector` が設定ディレクトリの `storage-backend` に記録する。記録済みの保存先が使えない場合に他の保存先へフォールバックしてはならない。`--reset --yes` は記録も削除する
-- OSセキュアストレージが利用できない場合の `FileBackend` は、PINの総当たりリスクをユーザーが承知の上で使う代替手段とし、新規使用時は同意を得ること。保存キーは英数字・`_`・`.`・`-` のみに無害化され、UNIX ではディレクトリ・ファイルのパーミッションを制限する
+- OSセキュアストレージが利用できない場合の `FileBackend` は、PINの総当たりリスクをユーザーが承知の上で使う代替手段とし、新規使用時は同意を得ること。ただしアプリケーションが永続設定として `StoragePreference::FileOnly` を明示した場合は、OSストレージを探索せず FileBackend を常用する。作成済み Vault の保存先をこの設定で切り替えてはならない。保存キーは英数字・`_`・`.`・`-` のみに無害化され、UNIX ではディレクトリ・ファイルのパーミッションを制限する
 - `SecureBuffer` は `sodium_malloc` で確保するため、1 バッファごとにガードページ分のメモリを消費する。大量の小さなバッファを作らないこと
 - PIN 入力には `QLineEdit` ではなく `SecurePinEdit` を使用する（IME・クリップボードは無効）
+- `SecurePinEdit::pin()` と各 PIN ダイアログの `pin()` は、メモリロック済みの値を出力引数で返す。失敗時は false を返すため、PIN を使用せず `MemoryLockFailed` として扱う
 - 空 PIN の許可・禁止はコンパイル時に選択可能である。空 PIN を許可すると KEK が事実上不要になりセキュリティが著しく低下するため、通常は禁止して使用すること
 - 全シンボルは `namespace localvault` に属する。GUI 層から libsodium を直接呼ばず、`SecureBuffer` の API を使うこと
 - Linux の libsecret では、ロック中の項目を `NotFound` と扱ってはならない（新規セットアップへ誘導され既存 EMK を上書きする恐れがある）。`load()` は `SECRET_SEARCH_ALL` で列挙し、ロック中なら `Unavailable` を返す

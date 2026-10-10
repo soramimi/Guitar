@@ -18,9 +18,9 @@ ResetVaultDialog::~ResetVaultDialog()
 	delete ui;
 }
 
-localvault::SecureBuffer ResetVaultDialog::pin() const
+bool ResetVaultDialog::pin(localvault::SecureBuffer *out) const
 {
-	return ui->widget_new_pin->pin();
+	return ui->widget_new_pin->pin(out);
 }
 
 void ResetVaultDialog::accept()

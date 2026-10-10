@@ -99,7 +99,11 @@ bool localvault::SecureStoreGUI::resetVault(Vault *vault)
 	ResetVaultDialog dlg(parent_);
 	if (dlg.exec() == QDialog::Rejected) return false;
 	
-	SecureBuffer newPin = dlg.pin();
+	SecureBuffer newPin;
+	if (!dlg.pin(&newPin)) {
+		QMessageBox::critical(parent_, QObject::tr("Reset Failed"), vaultErrorMessage(VaultError::MemoryLockFailed));
+		return false;
+	}
 	const VaultError err = vault->reset(newPin);
 	newPin.clear();
 	if (err != VaultError::None) {
@@ -119,7 +123,7 @@ int localvault::SecureStoreGUI::destroyVault(QString const &confdir, QString con
 {
 	BackendSelection selection;
 	BackendSelector selector = makeBackendSelector(confdir, schema);
-	if (!selectBackend(selector, &selection, force_file_backend_)) return {};
+	if (!selectBackend(selector, &selection, storagePreference_ == StoragePreference::FileOnly)) return {};
 	
 	switch (selection.status) {
 	case BackendSelection::Status::Ok:
@@ -169,7 +173,11 @@ bool localvault::SecureStoreGUI::setupVault(Vault *vault, bool msgbox)
 	if (!vault) return false;
 	SetupVaultDialog dlg(parent_);
 	if (dlg.exec() == QDialog::Accepted) {
-		SecureBuffer pin = dlg.pin();
+		SecureBuffer pin;
+		if (!dlg.pin(&pin)) {
+			if (msgbox) QMessageBox::critical(parent_, QObject::tr("Setup Failed"), vaultErrorMessage(VaultError::MemoryLockFailed));
+			return false;
+		}
 		if (!validate_pin(pin)) {
 			if (msgbox) QMessageBox::warning(parent_, QObject::tr("Invalid PIN"), QObject::tr("The PIN is invalid."));
 			return false;
@@ -269,17 +277,17 @@ bool localvault::SecureStoreGUI::unlockVault(Vault *vault, SecureBuffer const &p
 	return false;
 }
 
-localvault::SecureStoreGUI::SecureStoreGUI(QWidget *parent, bool force_file_backend)
+localvault::SecureStoreGUI::SecureStoreGUI(QWidget *parent, StoragePreference storagePreference)
 	: parent_(parent)
+	, storagePreference_(storagePreference)
 {
-	setForceFileBackend(force_file_backend);
 }
 
 localvault::VaultWithBackend localvault::SecureStoreGUI::execUnlock(QString const &confdir, QString const &schema)
 {
 	BackendSelection selection;
 	BackendSelector selector = makeBackendSelector(confdir, schema);
-	if (!selectBackend(selector, &selection, force_file_backend_)) return {};
+	if (!selectBackend(selector, &selection, storagePreference_ == StoragePreference::FileOnly)) return {};
 	
 	std::unique_ptr<localvault::Vault> vault = std::make_unique<localvault::Vault>(selection.backend.get(), EMK_KEY);
 	
@@ -301,7 +309,12 @@ localvault::VaultWithBackend localvault::SecureStoreGUI::execUnlock(QString cons
 				if (dlg.exec() == QDialog::Rejected) return {};
 
 				if (dlg.result() == UnlockVaultDialog::Unlock) {
-					if (unlockVault(vault.get(), dlg.pin())) {
+					SecureBuffer pin;
+					if (!dlg.pin(&pin)) {
+						QMessageBox::critical(parent_, QObject::tr("Unlock Failed"), vaultErrorMessage(VaultError::MemoryLockFailed));
+						return {};
+					}
+					if (unlockVault(vault.get(), pin)) {
 						ready = true;
 					}
 				} else {
@@ -322,7 +335,7 @@ localvault::VaultWithBackend localvault::SecureStoreGUI::execUnlock2(QString con
 {
 	BackendSelection selection;
 	BackendSelector selector = makeBackendSelector(confdir, schema);
-	if (!selectBackend(selector, &selection, force_file_backend_)) return {};
+	if (!selectBackend(selector, &selection, storagePreference_ == StoragePreference::FileOnly)) return {};
 
 	std::unique_ptr<localvault::Vault> vault = std::make_unique<localvault::Vault>(selection.backend.get(), EMK_KEY);
 
@@ -353,8 +366,13 @@ localvault::VaultWithBackend localvault::SecureStoreGUI::execUnlock2(QString con
 	return {std::move(selection), std::move(vault)};
 }
 
-void localvault::SecureStoreGUI::setForceFileBackend(bool force_file_backend)
+void localvault::SecureStoreGUI::setStoragePreference(StoragePreference storagePreference)
 {
-	force_file_backend_ = force_file_backend;
+	storagePreference_ = storagePreference;
+}
+
+localvault::StoragePreference localvault::SecureStoreGUI::storagePreference() const
+{
+	return storagePreference_;
 }
 

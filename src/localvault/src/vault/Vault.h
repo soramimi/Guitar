@@ -124,11 +124,13 @@ public:
 	 * @brief 平文を暗号化する。unlock 済みである必要がある
 	 *
 	 * 機密データ（ユーザーが入力した API キー等）はこちらを使い、通常メモリを経由させないこと。
+	 * @return cipher が nullptr の場合は InvalidArgument
 	 */
 	[[nodiscard]] VaultError encrypt(SecureBuffer const &plain, Blob *cipher);
 
 	/**
 	 * @brief 平文を暗号化する（機密性の低いデータ、または既に通常メモリ上にあるデータ用）
+	 * @return cipher が nullptr の場合は InvalidArgument
 	 */
 	[[nodiscard]] VaultError encrypt(Blob const &plain, Blob *cipher);
 
@@ -136,6 +138,7 @@ public:
 	 * @brief 暗号文を復号する。unlock 済みである必要がある
 	 *
 	 * 平文は SecureBuffer に返され、使用後は明示的に clear() すること。
+	 * @return plain が nullptr の場合は InvalidArgument
 	 */
 	[[nodiscard]] VaultError decryptToSecureBuffer(Blob const &cipher, SecureBuffer *plain);
 

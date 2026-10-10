@@ -21,11 +21,13 @@ static QString getConfigDirectory()
 }
 #endif
 
-ChangePinDialog::ChangePinDialog(QWidget *parent, QString const &schema, localvault::VaultWithBackend *global_vault)
+ChangePinDialog::ChangePinDialog(QWidget *parent, QString const &schema, localvault::VaultWithBackend *global_vault,
+	localvault::StoragePreference storagePreference)
 	: QDialog(parent)
 	, ui(new Ui::ChangePinDialog)
 	, schema_(schema)
 	, global_vault_(global_vault)
+	, storagePreference_(storagePreference)
 {
 	ui->setupUi(this);
 	
@@ -39,9 +41,15 @@ ChangePinDialog::~ChangePinDialog()
 
 void ChangePinDialog::accept()
 {
-	localvault::SecureBuffer oldPin = ui->widget_old_pin->pin();
-	localvault::SecureBuffer newPin = ui->widget_new_pin->pin();
-	localvault::SecureBuffer confirmPin = ui->widget_confirm_pin->pin();
+	localvault::SecureBuffer oldPin;
+	localvault::SecureBuffer newPin;
+	localvault::SecureBuffer confirmPin;
+	if (!ui->widget_old_pin->pin(&oldPin)
+		|| !ui->widget_new_pin->pin(&newPin)
+		|| !ui->widget_confirm_pin->pin(&confirmPin)) {
+		QMessageBox::critical(this, tr("PIN Error"), localvault::SecureStoreGUI::vaultErrorMessage(localvault::VaultError::MemoryLockFailed));
+		return;
+	}
 	if (!localvault::validate_pin(newPin)) {
 		QMessageBox::warning(this, tr("Invalid PIN"), tr("The new PIN is invalid."));
 		return;
@@ -54,8 +62,7 @@ void ChangePinDialog::accept()
 	QString confdir = getConfigDirectory();
 	// QString schema_ = global->vault_schema();
 	
-	constexpr bool force_file_backend = true;
-	localvault::SecureStoreGUI store(this, force_file_backend);
+	localvault::SecureStoreGUI store(this, storagePreference_);
 	
 	auto vault = store.execUnlock2(confdir, schema_, oldPin);
 	if (!vault) {

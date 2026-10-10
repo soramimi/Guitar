@@ -399,6 +399,7 @@ VaultError Vault::encrypt(Blob const &plain, Blob *cipher)
 
 VaultError Vault::encryptBytes(unsigned char const *plain, size_t size, Blob *cipher)
 {
+	if (!cipher) return VaultError::InvalidArgument;
 	*cipher = { };
 	if (!isUnlocked()) return VaultError::Locked;
 	Blob header;
@@ -427,6 +428,7 @@ VaultError Vault::encryptBytes(unsigned char const *plain, size_t size, Blob *ci
 
 VaultError Vault::decryptToSecureBuffer(Blob const &cipher, SecureBuffer *plain)
 {
+	if (!plain) return VaultError::InvalidArgument;
 	plain->clear();
 	if (!isUnlocked()) return VaultError::Locked;
 	if (cipher.size() < static_cast<size_t>(DATA_HEADER_SIZE + NONCE_SIZE + TAG_SIZE)

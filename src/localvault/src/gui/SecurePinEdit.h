@@ -35,8 +35,11 @@ public:
 	/** 入力内容が other と一致するか */
 	bool equals(const SecurePinEdit &other) const;
 
-	/** 入力内容を UTF-8 の SecureBuffer として複製する */
-	localvault::SecureBuffer pin() const;
+	/**
+	 * @brief 入力内容をメモリロック済みの SecureBuffer として複製する
+	 * @return メモリロックに失敗した場合は false。out は空のままにする
+	 */
+	bool pin(localvault::SecureBuffer *out) const;
 
 	/** 入力内容を消去する */
 	void clear();

@@ -261,6 +261,8 @@ public:
 		check(!encrypted.empty(), "Vault encrypt");
 		check(encrypted != secret, "Vault encryption changes data");
 		check(decryptsTo(&vault, encrypted, secret), "Vault decrypt");
+		check(vault.encrypt(secret, nullptr) == VaultError::InvalidArgument, "Vault rejects null cipher output");
+		check(vault.decryptToSecureBuffer(encrypted, nullptr) == VaultError::InvalidArgument, "Vault rejects null plain output");
 
 		Blob emptyCipher = encryptOrEmpty(&vault, Blob());
 		check(!emptyCipher.empty() && decryptsTo(&vault, emptyCipher, Blob()), "Vault empty plaintext roundtrip");
@@ -712,7 +714,11 @@ static bool setupVaultFromGui(Vault *vault)
 	// SecureBuffer pin = PinDialog::setupPin(nullptr, &ok);
 	SetupVaultDialog dlg(nullptr);
 	if (dlg.exec() == QDialog::Accepted) {
-		SecureBuffer pin = dlg.pin();
+		SecureBuffer pin;
+		if (!dlg.pin(&pin)) {
+			QMessageBox::critical(nullptr, QObject::tr("Setup Failed"), vaultErrorMessage(VaultError::MemoryLockFailed));
+			return false;
+		}
 		if (pin.empty()) {
 			QMessageBox::information(nullptr, QObject::tr("Cancelled"), QObject::tr("Vault setup was cancelled."));
 			return false;
@@ -742,7 +748,11 @@ static bool resetVaultFromGui(Vault *vault)
 	// SecureBuffer newPin = PinDialog::setupPin(nullptr, &ok);
 	ResetVaultDialog dlg(nullptr);
 	if (dlg.exec() == QDialog::Accepted) {
-		SecureBuffer newPin = dlg.pin();
+		SecureBuffer newPin;
+		if (!dlg.pin(&newPin)) {
+			QMessageBox::critical(nullptr, QObject::tr("Reset Failed"), vaultErrorMessage(VaultError::MemoryLockFailed));
+			return false;
+		}
 		if (newPin.empty()) return false;
 		const VaultError err = vault->reset(newPin);
 		newPin.clear();
@@ -763,7 +773,11 @@ static bool unlockVaultFromGui(Vault *vault)
 		// SecureBuffer pin = PinDialog::requestPin(nullptr, &ok);
 		UnlockVaultDialog dlg(nullptr);
 		if (dlg.exec() == QDialog::Accepted) {
-			SecureBuffer pin = dlg.pin();
+			SecureBuffer pin;
+			if (!dlg.pin(&pin)) {
+				QMessageBox::critical(nullptr, QObject::tr("Unlock Failed"), vaultErrorMessage(VaultError::MemoryLockFailed));
+				return false;
+			}
 			if (pin.empty()) return false;
 			const VaultError err = vault->unlock(pin);
 			pin.clear();

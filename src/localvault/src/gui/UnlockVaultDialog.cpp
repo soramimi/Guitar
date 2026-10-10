@@ -20,9 +20,9 @@ UnlockVaultDialog::Result UnlockVaultDialog::result() const
 	return result_;
 }
 
-localvault::SecureBuffer UnlockVaultDialog::pin() const
+bool UnlockVaultDialog::pin(localvault::SecureBuffer *out) const
 {
-	return ui->widget->pin();
+	return ui->widget->pin(out);
 }
 
 void UnlockVaultDialog::on_pushButton_unlock_clicked()

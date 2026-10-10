@@ -39,11 +39,14 @@ bool SecurePinEdit::equals(const SecurePinEdit &other) const
 	return utf8_.equals(other.utf8_);
 }
 
-localvault::SecureBuffer SecurePinEdit::pin() const
+bool SecurePinEdit::pin(localvault::SecureBuffer *out) const
 {
+	if (!out) return false;
+	out->clear();
 	localvault::SecureBuffer result(utf8_.data(), utf8_.size());
-	result.lock();
-	return result;
+	if (!result.empty() && !result.lock()) return false;
+	*out = std::move(result);
+	return true;
 }
 
 void SecurePinEdit::clear()

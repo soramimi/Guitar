@@ -15,7 +15,7 @@ public:
 	explicit SetupVaultDialog(QWidget *parent = nullptr);
 	~SetupVaultDialog();
 	
-	localvault::SecureBuffer pin() const;
+	bool pin(localvault::SecureBuffer *out) const;
 private:
 	Ui::SetupPinDialog *ui;
 	

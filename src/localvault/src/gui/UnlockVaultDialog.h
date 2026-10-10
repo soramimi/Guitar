@@ -21,7 +21,7 @@ public:
 	explicit UnlockVaultDialog(QWidget *parent);
 	~UnlockVaultDialog();
 
-	localvault::SecureBuffer pin() const;
+	bool pin(localvault::SecureBuffer *out) const;
 
 	Result result() const;
 

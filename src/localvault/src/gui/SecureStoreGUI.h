@@ -13,10 +13,17 @@ class QWidget;
 
 namespace localvault {
 
+enum class StoragePreference {
+	/** OS のセキュアストレージを優先し、使えない初回だけ同意を求めて FileBackend を使う */
+	PreferSystem,
+	/** OS のセキュアストレージを探索せず、常に FileBackend を使う */
+	FileOnly
+};
+
 class SecureStoreGUI {
 private:
 	QWidget *parent_ = nullptr;
-	bool force_file_backend_ = false;
+	StoragePreference storagePreference_ = StoragePreference::PreferSystem;
 public:
 	static constexpr char EMK_KEY[] = "vault_emk";
 	
@@ -42,10 +49,11 @@ private:
 	bool unlockVault(Vault *vault, const SecureBuffer &pin);
 	localvault::BackendSelector makeBackendSelector(const QString &confdir, const QString &schema);
 public:
-	SecureStoreGUI(QWidget *parent, bool force_file_backend);
+	SecureStoreGUI(QWidget *parent, StoragePreference storagePreference = StoragePreference::PreferSystem);
 	VaultWithBackend execUnlock(QString const &confdir, QString const &schema);
 	VaultWithBackend execUnlock2(QString const &confdir, QString const &schema, localvault::SecureBuffer const &pin);
-	void setForceFileBackend(bool force_file_backend);
+	void setStoragePreference(StoragePreference storagePreference);
+	StoragePreference storagePreference() const;
 };
 
 } // namespace localvault

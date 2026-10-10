@@ -8,6 +8,7 @@ example.decoded.txt
 example.encoded.bin
 localvault
 moc_*
+ui_*.h
 localvault-review.Makefile
 _bin/
 qmake/Makefile.*

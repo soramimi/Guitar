@@ -247,8 +247,10 @@ Vault 操作専用の QtWidgets ダイアログ群。Vault から独立してお
 
 SetupVaultDialog dlg(parent);
 if (dlg.exec() == QDialog::Accepted) {
-    SecureBuffer pin = dlg.pin();
-    VaultError err = vault.setup(pin);
+    SecureBuffer pin;
+    if (dlg.pin(&pin)) {
+        VaultError err = vault.setup(pin);
+    }
 }
 ```
 
@@ -259,11 +261,22 @@ if (dlg.exec() == QDialog::Accepted) {
 ```cpp
 #include "gui/SecureStoreGUI.h"
 
-localvault::SecureStoreGUI store(parent, false);
+// OS のセキュアストレージを優先する既定設定
+localvault::SecureStoreGUI store(parent);
 localvault::VaultWithBackend vault = store.execUnlock(configDir, schema);
 if (vault) {
     // vault.vault を通じて encrypt/decrypt 等を実行
 }
+```
+
+アプリケーションの要件として常にファイル保存を使う場合は、生成時または
+`setStoragePreference()` で `StoragePreference::FileOnly` を指定する。この設定は
+OS のセキュアストレージや既存の保存先記録を探索せず FileBackend を選ぶため、Vault を
+作成した後に切り替えてはならない。PIN 変更ダイアログを使用する場合も、同じ
+`StoragePreference` をコンストラクタへ渡すこと。
+
+```cpp
+localvault::SecureStoreGUI store(parent, localvault::StoragePreference::FileOnly);
 ```
 
 ## 形式と互換性
@@ -303,7 +316,7 @@ if (backend.isAvailable()) {
     Blob data = { 'e', 'n', 'c', 'r', 'y', 'p', 't', 'e', 'd', '-', 'b', 'l', 'o', 'b' };
     backend.store("my-key", data);              // 既存データはアトミックに置き換えられる
     Blob loaded;
-    StorageStatus status = backend.load("my-key", loaded);  // Ok / NotFound / Unavailable / Error
+    StorageStatus status = backend.load("my-key", &loaded); // Ok / NotFound / Unavailable / Error
     backend.remove("my-key");
 }
 ```
@@ -378,7 +391,9 @@ if (backend.isAvailable()) {
 - KEKはArgon2id（opslimit 3、memlimit 256 MiB）で導出します。コストはEMKに格納され、受入値には上下限があります。
 - 復号には平文を通常メモリへコピーしない`decryptToSecureBuffer()`を使用してください。
 - `FileBackend` は OS セキュアストレージが使えない場合に、PIN 総当たりのリスクを承知の上で使う代替手段です。書き込みは 0600 の一時ファイル → fsync → rename で行います。保存キーは英数字・`_`・`.`・`-` のみに無害化され、ディレクトリ・ファイルのパーミッションは可能な範囲で制限されます。
+- `StoragePreference::FileOnly` は、アプリケーションが明示的に FileBackend を常用する場合の設定です。このモードではフォールバック確認を表示せず、OS のセキュアストレージや保存先記録も探索しません。初回セットアップ前に固定し、既存 Vault の保存先を切り替える目的には使用しないでください。
 - 復号後の機密情報は `SecureBuffer` で管理し、使用後は即座に消去してください。
+- `SecurePinEdit::pin()` と各 PIN ダイアログの `pin()` は、メモリロック済みの PIN を出力引数に返します。false の場合は PIN を使用せず、メモリロック失敗として処理してください。
 - アプリケーションの `main()` 冒頭で `hardenProcess()` を呼び、コアダンプを抑止してください（Linux では同一ユーザーからの ptrace アタッチも拒否されます）。
 - `SecureBuffer::unlock()` はロック解除と同時に内容をゼロクリアします。単独で呼ばず、`clear()` かデストラクタに任せてください。
 - PIN 入力欄（`SecurePinEdit`）は IME に対応していません。

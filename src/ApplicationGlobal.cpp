@@ -236,8 +236,7 @@ localvault::Vault *ApplicationGlobal::unlockVault(QWidget *parent)
 		QString confdir = global->app_secret_config_dir;
 		QString schema = global->vault_schema();
 		
-		constexpr bool force_file_backend = true;
-		localvault::SecureStoreGUI store(parent, force_file_backend);
+		localvault::SecureStoreGUI store(parent, localvault::StoragePreference::FileOnly);
 		
 		global->vault = store.execUnlock(confdir, schema);
 		if (!global->vault) {

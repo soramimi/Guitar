@@ -59,6 +59,10 @@ public:
 	 */
 	BackendSelector(const std::filesystem::path &configDir, const std::string &schema, const std::string &emkKey, const Factory &systemFactory = { });
 	
+	/**
+	 * @param force_file_backend true の場合、記録済みの保存先を探索せず FileBackend を選ぶ。
+	 *        アプリケーションの永続設定としてのみ使用し、既存 Vault の保存先を途中で変更しないこと。
+	 */
 	BackendSelection select(bool force_file_backend) const;
 
 	/** 保存先を記録する */
