@@ -105,7 +105,7 @@ SelectAiModelDialog::SelectAiModelDialog(QWidget *parent)
 	
 	// プロバイダー一覧をコンボボックスに追加（空の tag はプレースホルダーとしてスキップ）
 	for (ProviderInfo const &provider : complete_provider_table()) {
-		if (provider.tag.empty()) continue; // Skip placeholder entries
+		if (provider.id == ProviderID::Invalid) continue;
 		ui->comboBox_provider->addItem(QString::fromStdString(provider.description), (int)provider.id);
 	}
 
@@ -164,15 +164,36 @@ void SelectAiModelDialog::setLineEditEndpointUrl(std::string const &url)
 }
 
 // API キー入力欄に値を設定し、選択状態を解除する
-void SelectAiModelDialog::setLineEditApiKey(std::string const &apikey)
+void SelectAiModelDialog::setLineEditApiKey(std::string apikey, ModelConf const *conf)
 {
+	std::string account;
+	
+	if (conf && conf->model.provider_id() == ProviderID::Cloudflare) {
+		// Cloudflare の場合、API キーは「アカウント:API キー」の形式で格納されているため、分割して表示する
+		auto pos = apikey.find(':');
+		if (pos != std::string::npos) {
+			account = apikey.substr(0, pos);
+			apikey = apikey.substr(pos + 1);
+		}
+	}
+	
+	setTextAndDeselect(ui->lineEdit_account, account);
 	setTextAndDeselect(ui->lineEdit_cred_api_key, apikey);
 }
 
 GenerativeAI::Credential SelectAiModelDialog::credential() const
 {
 	Credential cred;
-	cred.api_key = ui->lineEdit_cred_api_key->text().toStdString();
+
+	ModelConf const *confp = current_modelconf();
+	if (confp && confp->model.provider_id() == ProviderID::Cloudflare) {
+		QString account = ui->lineEdit_account->text();
+		QString apikey = ui->lineEdit_cred_api_key->text();		
+		cred.api_key = (account + ':' + apikey).toStdString();
+	} else {
+		cred.api_key = ui->lineEdit_cred_api_key->text().toStdString();
+	}
+
 	return cred;
 }
 
@@ -200,7 +221,7 @@ void SelectAiModelDialog::on_pushButton_load_preset_clicked()
 			confp->model.set_endpoint_url({});
 			Request req = make_request(confp->model.provider_id(), confp->model, {});
 			Credential cred = credential();
-			setLineEditEndpointUrl(req.endpoint.url_chat(confp->model, cred));
+			setLineEditEndpointUrl(req.endpoint.url_chat(confp->model, cred, false));
 			
 			// モデル名も comboBox_model に設定
 			ui->comboBox_model->setCurrentText(QString::fromStdString(confp->model.model_name()));
@@ -227,7 +248,7 @@ void SelectAiModelDialog::update_api_endpoint_url()
 			conf->model.set_endpoint_url(req.endpoint.url_);
 		} else {
 			Credential cred = global->get_ai_credential(conf->model);
-			conf->model.set_endpoint_url(req.endpoint.url_chat(conf->model, cred, hostport));
+			conf->model.set_endpoint_url(req.endpoint.url_chat(conf->model, cred, false, hostport));
 		}
 	}
 	setLineEditEndpointUrl(conf->model.endpoint_url());
@@ -270,6 +291,9 @@ void SelectAiModelDialog::on_comboBox_provider_currentIndexChanged(int index)
 				};
 				switch (provider->id) {
 				case ProviderID::OpenAI:
+					Add(api_openai_responses_v1, ProviderID::OpenAI_responses);
+					Add(api_openai_chat_completions_v1, ProviderID::OpenAI_chat_completions);
+					break;
 				case ProviderID::OpenAI_responses:
 					Add(api_openai_responses_v1, ProviderID::OpenAI_responses);
 					break;
@@ -311,7 +335,7 @@ void SelectAiModelDialog::on_comboBox_provider_currentIndexChanged(int index)
 		Credential cred = global->get_ai_credential(conf->model);
 		bool use_env = conf->api_key_method == key_store_environment;
 		cred.api_key = query_api_key(provider->env_name, use_env);
-		setLineEditApiKey(cred.api_key);
+		setLineEditApiKey(cred.api_key, conf);
 	}
 }
 
@@ -362,7 +386,7 @@ void SelectAiModelDialog::on_cred_key_method_changed()
 	ui->lineEdit_cred_api_key->setEnabled(!use_env);
 	cred.api_key = query_api_key(symbol, use_env);
 	
-	setLineEditApiKey(cred.api_key);
+	setLineEditApiKey(cred.api_key, conf);
 }
 
 // API キー表示切替チェックボックス: 入力モードを通常表示 / パスワード表示に切り替える
@@ -549,6 +573,8 @@ void SelectAiModelDialog::selectItem(int row)
 	} else {
 		ui->radioButton_cred_custom->setChecked(true);
 	}
+	
+	ui->lineEdit_account->setEnabled(conf.model.provider_id() == ProviderID::Cloudflare);
 	
 	ui->comboBox_model->setCurrentText(QString::fromStdString(conf.model.model_name()));
 	

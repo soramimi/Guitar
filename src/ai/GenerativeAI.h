@@ -260,14 +260,14 @@ struct EndPoint {
 	std::string url_;
 	std::string suffix_;
 	EndPoint() = default;
-	void set_chat_endpoint_url(std::string const &url);
-	std::string url_chat(const Model &model, const Credential &cred, std::optional<HostPort> hostport = {}) const;
+	void set_chat_endpoint_url(std::string const &url, const Credential &cred);
+	std::string url_chat(const Model &model, const Credential &cred, bool rewrite, std::optional<HostPort> hostport = {}) const;
 	std::string url_models(const Credential &cred, const std::string &cursor) const;
 	std::string url(Type type, Model const &model, Credential const &cred, std::string const &cursor) const
 	{
 		switch (type) {
 		case Type::Chat:
-			return url_chat(model, cred);
+			return url_chat(model, cred, true);
 		case Type::Models:
 			return url_models(cred, cursor);
 		}

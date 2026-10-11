@@ -17,15 +17,16 @@ private:
 	Ui::SelectAiModelDialog *ui;
 	struct Private;
 	Private *m;
+
+	using ModelConf = GenerativeAI::ModelConf;
+	
 	void on_cred_key_method_changed();
 	void setLineEditEndpointUrl(const std::string &url);
-	void setLineEditApiKey(const std::string &apikey);
+	void setLineEditApiKey(std::string apikey, const ModelConf *conf);
 	GenerativeAI::Credential credential() const;
 	void updateListWidget(const std::string &def);
 	void selectItem(int i);
 	void enableSettingsFrame(bool f);
-	
-	using ModelConf = GenerativeAI::ModelConf;
 	
 	ModelConf *modelconf(int row);
 	ModelConf const *modelconf(int row) const
@@ -33,6 +34,10 @@ private:
 		return const_cast<SelectAiModelDialog *>(this)->modelconf(row);
 	}
 	ModelConf *current_modelconf();
+	ModelConf const *current_modelconf() const
+	{
+		return const_cast<SelectAiModelDialog *>(this)->current_modelconf();
+	}
 	bool set_current_modelconf(const ModelConf &newconf);
 	void update_api_endpoint_url();
 	std::string query_api_key(const std::string &symbol, bool env);

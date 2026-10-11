@@ -89,9 +89,6 @@ SelectAiModelPresetDialog::~SelectAiModelPresetDialog()
 	delete ui;
 }
 
-
-
-
 void SelectAiModelPresetDialog::on_tableWidget_itemDoubleClicked(QTableWidgetItem *item)
 {
 	done(QDialog::Accepted);

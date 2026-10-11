@@ -17,7 +17,7 @@
    <item>
     <widget class="QGroupBox" name="groupBox_generate_commit_message_by_ai">
      <property name="title">
-      <string>Enable commit message generation with AI</string>
+      <string>&amp;Enable commit message generation with AI</string>
      </property>
      <property name="checkable">
       <bool>true</bool>
@@ -29,7 +29,7 @@
       <item>
        <widget class="QPushButton" name="pushButton_model_config">
         <property name="text">
-         <string>Model Configuration...</string>
+         <string>&amp;Model Configuration...</string>
         </property>
        </widget>
       </item>
@@ -60,14 +60,14 @@
           <item>
            <widget class="QPushButton" name="pushButton_change_pin">
             <property name="text">
-             <string>Change PIN...</string>
+             <string>&amp;Change PIN...</string>
             </property>
            </widget>
           </item>
           <item>
            <widget class="QPushButton" name="pushButton_lock_vault">
             <property name="text">
-             <string>Lock the vault</string>
+             <string>&amp;Lock the vault</string>
             </property>
            </widget>
           </item>
@@ -84,14 +84,14 @@
              <bool>false</bool>
             </property>
             <property name="text">
-             <string>Destroy the vault</string>
+             <string>&amp;Destroy the vault</string>
             </property>
            </widget>
           </item>
           <item>
            <widget class="QCheckBox" name="checkBox_confirm_destroy_vault">
             <property name="text">
-             <string>Confirm</string>
+             <string>Confirm &amp;destroy</string>
             </property>
            </widget>
           </item>

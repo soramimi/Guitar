@@ -5,6 +5,7 @@
 #include <common/misc.h>
 #include <sys/stat.h>
 #include <common/jstream.h>
+#include <QDebug>
 #include <regex>
 #include <localvault/src/vault/SecureBuffer.h>
 #include <localvault/src/gui/SecureStoreGUI.h>
@@ -33,8 +34,8 @@ const std::vector<ProviderInfo> &complete_provider_table()
 		{ProviderID::Invalid,                      "invalid",                         "Invalid",                          ""},
 		{ProviderID::Custom,                       "custom",                          "Custom",                           ""},
 		{ProviderID::OpenAI,                       "openai",                          "OpenAI",                           "OPENAI_API_KEY"},
-		// {ProviderID::OpenAI_responses,             "openai-responses",                "OpenAI / GPT (responses)",         "OPENAI_API_KEY"},
-		// {ProviderID::OpenAI_chat_completions,      "openai-chat-completions",         "OpenAI / GPT (chat completions)",  "OPENAI_API_KEY"},
+		{ProviderID::OpenAI_responses,             "openai-responses",                "OpenAI / GPT (responses)",         "OPENAI_API_KEY"},
+		{ProviderID::OpenAI_chat_completions,      "openai-chat-completions",         "OpenAI / GPT (chat completions)",  "OPENAI_API_KEY"},
 		{ProviderID::Anthropic,                    "anthropic",                       "Anthropic / Claude",               "ANTHROPIC_API_KEY"},
 		{ProviderID::Google,                       "google",                          "Google / Gemini",                  "GEMINI_API_KEY"},
 		{ProviderID::DeepSeek,                     "deepseek",                        "DeepSeek",                         "DEEPSEEK_API_KEY"},
@@ -42,7 +43,7 @@ const std::vector<ProviderInfo> &complete_provider_table()
 		{ProviderID::XAI,                          "xai",                             "xAI / Grok",                       "XAI_API_KEY"},
 		{ProviderID::PFN,                          "pfn",                             "Preferred Networks / PLaMo",       "PFN_API_KEY"},
 		{ProviderID::Sakura,                       "sakura",                          "Sakura AI Engine",                 "SAKURAAI_API_KEY"},
-		// {ProviderID::Cloudflare,                   "cloudflare",                      "Cloudflare",                       "CLOUDFLARE_API_TOKEN"},
+		{ProviderID::Cloudflare,                   "cloudflare",                      "Cloudflare",                       "CLOUDFLARE_API_KEY"},
 		{ProviderID::OpenRouter,                   "openrouter",                      "OpenRouter",                       "OPENROUTER_API_KEY"},
 		{ProviderID::OrcaRouter,                   "orcarouter",                      "OrcaRouter",                       "ORCAROUTER_API_KEY"},
 		{ProviderID::Requesty,                     "requesty",                        "Requesty",                         "REQUESTY_API_KEY"},
@@ -104,7 +105,7 @@ std::vector<Model> const &ai_model_presets()
 		{ProviderID::XAI,              "grok-latest"},
 		{ProviderID::PFN,              "plamo-3.0-prime"},
 		{ProviderID::Sakura,           "sakura:gpt-oss-120b"},
-		// {ProviderID::Cloudflare,       "cloudflare:openai/gpt-6-luna"},
+		{ProviderID::Cloudflare,       "cloudflare:openai/gpt-6-luna"},
 		{ProviderID::OpenRouter,       "openrouter:anthropic/claude-5.5-sonnet"},
 		{ProviderID::OrcaRouter,       "orcarouter:anthropic/claude-sonnet-5.5"},
 		{ProviderID::Requesty,         "requesty:anthropic/claude-sonnet-5-5"},
@@ -134,7 +135,7 @@ std::vector<ProviderID> const &ai_provider_id_list_for_present_to_users()
 		ProviderID::XAI,
 		ProviderID::PFN,
 		ProviderID::Sakura,
-		// ProviderID::Cloudflare,
+		ProviderID::Cloudflare,
 		ProviderID::OpenRouter,
 		ProviderID::OrcaRouter,
 		ProviderID::Requesty,
@@ -169,7 +170,7 @@ Model Model::from_name(std::string const &name)
 		{ProviderID::XAI, "^grok-"},
 		{ProviderID::PFN, "^plamo-"},
 		{ProviderID::Sakura, "^sakura:"},
-		// {ProviderID::Cloudflare, "^cloudflare:"},
+		{ProviderID::Cloudflare, "^cloudflare:"},
 		{ProviderID::OpenRouter, "^openrouter:"},
 		{ProviderID::OrcaRouter, "^orcarouter:"},
 		{ProviderID::Requesty, "^requesty:"},
@@ -230,7 +231,7 @@ void Model::parse_model(const std::string &model_uri)
 		return false;
 	};
 	
-	// if (Parse("cloudflare:", 443)) return;
+	if (Parse("cloudflare:", 443)) return;
 	if (Parse("openrouter:", 443)) return;
 	if (Parse("orcarouter:", 443)) return;
 	if (Parse("requesty:", 443)) return;
@@ -357,7 +358,7 @@ struct _ApiBaseUrl : public AbstractVisitor<std::string> {
 	}
 	std::string case_Cloudflare()
 	{
-		return "https://api.cloudflare.com/client/v4/accounts/00000000000000000000000000000000/ai/run";
+		return "https://api.cloudflare.com/client/v4/accounts/{{ACCOUNT}}/ai/run";
 	}
 	std::string case_DeepSeek()
 	{
@@ -417,6 +418,7 @@ struct _MakeRequest : public AbstractVisitor<Request> {
 	std::string _standard_api_suffix()
 	{
 		switch (model_.api_compatibility()) {
+		case ProviderID::OpenAI: // fallthru
 		case ProviderID::OpenAI_responses:
 			return "responses";
 		case ProviderID::OpenAI_chat_completions:
@@ -437,7 +439,7 @@ struct _MakeRequest : public AbstractVisitor<Request> {
 		Request r;
 		r.model_name = model_.model_name();
 		set_authorization_bearer_cred(&r, cred_);
-		r.endpoint.set_chat_endpoint_url(_generic_endpoint_url());
+		r.endpoint.set_chat_endpoint_url(_generic_endpoint_url(), cred_);
 		return r;
 	}
 
@@ -446,7 +448,7 @@ struct _MakeRequest : public AbstractVisitor<Request> {
 		Request r;
 		r.model_name = model_.model_name();
 		set_authorization_bearer_cred(&r, cred_);
-		r.endpoint.set_chat_endpoint_url(_generic_endpoint_url());
+		r.endpoint.set_chat_endpoint_url(_generic_endpoint_url(), cred_);
 		return r;
 	}
 
@@ -464,7 +466,7 @@ struct _MakeRequest : public AbstractVisitor<Request> {
 	{
 		Request r;
 		r.model_name = model_.model_name();
-		r.endpoint.set_chat_endpoint_url(_generic_endpoint_url());
+		r.endpoint.set_chat_endpoint_url(_generic_endpoint_url(), cred_);
 		r.header.push_back("x-api-key: " + cred_.api_key);
 		r.header.push_back("anthropic-version: 2023-06-01"); // ref. https://docs.anthropic.com/en/api/versioning
 		return r;
@@ -482,7 +484,7 @@ struct _MakeRequest : public AbstractVisitor<Request> {
 	{
 		Request r;
 		r.model_name = model_.model_name();
-		r.endpoint.set_chat_endpoint_url(_generic_endpoint_url());
+		r.endpoint.set_chat_endpoint_url(_generic_endpoint_url(), cred_);
 		set_authorization_bearer_cred(&r, cred_);
 		return r;
 	}
@@ -491,7 +493,7 @@ struct _MakeRequest : public AbstractVisitor<Request> {
 	{
 		Request r;
 		r.model_name = model_.model_name();
-		r.endpoint.set_chat_endpoint_url(_generic_endpoint_url());
+		r.endpoint.set_chat_endpoint_url(_generic_endpoint_url(), cred_);
 		set_authorization_bearer_cred(&r, cred_);
 		return r;
 	}
@@ -500,7 +502,7 @@ struct _MakeRequest : public AbstractVisitor<Request> {
 	{
 		Request r;
 		r.model_name = model_.model_name();
-		r.endpoint.set_chat_endpoint_url(_generic_endpoint_url());
+		r.endpoint.set_chat_endpoint_url(_generic_endpoint_url(), cred_);
 		set_authorization_bearer_cred(&r, cred_);
 		return r;
 	}
@@ -509,7 +511,7 @@ struct _MakeRequest : public AbstractVisitor<Request> {
 	{
 		Request r;
 		r.model_name = model_.model_name();
-		r.endpoint.set_chat_endpoint_url(_generic_endpoint_url());
+		r.endpoint.set_chat_endpoint_url(_generic_endpoint_url(), cred_);
 		set_authorization_bearer_cred(&r, cred_);
 		return r;
 	}
@@ -518,7 +520,7 @@ struct _MakeRequest : public AbstractVisitor<Request> {
 	{
 		Request r;
 		r.model_name = model_.model_name();
-		r.endpoint.set_chat_endpoint_url(_generic_endpoint_url());
+		r.endpoint.set_chat_endpoint_url(_generic_endpoint_url(), cred_);
 		set_authorization_bearer_cred(&r, cred_);
 		return r;
 	}
@@ -528,7 +530,12 @@ struct _MakeRequest : public AbstractVisitor<Request> {
 		Request r;
 		r.model_name = model_.model_name();
 		r.endpoint.url_ = _endpoint_base_url();
-		set_authorization_bearer_cred(&r, cred_);
+		
+		auto i = cred_.api_key.find(':');
+		if (i != std::string::npos) {
+			std::string key = cred_.api_key.substr(i + 1);
+			r.header.push_back("Authorization: Bearer " + key);
+		}
 		return r;
 	}
 
@@ -536,7 +543,7 @@ struct _MakeRequest : public AbstractVisitor<Request> {
 	{
 		Request r;
 		r.model_name = model_.model_name();
-		r.endpoint.set_chat_endpoint_url(_generic_endpoint_url());
+		r.endpoint.set_chat_endpoint_url(_generic_endpoint_url(), cred_);
 		set_authorization_bearer_cred(&r, cred_);
 		return r;
 	}
@@ -545,7 +552,7 @@ struct _MakeRequest : public AbstractVisitor<Request> {
 	{
 		Request r;
 		r.model_name = model_.model_name();
-		r.endpoint.set_chat_endpoint_url(_generic_endpoint_url());
+		r.endpoint.set_chat_endpoint_url(_generic_endpoint_url(), cred_);
 		set_authorization_bearer_cred(&r, cred_);
 		return r;
 	}
@@ -554,7 +561,7 @@ struct _MakeRequest : public AbstractVisitor<Request> {
 	{
 		Request r;
 		r.model_name = model_.model_name();
-		r.endpoint.set_chat_endpoint_url(_generic_endpoint_url());
+		r.endpoint.set_chat_endpoint_url(_generic_endpoint_url(), cred_);
 		set_authorization_bearer_cred(&r, cred_);
 		return r;
 	}
@@ -563,7 +570,7 @@ struct _MakeRequest : public AbstractVisitor<Request> {
 	{
 		Request r;
 		r.model_name = model_.model_name();
-		r.endpoint.set_chat_endpoint_url(_generic_endpoint_url());
+		r.endpoint.set_chat_endpoint_url(_generic_endpoint_url(), cred_);
 		set_authorization_bearer_cred(&r, cred_);
 		return r;
 	}
@@ -612,12 +619,27 @@ Request make_request(ProviderID provider, const Model &model, Credential const &
 {
 	Request ret = _MakeRequest(model, cred).visit(provider);
 	if (!model.endpoint_url().empty()) {
-		ret.endpoint.set_chat_endpoint_url(model.endpoint_url());
+		ret.endpoint.set_chat_endpoint_url(model.endpoint_url(), cred);
 	}
 	return ret;
 }
 
-void EndPoint::set_chat_endpoint_url(const std::string &url)
+static std::string rewrite_url_account(std::string url, Credential const &cred)
+{
+	static constexpr std::string_view account_placeholder = "{{ACCOUNT}}";
+	std::string account;
+	auto i = cred.api_key.find(':');
+	if (i != std::string::npos) {
+		account = cred.api_key.substr(0, i);
+	}
+	auto j = url.find(account_placeholder);
+	if (j != std::string::npos) {
+		url = url.substr(0, j) + account + url.substr(j + account_placeholder.size());
+	}
+	return url;
+}
+
+void EndPoint::set_chat_endpoint_url(const std::string &url, Credential const &cred)
 {
 	url_ = url;
 	static constexpr std::string_view suffix_chat_completions = "/chat/completions";
@@ -635,27 +657,32 @@ void EndPoint::set_chat_endpoint_url(const std::string &url)
 	if (Split(suffix_responses)) return;
 	if (Split(suffix_messages)) return;
 
-	// google special case
-	if (url_.find(".googleapis.com/") != std::string::npos) {
+	if (url_.find(".googleapis.com/") != std::string::npos) { // google special case
 		auto i = url_.find("/models/");
 		if (i != std::string::npos) {
 			suffix_ = url_.substr(i);
 			url_ = url_.substr(0, i);
 		}
+	} else if (url_.find(".cloudflare.com/") != std::string::npos) { // cloudflare special case
+		url_ = rewrite_url_account(url_, cred);
 	}
 }
 
-std::string EndPoint::url_chat(Model const &model, Credential const &cred, std::optional<HostPort> hostport) const
+std::string EndPoint::url_chat(Model const &model, Credential const &cred, bool rewrite, std::optional<HostPort> hostport) const
 {
 	std::string url = url_;
 
-	// google special case
-	if (url.find(".googleapis.com/") != std::string::npos) {
+	if (url.find(".googleapis.com/") != std::string::npos) { // google special case
 		url = url / "models" / url_encode(model.model_name()) + ":generateContent";
 		url += "?key=" + cred.api_key;
 	} else {
 		if (!suffix_.empty()) {
 			url = url / suffix_;
+		}
+		if (rewrite) {
+			if (url.find(".cloudflare.com/") != std::string::npos) { // cloudflare special case
+				url = rewrite_url_account(url, cred);
+			}
 		}
 	}
 

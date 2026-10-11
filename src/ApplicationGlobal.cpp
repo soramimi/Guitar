@@ -282,14 +282,14 @@ GenerativeAI::Credential ApplicationGlobal::get_ai_credential(GenerativeAI::Mode
 	GenerativeAI::Credential cred;
 	GenerativeAI::ProviderInfo const *provider = GenerativeAI::provider_info(model.provider_id()); // 絶対に非nullptrを返す
 	Q_ASSERT(provider);
-	std::string envname = provider->env_name;
-	if (envname.empty()) return {};
+	std::string symbol = provider->env_name;
+	if (symbol.empty()) return {};
 	
-	auto opt = global->appsettings.ai_api_keys.get_api_key(envname);
+	auto opt = global->appsettings.ai_api_keys.get_api_key(symbol);
 	if (opt && opt->from == AiApiKeys::KeyFrom::LocalSecret) {
 		cred.api_key = misc::trimmed(opt->api_key);
-	} else if (!envname.empty()) {
-		char const *env = std::getenv(envname.c_str());
+	} else if (!symbol.empty()) {
+		char const *env = std::getenv(symbol.c_str());
 		if (env) {
 			cred.api_key = env;
 		}

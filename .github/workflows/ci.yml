@@ -32,6 +32,7 @@ jobs:
           qt6-base-dev \
           qt6-svg-dev \
           libcurl4-openssl-dev \
+        	libsecret-1-dev \
           mecab-utils
           
     - name: Build Guitar
