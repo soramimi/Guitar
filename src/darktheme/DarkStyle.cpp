@@ -14,7 +14,7 @@
 #include <QTableWidget>
 #include "darkstylehelper.i"
 
-#define THEME Theme::Dark
+#define THEME DarkStyle::Theme::Dark
 
 #define MBI_NORMAL                  1
 #define MBI_HOT                     2
@@ -244,9 +244,9 @@ public:
 // static const int TEXTURE_CACHE_SIZE = 100;
 
 struct DarkStyle::Private {
-	Theme theme = THEME;
+	DarkStyle::Theme theme = THEME;
 	
-	QColor base_color;
+	QColor theme_color;
 	bool images_loaded = false;
 
 	ScrollBarTextures hsb;
@@ -276,10 +276,12 @@ struct DarkStyle::Private {
 DarkStyle::DarkStyle(QColor base_color)
 	: m(new Private)
 {
-	if (theme() == Theme::Light || theme() == Theme::Gray) {
-		base_color = QColor(QRgb(0xffffff));
+	if (theme() == Theme::Light) {
+		base_color = QColor(QRgb(0xf0f0f0));
+	// } else if (theme() == Theme::Gray) {
+	// 	base_color = QColor(QRgb(0xc0c0c0));
 	}
-	setBaseColor(base_color);
+	setThemeColor(base_color);
 }
 
 DarkStyle::~DarkStyle()
@@ -322,121 +324,22 @@ qreal DarkStyle::dpiScaled(qreal value, const QStyleOption *option) const
 	return DarkStyleHelper::dpiScaled(value, option);
 }
 
-QColor DarkStyle::baseColor() const
+void DarkStyle::setThemeColor(QColor const &color)
 {
-	return m->base_color;
-}
-
-void DarkStyle::setBaseColor(QColor const &color)
-{
-	m->base_color = color;
+	m->theme_color = color;
 	m->images_loaded = false;
 }
 
-QColor DarkStyle::color(int level, int alpha) const
+QColor DarkStyle::themeColor() const
 {
-	QColor c = baseColor().lighter(level * 100 / 255);
+	return m->theme_color;
+}
+
+QColor DarkStyle::themeColor(int level, int alpha) const
+{
+	QColor c = themeColor().lighter(level * 100 / 255);
 	c.setAlpha(alpha);
 	return c;
-}
-
-void DarkStyle::setScrollBarExtent(int n)
-{
-	m->scroll_bar_extent = n;
-}
-
-QImage DarkStyle::colorizeImage(QImage image)
-{
-	int w = image.width();
-	int h = image.height();
-	if (w > 0 && h > 0) {
-		QColor c = color(128);
-		QRgb rgb = c.rgb();
-		Q_ASSERT(image.format() == QImage::Format_ARGB32);
-		for (int y = 0; y < h; y++) {
-			QRgb *p = reinterpret_cast<QRgb *>(image.scanLine(y));
-			for (int x = 0; x < w; x++) {
-				p[x] = correct_brightness(rgb, qGray(p[x]), qAlpha(p[x]));
-			}
-		}
-	}
-	return image;
-}
-
-QImage DarkStyle::loadColorizedImage(QString const &path, QString const &role)
-{
-	QImage image = loadImage(path);
-	image = colorizeImage(image);
-	image.setText("name", path);
-	image.setText("role", role);
-	return image;
-}
-
-ButtonImages DarkStyle::generateButtonImages(QString const &path)
-{
-	QImage source = loadImage(path).convertedTo(QImage::Format_ARGB32);
-	ButtonImages buttons;
-	int w = source.width();
-	int h = source.height();
-	if (w > 4 && h > 4) {
-		QRgb rgb(0x808080);
-		if (theme() == Theme::Dark) {
-			rgb = color(128).rgb();
-		} else if (theme() == Theme::Dark) {
-			rgb = color(255).rgb();
-		}
-		Lighten lighten;
-		buttons.im_normal = source;
-		buttons.im_pressed = source;
-		w -= 4;
-		h -= 4;
-		for (int y = 0; y < h; y++) {
-			QRgb *src1 = reinterpret_cast<QRgb *>(source.scanLine(y + 1));
-			QRgb *src2 = reinterpret_cast<QRgb *>(source.scanLine(y + 2));
-			QRgb *src3 = reinterpret_cast<QRgb *>(source.scanLine(y + 3));
-			QRgb *dst0 = reinterpret_cast<QRgb *>(buttons.im_normal.scanLine(y + 2)) + 2;
-			QRgb *dst1 = reinterpret_cast<QRgb *>(buttons.im_pressed.scanLine(y + 2)) + 2;
-			for (int x = 0; x < w; x++) {
-				int v = (int)qAlpha(src3[x + 3]) - (int)qAlpha(src1[x + 1]);
-				v = (v + 256) / 2;
-				int alpha = qAlpha(src2[x + 2]);
-				dst0[x] = correct_brightness(rgb, v, alpha);
-				v = lighten[v];
-				dst1[x] = correct_brightness(rgb, v, alpha);
-			}
-		}
-		buttons.im_normal.setText("name", source.text("name"));
-		buttons.im_pressed.setText("name", source.text("name"));
-		buttons.im_normal.setText("role", "normal");
-		buttons.im_pressed.setText("role", "hover");
-	}
-	return buttons;
-}
-
-QImage DarkStyle::generateHoverImage(QImage const &source)
-{
-	QImage newimage;
-	int w = source.width();
-	int h = source.height();
-	if (w > 2 && h > 2) {
-		QColor c = color(128);
-		QRgb rgb = c.rgb();
-		Lighten lighten;
-		newimage = source;
-		Q_ASSERT(newimage.format() == QImage::Format_ARGB32);
-		w -= 2;
-		h -= 2;
-		for (int y = 0; y < h; y++) {
-			QRgb *ptr = reinterpret_cast<QRgb *>(newimage.scanLine(y + 1)) + 1;
-			for (int x = 0; x < w; x++) {
-				int v = qGray(ptr[x]);
-				v = lighten[v];
-				ptr[x] = correct_brightness(rgb, v, qAlpha(ptr[x]));
-			}
-		}
-		newimage.setText("role", "hover");
-	}
-	return newimage;
 }
 
 static void correct_image_level(QImage *image, bool ninepatch, float wl, float ww, float gamma)
@@ -479,6 +382,105 @@ static void correct_image_level(ButtonImages *images, bool ninepatch, float wl, 
 	correct_image_level(&images->im_pressed, ninepatch, wl, ww, gamma);
 }
 
+void DarkStyle::setScrollBarExtent(int n)
+{
+	m->scroll_bar_extent = n;
+}
+
+QImage DarkStyle::colorizeImage(QImage image)
+{
+	int w = image.width();
+	int h = image.height();
+	if (w > 0 && h > 0) {
+		QColor c = themeColor(128);
+		QRgb rgb = c.rgb();
+		Q_ASSERT(image.format() == QImage::Format_ARGB32);
+		for (int y = 0; y < h; y++) {
+			QRgb *p = reinterpret_cast<QRgb *>(image.scanLine(y));
+			for (int x = 0; x < w; x++) {
+				p[x] = correct_brightness(rgb, qGray(p[x]), qAlpha(p[x]));
+			}
+		}
+	}
+	return image;
+}
+
+QImage DarkStyle::loadColorizedImage(QString const &path, QString const &role)
+{
+	QImage image = loadImage(path);
+	image = colorizeImage(image);
+	image.setText("name", path);
+	image.setText("role", role);
+	return image;
+}
+
+ButtonImages DarkStyle::generateButtonImages(QString const &path)
+{
+	QImage source = loadImage(path).convertedTo(QImage::Format_ARGB32);
+	ButtonImages buttons;
+	int w = source.width();
+	int h = source.height();
+	if (w > 4 && h > 4) {
+		QRgb rgb(0x808080);
+		if (theme() == Theme::Dark) {
+			rgb = themeColor(128).rgb();
+		} else if (theme() == Theme::Dark) {
+			rgb = themeColor(255).rgb();
+		}
+		Lighten lighten;
+		buttons.im_normal = source;
+		buttons.im_pressed = source;
+		w -= 4;
+		h -= 4;
+		for (int y = 0; y < h; y++) {
+			QRgb *src1 = reinterpret_cast<QRgb *>(source.scanLine(y + 1));
+			QRgb *src2 = reinterpret_cast<QRgb *>(source.scanLine(y + 2));
+			QRgb *src3 = reinterpret_cast<QRgb *>(source.scanLine(y + 3));
+			QRgb *dst0 = reinterpret_cast<QRgb *>(buttons.im_normal.scanLine(y + 2)) + 2;
+			QRgb *dst1 = reinterpret_cast<QRgb *>(buttons.im_pressed.scanLine(y + 2)) + 2;
+			for (int x = 0; x < w; x++) {
+				int v = (int)qAlpha(src3[x + 3]) - (int)qAlpha(src1[x + 1]);
+				v = (v + 256) / 2;
+				int alpha = qAlpha(src2[x + 2]);
+				dst0[x] = correct_brightness(rgb, v, alpha);
+				v = lighten[v];
+				dst1[x] = correct_brightness(rgb, v, alpha);
+			}
+		}
+		buttons.im_normal.setText("name", source.text("name"));
+		buttons.im_pressed.setText("name", source.text("name"));
+		buttons.im_normal.setText("role", "normal");
+		buttons.im_pressed.setText("role", "hover");
+	}
+	return buttons;
+}
+
+QImage DarkStyle::generateHoverImage(QImage const &source)
+{
+	QImage newimage;
+	int w = source.width();
+	int h = source.height();
+	if (w > 2 && h > 2) {
+		QColor c = themeColor(128);
+		QRgb rgb = c.rgb();
+		Lighten lighten;
+		newimage = source;
+		Q_ASSERT(newimage.format() == QImage::Format_ARGB32);
+		w -= 2;
+		h -= 2;
+		for (int y = 0; y < h; y++) {
+			QRgb *ptr = reinterpret_cast<QRgb *>(newimage.scanLine(y + 1)) + 1;
+			for (int x = 0; x < w; x++) {
+				int v = qGray(ptr[x]);
+				v = lighten[v];
+				ptr[x] = correct_brightness(rgb, v, qAlpha(ptr[x]));
+			}
+		}
+		newimage.setText("role", "hover");
+	}
+	return newimage;
+}
+
 void DarkStyle::loadImages()
 {
 	if (m->images_loaded) return;
@@ -501,22 +503,23 @@ void DarkStyle::loadImages()
 	m->progress_horz = loadImage(QLatin1String(":/darktheme/progress/horz.png"));
 	m->progress_vert = loadImage(QLatin1String(":/darktheme/progress/vert.png"));
 
-	if (theme() == Theme::Gray) {
-		float wl = 60;
-		float ww = 280;
-		float gamma = 0.8;
-		correct_image_level(&m->hsb.sub_line           , true, wl, ww, gamma);
-		correct_image_level(&m->hsb.add_line           , true, wl, ww, gamma);
-		correct_image_level(&m->hsb.page_bg            , true, wl, ww, gamma);
-		correct_image_level(&m->hsb.slider.im_normal   , true, wl, ww, gamma);
-		correct_image_level(&m->hsb.slider.im_pressed  , true, wl, ww, gamma);
+	// if (theme() == Theme::Gray) {
+	// 	float wl = 60;
+	// 	float ww = 280;
+	// 	float gamma = 0.8;
+	// 	correct_image_level(&m->hsb.sub_line           , true, wl, ww, gamma);
+	// 	correct_image_level(&m->hsb.add_line           , true, wl, ww, gamma);
+	// 	correct_image_level(&m->hsb.page_bg            , true, wl, ww, gamma);
+	// 	correct_image_level(&m->hsb.slider.im_normal   , true, wl, ww, gamma);
+	// 	correct_image_level(&m->hsb.slider.im_pressed  , true, wl, ww, gamma);
 
-		correct_image_level(&m->vsb.sub_line           , true, wl, ww, gamma);
-		correct_image_level(&m->vsb.add_line           , true, wl, ww, gamma);
-		correct_image_level(&m->vsb.page_bg            , true, wl, ww, gamma);
-		correct_image_level(&m->vsb.slider.im_normal   , true, wl, ww, gamma);
-		correct_image_level(&m->vsb.slider.im_pressed  , true, wl, ww, gamma);
-	} else if (theme() == Theme::Light) {
+	// 	correct_image_level(&m->vsb.sub_line           , true, wl, ww, gamma);
+	// 	correct_image_level(&m->vsb.add_line           , true, wl, ww, gamma);
+	// 	correct_image_level(&m->vsb.page_bg            , true, wl, ww, gamma);
+	// 	correct_image_level(&m->vsb.slider.im_normal   , true, wl, ww, gamma);
+	// 	correct_image_level(&m->vsb.slider.im_pressed  , true, wl, ww, gamma);
+	// } else
+	if (theme() == Theme::Light) {
 		float wl = 50;
 		float ww = 300;
 		float gamma = 0.7;
@@ -549,7 +552,7 @@ void DarkStyle::loadImages()
 
 QPixmap DarkStyle::pixmapFromImage(const QImage &image, QSize size) const
 {
-	QString key = pixmapkey(image.text("name"), image.text("role"), size, baseColor());
+	QString key = pixmapkey(image.text("name"), image.text("role"), size, themeColor());
 
 	QPixmap pm;
 	if (QPixmapCache::find(key, &pm)) {
@@ -577,11 +580,11 @@ void DarkStyle::drawNinePatchImage(QPainter *p, const QImage &image, const QRect
 std::pair<QColor, QColor> DarkStyle::menuBorderColors(Theme theme) const
 {
 	if (theme == DarkStyle::Theme::Dark) {
-		return {color(128), color(32)};
-	} else if (theme == DarkStyle::Theme::Gray) {
-		return {color(255), color(160)};
+		return {themeColor(128), themeColor(32)};
+	// } else if (theme == DarkStyle::Theme::Gray) {
+	// 	return {themeColor(255), themeColor(160)};
 	} else if (theme == DarkStyle::Theme::Light) {
-		return {color(255), color(192)};
+		return {themeColor(255), themeColor(192)};
 	}
 	return {};
 }
@@ -744,14 +747,14 @@ void DarkStyle::drawButton(QPainter *p, const QStyleOption *option, bool mac_mar
 				color0.setAlpha(0);
 				color1.setAlpha(128);
 			}
-		} else if (theme() == Theme::Gray) {
-			if (pressed) {
-				color0.setAlpha(16);
-				color1.setAlpha(96);
-			} else {
-				color0.setAlpha(0);
-				color1.setAlpha(64);
-			}
+		// } else if (theme() == Theme::Gray) {
+		// 	if (pressed) {
+		// 		color0.setAlpha(16);
+		// 		color1.setAlpha(96);
+		// 	} else {
+		// 		color0.setAlpha(0);
+		// 		color1.setAlpha(64);
+		// 	}
 		} else if (theme() == Theme::Light) {
 			if (pressed) {
 				color0.setAlpha(16);
@@ -792,46 +795,46 @@ void DarkStyle::drawToolButton(QPainter *p, const QStyleOption *option) const
 	QColor color0, color1;
 #ifdef Q_OS_MAC
 	if (pressed) {
-		color0 = color(72);
-		color1 = color(40);
+		color0 = themeColor(72);
+		color1 = themeColor(40);
 	} else {
-		color0 = color(80);
-		color1 = color(48);
+		color0 = themeColor(80);
+		color1 = themeColor(48);
 	}
 #else
 #if 1
 	if (theme() == Theme::Dark) {
 		if (pressed) {
-			color0 = color(80);
-			color1 = color(48);
+			color0 = themeColor(80);
+			color1 = themeColor(48);
 		} else if (hover) {
-			color0 = color(90);
-			color1 = color(60);
+			color0 = themeColor(90);
+			color1 = themeColor(60);
 		} else {
-			color0 = color(80);
-			color1 = color(48);
+			color0 = themeColor(80);
+			color1 = themeColor(48);
 		}
-	} else if (theme() == Theme::Gray) {
-		if (pressed) {
-			color0 = color(224);
-			color1 = color(128);
-		} else if (hover) {
-			color0 = color(250);
-			color1 = color(170);
-		} else {
-			color0 = color(240);
-			color1 = color(160);
-		}
+	// } else if (theme() == Theme::Gray) {
+	// 	if (pressed) {
+	// 		color0 = themeColor(224);
+	// 		color1 = themeColor(128);
+	// 	} else if (hover) {
+	// 		color0 = themeColor(250);
+	// 		color1 = themeColor(170);
+	// 	} else {
+	// 		color0 = themeColor(240);
+	// 		color1 = themeColor(160);
+	// 	}
 	} else if (theme() == Theme::Light) {
 		if (pressed) {
-			color0 = color(240);
-			color1 = color(180);
+			color0 = themeColor(240);
+			color1 = themeColor(180);
 		} else if (hover) {
-			color0 = color(255);
-			color1 = color(214);
+			color0 = themeColor(255);
+			color1 = themeColor(214);
 		} else {
-			color0 = color(250);
-			color1 = color(192);
+			color0 = themeColor(250);
+			color1 = themeColor(192);
 		}
 	}
 
@@ -844,9 +847,9 @@ void DarkStyle::drawToolButton(QPainter *p, const QStyleOption *option) const
 	p->fillRect(x, y, w, h, br);
 
 	if (option->state & State_Raised) {
-		drawFrame(p, option->rect, color(96), color(32));
+		drawFrame(p, option->rect, themeColor(96), themeColor(32));
 	} else if (option->state & State_Sunken) {
-		drawFrame(p, option->rect, color(48), color(48));
+		drawFrame(p, option->rect, themeColor(48), themeColor(48));
 	}
 
 	p->restore();
@@ -869,30 +872,36 @@ void DarkStyle::drawMenuBarBG(QPainter *p, const QStyleOption *option, QWidget c
 
 void DarkStyle::polish(QPalette &palette)
 {
-	if (!baseColor().isValid()) {
-		setBaseColor(Qt::white);
+	if (!themeColor().isValid()) {
+		setThemeColor(Qt::white);
 	}
 	loadImages();
 	if (theme() == Theme::Dark) {
-		palette = QPalette(color(64));
-		palette.setColor(QPalette::Normal, QPalette::Base, Qt::black);
-		palette.setColor(QPalette::Disabled, QPalette::Text, color(160));
-		palette.setColor(QPalette::Disabled, QPalette::ButtonText, color(128));
+		palette = QPalette(themeColor(64));
+		palette.setColor(QPalette::All, QPalette::Base, Qt::black);
+		palette.setColor(QPalette::All, QPalette::Text, Qt::white);
+		palette.setColor(QPalette::All, QPalette::ButtonText, Qt::white);
+		palette.setColor(QPalette::Disabled, QPalette::Text, themeColor(160));
+		palette.setColor(QPalette::Disabled, QPalette::ButtonText, themeColor(128));
 		palette.setColor(QPalette::Normal, QPalette::Highlight, selectionColor().lighter(75));
 #ifndef Q_OS_WIN
 		palette.setColor(QPalette::ToolTipText, Qt::black); // ツールチップの文字色
 #endif
-	} else if (theme() == Theme::Gray) {
-		palette = QPalette(color(160));
-		palette.setColor(QPalette::Normal, QPalette::Base, color(192));
-		palette.setColor(QPalette::Disabled, QPalette::Text, color(96));
-		palette.setColor(QPalette::Disabled, QPalette::ButtonText, color(128));
-		palette.setColor(QPalette::Normal, QPalette::Highlight, selectionColor().lighter(125));
+	// } else if (theme() == Theme::Gray) {
+	// 	palette = QPalette(themeColor(248));
+	// 	palette.setColor(QPalette::All, QPalette::Base, themeColor(248));
+	// 	palette.setColor(QPalette::All, QPalette::Text, Qt::black);
+	// 	palette.setColor(QPalette::All, QPalette::ButtonText, Qt::black);
+	// 	palette.setColor(QPalette::Disabled, QPalette::Text, themeColor(64));
+	// 	palette.setColor(QPalette::Disabled, QPalette::ButtonText, themeColor(160));
+	// 	palette.setColor(QPalette::Normal, QPalette::Highlight, selectionColor().lighter(192));
 	} else if (theme() == Theme::Light) {
-		palette = QPalette(color(240));
-		palette.setColor(QPalette::Normal, QPalette::Base, Qt::white);
-		palette.setColor(QPalette::Disabled, QPalette::Text, color(64));
-		palette.setColor(QPalette::Disabled, QPalette::ButtonText, color(160));
+		palette = QPalette(themeColor(224));
+		palette.setColor(QPalette::All, QPalette::Base, themeColor(224));
+		palette.setColor(QPalette::All, QPalette::Text, Qt::black);
+		palette.setColor(QPalette::All, QPalette::ButtonText, Qt::black);
+		palette.setColor(QPalette::Disabled, QPalette::Text, themeColor(64));
+		palette.setColor(QPalette::Disabled, QPalette::ButtonText, themeColor(160));
 		palette.setColor(QPalette::Normal, QPalette::Highlight, selectionColor().lighter(192));
 	}
 	m->palette = palette;
@@ -1337,27 +1346,25 @@ void DarkStyle::drawPrimitive(PrimitiveElement element, const QStyleOption *opti
 	if (element == PE_PanelMenu) { // メニューの背景
 		if (theme() == Theme::Dark) {
 			QRect r = option->rect;
-			drawFrame(painter, r, color(10), color(10));
+			drawFrame(painter, r, themeColor(10), themeColor(10));
 			r = r.adjusted(1, 1, -1, -1);
-			drawFrame(painter, r, color(128), color(64));
+			drawFrame(painter, r, themeColor(128), themeColor(64));
 			r = r.adjusted(1, 1, -1, -1);
-			painter->fillRect(r, color(80));
-		} else if (theme() == Theme::Gray) {
-			QRect r = option->rect;
-			// painter->fillRect(r, Qt::red);
-			drawFrame(painter, r, color(240), color(10));
-			r = r.adjusted(1, 1, -1, -1);
-			drawFrame(painter, r, color(255), color(160));
-			r = r.adjusted(1, 1, -1, -1);
-			painter->fillRect(r, color(224));
+			painter->fillRect(r, themeColor(80));
+		// } else if (theme() == Theme::Gray) {
+		// 	QRect r = option->rect;
+		// 	drawFrame(painter, r, themeColor(240), themeColor(10));
+		// 	r = r.adjusted(1, 1, -1, -1);
+		// 	drawFrame(painter, r, themeColor(255), themeColor(160));
+		// 	r = r.adjusted(1, 1, -1, -1);
+		// 	painter->fillRect(r, themeColor(224));
 		} else if (theme() == Theme::Light) {
 			QRect r = option->rect;
-			// painter->fillRect(r, Qt::red);
-			drawFrame(painter, r, color(250), color(10));
+			drawFrame(painter, r, themeColor(250), themeColor(10));
 			r = r.adjusted(1, 1, -1, -1);
-			drawFrame(painter, r, color(255), color(192));
+			drawFrame(painter, r, themeColor(255), themeColor(192));
 			r = r.adjusted(1, 1, -1, -1);
-			painter->fillRect(r, color(250));
+			painter->fillRect(r, themeColor(250));
 		}
 		return;
 	}
@@ -1407,7 +1414,7 @@ void DarkStyle::drawPrimitive(PrimitiveElement element, const QStyleOption *opti
 	}
 	if (element == PE_PanelItemViewRow) {
 		if (option->state & State_MouseOver) {
-			painter->fillRect(option->rect, option->palette.color(QPalette::Window).lighter(95));
+			// painter->fillRect(option->rect, option->palette.color(QPalette::Window).lighter(95));
 		}
 		return;
 	}
@@ -1500,7 +1507,7 @@ void DarkStyle::drawPrimitive(PrimitiveElement element, const QStyleOption *opti
 					int extent = rect.height() - 2;
 					QPixmap pm;
 					{
-						QString key = pixmapkey("checkbox", "checked", QSize(extent, extent), baseColor());
+						QString key = pixmapkey("checkbox", "checked", QSize(extent, extent), themeColor());
 						if (!QPixmapCache::find(key, &pm)) {
 							QImage img = render_msdf_image(m->check_msdf, QSize(extent * 4, extent * 4)); // 4倍の解像度でレンダリングして縮小する
 							img = img.scaled(extent, extent);
@@ -1556,7 +1563,7 @@ void DarkStyle::drawControl(ControlElement ce, const QStyleOption *option, QPain
 		int y = option->rect.y();
 		int w = option->rect.width();
 		int h = option->rect.height();
-		p->fillRect(x, y + h - 1, w, 1, color(32));
+		p->fillRect(x, y + h - 1, w, 1, themeColor(32));
 		return;
 	}
 #endif
@@ -2256,7 +2263,7 @@ void DarkStyle::drawControl(ControlElement ce, const QStyleOption *option, QPain
 			}
 			QPixmap pm;
 			QSize size(w, h);
-			key = pixmapkey("progress_bar", key, size, baseColor());
+			key = pixmapkey("progress_bar", key, size, themeColor());
 			if (!QPixmapCache::find(key, &pm)) {
 				QImage im = image->scaled(size, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
 				pm = QPixmap::fromImage(im);
@@ -2779,7 +2786,7 @@ void DarkStyle::drawComplexControl(ComplexControl cc, const QStyleOptionComplex 
 
 			if ((option->subControls & SC_SliderGroove) && groove.isValid()) {
 				QRect rect(0, 0, groove.width(), groove.height());
-				QString key = pixmapkey("slider_groove", horizontal ? "horz" : "vert", rect.size(), baseColor());
+				QString key = pixmapkey("slider_groove", horizontal ? "horz" : "vert", rect.size(), themeColor());
 
 				QRectF grooveRect;
 				double r = std::min(groove.width(), groove.height()) / 2.0;
@@ -2807,14 +2814,14 @@ void DarkStyle::drawComplexControl(ComplexControl cc, const QStyleOptionComplex 
 					}
 					groovePainter.setPen(Qt::NoPen);
 					if (theme() == Theme::Dark) {
-						gradient.setColorAt(0, color(32));
-						gradient.setColorAt(1, color(128));
-					} else if (theme() == Theme::Gray) {
-						gradient.setColorAt(0, color(80));
-						gradient.setColorAt(1, color(255));
+						gradient.setColorAt(0, themeColor(32));
+						gradient.setColorAt(1, themeColor(128));
+					// } else if (theme() == Theme::Gray) {
+					// 	gradient.setColorAt(0, themeColor(80));
+					// 	gradient.setColorAt(1, themeColor(255));
 					} else if (theme() == Theme::Light) {
-						gradient.setColorAt(0, color(120));
-						gradient.setColorAt(1, color(255));
+						gradient.setColorAt(0, themeColor(120));
+						gradient.setColorAt(1, themeColor(255));
 					}
 					groovePainter.setBrush(gradient);
 					groovePainter.drawRoundedRect(grooveRect, r, r);
@@ -2852,20 +2859,20 @@ void DarkStyle::drawComplexControl(ComplexControl cc, const QStyleOptionComplex 
 
 					if (horizontal) {
 						if (ticksAbove) {
-							p->setPen(color(128));
+							p->setPen(themeColor(128));
 							p->drawLine(pos, o->rect.top() + extra, pos, o->rect.top() + tickSize);
 						}
 						if (ticksBelow) {
-							p->setPen(color(0));
+							p->setPen(themeColor(0));
 							p->drawLine(pos, o->rect.bottom() - extra, pos, o->rect.bottom() - tickSize);
 						}
 					} else {
 						if (ticksAbove) {
-							p->setPen(color(128));
+							p->setPen(themeColor(128));
 							p->drawLine(o->rect.left() + extra, pos, o->rect.left() + tickSize, pos);
 						}
 						if (ticksBelow) {
-							p->setPen(color(0));
+							p->setPen(themeColor(0));
 							p->drawLine(o->rect.right() - extra, pos, o->rect.right() - tickSize, pos);
 						}
 					}
@@ -2881,7 +2888,7 @@ void DarkStyle::drawComplexControl(ComplexControl cc, const QStyleOptionComplex 
 				QRect r = pixmapRect.adjusted(0, 0, -1, -1);
 				QPainterPath path;
 				path.addEllipse(r);
-				QString handlePixmapName = pixmapkey(QLatin1String("slider_handle"), "", handle.size(), baseColor());
+				QString handlePixmapName = pixmapkey(QLatin1String("slider_handle"), "", handle.size(), themeColor());
 				if (!QPixmapCache::find(handlePixmapName, &cache)) {
 					cache = QPixmap(handle.size());
 					cache.fill(Qt::transparent);
@@ -2894,13 +2901,13 @@ void DarkStyle::drawComplexControl(ComplexControl cc, const QStyleOptionComplex 
 					gradient.setStart(pixmapRect.topLeft());
 					gradient.setFinalStop(pixmapRect.bottomRight());
 					if (theme() == Theme::Dark) {
-						gradient.setColorAt(0, color(192));
+						gradient.setColorAt(0, themeColor(192));
 						gradient.setColorAt(1, QColor(0, 0, 0));
-					} else if (theme() == Theme::Gray) {
-						gradient.setColorAt(0, color(255));
-						gradient.setColorAt(1, QColor(80, 80, 80));
+					// } else if (theme() == Theme::Gray) {
+					// 	gradient.setColorAt(0, themeColor(255));
+					// 	gradient.setColorAt(1, QColor(80, 80, 80));
 					} else if (theme() == Theme::Light) {
-						gradient.setColorAt(0, color(255));
+						gradient.setColorAt(0, themeColor(255));
 						gradient.setColorAt(1, QColor(144, 144, 144));
 					}
 					handlePainter.save();
@@ -2909,9 +2916,9 @@ void DarkStyle::drawComplexControl(ComplexControl cc, const QStyleOptionComplex 
 
 					QColor highlight_color;
 					if (theme() == Theme::Dark) {
-						highlight_color = correct_brightness(color(160).rgb(), 192, 255);
-					} else if (theme() == Theme::Gray || theme() == Theme::Light) {
-						highlight_color = correct_brightness(color(255).rgb(), 255, 255);
+						highlight_color = correct_brightness(themeColor(160).rgb(), 192, 255);
+					} else if (theme() == Theme::Light) {
+						highlight_color = correct_brightness(themeColor(255).rgb(), 255, 255);
 					}
 
 					handlePainter.setPen(QPen(highlight_color, 2));

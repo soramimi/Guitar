@@ -21,7 +21,7 @@ private:
 
 	enum class Theme {
 		Light,
-		Gray,
+		// Gray,
 		Dark,
 	};
 	Theme theme() const;
@@ -53,7 +53,7 @@ private:
 	void drawButton(QPainter *p, QStyleOption const *option, bool mac_margin = true) const;
 	void drawToolButton(QPainter *p, QStyleOption const *option) const;
 	void drawMenuBarBG(QPainter *p, const QStyleOption *option, const QWidget *widget) const;
-	QColor color(int level, int alpha = 255) const;
+	QColor themeColor(int level, int alpha = 255) const;
 	void drawItemViewText(QPainter *p, const QStyleOptionViewItem *option, const QRect &rect, bool abbreviation) const;
 	QRect indicatorRect(const QStyleOption *option, const QWidget *widget, const QRect &rect) const;
 	qreal dpiScaled(qreal value, qreal dpi) const;
@@ -65,8 +65,8 @@ public:
 
 	bool isDpiScalingEnabled() const;
 
-	QColor baseColor() const;
-	void setBaseColor(const QColor &color);
+	QColor themeColor() const;
+	void setThemeColor(const QColor &color);
 	void setScrollBarExtent(int n);
 	void setDpiScalingEnabled(bool f);
 

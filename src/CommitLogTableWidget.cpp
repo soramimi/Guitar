@@ -542,7 +542,7 @@ void CommitLogTableWidget::paintEvent(QPaintEvent *e)
 		// draw marks
 
 		pr.setOpacity(opacity * 1);
-		pr.setBrush(mainwindow()->color(0));
+		pr.setBrush(palette().color(QPalette::Base));
 
 		for (int i = 0; i < (int)items.size(); i++) {
 			double y = DrawMark(i);
