@@ -8,6 +8,7 @@
 class FileTypeWrapper {
 public:
 	struct Result {
+		bool isdir = false;
 		std::string mimetype;
 		std::string charset;
 	};

@@ -392,15 +392,22 @@ FileTypeWrapper::Result FileTypeWrapper::detect(int fd) const
 	if (fd != -1) {
 		struct stat st;
 		if (fstat(fd, &st) == 0) {
+			if (S_ISDIR(st.st_mode)) {
+				FileTypeWrapper::Result r;
+				r.isdir = true;
+				// r.mimetype = "x-filesystem/x-directory";
+				return r;
+			}
 			ssize_t nbytes = std::min(4096, (int)st.st_size);
 			std::vector<unsigned char> buf(nbytes);
-			nbytes = read(fd, buf.data(), buf.size());
-			lseek(fd, 0, SEEK_SET);
-			{
-				std::lock_guard<std::mutex> lock(mutex_);
-				char const *p = _fd_or_buf((magic_set *)magic_set_, fd, buf.data(), nbytes, &st, false);
-				if (p) {
-					mime = p;
+			if (read(fd, buf.data(), buf.size()) == nbytes) {
+				lseek(fd, 0, SEEK_SET);
+				{
+					std::lock_guard<std::mutex> lock(mutex_);
+					char const *p = _fd_or_buf((magic_set *)magic_set_, fd, buf.data(), nbytes, &st, false);
+					if (p) {
+						mime = p;
+					}
 				}
 			}
 		}
