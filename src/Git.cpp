@@ -868,7 +868,7 @@ std::optional<GitCommitItem> Git::log_signature(GitHash const &id)
 
 std::optional<GitCommitItem> Git::queryCommitItem(GitHash const &id)
 {
-	if (objectType(id) == "commit") {
+	if (objectType(id) == GitObject::Type::COMMIT) {
 		auto ba = cat_file(id);
 		if (ba) {
 			auto ret = parseCommit(*ba);
@@ -1123,13 +1123,25 @@ std::vector<GitFileStatus> Git::status_s_u(std::string *out)
 	return status_s_u_(out);
 }
 
-std::string Git::objectType(GitHash const &id)
+GitObject::Type Git::objectType(GitHash const &id)
 {
 	if (GitHash::isValidID(id)) {
 		auto result = git(("cat-file -t " + id.toString()));
-		return (std::string)misc::trimmed(resultStdString(result));
+		// return (std::string)misc::trimmed(resultStdString(result));
+		QString s = resultQString(result);
+		if (s == "commit") {
+			return GitObject::Type::COMMIT;
+		} else if (s == "tree") {
+			return GitObject::Type::TREE;
+		} else if (s == "blob") {
+			return GitObject::Type::BLOB;
+		} else if (s == "tag") {
+			return GitObject::Type::TAG;
+		}
+		return GitObject::Type::UNKNOWN;
 	}
-	return {};
+	// return {};
+	return GitObject::Type::NONE;
 }
 
 std::optional<std::vector<char>> Git::cat_file(GitHash const &id)

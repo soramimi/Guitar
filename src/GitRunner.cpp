@@ -482,7 +482,7 @@ bool GitRunner::push_u(bool set_upstream, std::string const &remote, std::string
 	return gitptr()->push_u(set_upstream, remote, branch, force, pty);
 }
 
-std::string GitRunner::objectType(const GitHash &id)
+GitObject::Type GitRunner::objectType(const GitHash &id)
 {
 	return gitptr()->objectType(id);
 }

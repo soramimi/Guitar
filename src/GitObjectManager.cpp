@@ -20,7 +20,7 @@
 struct GitObjectManager::Private {
 	std::mutex *mutex_ = nullptr;
 	QString subdir_git_objects;
-	QString subdir_git_objects_pack;
+	// QString subdir_git_objects_pack;
 	std::vector<std::shared_ptr<GitPackIdxV2>> git_idx_list;
 };
 
@@ -54,7 +54,7 @@ GitObjectManager &GitObjectManager::operator =(const GitObjectManager &other)
 void GitObjectManager::init()
 {
 	m->subdir_git_objects = ".git/objects";
-	m->subdir_git_objects_pack = m->subdir_git_objects / "pack";
+	// m->subdir_git_objects_pack = m->subdir_git_objects / "pack";
 }
 
 void GitObjectManager::setup()
@@ -66,8 +66,31 @@ void GitObjectManager::loadIndexes(GitRunner g, std::mutex *mutex)
 {
 	auto Do = [&](){
 		if (m->git_idx_list.empty()) {
-			QString path = QString::fromStdString(g.workingDir()) / m->subdir_git_objects_pack;
-			QDirIterator it(path, { "pack-*.idx" }, QDir::Files | QDir::Readable);
+			std::string suffix = "pack";
+			auto objectsDir = [&]()-> std::string {
+				std::string workdir = g.workingDir();
+				QString gitfile = QString::fromStdString(workdir) / ".git";
+				if (QFileInfo(gitfile).isFile()) { // .git file exists (submodule)
+					QFile file(gitfile);
+					if (file.open(QFile::ReadOnly)) {
+						QByteArray ba = file.readAll();
+						std::string_view content{ba.data(), (size_t)ba.size()};
+						std::vector<std::string_view> lines = misc::splitLinesV(content);
+						for (std::string_view const &line : lines) {
+							if (misc::starts_with(line, "gitdir:")) {
+								std::string_view subdir = misc::trimmed(line.substr(7));
+								return workdir / subdir / "objects" / suffix;
+							}
+						}
+					}
+				} else {
+					return workdir / m->subdir_git_objects.toStdString() / suffix;
+				}
+				return {};
+			};
+			std::string dir = objectsDir();
+			
+			QDirIterator it(QString::fromStdString(dir), { "pack-*.idx" }, QDir::Files | QDir::Readable);
 			while (it.hasNext()) {
 				it.next();
 				std::shared_ptr<GitPackIdxV2> idx = std::make_shared<GitPackIdxV2>();
@@ -233,15 +256,38 @@ std::string GitObjectManager::findObjectPath(GitRunner g, GitHash const &id)
 		int count = 0;
 		std::string absolute_path;
 		std::string name = id.toString();
-		std::string xx = name.substr(0, 2); // leading two xdigits
+		std::string suffix = name.substr(0, 2); // leading two xdigits
 		std::string name2 = name.substr(2);  // remaining xdigits
-		std::string dir = g.workingDir() / m->subdir_git_objects.toStdString() / xx; // e.g. /home/user/myproject/.git/objects/5a
+		
+		auto objectsDir = [&]()-> std::string {
+			std::string workdir = g.workingDir();
+			QString gitfile = QString::fromStdString(workdir) / ".git";
+			if (QFileInfo(gitfile).isFile()) { // .git file exists (submodule)
+				QFile file(gitfile);
+				if (file.open(QFile::ReadOnly)) {
+					QByteArray ba = file.readAll();
+					std::string_view content{ba.data(), (size_t)ba.size()};
+					std::vector<std::string_view> lines = misc::splitLinesV(content);
+					for (std::string_view const &line : lines) {
+						if (misc::starts_with(line, "gitdir:")) {
+							std::string_view subdir = misc::trimmed(line.substr(7));
+							return workdir / subdir / "objects" / suffix; // e.g. /home/user/myproject/.git/modules/submodule/objects/5a
+						}
+					}
+				}
+			} else {
+				return workdir / m->subdir_git_objects.toStdString() / suffix; // e.g. /home/user/myproject/.git/objects/5a
+			}
+			return {};
+		};
+		std::string dir = objectsDir();
+		
 
 		std::optional<std::vector<GitFileItem>> ret = g.ls(dir);
 		if (ret) {
 			for (GitFileItem const &item : *ret) {
 				if (misc::starts_with(item.name, name2)) {
-					std::string id = xx + item.name; // complete id
+					std::string id = suffix + item.name; // complete id
 					if (id.size() == GIT_ID_LENGTH && GitHash::isValidID(id)) {
 						absolute_path = dir / item.name;
 						count++;
@@ -403,10 +449,11 @@ GitObject GitObjectCache::catFile(GitRunner g, GitHash const &id)
 			return Store();
 		}
 	}
-
+	
 	if (true) {
-		auto ret = g.cat_file_(id);
-		if (ret) { // 外部コマンド起動の git cat-file -p を試してみる
+		auto ret = g.cat_file_(id); // 外部コマンド起動の git cat-file -p を試してみる
+		if (ret) {
+			type = g.objectType(id);
 			// 上の独自実装のファイル取得が正しく動作していれば、ここには来ないはず
 			qDebug() << __FILE__ << __LINE__ << Q_FUNC_INFO << QString::fromStdString(id.toString());
 			ba = (QBA)*ret;

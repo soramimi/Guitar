@@ -4060,7 +4060,7 @@ void MainWindow::openExplorer(QString const &dir, QString const &ssh_key)
 
 void MainWindow::openNewGuitar(QString const &path, QString const &commit_id)
 {
-	QProcess::execute(global->application_file_path, { path, "--commit-id", commit_id });
+	QProcess::execute(global->application_file_path, { path, opt_submodule_commit_id, commit_id });
 }
 
 /**
@@ -5743,7 +5743,7 @@ GitUser MainWindow::currentGitUser() const
 	return m->current_git_user;
 }
 
-void MainWindow::autoOpenRepository(QString dir, QString const &commit_id)
+void MainWindow::autoOpenRepository(QString dir, bool save_repo, QString const &commit_id)
 {
 	auto Open = [&](RepositoryInfo const &item, QString const &commit_id) {
 		setCurrentRepository(item, true);
@@ -5774,7 +5774,9 @@ void MainWindow::autoOpenRepository(QString dir, QString const &commit_id)
 		if (p < right) {
 			newitem.local_dir = dir;
 			newitem.name = QString::fromUtf16((char16_t const *)p, int(right - p));
-			saveRepositoryBookmark(newitem);
+			if (save_repo) {
+				saveRepositoryBookmark(newitem);
+			}
 			Open(newitem, commit_id);
 			return;
 		}

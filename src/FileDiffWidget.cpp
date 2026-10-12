@@ -437,7 +437,7 @@ bool FileDiffWidget::setSubmodule(GitDiff const &diff)
 				text += '\n';
 				text += (QS)submodule_commit->message;
 				for (QString const &line : misc::splitLines(text)) {
-					ret.push_back(Document::Line::View(line.toStdString()));
+					ret.push_back(Document::Line(line.toStdString()));
 				}
 			}
 			return ret;

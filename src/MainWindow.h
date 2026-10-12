@@ -644,7 +644,7 @@ public:
 	GitRunner git();
 	static GitRunner git_for_submodule(GitRunner g, GitSubmoduleItem const &submod);
 	bool isValidWorkingCopy(QString const &dir) const;
-	void autoOpenRepository(QString dir, QString const &commit_id = { });
+	void autoOpenRepository(QString dir, bool save_repo, QString const &commit_id = { });
 	std::optional<GitCommitItem> queryCommit(const GitHash &id);
 	bool checkoutLocalBranch(const std::string &name);
 	void checkout(QWidget *parent, const GitCommitItem &commit, std::function<void()> accepted_callback = { });
@@ -704,6 +704,8 @@ public:
 	
 	static void openTerminal(QString const &dir, QString const &ssh_key);
 	static void openExplorer(QString const &dir, QString const &ssh_key);
+	
+	static constexpr char const *opt_submodule_commit_id = "--submodule-commit-id";
 	static void openNewGuitar(QString const &path, QString const &commit_id);
 public slots:
 	void internalWriteLog(const LogData &logdata, LogChannel channel);

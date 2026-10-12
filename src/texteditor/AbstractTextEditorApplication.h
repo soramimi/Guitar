@@ -244,7 +244,14 @@ public:
 			sp->text = std::vector<char>(ba.data(), ba.data() + ba.size());
 			sp->meta.type = type;
 		}
-	
+		
+		explicit Line(std::string const &str, LineType type = Normal)
+			: sp(std::make_shared<D>())
+		{
+			sp->text = std::vector<char>(str.begin(), str.end());
+			sp->meta.type = type;
+		}
+		
 		static Line InvalidLine()
 		{
 			Line line;

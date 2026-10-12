@@ -105,8 +105,8 @@ int main(int argc, char *argv[])
 	signal(SIGPIPE, onSigPipe);
 #endif
 
-	bool a_open_here = false;
-	QString a_commit_id;
+	// bool a_open_here = false;
+	QString a_submodule_commit_id;
 
 	QStringList args;
 
@@ -115,12 +115,10 @@ int main(int argc, char *argv[])
 		while (i < argc) {
 			std::string arg = argv[i];
 			if (arg.c_str()[0] == '-') {
-				if (arg == "--open-here") {
-					a_open_here = true;
-				} else if (arg == "--commit-id") {
+				if (arg == MainWindow::opt_submodule_commit_id) {
 					if (i + 1 < argc) {
 						i++;
-						a_commit_id = argv[i];
+						a_submodule_commit_id = argv[i];
 					}
 				} else if (arg == "--unsafe") { // experimental
 #ifdef UNSAFE_ENABLED
@@ -270,10 +268,7 @@ int main(int argc, char *argv[])
 	w.show();
 	w.shown();
 
-	if (a_open_here) {
-		QString dir = QDir::current().absolutePath();
-		w.autoOpenRepository(dir, a_commit_id);
-	} else if (args.size() == 1) {
+	if (args.size() == 1) {
 		QString dir = args[0] / QString();
 		if (dir.startsWith("./") || dir.startsWith(".\\")) {
 			dir = QDir::current().absolutePath() / dir.mid(2);
@@ -281,7 +276,8 @@ int main(int argc, char *argv[])
 		QFileInfo fi(dir);
 		if (fi.isDir()) {
 			dir = fi.absolutePath();
-			w.autoOpenRepository(dir, a_commit_id);
+			bool save_repo = a_submodule_commit_id.isEmpty(); // 子プロセスで起動されたときは保存しない
+			w.autoOpenRepository(dir, save_repo, a_submodule_commit_id);
 		}
 	}
 

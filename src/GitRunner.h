@@ -147,7 +147,7 @@ public:
 	bool reset_hard();
 	bool clean_df();
 	bool push_u(bool set_upstream, std::string const &remote, std::string const &branch, bool force, AbstractPtyProcess *pty);
-	std::string objectType(const GitHash &id);
+	GitObject::Type objectType(const GitHash &id);
 	bool rm_cached(const std::string &file);
 	void cherrypick(const std::string &name);
 	std::string getCherryPicking() const;

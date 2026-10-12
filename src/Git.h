@@ -2,11 +2,12 @@
 #ifndef GIT_H
 #define GIT_H
 
-#include "GitSubmodule.h"
 #include "AbstractGitSession.h"
 #include "GitCloneData.h"
+#include "GitObject.h"
 #include "GitRemote.h"
 #include "GitResult.h"
+#include "GitSubmodule.h"
 #include "GitUser.h"
 #include <optional>
 #include <q/DateTime.h>
@@ -208,7 +209,7 @@ public:
 	bool reset_hard();
 	bool clean_df();
 	bool push_u(bool set_upstream, std::string const &remote, std::string const &branch, bool force, AbstractPtyProcess *pty);
-	std::string objectType(const GitHash &id);
+	GitObject::Type objectType(const GitHash &id);
 	bool rm_cached(const std::string &file);
 	void cherrypick(std::string const &name);
 	std::string getCherryPicking() const;
