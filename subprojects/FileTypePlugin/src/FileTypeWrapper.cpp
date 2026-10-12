@@ -14,6 +14,9 @@
 // #define NOMINMAX
 #include <io.h>
 #include <fcntl.h>
+#ifndef S_ISDIR
+#define S_ISDIR(mode) (((mode) & _S_IFMT) == _S_IFDIR)
+#endif
 #else
 #include <sys/types.h>
 #include <unistd.h>
