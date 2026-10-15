@@ -171,7 +171,7 @@ void ApplicationGlobal::selftest()
 	graphics = std::make_unique<Graphics>();
 	{ // load graphic resources
 		QFileIconProvider icons;
-		graphics->folder_icon = icons.icon(QFileIconProvider::Folder);
+		graphics->folder_icon = QIcon(":/image/folder.png");;//icons.icon(QFileIconProvider::Folder);
 		graphics->repository_icon = QIcon(":/image/repository.png");
 		graphics->signature_good_icon = QIcon(":/image/signature-good.png");
 		graphics->signature_bad_icon = QIcon(":/image/signature-bad.png");

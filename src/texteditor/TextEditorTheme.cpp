@@ -9,7 +9,8 @@ TextEditorThemePtr TextEditorTheme::Light()
 	t->bg_default             = (QRgb)0xf0f0f0;
 	t->fg_line_number         = (QRgb)0x606060;
 	t->bg_line_number         = (QRgb)0xd0d0d0;
-	t->fg_cursor              = (QRgb)0x0050ff;
+	t->fg_cursor              = (QRgb)0x000000;
+	t->fg_current_line        = (QRgb)0x0050ff;
 	t->bg_current_line        = (QRgb)0xc0c0c0;
 	t->bg_current_line_number = (QRgb)0xb0b0b0;
 	t->bg_diff_unknown        = (QRgb)0xc0c0c0;
@@ -27,7 +28,8 @@ TextEditorThemePtr TextEditorTheme::Dark()
 	t->bg_default             = (QRgb)0x303030;
 	t->fg_line_number         = (QRgb)0xb0b0b0;
 	t->bg_line_number         = (QRgb)0x404040;
-	t->fg_cursor              = (QRgb)0x0050ff;
+	t->fg_cursor              = (QRgb)0xffffff;
+	t->fg_current_line        = (QRgb)0x0050ff;
 	t->bg_current_line_number = (QRgb)0x606060;
 	t->bg_diff_unknown        = (QRgb)0x202020;
 	t->bg_diff_line_del       = (QRgb)0x500000;

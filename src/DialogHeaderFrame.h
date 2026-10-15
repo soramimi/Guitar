@@ -1,14 +1,14 @@
-#ifndef DIALOGHEADERFRAME_H
-#define DIALOGHEADERFRAME_H
+// #ifndef DIALOGHEADERFRAME_H
+// #define DIALOGHEADERFRAME_H
 
-#include <QFrame>
+// #include <QFrame>
 
-class DialogHeaderFrame : public QFrame {
-	Q_OBJECT
-public:
-	explicit DialogHeaderFrame(QWidget *parent = nullptr);
-protected:
-	void paintEvent(QPaintEvent *) override;
-};
+// class DialogHeaderFrame : public QFrame {
+// 	Q_OBJECT
+// public:
+// 	explicit DialogHeaderFrame(QWidget *parent = nullptr);
+// protected:
+// 	void paintEvent(QPaintEvent *) override;
+// };
 
-#endif // DIALOGHEADERFRAME_H
+// #endif // DIALOGHEADERFRAME_H

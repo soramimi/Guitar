@@ -226,9 +226,9 @@ int main(int argc, char *argv[])
 		} else {
 			global->theme = createLightTheme();
 			a.setStyle(global->theme->newStyle());
-#ifndef Q_OS_WIN
+// #ifndef Q_OS_WIN
 			a.setPalette(a.style()->standardPalette());
-#endif
+// #endif
 		}
 		s.endGroup();
 	}

@@ -14,7 +14,7 @@ class QStyle;
 class AbstractTheme {
 public:
 	TextEditorThemePtr text_editor_theme;
-	QColor dialog_header_frame_bg;
+	// QColor dialog_header_frame_bg;
 	QColor diff_slider_normal_bg;
 	QColor diff_slider_unknown_bg;
 	QColor diff_slider_add_bg;

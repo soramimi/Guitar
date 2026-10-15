@@ -17,10 +17,23 @@ public:
 };
 
 template <typename T> class MyCommonStyle : public MyCommonStyleBase, public T {
+public:
+	enum class Theme {
+		Light,
+		Dark,
+	};
 private:
 	using Base = T;
+	Theme theme_ = Theme::Dark;
+protected:
+	Theme theme() const
+	{
+		return theme_;
+	}
 public:
-	MyCommonStyle() = default;
+	MyCommonStyle(Theme theme)
+		: theme_(theme)
+	{}
 	~MyCommonStyle() override = default;
 	int styleHint(QStyle::StyleHint hint, const QStyleOption *option, const QWidget *widget = nullptr, QStyleHintReturn *returnData = nullptr) const override
 	{

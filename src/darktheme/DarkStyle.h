@@ -15,16 +15,11 @@ public:
 
 class DarkStyle : public MyCommonStyle<QCommonStyle> {
 	using Base = MyCommonStyle<QCommonStyle>;
+public:
+	using MyCommonStyle::Theme;
 private:
 	struct Private;
 	Private *m;
-
-	enum class Theme {
-		Light,
-		// Gray,
-		Dark,
-	};
-	Theme theme() const;
 
 	struct ScrollBarTextures {
 		QImage page_bg;
@@ -42,9 +37,9 @@ private:
 
 	QColor selectionColor() const
 	{
-		return QColor(80, 160, 255);
+		return QColor(72, 144, 255);
 	}
-	std::pair<QColor, QColor> menuBorderColors(Theme theme) const;
+	std::pair<QColor, QColor> menuBorderColors() const;
 
 	void drawNinePatchImage(QPainter *p, QImage const &image, QRect const &r, int w, int h) const;
 	void drawGutter(QPainter *p, QRect const &r) const;
@@ -54,13 +49,15 @@ private:
 	void drawToolButton(QPainter *p, QStyleOption const *option) const;
 	void drawMenuBarBG(QPainter *p, const QStyleOption *option, const QWidget *widget) const;
 	QColor themeColor(int level, int alpha = 255) const;
+	std::pair<QColor, QColor> buttonColor(State state) const;
+	std::tuple<QColor, QColor> sliderKnobColor() const;
 	void drawItemViewText(QPainter *p, const QStyleOptionViewItem *option, const QRect &rect, bool abbreviation) const;
 	QRect indicatorRect(const QStyleOption *option, const QWidget *widget, const QRect &rect) const;
 	qreal dpiScaled(qreal value, qreal dpi) const;
 	qreal dpiScaled(qreal value, const QPaintDevice *device) const;
 	qreal dpiScaled(qreal value, const QStyleOption *option) const;
 public:
-	DarkStyle(QColor base_color = QColor());
+	DarkStyle(Theme theme, QColor theme_color = Qt::white);
 	~DarkStyle() override;
 
 	bool isDpiScalingEnabled() const;

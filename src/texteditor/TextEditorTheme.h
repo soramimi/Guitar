@@ -15,6 +15,7 @@ public:
 	QColor fg_line_number;
 	QColor bg_line_number;
 	QColor fg_cursor;
+	QColor fg_current_line;
 	QColor bg_current;
 	QColor bg_current_line;
 	QColor bg_current_line_number;

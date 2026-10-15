@@ -534,7 +534,7 @@ TextEditorView::PointInView TextEditorView::pointInView(int row, int col) const
 QColor TextEditorView::cursorColor() const
 {
 	bool blink_on = m->cursor_animation_counter >= cursor_animation_cycle / 2;
-	return blink_on ? Qt::white : Qt::transparent;
+	return blink_on ? theme()->fg_cursor : Qt::transparent;
 }
 
 /**
@@ -692,7 +692,8 @@ void TextEditorView::paintEvent(QPaintEvent *)
 	
 					// 現在行の背景
 					auto DrawCurrentLineBackground = [&](){
-						pr.fillRect(rect_line, QColor(0, 0, 0));
+						// pr.fillRect(rect_line, QColor(0, 0, 0));
+						pr.fillRect(rect_line, theme()->bg_current_line);
 					};
 	
 					// 現在行の前景
@@ -702,7 +703,7 @@ void TextEditorView::paintEvent(QPaintEvent *)
 						int y = rect_line.y() + rect_line.height() - N;
 						int w = rect_line.width();
 						int h = N;
-						pr.fillRect(x, y, w, h, theme()->fg_cursor); // アンダーライン
+						pr.fillRect(x, y, w, h, theme()->fg_current_line); // アンダーライン
 					};
 	
 					// 選択範囲
@@ -740,7 +741,8 @@ void TextEditorView::paintEvent(QPaintEvent *)
 							int h = line_height;
 							pr.save();
 							pr.setClipRect(TextAreaRectForClip());
-							pr.fillRect(x, y, w, h, QBrush(QColor(64, 128, 128)));
+							QColor color = palette().color(QPalette::Highlight);
+							pr.fillRect(x, y, w, h, QBrush(color));
 							pr.restore();
 						}
 					};
