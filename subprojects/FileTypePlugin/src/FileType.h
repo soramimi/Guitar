@@ -15,50 +15,37 @@ public:
 	
 	class Result {
 	private:
-		FileTypeWrapper::Result *result_ = nullptr;
+		// FileTypeWrapper::Result *result_ = nullptr;
 	public:
-		~Result()
-		{
-			if (result_) {
-				void (*_free)(void *p) = result_->_free;
-				if (_free) {
-					_free(result_->mimetype);
-					_free(result_->charset);
-				}
-				_free(result_);
-			}
-		}
+		bool isdir = false;
+		QString mimetype;
+		QString charset;
+		// ~Result()
+		// {
+		// 	if (result_) {
+		// 		void (*_free)(void *p) = result_->_free;
+		// 		if (_free) {
+		// 			_free(result_->mimetype);
+		// 			_free(result_->charset);
+		// 		}
+		// 		_free(result_);
+		// 	}
+		// }
 		Result() = default;
 		Result(FileTypeWrapper::Result *result)
-			: result_(result)
+			// : result_(result)
 		{
-		}
-		Result(Result const &) = delete;
-		Result &operator=(Result const &) = delete;
-		Result(Result &&t)
-			: result_(t.result_)
-		{
-			t.result_ = nullptr;
-		}
-		Result &operator=(Result &&t)
-		{
-			if (this != &t) {
-				result_ = t.result_;
-				t.result_ = nullptr;
+			if (result) {
+				isdir = result->isdir;
+				mimetype = QString::fromUtf8(result->mimetype);
+				charset = QString::fromUtf8(result->charset);
+				void (*_free)(void *p) = result->_free;
+				if (_free) {
+					_free(result->mimetype);
+					_free(result->charset);
+					_free(result);
+				}
 			}
-			return *this;
-		}
-		bool isdir() const
-		{
-			return result_ ? result_->isdir : false;
-		}
-		const char *mimetype() const
-		{
-			return result_ ? result_->mimetype : nullptr;
-		}
-		const char *charset() const
-		{
-			return result_ ? result_->charset : nullptr;
 		}
 	};
 	

@@ -1,3 +1,4 @@
+
 #ifndef FILETYPEPLUGIN_H
 #define FILETYPEPLUGIN_H
 

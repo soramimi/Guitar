@@ -114,7 +114,7 @@ void ApplicationGlobal::selftest()
 		auto mime = mimetype_by_data(ba.data(), ba.size());
 		if (mime != "text/plain") {
 			qDebug() << "Failed to register \"Hello, world\" filetype: "
-					 << QString::fromStdString(mime) << " expected text/plain";
+					 << mime << " expected text/plain";
 		}
 	}
 	
@@ -125,7 +125,7 @@ void ApplicationGlobal::selftest()
 		auto mime = mimetype_by_data(ba.data(), ba.size());
 		if (mime != "image/png") {
 			qDebug() << "Failed to register digits.png filetype: "
-					 << QString::fromStdString(mime) << " expected image/png";
+					 << mime << " expected image/png";
 		}
 	}
 	
@@ -300,8 +300,7 @@ GenerativeAI::Credential ApplicationGlobal::get_ai_credential(GenerativeAI::Mode
 
 std::string ApplicationGlobal::mimetype_by_data(char const *data, size_t size)
 {
-	FileType::Result res = file_type_detector->detect(data, size);
-	return res.mimetype();
+	return file_type_detector->detect(data, size).mimetype.toStdString();
 }
 
 std::string ApplicationGlobal::mimetype_by_data(QByteArray const &ba)
@@ -316,8 +315,7 @@ std::string ApplicationGlobal::mimetype_by_data(std::vector<char> const &ba)
 
 std::string ApplicationGlobal::mimetype_by_file(char const *path)
 {
-	FileType::Result res = file_type_detector->detect(path);
-	return res.mimetype();
+	return file_type_detector->detect(path).mimetype.toStdString();
 }
 
 std::string ApplicationGlobal::mimetype_by_file(const std::string &path)

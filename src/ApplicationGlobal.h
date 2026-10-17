@@ -56,7 +56,7 @@ private:
 public:
 	ApplicationGlobal();
 	~ApplicationGlobal();
-
+	
 	int copyright_year();
 	
 	char const *product_version();
@@ -73,13 +73,13 @@ public:
 #ifdef APP_GUITAR
 	ThemePtr theme;
 #endif
-
+	
 	QFont textFont();
-
+	
 #ifdef UNSAFE_ENABLED
 	bool unsafe_enabled = false;
 #endif
-
+	
 	struct Graphics {
 		QIcon repository_icon;
 		QIcon folder_icon;
@@ -90,30 +90,30 @@ public:
 		QPixmap small_digits;
 	};
 	std::unique_ptr<Graphics> graphics;
-
+	
 	GitContext gcx();
-
+	
 	ApplicationSettings appsettings;
-
+	
 #ifdef USE_LIBCURL
 	CurlContext curlcx;
 #else
 	WebContext webcx = {WebClient::HTTP_1_0};
 #endif
 	AvatarLoader avatar_loader;
-
+	
 	std::vector<AccountProfile> account_profiles;
-
+	
 	void selftest();
-
+	
 	void open_trace_logger();
 	void close_trace_logger();
 	void restart_trace_logger();
 	void put_trace_event(TraceEventItem const &event);
-
+	
 	void writeLog(const std::string_view &str);
 	void writeLog(const QString &str);
-
+	
 	constexpr static std::string_view prefix_chg = "(chg) ";
 	constexpr static std::string_view prefix_cpy = "(cpy) ";
 	constexpr static std::string_view prefix_ren = "(ren) ";
@@ -121,9 +121,9 @@ public:
 	constexpr static std::string_view prefix_del = "(del) ";
 	constexpr static std::string_view prefix_unmerged = "(unmerged) ";
 	// constexpr static std::string_view prefix_empty = "() ";
-
+	
 	std::shared_ptr<AbstractInetClient> inet_client();
-
+	
 	std::shared_ptr<IncrementalSearch> incremental_search;
 	IncrementalSearchFilter makeIncrementalSearchFilter(const std::string &filtertext);
 	QString incremental_search_text;
@@ -138,9 +138,9 @@ public:
 	std::shared_ptr<OnePassword> onepassword;
 	
 	GenerativeAI::Credential get_ai_credential(const GenerativeAI::Model &model);
-
+	
 	static bool isMainThread();
-
+	
 	bool isUnsafeEnabled() const
 	{
 #ifdef UNSAFE_ENABLED
@@ -149,12 +149,12 @@ public:
 		return false;
 #endif
 	}
-
+	
 	bool isAiEnabled() const
 	{
 		return appsettings.generate_commit_message_with_ai;
 	}
-
+	
 	QString aimodels_json_path() const;
 	localvault::VaultWithBackend vault;
 	QString vault_schema() const;
