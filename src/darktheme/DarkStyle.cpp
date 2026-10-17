@@ -337,9 +337,9 @@ std::pair<QColor, QColor> DarkStyle::buttonColor(QStyle::State state) const
 		}
 	} else if (theme() == Theme::Light) {
 		if (pressed) {
-			return { themeColor(224), themeColor(160) };
+			return { themeColor(224), themeColor(144) };
 		} else {
-			return { themeColor(255), themeColor(192) };
+			return { themeColor(255), themeColor(160) };
 		}
 	}
 	
@@ -565,26 +565,28 @@ void DarkStyle::polish(QPalette &palette)
 	if (theme() == Theme::Dark) {
 		palette = QPalette(themeColor(64));
 		palette.setColor(QPalette::All, QPalette::Window, themeColor(48));
+		palette.setColor(QPalette::All, QPalette::Button, themeColor(48));
 		palette.setColor(QPalette::All, QPalette::Base, Qt::black);
 		palette.setColor(QPalette::All, QPalette::Highlight, Qt::black);
 		palette.setColor(QPalette::All, QPalette::Text, Qt::white);
 		palette.setColor(QPalette::All, QPalette::ButtonText, Qt::white);
 		palette.setColor(QPalette::All, QPalette::HighlightedText, Qt::white);
 		palette.setColor(QPalette::Disabled, QPalette::Text, themeColor(160));
-		palette.setColor(QPalette::Disabled, QPalette::ButtonText, themeColor(128));
+		palette.setColor(QPalette::Disabled, QPalette::ButtonText, Qt::black);
 #ifndef Q_OS_WIN
 		palette.setColor(QPalette::ToolTipText, Qt::black); // ツールチップの文字色
 #endif
 	} else if (theme() == Theme::Light) {
 		palette = QPalette(themeColor(192));
 		palette.setColor(QPalette::All, QPalette::Window, themeColor(192));
+		palette.setColor(QPalette::All, QPalette::Button, themeColor(192));
 		palette.setColor(QPalette::All, QPalette::Base, themeColor(224));
 		palette.setColor(QPalette::All, QPalette::Highlight, themeColor(224));
 		palette.setColor(QPalette::All, QPalette::Text, Qt::black);
 		palette.setColor(QPalette::All, QPalette::ButtonText, Qt::black);
 		palette.setColor(QPalette::All, QPalette::HighlightedText, Qt::black);
-		palette.setColor(QPalette::Disabled, QPalette::Text, themeColor(64));
-		palette.setColor(QPalette::Disabled, QPalette::ButtonText, themeColor(160));
+		palette.setColor(QPalette::Disabled, QPalette::Text, themeColor(96));
+		palette.setColor(QPalette::Disabled, QPalette::ButtonText,themeColor(96));
 	}
 
 	{
@@ -861,13 +863,14 @@ void DarkStyle::drawMenuBarBG(QPainter *p, const QStyleOption *option, QWidget c
 	int w = option->rect.width();
 	int h = widget->height();
 
+	QColor color_bg = option->palette.color(QPalette::Window);
 	auto [color_lite, color_dark] = buttonColor(QStyle::State_Raised);
 
 	QLinearGradient gradient;
 	gradient.setStart(x, y);
 	gradient.setFinalStop(x, y + h / 2.0);
 	gradient.setColorAt(0, color_lite);
-	gradient.setColorAt(1, color_dark);
+	gradient.setColorAt(1, color_bg);
 	p->fillRect(x, y, w, h, gradient);
 	p->fillRect(x, y + h - 1, w, 1, option->palette.color(QPalette::Dark));
 }
@@ -2218,12 +2221,13 @@ void DarkStyle::drawControl(ControlElement ce, const QStyleOption *option, QPain
 		int y = option->rect.y();
 		int w = option->rect.width();
 		int h = option->rect.height();
+		QColor color_bg = option->palette.color(QPalette::Window);
 		auto [lite, dark] = buttonColor(QStyle::State_Raised);
 		QLinearGradient gradient;
 		gradient.setStart(x, y);
 		gradient.setFinalStop(x, y + h / 4.0);
 		gradient.setColorAt(0, lite);
-		gradient.setColorAt(1, dark);
+		gradient.setColorAt(1, color_bg);
 		p->fillRect(x, y, w, h, gradient);
 		{ // 仕切り線
 			QColor color = option->palette.color(QPalette::Dark);
