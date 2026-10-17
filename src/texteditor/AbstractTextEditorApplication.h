@@ -35,20 +35,15 @@ enum EscapeCode {
 }
 
 struct CharAttr {
-	enum Index {
-		Normal,
-		Invert,
-		Hilite,
-	};
-	uint16_t index = 0; // テーマ側で解釈する属性番号
-	QColor color;       // 属性番号では表せない明示色（未指定なら無効色）
-	CharAttr(int index = Normal)
-		: index(index)
+	uint16_t flags= 0;
+	uint32_t color = 0;
+	CharAttr(int index = 0)
+		: flags(index)
 	{
 	}
 	bool operator == (CharAttr const &r) const
 	{
-		return index == r.index && color == r.color;
+		return flags == r.flags && color == r.color;
 	}
 	bool operator != (CharAttr const &r) const
 	{
@@ -602,37 +597,7 @@ public:
 		WordWrap,
 	};
 	
-	struct Option {
-		CharAttr char_attr = {};
-		CharFlags char_flag = {};
-		QRect clip;
-	};
-	
-	struct Char16 {
-		uint16_t c = 0;
-		CharAttr a;
-	};
-	
 	static int charWidth(uint32_t c);
-	
-	class FormattedLine {
-	public:
-		QString text;
-		enum Attr {
-			StyleID = 0x00ffffff,
-			Selected = 0x01000000,
-		};
-		uint32_t atts;
-		FormattedLine(QString const &text, int atts)
-			: text(text)
-			, atts(atts)
-		{
-		}
-		bool isSelected() const
-		{
-			return atts & Selected;
-		}
-	};
 	
 private:
 	// 実装詳細と状態を隠すPimpl。所有権は本クラスにありデストラクタで破棄する。

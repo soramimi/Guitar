@@ -31,21 +31,6 @@ struct PreEditText {
 
 class TextEditorView : public QWidget, public AbstractTextEditorApplication {
 	Q_OBJECT
-public:
-	class FormattedLines {
-	public:
-		int row_start = 0;
-		int row_count = 0;
-		std::unordered_map<int, TextEditorView::FormattedLine> lines;
-		void clear()
-		{
-			lines.clear();
-		}
-		size_t size() const
-		{
-			return lines.size();
-		}
-	};
 private:
 	struct Private;
 	Private *m;

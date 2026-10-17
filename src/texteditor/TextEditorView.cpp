@@ -486,12 +486,8 @@ QColor TextEditorView::defaultBackgroundColor()
 
 QColor TextEditorView::colorForIndex(CharAttr const &attr, bool foreground)
 {
-	if (foreground && attr.color.isValid()) {
-		return attr.color;
-	}
-	switch (attr.index) {
-	case CharAttr::Invert:
-		return foreground ? defaultBackgroundColor() : defaultForegroundColor();
+	if (foreground) {
+		return (QRgb)attr.color;
 	}
 	return foreground ? defaultForegroundColor() : Qt::transparent;//defaultBackgroundColor();
 }

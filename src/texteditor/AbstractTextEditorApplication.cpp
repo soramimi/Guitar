@@ -13,7 +13,7 @@
 #include <thread>
 
 using WriteMode = AbstractTextEditorApplication::WriteMode;
-using FormattedLine = AbstractTextEditorApplication::FormattedLine;
+// using FormattedLine = AbstractTextEditorApplication::FormattedLine;
 
 
 namespace texteditor {
