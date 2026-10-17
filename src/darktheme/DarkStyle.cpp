@@ -61,33 +61,6 @@ inline void drawCheckBoxFrame(QPainter *p, QRect const &rect, QPalette const &pa
 }
 
 /**
- * @brief ラジオボタンの枠（凹んだ円）を描く
- * @param p
- * @param rect
- * @param palette
- * @param state
- */
-void drawRadioButtonFrame(QPainter *p, QRect const &rect, QPalette const &palette, QStyle::State state)
-{
-	QColor topleft;
-	QColor bottomright;
-	if (state & QStyle::State_Raised) {
-		topleft = palette.color(QPalette::Light);
-		bottomright = palette.color(QPalette::Shadow);
-	} else if (state & QStyle::State_Sunken) {
-		topleft = palette.color(QPalette::Shadow);
-		bottomright = palette.color(QPalette::Light);
-	}
-	p->save();
-	p->setRenderHint(QPainter::Antialiasing);
-	p->setPen(topleft);
-	p->drawArc(rect, 45 * 16, 180 * 16);
-	p->setPen(bottomright);
-	p->drawArc(rect, 225 * 16, 180 * 16);
-	p->restore();
-}
-
-/**
  * @brief MSDF画像をレンダリングする
  * @param msdfimage
  * @param size
@@ -377,7 +350,6 @@ std::pair<QColor, QColor> DarkStyle::menuBorderColors() const
 {
 	return buttonColor(QStyle::State_Raised);
 }
-
 
 std::tuple<QColor, QColor> DarkStyle::sliderKnobColor() const
 {
@@ -1055,6 +1027,11 @@ QRect DarkStyle::indicatorRect(const QStyleOption *option, const QWidget *widget
 	return {x, y, w, h};
 }
 
+QRect DarkStyle::subElementRect(SubElement r, const QStyleOption *opt, const QWidget *widget) const
+{
+	return Base::subElementRect(r, opt, widget);
+}
+	
 QRect DarkStyle::subControlRect(ComplexControl cc, const QStyleOptionComplex *option, SubControl sc, const QWidget *widget) const
 {
 	if (cc == CC_Slider && sc == SC_SliderGroove) {
@@ -1403,12 +1380,13 @@ void DarkStyle::drawPrimitive(PrimitiveElement element, const QStyleOption *opti
 	if (element == PE_FrameGroupBox) {
 		painter->save();
 		painter->setRenderHint(QPainter::Antialiasing);
+		auto [lite, dark] = buttonColor(QStyle::State_Raised);
 		QRectF r = option->rect;
 		r = r.adjusted(1.5, 1.5, -0.5, -0.5);
-		painter->setPen(option->palette.color(QPalette::Light));
+		painter->setPen(lite);
 		painter->drawRoundedRect(r, 5, 5);
 		r = r.adjusted(-1, -1, -1, -1);
-		painter->setPen(option->palette.color(QPalette::Dark));
+		painter->setPen(dark);
 		painter->drawRoundedRect(r, 5, 5);
 		painter->restore();
 		return;
@@ -1468,10 +1446,11 @@ void DarkStyle::drawPrimitive(PrimitiveElement element, const QStyleOption *opti
 
 		if (buttonBox) {
 			int y = buttonBox->geometry().top();
+			auto [lite, dark] = buttonColor(QStyle::State_Raised);
 			QRect r(option->rect.x(), y, option->rect.width(), 1);
-			painter->fillRect(r, option->palette.color(QPalette::Light));
+			painter->fillRect(r, lite);
 			r.translate(0, -1);
-			painter->fillRect(r, option->palette.color(QPalette::Dark));
+			painter->fillRect(r, dark);
 		}
 		return;
 	}
@@ -1485,66 +1464,18 @@ void DarkStyle::drawPrimitive(PrimitiveElement element, const QStyleOption *opti
 #endif
 	auto DrawCheckBox = [this](QPainter *painter, PrimitiveElement element, QStyleOption const *option){
 		QRect rect = option->rect;
-		if (0) {
-			// draw the checkbox/radiobutton frame
-			if (element == PE_IndicatorCheckBox) {
-				drawCheckBoxFrame(painter, rect, option->palette, QStyle::State_Sunken);
+		bool checked = option->state & (State_Sunken | State_On);
+		if (element == PE_IndicatorCheckBox) {
+			if (checked) {
+				if (m->checkbox_checked_svg) m->checkbox_checked_svg->render(painter, rect);
 			} else {
-				drawRadioButtonFrame(painter, rect, option->palette, QStyle::State_Sunken);
+				if (m->checkbox_unchecked_svg) m->checkbox_unchecked_svg->render(painter, rect);
 			}
-			// draw the checkmark or radio button dot if the checkbox/radiobutton is checked
-			if (option->state & (State_Sunken | State_On)) {
-				painter->save();
-				QColor color;
-				if (theme() == Theme::Dark) {
-					color = QColor(255, 255, 255);
-				} else {
-					color = QColor(0, 0, 0);
-				}
-				if (element == PE_IndicatorCheckBox) {
-					drawCheckBoxFrame(painter, rect, option->palette, QStyle::State_Sunken);
-					int x = rect.x();
-					int y = rect.y();
-					int extent = rect.height() - 2;
-					QPixmap pm;
-					{
-						QString key = pixmapkey("checkbox", "checked", QSize(extent, extent), themeColor());
-						if (!QPixmapCache::find(key, &pm)) {
-							QImage img = render_msdf_image(m->check_msdf, QSize(extent * 4, extent * 4)); // 4倍の解像度でレンダリングして縮小する
-							img = img.scaled(extent, extent);
-							img.invertPixels();
-							pm = QPixmap::fromImage(img);
-							QPixmapCache::insert(key, pm);
-						}
-					}
-					QRect r(x + 1, y + 1, extent, extent);
-					QRegion region(QBitmap::fromPixmap(pm));
-					painter->setClipRegion(region.translated(r.topLeft()));
-					painter->fillRect(r, color);
-				} else if (element == PE_IndicatorRadioButton) {
-					const int N = 3;
-					rect.adjust(N, N, -N, -N);
-					painter->setRenderHint(QPainter::Antialiasing);
-					painter->setPen(Qt::NoPen);
-					painter->setBrush(color);
-					painter->drawEllipse(rect);
-				}
-				painter->restore();
-			}
-		} else {
-			bool checked = option->state & (State_Sunken | State_On);
-			if (element == PE_IndicatorCheckBox) {
-				if (checked) {
-					if (m->checkbox_checked_svg) m->checkbox_checked_svg->render(painter, rect);
-				} else {
-					if (m->checkbox_unchecked_svg) m->checkbox_unchecked_svg->render(painter, rect);
-				}
-			} else if (element == PE_IndicatorRadioButton) {
-				if (checked) {
-					if (m->radiobutton_checked_svg) m->radiobutton_checked_svg->render(painter, rect);
-				} else {
-					if (m->radiobutton_unchecked_svg) m->radiobutton_unchecked_svg->render(painter, rect);
-				}
+		} else if (element == PE_IndicatorRadioButton) {
+			if (checked) {
+				if (m->radiobutton_checked_svg) m->radiobutton_checked_svg->render(painter, rect);
+			} else {
+				if (m->radiobutton_unchecked_svg) m->radiobutton_unchecked_svg->render(painter, rect);
 			}
 		}
 	};
@@ -1727,6 +1658,7 @@ void DarkStyle::drawControl(ControlElement ce, const QStyleOption *option, QPain
 			int lw = o->lineWidth;
 			if (lw > 0) {
 				QRect r = o->rect;
+				auto [color_lite, color_dark] = buttonColor(QStyle::State_Raised);
 				if (o->frameShape == QFrame::Panel || o->frameShape == QFrame::HLine || o->frameShape == QFrame::VLine) {
 					if (o->state & (State_Sunken | State_Raised)) {
 						if (r.width() < r.height()) {
@@ -1742,8 +1674,8 @@ void DarkStyle::drawControl(ControlElement ce, const QStyleOption *option, QPain
 						int y = r.y();
 						int w = r.width();
 						int h = r.height();
-						QColor color_topleft     = o->palette.color(QPalette::Dark);
-						QColor color_bottomright = o->palette.color(QPalette::Light);
+						QColor color_topleft     = color_dark;//o->palette.color(QPalette::Dark);
+						QColor color_bottomright = color_lite;//o->palette.color(QPalette::Light);
 						if (o->state & State_Raised) {
 							std::swap(color_topleft, color_bottomright);
 						}
@@ -1773,7 +1705,7 @@ void DarkStyle::drawControl(ControlElement ce, const QStyleOption *option, QPain
 						int y = r.y();
 						int w = r.width();
 						int h = r.height();
-						QColor color = o->palette.color(QPalette::Shadow);
+						QColor color = color_dark;//o->palette.color(QPalette::Shadow);
 						p->fillRect(x, y, w, h, color);
 					}
 				} else if (o->frameShape == QFrame::Box) {
@@ -1783,8 +1715,8 @@ void DarkStyle::drawControl(ControlElement ce, const QStyleOption *option, QPain
 					int h = r.height();
 					if (w > 1) w--;
 					if (h > 1) h--;
-					QColor color_topleft     = o->palette.color(QPalette::Dark);
-					QColor color_bottomright = o->palette.color(QPalette::Light);
+					QColor color_topleft     = color_dark;//o->palette.color(QPalette::Dark);
+					QColor color_bottomright = color_lite;//o->palette.color(QPalette::Light);
 					if (o->state & State_Raised) {
 						std::swap(color_topleft, color_bottomright);
 					}
@@ -2286,19 +2218,23 @@ void DarkStyle::drawControl(ControlElement ce, const QStyleOption *option, QPain
 		int y = option->rect.y();
 		int w = option->rect.width();
 		int h = option->rect.height();
+		auto [lite, dark] = buttonColor(QStyle::State_Raised);
 		QLinearGradient gradient;
 		gradient.setStart(x, y);
 		gradient.setFinalStop(x, y + h / 4.0);
-		gradient.setColorAt(0, option->palette.color(QPalette::Light));
-		gradient.setColorAt(1, option->palette.color(QPalette::Window));
+		gradient.setColorAt(0, lite);
+		gradient.setColorAt(1, dark);
 		p->fillRect(x, y, w, h, gradient);
-		p->fillRect(x, y + h - 1, w, 1, option->palette.color(QPalette::Dark));
-		if (horz) {
-			p->fillRect(x + w - 1, y, 1, h, option->palette.color(QPalette::Dark));
+		{ // 仕切り線
+			QColor color = option->palette.color(QPalette::Dark);
+			p->fillRect(x, y + h - 1, w, 1, color);
+			if (horz) {
+				p->fillRect(x + w - 1, y, 1, h, color);
+			}
 		}
 		if (ce == CE_HeaderSection) {
 			if (horz) {
-				p->fillRect(x, y, 1, h, option->palette.color(QPalette::Light));
+				p->fillRect(x, y, 1, h, lite);
 			}
 			if (option->state & QStyle::State_MouseOver) {
 				p->save();
@@ -2517,8 +2453,10 @@ void DarkStyle::drawComplexControl(ComplexControl cc, const QStyleOptionComplex 
 #define EP_EDITBORDER_NOSCROLL      6
 #define EP_EDITBORDER_HVSCROLL      9
 				if (sub & SC_ComboBoxEditField) {
-					p->fillRect(option->rect, option->palette.color(QPalette::Dark));
-					drawFrame(p, option->rect, option->palette.color(QPalette::Shadow), option->palette.color(QPalette::Light));
+					auto [lite, dark] = buttonColor(option->state);
+					QColor darker = option->palette.color(QPalette::Dark);
+					p->fillRect(option->rect, darker);
+					drawFrame(p, option->rect, dark, lite);
 				}
 				if (sub & SC_ComboBoxArrow) {
 					QRect subRect = subControlRect(CC_ComboBox, option, SC_ComboBoxArrow, widget);

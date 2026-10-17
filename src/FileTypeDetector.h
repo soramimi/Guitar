@@ -3,21 +3,16 @@
 
 #include <string>
 #include <cstdint>
-#include "../subprojects/FileTypePlugin/src/FileTypeWrapper.h"
+// #include "../subprojects/FileTypePlugin/src/FileTypeWrapper.h"
+#include "../subprojects/FileTypePlugin/src/FileType.h"
 
 class FileTypeDetector {
 private:
-	FileTypeWrapper filetype;
-	using Result = FileTypeWrapper::Result;
-
-	Result detect(const char *data, int64_t size) const;
+	// FileType filetype;
+	FileType::Result detect(const char *data, int64_t size) const;
 public:
-	std::string mimetype_by_data(const char *data, int64_t size) const;
-	std::string mimetype_by_file(const char *path) const;
-	std::string mimetype_by_file(std::string const &path) const
-	{
-		return mimetype_by_file(path.c_str());
-	}
+	FileType::Result detect_by_data(const char *data, int64_t size) const;
+	FileType::Result detect_by_file(const char *path) const;
 };
 
 #endif // FILETYPEDETECTOR_H

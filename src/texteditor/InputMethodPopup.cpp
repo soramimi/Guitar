@@ -43,7 +43,7 @@ void InputMethodPopup::paintEvent(QPaintEvent *)
 			if (f.format.hasProperty(QTextFormat::TextUnderlineStyle)) {
 				QColor color;
 				if (f.format.hasProperty(QTextFormat::TextUnderlineColor)) {
-					color = Qt::yellow;//qvariant_cast<QColor>(f.format.property(QTextFormat::TextUnderlineColor));
+					color = qvariant_cast<QColor>(f.format.property(QTextFormat::TextUnderlineColor));
 				}
 				if (!color.isValid()) {
 					color = Qt::black;

@@ -300,7 +300,8 @@ GenerativeAI::Credential ApplicationGlobal::get_ai_credential(GenerativeAI::Mode
 
 std::string ApplicationGlobal::mimetype_by_data(char const *data, size_t size)
 {
-	return file_type_detector->detect(data, size).mimetype;
+	FileType::Result res = file_type_detector->detect(data, size);
+	return res.mimetype();
 }
 
 std::string ApplicationGlobal::mimetype_by_data(QByteArray const &ba)
@@ -315,7 +316,8 @@ std::string ApplicationGlobal::mimetype_by_data(std::vector<char> const &ba)
 
 std::string ApplicationGlobal::mimetype_by_file(char const *path)
 {
-	return file_type_detector->detect(path).mimetype;
+	FileType::Result res = file_type_detector->detect(path);
+	return res.mimetype();
 }
 
 std::string ApplicationGlobal::mimetype_by_file(const std::string &path)

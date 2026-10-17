@@ -67,7 +67,7 @@ FileType file_type_detector;
 
 } // namespace
 
-FileTypeDetector::Result FileTypeDetector::detect(const char *data, int64_t size) const
+FileType::Result FileTypeDetector::detect(const char *data, int64_t size) const
 {
 #ifdef APP_GUITAR
 	return global->file_type_detector->detect(data, size);
@@ -76,30 +76,31 @@ FileTypeDetector::Result FileTypeDetector::detect(const char *data, int64_t size
 #endif
 }
 
-std::string FileTypeDetector::mimetype_by_data(const char *data, int64_t size) const
+FileType::Result FileTypeDetector::detect_by_data(const char *data, int64_t size) const
 {
 	if (!data || size == 0) return {};
-
+	
 	if (size > 10) {
 		if (memcmp(data, "\x1f\x8b\x08", 3) == 0) { // gzip
 			MemoryReader src(data, size);
 			BufferWriter dst;
-
+			
 			gzip z;
 			z.set_maximul_size(100000);
 			z.decompress(&src, &dst);
-
+			
 			std::vector<char> const &unzipped = dst.buffer();
 			if (!unzipped.empty()) {
-				return detect(unzipped.data(), unzipped.size()).mimetype;
+				std::string mimetype;
+				return detect(unzipped.data(), unzipped.size());
 			}
 		}
 	}
-
-	return detect(data, size).mimetype;
+	
+	return detect(data, size);
 }
 
-std::string FileTypeDetector::mimetype_by_file(const char *path) const
+FileType::Result FileTypeDetector::detect_by_file(const char *path) const
 {
 	FILE *f = fopen(path, "rb");
 	if (!f) return {};
@@ -107,5 +108,5 @@ std::string FileTypeDetector::mimetype_by_file(const char *path) const
 	size_t n = fread(buf, 1, sizeof(buf), f);
 	fclose(f);
 	if (n == 0) return {};
-	return mimetype_by_data(buf, n);
+	return detect_by_data(buf, n);
 }

@@ -287,6 +287,7 @@ MainWindow::MainWindow(QWidget *parent)
 
 	ui->splitter_v->setSizes({ 100, 400 });
 	ui->splitter_h->setSizes({ 200, 100, 200 });
+	ui->splitter_log->setSizes({ 900, 100 });
 
 	m->status_bar_label = new StatusLabel(this);
 	m->status_bar_label->setAlignment((Qt::Alignment)Qt::TextSingleLine);
@@ -310,7 +311,7 @@ MainWindow::MainWindow(QWidget *parent)
 
 	m->graph_color = global->theme->graphColorMap();
 
-	connect(ui->dockWidget_log, &QDockWidget::visibilityChanged, this, &MainWindow::onLogVisibilityChanged);
+	// connect(ui->dockWidget_log, &QDockWidget::visibilityChanged, this, &MainWindow::onLogVisibilityChanged);
 	connect(ui->widget_log->view(), &TextEditorView::idle, this, &MainWindow::onLogIdle);
 
 	connect(ui->treeWidget_repos, &RepositoryTreeWidget::dropped, this, &MainWindow::onRepositoriesTreeDropped);
@@ -936,7 +937,7 @@ void MainWindow::toggleMaximized()
 
 void MainWindow::onLogVisibilityChanged()
 {
-	ui->action_window_log->setChecked(ui->dockWidget_log->isVisible());
+	// ui->action_window_log->setChecked(ui->dockWidget_log->isVisible());
 }
 
 void MainWindow::appendLogHistory(QByteArray const &str, LogChannel channel)
@@ -6599,7 +6600,7 @@ void MainWindow::on_action_configure_user_triggered()
 
 void MainWindow::showLogWindow(bool show)
 {
-	ui->dockWidget_log->setVisible(show);
+	// ui->dockWidget_log->setVisible(show);
 }
 
 bool MainWindow::isValidRemoteURL(const QString &url, const QString &sshkey)
