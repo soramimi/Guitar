@@ -754,10 +754,12 @@ void TextEditorView::paintEvent(QPaintEvent *)
 						while (j < chars.size()) {
 							int n = 0;
 							QString text;
+							CharAttr attr;
 							while (j + n < chars.size()) {
 								if (n == 0) {
 									left_x = chars[j].left_x;
 									right_x = chars[j].right_x;
+									attr = chars[j].attr;
 								} else { // 2文字目以降
 									if (right_x != chars[j + n].left_x) break; // x座標がつながっていないなら抜ける
 									if (chars[j].attr != chars[j + n].attr) break; // 属性が異なっていたら抜ける

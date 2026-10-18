@@ -3,6 +3,7 @@
 #include "../subprojects/FileTypePlugin/src/FileTypeInterface.h"
 #include "../subprojects/IncrementalSearchPlugin/src/IncrementalSearchInterface.h"
 #include "../subprojects/OnePasswordPlugin/src/OnePasswordInterface.h"
+#include "AvatarLoader.h"
 #include "CommitRecord.h"
 #include "GeneratedCommitMessage.h"
 #include "GitObjectData.h"
@@ -20,7 +21,6 @@
 #include <QTranslator>
 #include <common/joinpath.h>
 #include <csignal>
-#include "AvatarLoader.h"
 
 #ifndef APP_GUITAR
 #error APP_GUITAR is not defined.

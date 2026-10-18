@@ -142,7 +142,7 @@ void CommitLogTableModel::private_SetFilter(std::string const &text)
 		for (size_t i = 0; i < n; i++) {
 			bool match = [&](){
 				auto Match = [&](QString const &s){
-					return global->incremental_search->match(s.toStdString(), getIncrementalSearchFilter());
+					return global->incremental_search->match(xstring::fromQString(s), getIncrementalSearchFilter());
 				};
 				CommitRecord const *r = records_[i];
 				Q_ASSERT(r);

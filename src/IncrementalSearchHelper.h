@@ -1,12 +1,14 @@
 #ifndef INCREMENTALSEARCHHELPER_H
 #define INCREMENTALSEARCHHELPER_H
 
-#include "../subprojects/IncrementalSearchPlugin/src/MyMecab.h"
-#include <QString>
+#include <QString> // include first
 #include <memory>
 #include <optional>
 #include <regex>
 #include <string>
+
+#include "../subprojects/IncrementalSearchPlugin/src/MyMecab.h"
+#include "../subprojects/xstring.h"
 
 class QRect;
 class QPainter;

@@ -64,11 +64,11 @@ void drawText_filtered(QPainter *painter, const QStyleOptionViewItem &opt, const
 
 	QString text = opt.text;
 
-	Result match = global->incremental_search->match(text.toStdString(), filter);
+	Result match = global->incremental_search->match(xstring::fromQString(text), filter);
 	if (match) {
 		int x = rect.x();
 		for (Result::Part const &part : match.parts) {
-			QString s = QString::fromStdString(part.text);
+			QString s = toQString(part.text);
 			int w = painter->fontMetrics().horizontalAdvance(s);
 			QRect r = rect;
 			r.setLeft(x);

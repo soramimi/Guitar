@@ -44,6 +44,7 @@ win32:CONFIG(debug, debug|release):LIBS += $$PWD/lib/filed.lib $$PWD/lib/oniguru
 !win32:CONFIG(debug, debug|release):LIBS += $$PWD/lib/libfiled.a $$PWD/lib/libonigurumad.a
 
 HEADERS += \
+	../xstring.h \
 	src/FileType.h \
 	src/FileTypeInterface.h \
 	src/FileTypePlugin.h

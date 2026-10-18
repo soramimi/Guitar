@@ -190,7 +190,7 @@ void RepositoryTreeWidget::updateList(RepositoryListStyle style, std::vector<Rep
 			RepositoryInfo const &repo = repos.at(i);
 
 			if (global->incremental_search) {
-				if (!global->incremental_search->match(repo.name.toStdString(), filter)) continue;
+				if (!global->incremental_search->match(xstring::fromQString(repo.name), filter)) continue;
 			}
 
 			RepositoryTreeWidgetItem *parent = nullptr;

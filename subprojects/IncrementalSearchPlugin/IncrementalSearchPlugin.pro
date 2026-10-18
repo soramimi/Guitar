@@ -47,6 +47,7 @@ use_cudachi {
 
 
 HEADERS += \
+	../xstring.h \
 	src/IncrementalSearch.h \
 	src/IncrementalSearchFilter.h \
 	src/IncrementalSearchInterface.h \

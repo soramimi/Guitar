@@ -321,9 +321,9 @@ std::vector<incrementalsearch::Part> MyMecab::parse(const std::string_view &line
 			std::vector<std::string_view> features = split(node->feature);
 			Part part;
 			if (features.size() == 1 && features[0] == "unknown") {
-				part.text = std::string(line.substr(node->surface - line.data(), node->length));
+				part.text = line.substr(node->surface - line.data(), node->length);
 			} else if (features.size() > 7) {
-				part.text = std::string(features[7]);
+				part.text = features[7];
 			}
 			if (!part.text.empty()) {
 				part.offset = node->surface - line.data();

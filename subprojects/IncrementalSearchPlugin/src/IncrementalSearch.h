@@ -2,15 +2,15 @@
 #ifndef INCREMENTALSEARCH_H
 #define INCREMENTALSEARCH_H
 
-#include "IncrementalSearchFilter.h"
 #include <QObject>
+#include "IncrementalSearchFilter.h"
 
 namespace incrementalsearch {
 
 struct Element {
 	bool match = false;
 	struct Fragment {
-		std::string text;
+		xstring text;
 		size_t pos = 0;
 		size_t end = 0;
 	};
@@ -40,14 +40,13 @@ struct Result {
 struct Part {
 	size_t offset;
 	size_t length;
-	std::string text;
+	xstring text;
 };
 
 class Engine {
 private:
 	struct Private;
 	Private *m;
-public:
 public:
 	virtual ~Engine() {}
 	virtual bool open(char const *dicpath) = 0;
@@ -65,14 +64,14 @@ private:
 	Private *m;
 	incrementalsearch::Engine *mecab();
 	incrementalsearch::Engine const *mecab() const;
-	std::string to_kana(const std::string &text, std::vector<incrementalsearch::Element> *out) const;
+	xstring to_kana(const xstring &text, std::vector<incrementalsearch::Element> *out) const;
 public:
 	IncrementalSearch();
 	~IncrementalSearch();
 	virtual bool open();
 	virtual std::string convertRomajiToKatakana(std::string const &a);
 	virtual IncrementalSearchFilter makeFilter(const std::string &filtertext);
-	virtual incrementalsearch::Result match(const std::string &text, const IncrementalSearchFilter &filter) const;
+	virtual incrementalsearch::Result match(const xstring &text, const IncrementalSearchFilter &filter) const;
 };
 
 #endif // INCREMENTALSEARCH_H

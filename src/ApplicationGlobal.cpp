@@ -162,13 +162,13 @@ void ApplicationGlobal::selftest()
 				throw QString("Failed to match romaji filter with IncrementalSearchPlugin. Expected 3 parts, got " + QString::number(r.parts.size()));
 			}
 			if (!(r.parts[0].text == "吾輩は" && !r.parts[0].match)) {
-				throw QString("Failed to match romaji filter with IncrementalSearchPlugin. Expected part 0 to be \"吾輩は\", got \"" + QString::fromStdString(r.parts[0].text) + "\"");
+				throw QString("Failed to match romaji filter with IncrementalSearchPlugin. Expected part 0 to be \"吾輩は\", got \"" + toQString(r.parts[0].text) + "\"");
 			}
 			if (!(r.parts[1].text == "猫" && r.parts[1].match)) {
-				throw QString("Failed to match romaji filter with IncrementalSearchPlugin. Expected part 1 to be \"猫\", got \"" + QString::fromStdString(r.parts[1].text) + "\"");
+				throw QString("Failed to match romaji filter with IncrementalSearchPlugin. Expected part 1 to be \"猫\", got \"" + toQString(r.parts[1].text) + "\"");
 			}
 			if (!(r.parts[2].text == "である" && !r.parts[2].match)) {
-				throw QString("Failed to match romaji filter with IncrementalSearchPlugin. Expected part 2 to be \"である\", got \"" + QString::fromStdString(r.parts[2].text) + "\"");
+				throw QString("Failed to match romaji filter with IncrementalSearchPlugin. Expected part 2 to be \"である\", got \"" + toQString(r.parts[2].text) + "\"");
 			}
 		} catch (QString const &e) {
 			qDebug() << e;

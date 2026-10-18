@@ -265,7 +265,7 @@ const char *_fd_or_buf(magic_set *ms, int fd, unsigned char *buf, ssize_t nbytes
 	return file_getbuffer(ms);
 }
 
-InternalFileTypeResult *parse_mime(std::string const &mime)
+InternalFileTypeResult parse_mime(std::string const &mime)
 {
 	if (mime.empty()) return {};
 
@@ -288,11 +288,9 @@ InternalFileTypeResult *parse_mime(std::string const &mime)
 			}
 		}
 	}
-	InternalFileTypeResult *ret = (InternalFileTypeResult *)malloc(sizeof(InternalFileTypeResult));
-	new (ret) InternalFileTypeResult();
-	ret->_free = ::free;
-	ret->mimetype = strdup(ret_mimetype.c_str());
-	ret->charset = strdup(ret_charset.c_str());
+	InternalFileTypeResult ret;
+	ret.mimetype = ret_mimetype;
+	ret.charset = ret_charset;
 	return ret;
 }
 
@@ -389,7 +387,7 @@ void FileTypeWrapper::close()
  * @param fd The detect descriptor
  * @return The result
  */
-InternalFileTypeResult *FileTypeWrapper::detect(int fd) const
+InternalFileTypeResult FileTypeWrapper::detect(int fd) const
 {
 	if (!magic_set_) {
 		fprintf(stderr, "magic_set is null\n");
@@ -402,8 +400,8 @@ InternalFileTypeResult *FileTypeWrapper::detect(int fd) const
 		struct stat st;
 		if (fstat(fd, &st) == 0) {
 			if (S_ISDIR(st.st_mode)) {
-				InternalFileTypeResult *r = (InternalFileTypeResult *)malloc(sizeof(InternalFileTypeResult));
-				r->isdir = true;
+				InternalFileTypeResult r;
+				r.isdir = true;
 				// r.mimetype = "x-filesystem/x-directory";
 				return r;
 			}
@@ -430,7 +428,7 @@ InternalFileTypeResult *FileTypeWrapper::detect(int fd) const
  * @param filepath The path to the detect
  * @return The result
  */
-InternalFileTypeResult *FileTypeWrapper::detect(const char *filepath) const
+InternalFileTypeResult FileTypeWrapper::detect(const char *filepath) const
 {
 	if (!magic_set_) {
 		fprintf(stderr, "magic_set is null\n");
@@ -439,7 +437,7 @@ InternalFileTypeResult *FileTypeWrapper::detect(const char *filepath) const
 
 	if (!filepath) return {};
 
-	InternalFileTypeResult *ret = nullptr;
+	InternalFileTypeResult ret;
 
 	int fd = ::open(filepath, O_RDONLY | O_BINARY | O_NONBLOCK | O_CLOEXEC);
 	if (fd != -1) {
@@ -457,7 +455,7 @@ InternalFileTypeResult *FileTypeWrapper::detect(const char *filepath) const
  * @param st_mode The mode of the detect
  * @return The result
  */
-InternalFileTypeResult *FileTypeWrapper::detect(const char *data, size_t size, int st_mode) const
+InternalFileTypeResult FileTypeWrapper::detect(const char *data, size_t size, int st_mode) const
 {
 	if (!magic_set_) {
 		fprintf(stderr, "magic_set is null\n");
@@ -471,7 +469,8 @@ InternalFileTypeResult *FileTypeWrapper::detect(const char *data, size_t size, i
 	{
 		std::lock_guard<std::mutex> lock(mutex_);
 		char const *p = _fd_or_buf((magic_set *)magic_set_, -1, (unsigned char *)data, size, &st, false);
-		return p ? parse_mime(p) : nullptr;
+		if (p) return parse_mime(p);
 	}
+	return {};
 }
 

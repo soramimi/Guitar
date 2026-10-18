@@ -39,11 +39,11 @@ static inline int stricmp(std::string_view const &s1, std::string_view const &s2
 	return 0;
 }
 
-static inline char const *stristr(const char *haystack, const char *needle)
+static inline char const *stristr(const char *s1, const char *s2)
 {
-	size_t needle_len = strlen(needle);
-	for (const char *p = haystack; *p; p++) {
-		if (strnicmp(p, needle, needle_len) == 0) {
+	size_t needle_len = strlen(s2);
+	for (const char *p = s1; *p; p++) {
+		if (strnicmp(p, s2, needle_len) == 0) {
 			return p;
 		}
 	}
@@ -94,7 +94,7 @@ bool IncrementalSearch::open()
 				std::vector<std::string> expected = {"ワガハイ", "ハ", "ネコ", "デ", "アル"};
 				for (size_t i = 0; i < parts.size(); i++) {
 					if (parts[i].text != expected[i]) {
-						throw QString("Failed to parse sentence with IncrementalSearchPlugin. Part " + QString::number(i) + ": expected \"" + QString::fromStdString(expected[i]) + "\", got \"" + QString::fromStdString(parts[i].text) + "\"");
+						throw QString("Failed to parse sentence with IncrementalSearchPlugin. Part " + QString::number(i) + ": expected \"" + QString::fromStdString(expected[i]) + "\", got \"" + toQString(parts[i].text) + "\"");
 					}
 				}
 			}
@@ -111,7 +111,7 @@ bool IncrementalSearch::open()
 				std::vector<std::string> expected = {"カワイイ", "ミミノ", "チャン"};
 				for (size_t i = 0; i < parts.size(); i++) {
 					if (parts[i].text != expected[i]) {
-						throw QString("Failed to parse sentence with IncrementalSearchPlugin. Part " + QString::number(i) + ": expected \"" + QString::fromStdString(expected[i]) + "\", got \"" + QString::fromStdString(parts[i].text) + "\"");
+						throw QString("Failed to parse sentence with IncrementalSearchPlugin. Part " + QString::number(i) + ": expected \"" + QString::fromStdString(expected[i]) + "\", got \"" + toQString(parts[i].text) + "\"");
 					}
 				}
 			}
@@ -126,13 +126,13 @@ bool IncrementalSearch::open()
 				throw QString("Failed to match romaji filter with IncrementalSearchPlugin. Expected 3 parts, got " + QString::number(r.parts.size()));
 			}
 			if (!(r.parts[0].text == "吾輩は" && !r.parts[0].match)) {
-				throw QString("Failed to match romaji filter with IncrementalSearchPlugin. Expected part 0 to be \"吾輩は\", got \"" + QString::fromStdString(r.parts[0].text) + "\"");
+				throw QString("Failed to match romaji filter with IncrementalSearchPlugin. Expected part 0 to be \"吾輩は\", got \"" + toQString(r.parts[0].text) + "\"");
 			}
 			if (!(r.parts[1].text == "猫" && r.parts[1].match)) {
-				throw QString("Failed to match romaji filter with IncrementalSearchPlugin. Expected part 1 to be \"猫\", got \"" + QString::fromStdString(r.parts[1].text) + "\"");
+				throw QString("Failed to match romaji filter with IncrementalSearchPlugin. Expected part 1 to be \"猫\", got \"" + toQString(r.parts[1].text) + "\"");
 			}
 			if (!(r.parts[2].text == "である" && !r.parts[2].match)) {
-				throw QString("Failed to match romaji filter with IncrementalSearchPlugin. Expected part 2 to be \"である\", got \"" + QString::fromStdString(r.parts[2].text) + "\"");
+				throw QString("Failed to match romaji filter with IncrementalSearchPlugin. Expected part 2 to be \"である\", got \"" + toQString(r.parts[2].text) + "\"");
 			}
 		}
 	} catch (QString const &err) {
@@ -149,10 +149,10 @@ IncrementalSearch::~IncrementalSearch()
 	delete m;
 }
 
-std::string IncrementalSearch::to_kana(const std::string &text, std::vector<incrementalsearch::Element> *out) const
+xstring IncrementalSearch::to_kana(const xstring &text, std::vector<incrementalsearch::Element> *out) const
 {
-	std::string kana;
-	std::vector<incrementalsearch::Part> parts = mecab()->parse(text);
+	xstring kana;
+	std::vector<incrementalsearch::Part> parts = mecab()->parse(text.view());
 	size_t pos = 0;
 	for (incrementalsearch::Part const &part : parts) {
 		incrementalsearch::Element item;
@@ -167,7 +167,7 @@ std::string IncrementalSearch::to_kana(const std::string &text, std::vector<incr
 		if (out) {
 			out->push_back(item);
 		}
-		kana.append(part.text);
+		kana.append(part.text.view());
 	}
 	return kana;
 }
@@ -185,7 +185,7 @@ IncrementalSearchFilter IncrementalSearch::makeFilter(std::string const &filtert
 	return filter;
 }
 
-incrementalsearch::Result IncrementalSearch::match(std::string const &text, const IncrementalSearchFilter &filter) const
+incrementalsearch::Result IncrementalSearch::match(xstring const &text, const IncrementalSearchFilter &filter) const
 {
 	using namespace incrementalsearch;
 	Result ret;
@@ -217,10 +217,10 @@ incrementalsearch::Result IncrementalSearch::match(std::string const &text, cons
 		// 文字列をカタカナに変換してマッチさせる
 		if (!filter.katakana_text.empty()) {
 			std::vector<Element> parts;
-			std::string kana = to_kana(text, &parts);
+			xstring kana = to_kana(text, &parts);
 			(void)kana;
 			for (size_t i = 0; i < parts.size(); i++) {
-				bool match = parts[i].kana.text.find(filter.katakana_text) != std::string::npos;
+				bool match = to_std_string_view(parts[i].kana.text).find(to_std_string_view(filter.katakana_text)) != xstring::npos;
 				if (!match) continue;
 				// マッチした部分を追加
 				size_t pos = parts[i].source.pos;

@@ -2,12 +2,15 @@
 #ifndef INCREMENTALSEARCHFILTER_H
 #define INCREMENTALSEARCHFILTER_H
 
-#include <string>
+#include <QString> // include first
+
+#define XSTRING_WITH_STD_STRING
+#include "../../xstring.h"
 
 class IncrementalSearchFilter {
 public:
-	std::string original_text;
-	std::string katakana_text;
+	xstring original_text;
+	xstring katakana_text;
 public:
 	bool isEmpty() const
 	{

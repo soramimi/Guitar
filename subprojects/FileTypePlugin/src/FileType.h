@@ -20,7 +20,7 @@ public:
 		QString mimetype;
 		QString charset;
 		Result() = default;
-		Result(InternalFileTypeResult *result);
+		Result(const InternalFileTypeResult &result);
 	};
 	
 	virtual bool open();
