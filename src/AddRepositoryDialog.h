@@ -47,7 +47,7 @@ private:
 	void parseAndUpdateRemoteURL();
 	void resetRemoteRepository();
 public:
-	explicit AddRepositoryDialog(MainWindow *parent, QString const &local_dir = QString());
+	explicit AddRepositoryDialog(QWidget *parent, QString const &local_dir = QString());
 	~AddRepositoryDialog() override;
 
 	int execClone(QString const &remote_url);

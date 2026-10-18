@@ -11,6 +11,8 @@
 #define PATH_PREFIX "*"
 
 struct GitCommitItem;
+class AbstractGitSession;
+class AbstractPtyProcess;
 
 namespace std {
 template <> class hash<GitHash> {
@@ -21,6 +23,15 @@ public:
 	}
 };
 }
+
+class GitContext {
+public:
+	std::string git_command;
+	std::string ssh_command;
+	
+	std::shared_ptr<AbstractGitSession> connect() const;
+};
+
 
 struct GitFileItem {
 	std::string name;
@@ -248,6 +259,14 @@ enum class GitSignatureGrade {
 	Dubious,
 	Missing,
 	Bad,
+};
+
+struct GitSessionOption {
+	bool use_cache = false;
+	bool chdir = true;
+	bool log = true;
+	bool errout = false;
+	AbstractPtyProcess *pty = nullptr;
 };
 
 std::string gitTrimPath(std::string const &s);

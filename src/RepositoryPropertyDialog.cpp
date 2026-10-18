@@ -1,5 +1,6 @@
 #include "RepositoryPropertyDialog.h"
 #include "ui_RepositoryPropertyDialog.h"
+#include "ApplicationGlobal.h"
 #include "MainWindow.h"
 #include <QClipboard>
 #include <QDebug>

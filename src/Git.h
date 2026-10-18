@@ -14,14 +14,6 @@
 
 struct GitDiffOption;
 
-class GitContext {
-public:
-	std::string git_command;
-	std::string ssh_command;
-
-	std::shared_ptr<AbstractGitSession> connect() const;
-};
-
 class Git {
 	friend class GitRunner;
 private:
@@ -88,7 +80,7 @@ public:
 #ifdef QT_VERSION
 	QString resultQString(const std::optional<GitResult> &var) const;
 #endif
-	std::optional<GitResult> exec_git(std::string const &arg, AbstractGitSession::Option const &opt)
+	std::optional<GitResult> exec_git(std::string const &arg, GitSessionOption const &opt)
 	{
 		return session_->exec_git(arg, opt);
 	}
@@ -98,14 +90,14 @@ public:
 	}
 	std::optional<GitResult> git_nolog(std::string const &arg, AbstractPtyProcess *pty)
 	{
-		AbstractGitSession::Option opt;
+		GitSessionOption opt;
 		opt.pty = pty;
 		opt.log = false;
 		return exec_git(arg, opt);
 	}
 	std::optional<GitResult> git_nochdir(std::string const &arg, AbstractPtyProcess *pty)
 	{
-		AbstractGitSession::Option opt;
+		GitSessionOption opt;
 		opt.pty = pty;
 		opt.chdir = false;
 		return exec_git(arg, opt);
@@ -253,20 +245,6 @@ public:
 	std::optional<std::vector<GitFileItem>> ls(std::string const &path);
 	std::optional<std::vector<char>> readfile(std::string const &path);
 };
-
-struct NamedCommitItem {
-	enum class Type {
-		None,
-		BranchLocal,
-		BranchRemote,
-		Tag,
-	};
-	Type type = Type::None;
-	std::string remote;
-	std::string name;
-	GitHash id;
-};
-using NamedCommitList = std::vector<NamedCommitItem>;
 
 std::vector<GitSubmoduleItem> parseGitSubModules(QByteArray const &ba);
 

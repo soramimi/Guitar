@@ -1,5 +1,6 @@
 #include "BlameWindow.h"
 #include "ui_BlameWindow.h"
+#include "ApplicationGlobal.h"
 #include "CommitPropertyDialog.h"
 #include "Git.h"
 #include "MainWindow.h"

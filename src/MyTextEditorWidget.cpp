@@ -1,4 +1,5 @@
 #include "MyTextEditorWidget.h"
+#include "ApplicationGlobal.h"
 #include "MainWindow.h"
 #include <QFileDialog>
 #include <QFontDatabase>

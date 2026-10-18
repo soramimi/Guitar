@@ -11,6 +11,7 @@
 #include "MainWindow.h"
 #include "MySettings.h"
 #include "SettingGeneralForm.h"
+#include "inet/webclient.h"
 #include <QApplication>
 #include <QDir>
 #include <QMessageBox>
@@ -19,6 +20,7 @@
 #include <QTranslator>
 #include <common/joinpath.h>
 #include <csignal>
+#include "AvatarLoader.h"
 
 #ifndef APP_GUITAR
 #error APP_GUITAR is not defined.
@@ -84,7 +86,7 @@ void onSigPipe(int)
 	qDebug() << "SIGPIPE caught";
 #ifdef USE_LIBCURL
 #else
-	global->webcx.notify_broken_pipe();
+	global->webcx()->notify_broken_pipe();
 #endif
 }
 
@@ -283,13 +285,13 @@ int main(int argc, char *argv[])
 
 #ifdef USE_LIBCURL
 #else
-	global->webcx.set_keep_alive_enabled(true);
+	global->webcx()->set_keep_alive_enabled(true);
 #endif
-	global->avatar_loader.start(&w);
+	global->avatar_loader()->start(&w);
 
 	int r = QApplication::exec();
 
-	global->avatar_loader.stop();
+	global->avatar_loader()->stop();
 
 	global->mainwindow = nullptr;
 

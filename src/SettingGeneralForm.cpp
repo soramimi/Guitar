@@ -1,10 +1,9 @@
 #include "SettingGeneralForm.h"
 #include "ui_SettingGeneralForm.h"
+#include "ApplicationGlobal.h"
+#include "Languages.h"
 #include "MySettings.h"
 #include "SelectItemDialog.h"
-// #include "ApplicationGlobal.h"
-#include "Languages.h"
-
 #include <QFileDialog>
 
 SettingGeneralForm::SettingGeneralForm(QWidget *parent)

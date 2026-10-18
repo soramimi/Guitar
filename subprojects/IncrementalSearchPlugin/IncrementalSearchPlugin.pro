@@ -48,6 +48,7 @@ use_cudachi {
 
 HEADERS += \
 	src/IncrementalSearch.h \
+	src/IncrementalSearchFilter.h \
 	src/IncrementalSearchInterface.h \
 	src/IncrementalSearchPlugin.h \
 	src/MyMecab.h \

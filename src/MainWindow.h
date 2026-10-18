@@ -1,20 +1,25 @@
+
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
-#include "ApplicationGlobal.h"
 #include "GitCommandRunner.h"
+#include "GitCommitItem.h"
+#include "GitDiff.h"
+#include "GitHash.h"
+#include "GitObject.h"
+#include "GitRunner.h"
+#include "GitTypes.h"
+#include "GitUser.h"
 #include "MainWindowTypes.h"
-#include "RepositoryInfo.h"
+#include "ProcessStatus.h"
 #include "RepositoryModel.h"
 #include "RepositoryTreeWidget.h"
 #include "StatusInfo.h"
 #include "TextEditorTheme.h"
 #include "UserEvent.h"
-#include <QElapsedTimer>
 #include <QMainWindow>
 #include <future>
-#include <memory>
-#include <span>
+#include <optional>
 
 class AbstractGitCommand;
 class AddRepositoryDialog;
@@ -533,14 +538,7 @@ private slots:
 	void onRemoteInfoChanged();
 	void onShowStatusInfo(StatusInfo const &info);
 	
-	void onShowFileList(MainWindowFileListType panel_type)
-	{
-		ASSERT_MAIN_THREAD();
-		
-		clearDiffView();
-		
-		internalShowPanel(panel_type);
-	}
+	void onShowFileList(MainWindowFileListType panel_type);
 	void onAddFileObjectData(const MainWindowExchangeData &data);
 	
 	void on_action_view_sort_by_time_changed();
@@ -596,8 +594,28 @@ public:
 	static QListWidgetItem *newListWidgetFileItem(const GitObjectData &data);
 	static std::string parseDetectedDubiousOwnershipInRepositoryAt(const std::vector<std::string> &lines);
 	static QString abbrevCommitID(const GitCommitItem &commit);
+private:	
+	static GitRunner _git(const QString &dir, const QString &submodpath, const QString &sshkey);
+public:
+	static GitRunner unassosiated_git_runner();
+	
+	static GitRunner new_git_runner(const QString &dir, const QString &sshkey);
+	GitRunner new_git_runner();
+	GitRunner git();
+	static GitRunner git_for_submodule(GitRunner g, GitSubmoduleItem const &submod);
+	
 	static bool isValidWorkingCopy(GitRunner g);
-	bool isValidWorkingCopy(QString const &local_dir);
+	
+	static bool isValidWorkingCopy(QString const &local_dir)
+	{
+		GitRunner g = new_git_runner(local_dir, { });
+		return isValidWorkingCopy(g);
+	}
+	// static bool isValidWorkingCopy(QString const &dir)
+	// {
+	// 	auto g = unassosiated_git_runner();
+	// 	return g.isValidWorkingCopy(dir.toStdString());
+	// }
 	
 	static constexpr int DIGIT_WIDTH = 5;
 	static constexpr int DIGIT_HEIGHT = 7;
@@ -637,13 +655,7 @@ public:
 	QString currentRepositoryName() const;
 	std::string currentRemoteName() const;
 	std::string currentBranchName() const;
-	GitRunner _git(const QString &dir, const QString &submodpath, const QString &sshkey) const;
-	GitRunner unassosiated_git_runner() const;
-	GitRunner new_git_runner(const QString &dir, const QString &sshkey);
-	GitRunner new_git_runner();
-	GitRunner git();
-	static GitRunner git_for_submodule(GitRunner g, GitSubmoduleItem const &submod);
-	bool isValidWorkingCopy(QString const &dir) const;
+	
 	void autoOpenRepository(QString dir, bool save_repo, QString const &commit_id = { });
 	std::optional<GitCommitItem> queryCommit(const GitHash &id);
 	bool checkoutLocalBranch(const std::string &name);

@@ -1,5 +1,6 @@
 #include "AddRepositoryDialog.h"
 #include "ui_AddRepositoryDialog.h"
+#include "ApplicationGlobal.h"
 #include "Git.h"
 #include "MainWindow.h"
 #include "ManageWorkingFolderDialog.h"
@@ -14,7 +15,7 @@ enum {
 	Manage = -100,
 };
 
-AddRepositoryDialog::AddRepositoryDialog(MainWindow *parent, QString const &local_dir)
+AddRepositoryDialog::AddRepositoryDialog(QWidget *parent, QString const &local_dir)
 	: QDialog(parent)
 	, ui(new Ui::AddRepositoryDialog)
 {

@@ -1,10 +1,11 @@
 #include "FilePropertyDialog.h"
 #include "ui_FilePropertyDialog.h"
+#include "ApplicationGlobal.h"
 #include "MainWindow.h"
-#include <QMessageBox>
-#include <common/q/helper.h>
 #include <QFile>
 #include <QFileInfo>
+#include <QMessageBox>
+#include <common/q/helper.h>
 
 FilePropertyDialog::FilePropertyDialog(QWidget *parent)
 	: QDialog(parent)

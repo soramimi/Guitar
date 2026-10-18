@@ -1,5 +1,6 @@
 #include "CommitPropertyDialog.h"
 #include "ui_CommitPropertyDialog.h"
+#include "ApplicationGlobal.h"
 #include "AvatarLoader.h"
 #include "MainWindow.h"
 #include "gpg.h"
@@ -22,7 +23,7 @@ CommitPropertyDialog::CommitPropertyDialog(QWidget *parent, GitCommitItem const 
 
 CommitPropertyDialog::~CommitPropertyDialog()
 {
-	global->avatar_loader.disconnectAvatarReady(this, &CommitPropertyDialog::avatarReady);
+	global->avatar_loader()->disconnectAvatarReady(this, &CommitPropertyDialog::avatarReady);
 	delete m;
 	delete ui;
 }
@@ -121,7 +122,7 @@ void CommitPropertyDialog::init()
 		ui->frame_pgp->setVisible(true);
 	}
 
-	global->avatar_loader.connectAvatarReady(this, &CommitPropertyDialog::avatarReady);
+	global->avatar_loader()->connectAvatarReady(this, &CommitPropertyDialog::avatarReady);
 	updateAvatar(true);
 
 	ui->plainTextEdit_message->setFocus();
@@ -134,7 +135,7 @@ void CommitPropertyDialog::updateAvatar(bool request)
 	auto SetAvatar = [&](QString const &email, SimpleImageWidget *widget){
 		if (mainwindow()->appsettings()->get_avatar_icon_from_network_enabled) {
 			widget->setFixedSize(QSize(64, 64));
-			QImage icon = global->avatar_loader.fetch(email.toStdString(), request);
+			QImage icon = global->avatar_loader()->fetch(email.toStdString(), request);
 			setAvatar(icon, widget);
 		} else {
 			widget->setVisible(false);

@@ -20,7 +20,7 @@ public:
 
 	bool is_connected() const;
 	bool isValidWorkingCopy(std::string const &dir) const;
-	std::optional<GitResult> exec_git(std::string const &arg, Option const &opt);
+	std::optional<GitResult> exec_git(std::string const &arg, GitSessionOption const &opt);
 	bool remove(const std::string &path);
 
 	virtual std::optional<std::vector<GitFileItem>> ls(char const *path);

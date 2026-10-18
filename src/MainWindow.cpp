@@ -4,6 +4,7 @@
 #include "AddRepositoriesCollectivelyDialog.h"
 #include "AddRepositoryDialog.h"
 #include "AreYouSureYouWantToContinueConnectingDialog.h"
+#include "AvatarLoader.h"
 #include "BlameWindow.h"
 #include "CheckoutDialog.h"
 #include "CherryPickDialog.h"
@@ -23,9 +24,11 @@
 #include "FilePropertyDialog.h"
 #include "FileUtil.h"
 #include "FindCommitDialog.h"
+#include "Git.h"
 #include "GitConfigGlobalAddSafeDirectoryDialog.h"
 #include "GitDiffManager.h"
 #include "GitHubAPI.h"
+#include "GitObjectData.h"
 #include "GitObjectManager.h"
 #include "GitProcessThread.h"
 #include "JumpDialog.h"
@@ -33,11 +36,11 @@
 #include "MergeDialog.h"
 #include "MyProcess.h"
 #include "MySettings.h"
-#include "OverrideWaitCursor.h"
 #include "Profile.h"
 #include "PushDialog.h"
 #include "ReflogWindow.h"
 #include "RepositoryPropertyDialog.h"
+#include "ResetAndCleanDialog.h"
 #include "SelectCommandDialog.h"
 #include "SetGlobalUserDialog.h"
 #include "SetGpgSigningDialog.h"
@@ -53,13 +56,10 @@
 #include "WelcomeWizardDialog.h"
 #include "common/misc.h"
 #include "common/qmisc.h"
-#include "GitObjectData.h"
-#include "ResetAndCleanDialog.h"
-#include "SelectAiModelDialog.h"
-#include "gpg.h"
 #include "main.h"
 #include "platform.h"
 #include <AbstractProcess.h>
+#include <OverrideWaitCursor.h>
 #include <QClipboard>
 #include <QDesktopServices>
 #include <QDir>
@@ -68,19 +68,15 @@
 #include <QFontDatabase>
 #include <QMessageBox>
 #include <QMimeData>
-#include <QPainter>
 #include <QProcess>
 #include <QShortcut>
 #include <QStandardPaths>
 #include <QTimer>
-#include <ai/CommitMessageGenerator.h>
 #include <common/fmt.h>
 #include <common/joinpath.h>
 #include <common/npos.h>
 #include <common/q/helper.h>
 #include <common/str.h>
-#include <map>
-#include <subprojects/OnePasswordPlugin/src/OnePassword.h>
 
 #ifdef UNSAFE_ENABLED
 #include "sshsupport/ConfirmRemoteSessionDialog.h"
@@ -158,7 +154,7 @@ struct MainWindow::Private {
 		current_repository_data = { };
 	}
 
-	GitRunner unassosiated_git_runner;
+	// GitRunner unassosiated_git_runner;
 	GitRunner current_git_runner;
 
 	GitUser current_git_user;
@@ -344,7 +340,7 @@ MainWindow::MainWindow(QWidget *parent)
 	updateRepositoryList();
 
 	// アイコン取得機能
-	global->avatar_loader.connectAvatarReady(this, &MainWindow::onAvatarReady);
+	global->avatar_loader()->connectAvatarReady(this, &MainWindow::onAvatarReady);
 
 	connect(ui->widget_diff_view, &FileDiffWidget::textcodecChanged, [&]() { updateDiffView(); });
 
@@ -379,7 +375,7 @@ MainWindow::~MainWindow()
 {
 	m->git_process_thread.stop();
 
-	global->avatar_loader.disconnectAvatarReady(this, &MainWindow::onAvatarReady);
+	global->avatar_loader()->disconnectAvatarReady(this, &MainWindow::onAvatarReady);
 
 	cancelPendingUserEvents();
 
@@ -1057,6 +1053,15 @@ void MainWindow::onShowStatusInfo(StatusInfo const &info)
 			m->status_bar_label->show();
 		}
 	}
+}
+
+void MainWindow::onShowFileList(MainWindowFileListType panel_type)
+{
+	ASSERT_MAIN_THREAD();
+	
+	clearDiffView();
+	
+	internalShowPanel(panel_type);
 }
 
 void MainWindow::clearStatusInfo()
@@ -3388,7 +3393,7 @@ void MainWindow::updateAvatar(const GitUser &user, bool request)
 
 	QImage icon;
 	if (isAvatarEnabled()) {
-		icon = global->avatar_loader.fetch(user.email, request);
+		icon = global->avatar_loader()->fetch(user.email, request);
 	}
 	ui->widget_avatar_icon->setImage(icon);
 }
@@ -5681,7 +5686,7 @@ GitObjectCache *MainWindow::getObjCache() // TODO:
 
 void MainWindow::clearGitCommandCache()
 {
-	m->unassosiated_git_runner = { };
+	// m->unassosiated_git_runner = { };
 	m->current_git_runner.clearCommandCache();
 }
 
@@ -5690,7 +5695,7 @@ void MainWindow::clearGitObjectCache()
 	m->current_git_runner.clearObjectCache();
 }
 
-GitRunner MainWindow::_git(QString const &dir, QString const &submodpath, QString const &sshkey) const
+GitRunner MainWindow::_git(QString const &dir, QString const &submodpath, QString const &sshkey)
 {
 	std::shared_ptr<Git> g = std::make_shared<Git>(global->gcx(), dir.toStdString(), submodpath.toStdString(), sshkey.toStdString());
 	if (g->isValidGitCommand()) {
@@ -5702,13 +5707,19 @@ GitRunner MainWindow::_git(QString const &dir, QString const &submodpath, QStrin
 	return { };
 }
 
-GitRunner MainWindow::unassosiated_git_runner() const
+GitRunner MainWindow::unassosiated_git_runner()
 {
+#if 0
 	if (!m->unassosiated_git_runner) {
 		m->unassosiated_git_runner = _git({ }, { }, { });
 	}
 	return m->unassosiated_git_runner;
+#else
+	return _git({ }, { }, { });
+#endif
 }
+
+
 
 GitRunner MainWindow::new_git_runner(QString const &dir, QString const &sshkey)
 {
@@ -5723,7 +5734,7 @@ GitRunner MainWindow::new_git_runner()
 
 GitRunner MainWindow::git()
 {
-	return m->current_git_runner ? m->current_git_runner : unassosiated_git_runner();
+	return m->current_git_runner ? m->current_git_runner : _git({ }, { }, { });
 }
 
 GitRunner MainWindow::git_for_submodule(GitRunner g, const GitSubmoduleItem &submod)
@@ -5731,12 +5742,6 @@ GitRunner MainWindow::git_for_submodule(GitRunner g, const GitSubmoduleItem &sub
 	GitRunner g2 = g.dup();
 	g2.setSubmodulePath(submod.path);
 	return g2;
-}
-
-bool MainWindow::isValidWorkingCopy(QString const &dir) const
-{
-	auto g = unassosiated_git_runner();
-	return g.isValidWorkingCopy(dir.toStdString());
 }
 
 GitUser MainWindow::currentGitUser() const
@@ -5896,11 +5901,7 @@ bool MainWindow::isValidWorkingCopy(GitRunner g)
 	return g && g.isValidWorkingCopy();
 }
 
-bool MainWindow::isValidWorkingCopy(QString const &local_dir)
-{
-	GitRunner g = new_git_runner(local_dir, { });
-	return isValidWorkingCopy(g);
-}
+
 
 void MainWindow::emitWriteLog(const LogData &logdata, LogChannel channel)
 {
@@ -5941,7 +5942,7 @@ QImage MainWindow::committerIcon(int row, QSize size) const
 			commit = logs[row];
 		}
 		if (commit) {
-			icon = global->avatar_loader.fetch(commit.email, true); // from gavatar
+			icon = global->avatar_loader()->fetch(commit.email, true); // from gavatar
 			if (!size.isValid()) {
 				icon = icon.scaled(size, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
 			}
@@ -6612,7 +6613,7 @@ bool MainWindow::isValidRemoteURL(const QString &url, const QString &sshkey)
 	GitRunner g = new_git_runner({ }, sshkey);
 	QString cmd = "ls-remote \"%1\" HEAD";
 	cmd = cmd.arg(url);
-	AbstractGitSession::Option opt;
+	GitSessionOption opt;
 	opt.chdir = false;
 	opt.pty = getPtyProcess();
 	bool f = (bool)g.git->exec_git(cmd.toStdString(), opt);

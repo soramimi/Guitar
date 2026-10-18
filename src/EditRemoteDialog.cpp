@@ -1,5 +1,6 @@
 #include "EditRemoteDialog.h"
 #include "ui_EditRemoteDialog.h"
+#include "ApplicationGlobal.h"
 #include "MainWindow.h"
 #include <QFileDialog>
 #include <QStandardPaths>

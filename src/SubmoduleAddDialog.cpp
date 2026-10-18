@@ -1,5 +1,6 @@
 #include "SubmoduleAddDialog.h"
 #include "ui_SubmoduleAddDialog.h"
+#include "ApplicationGlobal.h"
 #include "MainWindow.h"
 #include "SearchFromGitHubDialog.h"
 #include <QFileDialog>

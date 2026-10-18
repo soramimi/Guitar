@@ -1,5 +1,6 @@
 
 #include "GitDiffManager.h"
+#include "ApplicationGlobal.h"
 #include "GitObjectManager.h"
 #include "MainWindow.h"
 #include <QDebug>

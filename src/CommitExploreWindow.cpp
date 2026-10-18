@@ -1,6 +1,7 @@
 
 #include "CommitExploreWindow.h"
 #include "ui_CommitExploreWindow.h"
+#include "ApplicationGlobal.h"
 #include "GitObjectManager.h"
 #include "ImageViewWidget.h"
 #include "MainWindow.h"

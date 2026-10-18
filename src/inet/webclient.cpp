@@ -1529,10 +1529,10 @@ void WebClient::make_multipart_form_data(char const *data, size_t size, InetClie
 
 //
 
-WebContext::WebContext(WebClient::HttpVersion httpver)
+WebContext::WebContext()
 	: m(new Private)
 {
-	set_http_version(httpver);
+	// set_http_version(httpver);
 #if USE_OPENSSL
 	SSL_load_error_strings();
 	SSL_library_init();
@@ -1618,7 +1618,8 @@ void WebContext::notify_broken_pipe()
 
 std::string WebClient::quick_get(std::string const &url)
 {
-	WebContext wc(WebClient::HTTP_1_1);
+	WebContext wc;
+	wc.set_http_version(WebClient::HTTP_1_1);
 	wc.set_keep_alive_enabled(false);
 	WebClient http(&wc);
 	if (http.get(InetClient::Request(url))) {
@@ -1697,7 +1698,8 @@ void WebClient::self_test()
 	{
 		bool caught = false;
 		try {
-			WebContext wc(WebClient::HTTP_1_1);
+			WebContext wc;
+			wc.set_http_version(WebClient::HTTP_1_1);
 			WebClient http(&wc);
 			http.add_header("X-Evil: value\r\nX-Injected: evil");
 		} catch (InetClient::Error const &) {

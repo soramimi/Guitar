@@ -183,7 +183,7 @@ bool Git::init()
 GitHash Git::rev_parse(const std::string &name)
 {
 	std::string cmd = fmt("rev-parse %s")(name);
-	AbstractGitSession::Option opt;
+	GitSessionOption opt;
 	opt.use_cache = true;
 	auto result = exec_git(cmd, opt);
 	if (result) {
@@ -326,7 +326,7 @@ std::vector<GitDiffRaw> Git::diff_raw(GitHash const &old_id, GitHash const &new_
 
 std::string Git::getDefaultBranch()
 {
-	AbstractGitSession::Option opt;
+	GitSessionOption opt;
 	opt.chdir = false;
 	auto result = exec_git("config --global init.defaultBranch", opt);
 	return (std::string)misc::trimmed(resultStdString(result));
@@ -334,7 +334,7 @@ std::string Git::getDefaultBranch()
 
 void Git::setDefaultBranch(std::string const &branchname)
 {
-	AbstractGitSession::Option opt;
+	GitSessionOption opt;
 	opt.chdir = false;
 	std::string cmd = "config --global init.defaultBranch %s";
 	cmd = fmt(cmd)(quoted_text(branchname));
@@ -343,7 +343,7 @@ void Git::setDefaultBranch(std::string const &branchname)
 
 void Git::unsetDefaultBranch()
 {
-	AbstractGitSession::Option opt;
+	GitSessionOption opt;
 	opt.chdir = false;
 	exec_git("config --global --unset init.defaultBranch", opt);
 }
@@ -989,7 +989,7 @@ bool Git::submodule_add(const GitCloneData &data, bool force, AbstractPtyProcess
 		cmd += " -f";
 	}
 	cmd += fmt(" %s %s")(quoted_text(data.url))(quoted_text(data.subdir));
-	AbstractGitSession::Option opt;
+	GitSessionOption opt;
 	opt.errout = true;
 	opt.pty = pty;
 	ok = (bool)exec_git(cmd, opt);
@@ -1006,7 +1006,7 @@ bool Git::submodule_update(GitSubmoduleUpdateData const &data, AbstractPtyProces
 	if (data.recursive) {
 		cmd += " --recursive";
 	}
-	AbstractGitSession::Option opt;
+	GitSessionOption opt;
 	opt.errout = true;
 	opt.pty = pty;
 	return (bool)exec_git(cmd.toStdString(), opt);
@@ -1043,7 +1043,7 @@ bool Git::commit_(std::string const &msg, bool amend, bool sign, AbstractPtyProc
 	text = quoted_text(text);
 	cmd += fmt(" -m %s")(text);
 
-	AbstractGitSession::Option opt;
+	GitSessionOption opt;
 	opt.pty = pty;
 	return (bool)exec_git(cmd, opt);
 }
@@ -1077,7 +1077,7 @@ bool Git::push_u(bool set_upstream, const std::string &remote, const std::string
 	if (set_upstream && !remote.empty() && !branch.empty()) {
 		cmd += fmt(" -u %s %s")(quoted_text(remote))(quoted_text(branch));
 	}
-	AbstractGitSession::Option opt;
+	GitSessionOption opt;
 	opt.pty = pty;
 	return (bool)exec_git(cmd, opt);
 }
@@ -1085,7 +1085,7 @@ bool Git::push_u(bool set_upstream, const std::string &remote, const std::string
 bool Git::push_tags(AbstractPtyProcess *pty)
 {
 	QString cmd = "push --tags";
-	AbstractGitSession::Option opt;
+	GitSessionOption opt;
 	opt.pty = pty;
 	return (bool)exec_git(cmd.toStdString(), opt);
 }
@@ -1097,7 +1097,7 @@ std::vector<GitFileStatus> Git::status_s_u_(std::string *out)
 	}
 
 	std::vector<GitFileStatus> files;
-	AbstractGitSession::Option opt;
+	GitSessionOption opt;
 	opt.use_cache = true;
 	auto result = exec_git("status -s -u --porcelain", opt);
 	if (result) {
@@ -1224,7 +1224,7 @@ bool Git::stage(const std::vector<std::string> &paths, AbstractPtyProcess *pty)
 		cmd += '\"';
 	}
 
-	AbstractGitSession::Option opt;
+	GitSessionOption opt;
 	opt.pty = pty;
 	return (bool)exec_git(cmd, opt);
 }
@@ -1255,7 +1255,7 @@ bool Git::unstage_all()
 
 bool Git::pull(AbstractPtyProcess *pty)
 {
-	AbstractGitSession::Option opt;
+	GitSessionOption opt;
 	opt.pty = pty;
 	return (bool)exec_git("pull", opt);
 }
@@ -1267,7 +1267,7 @@ bool Git::fetch(AbstractPtyProcess *pty, bool prune)
 	if (prune) {
 		cmd += " --prune";
 	}
-	AbstractGitSession::Option opt;
+	GitSessionOption opt;
 	opt.pty = pty;
 	return (bool)exec_git(cmd, opt);
 }
@@ -1408,7 +1408,7 @@ GitUser Git::getUser(GitSource purpose)
 	std::string arg1;
 	if (global) arg1 = "--global";
 	if (local) arg1 = "--local";
-	AbstractGitSession::Option opt;
+	GitSessionOption opt;
 	opt.use_cache = true;
 	opt.chdir = !global;
 	{
@@ -1438,7 +1438,7 @@ void Git::setUser(const GitUser &user, bool global)
 	if (unset) {
 		config += " --unset";
 	}
-	AbstractGitSession::Option opt;
+	GitSessionOption opt;
 	opt.chdir = !global;
 	exec_git(fmt("config %s user.name %s")(config)(quoted_text(user.name)), opt);
 	exec_git(fmt("config %s user.email %s")(config)(quoted_text(user.email)), opt);
@@ -1719,7 +1719,7 @@ std::string Git::signingKey(GitSource purpose)
 	if (purpose == GitSource::Local) arg1 = "--local";
 	std::string cmd = "config %s user.signingkey";
 	cmd = fmt(cmd)(arg1);
-	AbstractGitSession::Option opt;
+	GitSessionOption opt;
 	opt.chdir = purpose != GitSource::Global;
 	auto result = exec_git(cmd, opt);
 	if (result) {
@@ -1736,7 +1736,7 @@ bool Git::setSigningKey(std::string const &id, bool global)
 
 	std::string cmd = "config %s %s user.signingkey %s";
 	cmd = fmt(cmd)(global ? "--global" : "--local")(id.empty() ? "--unset" : "")(id);
-	AbstractGitSession::Option opt;
+	GitSessionOption opt;
 	opt.chdir = !global;
 	return (bool)exec_git(cmd, opt);
 }
@@ -1747,7 +1747,7 @@ GitSignPolicy Git::signPolicy(GitSource source)
 	if (source == GitSource::Global) arg1 = "--global";
 	if (source == GitSource::Local)  arg1 = "--local";
 	std::string cmd = fmt("config %s commit.gpgsign")(arg1);
-	AbstractGitSession::Option opt;
+	GitSessionOption opt;
 	opt.chdir = source != GitSource::Global;
 	auto result = exec_git(cmd, opt);
 	if (result) {
@@ -1773,7 +1773,7 @@ bool Git::setSignPolicy(GitSource source, GitSignPolicy policy)
 		arg2 = "--unset";
 	}
 	std::string cmd = fmt("config %s %s commit.gpgsign %s")(arg1)(arg2)(arg3);
-	AbstractGitSession::Option opt;
+	GitSessionOption opt;
 	opt.chdir = source != GitSource::Global;
 	return (bool)exec_git(cmd, opt);
 }

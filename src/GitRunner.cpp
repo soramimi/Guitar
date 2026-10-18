@@ -52,8 +52,6 @@ void GitRunner::clearObjectCache()
 	if (git) gitptr()->clearObjectCache();
 }
 
-
-
 bool GitRunner::isValidWorkingCopy(std::string const &dir) const
 {
 	return git && gitptr()->isValidWorkingCopy(dir);

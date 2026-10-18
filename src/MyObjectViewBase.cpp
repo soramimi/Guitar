@@ -1,3 +1,4 @@
+#include "ApplicationGlobal.h"
 #include "GitRunner.h"
 #include "MainWindow.h"
 #include "MyObjectViewBase.h"

@@ -1,6 +1,7 @@
 #include "platform.h"
 #include "ApplicationGlobal.h"
 #include <common/misc.h>
+#include "inet/webclient.h"
 
 #ifndef Q_OS_WIN
 extern char** environ;
@@ -44,8 +45,8 @@ void initNetworking()
 	}
 #ifdef USE_LIBCURL
 #else
-	global->webcx.set_http_proxy(http_proxy);
-	global->webcx.set_https_proxy(https_proxy);
+	global->webcx()->set_http_proxy(http_proxy);
+	global->webcx()->set_https_proxy(https_proxy);
 #endif
 }
 

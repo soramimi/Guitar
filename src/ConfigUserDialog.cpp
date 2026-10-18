@@ -1,5 +1,6 @@
 #include "ConfigUserDialog.h"
 #include "ui_ConfigUserDialog.h"
+#include "ApplicationGlobal.h"
 #include "AvatarLoader.h"
 #include "EditProfilesDialog.h"
 #include "MainWindow.h"
@@ -42,14 +43,14 @@ ConfigUserDialog::ConfigUserDialog(MainWindow *parent, GitUser const &global_use
 	}
 	ui->groupBox_local->setTitle(text);
 
-	global->avatar_loader.connectAvatarReady(this, &ConfigUserDialog::avatarReady);
+	global->avatar_loader()->connectAvatarReady(this, &ConfigUserDialog::avatarReady);
 
 	updateAvatar();
 }
 
 ConfigUserDialog::~ConfigUserDialog()
 {
-	global->avatar_loader.disconnectAvatarReady(this, &ConfigUserDialog::avatarReady);
+	global->avatar_loader()->disconnectAvatarReady(this, &ConfigUserDialog::avatarReady);
 	delete m;
 	delete ui;
 }
@@ -83,7 +84,7 @@ GitUser ConfigUserDialog::user(bool global) const
 
 void ConfigUserDialog::updateAvatar(QString const &email, bool request)
 {
-	QImage image = global->avatar_loader.fetch(email.toStdString(), request);
+	QImage image = global->avatar_loader()->fetch(email.toStdString(), request);
 	ui->widget_avatar->setImage(image);
 }
 

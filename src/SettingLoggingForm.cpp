@@ -1,6 +1,7 @@
 // #include "ApplicationGlobal.h"
 #include "SettingLoggingForm.h"
 #include "ui_SettingLoggingForm.h"
+#include "ApplicationGlobal.h"
 
 #include <QFileDialog>
 

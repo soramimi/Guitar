@@ -3,7 +3,6 @@
 
 #include <string>
 #include <cstdint>
-// #include "../subprojects/FileTypePlugin/src/FileTypeWrapper.h"
 #include "../subprojects/FileTypePlugin/src/FileType.h"
 
 class FileTypeDetector {

@@ -1,5 +1,7 @@
 #include "WelcomeWizardDialog.h"
 #include "ui_WelcomeWizardDialog.h"
+#include "ApplicationGlobal.h"
+#include "Git.h"
 #include "MainWindow.h"
 #include "UserEvent.h"
 #include <QFileDialog>
@@ -25,14 +27,14 @@ WelcomeWizardDialog::WelcomeWizardDialog(MainWindow *parent)
 	ui->stackedWidget->setCurrentWidget(pages_[0]);
 	on_stackedWidget_currentChanged(0);
 
-	global->avatar_loader.connectAvatarReady(this, &WelcomeWizardDialog::avatarReady);
+	global->avatar_loader()->connectAvatarReady(this, &WelcomeWizardDialog::avatarReady);
 
 	ui->stackedWidget->setCurrentWidget(ui->page_helper_tools);
 }
 
 WelcomeWizardDialog::~WelcomeWizardDialog()
 {
-	global->avatar_loader.disconnectAvatarReady(this, &WelcomeWizardDialog::avatarReady);
+	global->avatar_loader()->disconnectAvatarReady(this, &WelcomeWizardDialog::avatarReady);
 	delete ui;
 }
 
@@ -196,7 +198,7 @@ void WelcomeWizardDialog::setAvatar(QImage const &icon)
 void WelcomeWizardDialog::avatarReady()
 {
 	QString email = ui->lineEdit_user_email->text();
-	auto icon = global->avatar_loader.fetch(email.toStdString(), true);
+	auto icon = global->avatar_loader()->fetch(email.toStdString(), true);
 	setAvatar(icon);
 }
 
@@ -205,7 +207,7 @@ void WelcomeWizardDialog::on_pushButton_get_icon_clicked()
 	ui->widget->setImage({});
 	QString email = ui->lineEdit_user_email->text();
 	if (misc::isValidMailAddress(email)) {
-		auto icon = global->avatar_loader.fetch(email.toStdString(), true);
+		auto icon = global->avatar_loader()->fetch(email.toStdString(), true);
 		if (!icon.isNull()) {
 			setAvatar(icon);
 		}

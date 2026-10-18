@@ -1,5 +1,6 @@
 
 #include "FileDiffWidget.h"
+#include "ApplicationGlobal.h"
 #include "BigDiffWindow.h"
 #include "GitDiffManager.h"
 #include "MainWindow.h"

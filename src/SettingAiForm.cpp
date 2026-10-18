@@ -1,5 +1,6 @@
 #include "SettingAiForm.h"
 #include "ui_SettingAiForm.h"
+#include "ApplicationGlobal.h"
 #include "Logger.h"
 #include "SelectAiModelDialog.h"
 #include <ChangePinDialog.h>
@@ -77,9 +78,10 @@ void SettingAiForm::on_pushButton_model_config_clicked()
 
 void SettingAiForm::lockVault()
 {
-	if (global->vault && global->vault.vault->isUnlocked()) {
-		global->vault.vault->lock();
-		global->vault.reset();
+	Q_ASSERT(global->vault_.get());
+	if (global->vault_->vault && global->vault_->vault->isUnlocked()) {
+		global->vault_->vault->lock();
+		global->vault_->vault.reset();
 	}
 }
 
@@ -87,7 +89,7 @@ void SettingAiForm::on_pushButton_change_pin_clicked()
 {
 	lockVault();
 	
-	ChangePinDialog dlg(this, global->vault_schema(), &global->vault);
+	ChangePinDialog dlg(this, global->vault_schema(), global->vault_.get());
 	dlg.exec();
 }
 
@@ -116,7 +118,7 @@ void SettingAiForm::on_pushButton_destroy_vault_clicked()
 		auto vault = global->unlockVault(this);
 		if (vault) {
 			vault->destroy();
-			global->vault.reset();
+			global->vault_.reset();
 		}
 	}
 	

@@ -2,20 +2,12 @@
 #ifndef APPLICATIONGLOBAL_H
 #define APPLICATIONGLOBAL_H
 
-#include "AbstractGitSession.h"
 #include "ApplicationSettings.h"
-#include "AvatarLoader.h"
-#include "Git.h"
-#include <QColor>
-#include <QString>
+// #include "AvatarLoader.h"
+#include "GitTypes.h"
 #include <inet/webclient.h>
-#include <localvault/src/app/BackendSelector.h>
-#include <localvault/src/app/SecretVault.h>
-#include <localvault/src/gui/SecureStoreGUI.h>
-#include <localvault/src/vault/Vault.h>
-#include <memory>
 #include <subprojects/FileTypePlugin/src/FileType.h>
-#include <subprojects/IncrementalSearchPlugin/src/IncrementalSearch.h>
+#include <subprojects/IncrementalSearchPlugin/src/IncrementalSearchFilter.h>
 
 #ifdef USE_LIBCURL
 #include <inet/curlclient.h>
@@ -25,8 +17,10 @@ class IncrementalSearch;
 class OnePassword;
 
 namespace localvault {
-class Vault;
+class VaultWithBackend;
 }
+
+class AvatarLoader;
 
 #ifdef APP_GUITAR
 #include "Theme.h"
@@ -63,7 +57,7 @@ public:
 	
 	char const *source_revision();
 	
-	AbstractGitSession::Option gitopt;
+	GitSessionOption gitopt;
 	MainWindow *mainwindow = nullptr;
 	bool start_with_shift_key = false;
 	QString language_id;
@@ -98,9 +92,21 @@ public:
 #ifdef USE_LIBCURL
 	CurlContext curlcx;
 #else
-	WebContext webcx = {WebClient::HTTP_1_0};
+	// WebContext webcx = {WebClient::HTTP_1_0};
+	std::unique_ptr<WebContext> webcx_;
+	WebContext *webcx()
+	{
+		return webcx_.get();
+	}
 #endif
-	AvatarLoader avatar_loader;
+	
+	
+	std::unique_ptr<AvatarLoader> avatar_loader_;
+	AvatarLoader *avatar_loader()
+	{
+		return avatar_loader_.get();
+		
+	}
 	
 	std::vector<AccountProfile> account_profiles;
 	
@@ -156,9 +162,9 @@ public:
 	}
 	
 	QString aimodels_json_path() const;
-	localvault::VaultWithBackend vault;
-	QString vault_schema() const;
 	
+	QString vault_schema() const;
+	std::unique_ptr<localvault::VaultWithBackend> vault_;
 	localvault::Vault *unlockVault(QWidget *parent);
 	
 	static bool load_api_keys(QWidget *parent, AiApiKeys *apikeys);

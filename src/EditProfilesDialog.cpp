@@ -8,6 +8,7 @@
 #include <QXmlStreamWriter>
 #include <common/misc.h>
 #include <common/q/helper.h>
+#include "AvatarLoader.h"
 
 EditProfilesDialog::Item::Item(const GitUser &user)
 	: name((QS)user.name)
@@ -30,12 +31,12 @@ EditProfilesDialog::EditProfilesDialog(QWidget *parent)
 	, ui(new Ui::EditProfilesDialog)
 {
 	ui->setupUi(this);
-	global->avatar_loader.connectAvatarReady(this, &EditProfilesDialog::avatarReady);
+	global->avatar_loader()->connectAvatarReady(this, &EditProfilesDialog::avatarReady);
 }
 
 EditProfilesDialog::~EditProfilesDialog()
 {
-	global->avatar_loader.disconnectAvatarReady(this, &EditProfilesDialog::avatarReady);
+	global->avatar_loader()->disconnectAvatarReady(this, &EditProfilesDialog::avatarReady);
 	delete ui;
 }
 
@@ -65,7 +66,7 @@ void EditProfilesDialog::updateAvatar(QString const &email, bool request)
 	if (current_email_.isEmpty()) {
 		ui->widget_avatar_icon->setImage({});
 	} else {
-		auto icon = global->avatar_loader.fetch(current_email_.toStdString(), request);
+		auto icon = global->avatar_loader()->fetch(current_email_.toStdString(), request);
 		if (!icon.isNull()) {
 			ui->widget_avatar_icon->setImage(icon);
 		}

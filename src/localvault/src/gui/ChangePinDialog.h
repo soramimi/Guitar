@@ -18,8 +18,7 @@ private:
 	localvault::VaultWithBackend *global_vault_ = nullptr;
 	localvault::StoragePreference storagePreference_ = localvault::StoragePreference::PreferSystem;
 public:
-	explicit ChangePinDialog(QWidget *parent, QString const &schema, localvault::VaultWithBackend *global_vault,
-		localvault::StoragePreference storagePreference = localvault::StoragePreference::PreferSystem);
+	explicit ChangePinDialog(QWidget *parent, QString const &schema, localvault::VaultWithBackend *global_vault, localvault::StoragePreference storagePreference = localvault::StoragePreference::PreferSystem);
 	~ChangePinDialog();
 
 public slots:

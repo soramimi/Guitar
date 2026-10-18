@@ -3,6 +3,7 @@
 
 #include <stdint.h>
 #include <string>
+#include <vector>
 
 static constexpr int GIT_ID_LENGTH = 40;
 
@@ -48,5 +49,19 @@ static inline bool operator < (GitHash const &l, GitHash const &r)
 {
 	return l.compare(r) < 0;
 }
+
+struct NamedCommitItem {
+	enum class Type {
+		None,
+		BranchLocal,
+		BranchRemote,
+		Tag,
+	};
+	Type type = Type::None;
+	std::string remote;
+	std::string name;
+	GitHash id;
+};
+using NamedCommitList = std::vector<NamedCommitItem>;
 
 #endif // GITHASH_H

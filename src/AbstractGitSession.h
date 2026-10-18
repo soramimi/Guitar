@@ -16,13 +16,6 @@ class GitObjectCache;
 class AbstractGitSession {
 	friend class GitRunner;
 public:
-	struct Option {
-		bool use_cache = false;
-		bool chdir = true;
-		bool log = true;
-		bool errout = false;
-		AbstractPtyProcess *pty = nullptr;
-	};
 	struct Info {
 		std::string git_command;
 		std::string ssh_command;// = "C:/Program Files/Git/usr/bin/ssh.exe";
@@ -55,7 +48,7 @@ public:
 
 	// GitCache &cache();
 	std::string workingDir() const;
-	virtual std::optional<GitResult> exec_git(std::string const &arg, Option const &opt) = 0;
+	virtual std::optional<GitResult> exec_git(std::string const &arg, GitSessionOption const &opt) = 0;
 	virtual bool remove(std::string const &path) = 0;
 
 	virtual bool is_connected() const = 0;

@@ -1,5 +1,6 @@
 #include "CommitViewWindow.h"
 #include "ui_CommitViewWindow.h"
+#include "ApplicationGlobal.h"
 #include "GitCommitItem.h"
 #include "MainWindow.h"
 #include <QMenu>

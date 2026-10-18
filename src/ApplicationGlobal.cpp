@@ -1,3 +1,5 @@
+#include "ApplicationGlobal.h"
+#include "AvatarLoader.h"
 #include "IncrementalSearchHelper.h"
 #include "Logger.h"
 #include "MainWindow.h"
@@ -6,18 +8,19 @@
 #include "TraceEventWriter.h"
 #include "ai/GenerativeAI.h"
 #include "gzip.h"
+#include "inet/webclient.h"
 #include "main.h"
 #include <QApplication>
 #include <QBuffer>
 #include <QDebug>
 #include <QFileIconProvider>
-#include <QListWidgetItem>
-#include <QThread>
-#include <common/misc.h>
-#include <common/joinpath.h>
 #include <QFontDatabase>
+#include <QListWidgetItem>
 #include <QMessageBox>
+#include <QThread>
 #include <SecureStoreGUI.h>
+#include <common/joinpath.h>
+#include <common/misc.h>
 #include <memory>
 
 namespace ver {
@@ -33,6 +36,12 @@ struct ApplicationGlobal::Private {
 ApplicationGlobal::ApplicationGlobal()
 	: m(new Private)
 {
+	webcx_ = std::make_unique<WebContext>();
+	webcx()->set_http_version(WebClient::HTTP_1_0);
+	
+	avatar_loader_ = std::make_unique<AvatarLoader>();
+	
+	vault_ = std::make_unique<localvault::VaultWithBackend>();
 }
 
 ApplicationGlobal::~ApplicationGlobal()
@@ -199,7 +208,7 @@ std::shared_ptr<AbstractInetClient> ApplicationGlobal::inet_client()
 #ifdef USE_LIBCURL
 	http = std::make_shared<CurlClient>(&global->curlcx);
 #else
-	http = std::make_shared<WebClient>(&global->webcx);
+	http = std::make_shared<WebClient>(global->webcx());
 #endif
 	return http;
 }
@@ -232,19 +241,20 @@ QString ApplicationGlobal::vault_schema() const
 
 localvault::Vault *ApplicationGlobal::unlockVault(QWidget *parent)
 {
-	if (!global->vault) {
+	Q_ASSERT(global->vault_);
+	if (!global->vault_->vault) {
 		QString confdir = global->app_secret_config_dir;
 		QString schema = global->vault_schema();
 		
 		localvault::SecureStoreGUI store(parent, localvault::StoragePreference::FileOnly);
 		
-		global->vault = store.execUnlock(confdir, schema);
-		if (!global->vault) {
+		*global->vault_ = store.execUnlock(confdir, schema);
+		if (!global->vault_) {
 			QMessageBox::critical(parent, QApplication::tr("Vault Error"), QApplication::tr("Failed to unlock the Vault. Please check your Vault configuration."));
 			return nullptr;
 		}
 	}
-	return global->vault.vault.get();
+	return global->vault_->vault.get();
 }
 
 bool ApplicationGlobal::load_api_keys(QWidget *parent, AiApiKeys *apikeys)

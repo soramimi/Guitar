@@ -1,6 +1,8 @@
 #include "AvatarLoader.h"
+#include "ApplicationGlobal.h"
 #include "MainWindow.h"
 #include "MemoryReader.h"
+#include "inet/inetclient.h"
 #include <QApplication>
 #include <QCryptographicHash>
 #include <QDebug>

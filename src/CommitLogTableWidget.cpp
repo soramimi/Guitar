@@ -1,4 +1,5 @@
 #include "CommitLogTableWidget.h"
+#include "ApplicationGlobal.h"
 #include "BranchLabel.h"
 #include "MainWindow.h"
 #include "MyTableWidgetDelegate.h"

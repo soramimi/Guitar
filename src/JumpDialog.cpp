@@ -1,6 +1,6 @@
 #include "JumpDialog.h"
 #include "ui_JumpDialog.h"
-// #include "ApplicationGlobal.h"
+#include "ApplicationGlobal.h"
 #include "MyTableWidgetDelegate.h"
 #include <MainWindow.h>
 #include <QClipboard>

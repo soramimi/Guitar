@@ -1,17 +1,18 @@
 #include "GitBasicSession.h"
+#include "Git.h"
+#include "MyProcess.h"
 #include "TraceEventWriter.h"
+#include <QDebug>
+#include <QDir>
+#include <QDirIterator>
+#include <QElapsedTimer>
+#include <QFileInfo>
 #include <common/fmt.h>
 #include <common/joinpath.h>
 #include <common/misc.h>
 #include <common/npos.h>
 #include <common/q/FileInfo.h>
 #include <common/str.h>
-#include <QDebug>
-#include <QDir>
-#include <QDirIterator>
-#include <QElapsedTimer>
-#include <QFileInfo>
-#include "MyProcess.h"
 
 #ifdef APP_GUITAR
 #include "ApplicationGlobal.h"
@@ -50,7 +51,7 @@ bool GitBasicSession::is_connected() const
 	return QFileInfo(QString::fromStdString(gitCommand())).isExecutable();
 }
 
-std::optional<GitResult> GitBasicSession::exec_git(std::string const &arg, const Option &opt)
+std::optional<GitResult> GitBasicSession::exec_git(std::string const &arg, const GitSessionOption &opt)
 {
 	std::string cmd = gitCommand();
 	FileInfo info2(cmd);
@@ -61,22 +62,11 @@ std::optional<GitResult> GitBasicSession::exec_git(std::string const &arg, const
 
 	QString env;
 	std::string ssh = sshCommand();
-	// if (ssh.empty() || gitinfo().ssh_key_override.empty()) {
-	// 	// nop
-	// } else {
-	// 	if ((FOUND)ssh.find('\"')) return std::nullopt;
-	// 	if ((FOUND)gitinfo().ssh_key_override.find('\"')) return std::nullopt;
-	// 	if (!QFileInfo(QString::fromStdString(ssh)).isExecutable()) return std::nullopt;
-	// 	env = QString("GIT_SSH_COMMAND=\"%1\" -i \"%2\" ").arg(QString::fromStdString(ssh)).arg(QString::fromStdString(gitinfo().ssh_key_override));
-	// }
 
 	int exit_code = 0;
 	GitResult result;
 
-	// std::string cwd = Dir::current().currentPath();
-
 	auto DoIt = [&](){
-		// std::string cmd = fmt("%s %s --no-pager ")(Git::quoted_text(gitCommand()));
 		std::string cmd = Git::quoted_text(gitCommand());
 		if (!ssh.empty()) {
 			std::string sshkey = gitinfo().ssh_key_override;
@@ -100,8 +90,6 @@ std::optional<GitResult> GitBasicSession::exec_git(std::string const &arg, const
 		cmd += " --no-pager ";
 		cmd += arg;
 
-		// fprintf(stderr, "--- %s\n", cmd.c_str());
-
 		if (opt.log) {
 			std::string s = fmt("> git %s\n")(arg);
 			global_write_log(s);
@@ -114,7 +102,6 @@ std::optional<GitResult> GitBasicSession::exec_git(std::string const &arg, const
 				auto const *a = findFromCommandCache(cmd);
 				if (a) {
 					result.set_output(*a);
-					// qDebug() << "--- Process\t" << QString::fromStdString(cmd) << "\t" << "cache hit" << "\t---";
 					return;
 				}
 			}

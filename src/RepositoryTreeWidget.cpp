@@ -1,4 +1,5 @@
 #include "RepositoryTreeWidget.h"
+#include "ApplicationGlobal.h"
 #include "IncrementalSearchHelper.h"
 #include "MainWindow.h"
 #include <QApplication>

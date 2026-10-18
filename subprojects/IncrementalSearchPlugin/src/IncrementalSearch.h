@@ -1,10 +1,9 @@
+
 #ifndef INCREMENTALSEARCH_H
 #define INCREMENTALSEARCH_H
 
-// #include "MyMecab.h"
+#include "IncrementalSearchFilter.h"
 #include <QObject>
-
-//
 
 namespace incrementalsearch {
 
@@ -58,21 +57,6 @@ public:
 };
 
 } // namespace incrementalsearch
-
-class IncrementalSearchFilter {
-public:
-	std::string original_text;
-	std::string katakana_text;
-public:
-	bool isEmpty() const
-	{
-		return original_text.empty();
-	}
-	operator bool () const
-	{
-		return !isEmpty();
-	}
-};
 
 class IncrementalSearch : public QObject {
 	Q_OBJECT

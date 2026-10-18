@@ -1,6 +1,7 @@
 #include "SelectGpgKeyDialog.h"
-#include "SetGpgSigningDialog.h"
 #include "ui_SetGpgSigningDialog.h"
+#include "ApplicationGlobal.h"
+#include "SetGpgSigningDialog.h"
 #include "MainWindow.h"
 #include "ConfigSigningDialog.h"
 

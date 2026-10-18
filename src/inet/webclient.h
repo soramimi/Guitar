@@ -140,7 +140,7 @@ private:
 	struct Private;
 	Private *m;
 public:
-	WebContext(WebClient::HttpVersion httpver);
+	WebContext();
 	~WebContext();
 	WebContext(WebContext const &r) = delete;
 	void operator = (WebContext const &r) = delete;

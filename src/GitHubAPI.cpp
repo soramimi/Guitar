@@ -12,6 +12,7 @@
 #include <common/charvec.h>
 #include <common/urlencode.h>
 #include <memory>
+#include "inet/webclient.h"
 
 struct GitHubRequestThread::Private {
 	std::shared_ptr<AbstractInetClient> web;
