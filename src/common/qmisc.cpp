@@ -1,11 +1,12 @@
 #include "qmisc.h"
 #include <QApplication>
-#include <QStringList>
+#include <QContextMenuEvent>
 #include <QDateTime>
 #include <QPainter>
-#include <QWidget>
+#include <QStringList>
 #include <QStyle>
-#include <QContextMenuEvent>
+#include <QWidget>
+#include <math.h>
 
 /**
  * @brief 文字列を単語に分割する。

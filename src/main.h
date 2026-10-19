@@ -9,6 +9,7 @@
 #include <QElapsedTimer>
 #include <QMetaType>
 #include <QVariant>
+#include <memory>
 
 class ProcessStatus;
 struct LogData {

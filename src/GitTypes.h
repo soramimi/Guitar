@@ -6,6 +6,7 @@
 #include <QByteArray>
 #include <QList>
 #include <map>
+#include <memory>
 #include <span>
 
 #define PATH_PREFIX "*"

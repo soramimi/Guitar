@@ -436,7 +436,7 @@ QImage DarkStyle::loadColorizedImage(QString const &path, QString const &role)
 
 ButtonImages DarkStyle::generateButtonImages(QString const &path)
 {
-	QImage source = loadImage(path).convertedTo(QImage::Format_ARGB32);
+	QImage source = loadImage(path).convertToFormat(QImage::Format_ARGB32);
 	ButtonImages buttons;
 	int w = source.width();
 	int h = source.height();

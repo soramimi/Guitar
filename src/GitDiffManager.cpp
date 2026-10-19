@@ -9,6 +9,7 @@
 #include <common/joinpath.h>
 #include <common/misc.h>
 #include <common/q/helper.h>
+#include <set>
 
 // PathToIdMap
 

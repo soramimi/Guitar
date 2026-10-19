@@ -123,7 +123,7 @@ void ApplicationGlobal::selftest()
 		auto mime = mimetype_by_data(ba.data(), ba.size());
 		if (mime != "text/plain") {
 			qDebug() << "Failed to register \"Hello, world\" filetype: "
-					 << mime << " expected text/plain";
+					 << QString::fromStdString(mime) << " expected text/plain";
 		}
 	}
 	
@@ -134,7 +134,7 @@ void ApplicationGlobal::selftest()
 		auto mime = mimetype_by_data(ba.data(), ba.size());
 		if (mime != "image/png") {
 			qDebug() << "Failed to register digits.png filetype: "
-					 << mime << " expected image/png";
+					 << QString::fromStdString(mime) << " expected image/png";
 		}
 	}
 	
