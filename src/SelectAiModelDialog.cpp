@@ -202,30 +202,49 @@ void SelectAiModelDialog::on_pushButton_load_preset_clicked()
 {
 	SelectAiModelPresetDialog dlg(this);
 	if (dlg.exec() == QDialog::Accepted) {
+		ModelConf conf;
 		ModelConf *confp = current_modelconf();
-		{
-			ModelConf conf;
-			conf.guid = confp ? confp->guid : generate_uuidv7_string();
-			conf.name = QString::fromStdString(dlg.selectedModel().model_name()).toStdString();
-			conf.model = dlg.selectedModel();
-			set_current_modelconf(conf);
+		if (confp) {
+			conf = *confp;
+		} else {
+			conf.guid = generate_uuidv7_string();
 		}
+		conf.name = QString::fromStdString(dlg.selectedModel().model_name()).toStdString();
+		conf.model = dlg.selectedModel();
+		
+		// エンドポイントURLを生成
+		Request req = make_request(conf.model.provider_id(), conf.model, {});
+		Credential cred = credential();
+		conf.model.set_endpoint_url(req.endpoint.url_chat(conf.model, cred, false));
+		
+		// 現在のモデルを設定
+		set_current_modelconf(conf);
 		
 		// 選択したモデル情報を各 UI に反映
-		if (confp) {
-			ui->lineEdit_name->setText(QString::fromStdString(confp->name));
-			ui->comboBox_provider->setCurrentIndex(ui->comboBox_provider->findData((int)confp->model.provider_id()));
-			ui->comboBox_api_type->setCurrentIndex(ui->comboBox_api_type->findData((int)confp->model.api_compatibility()));
-			
-			// エンドポイント URL を生成して表示
-			confp->model.set_endpoint_url({});
-			Request req = make_request(confp->model.provider_id(), confp->model, {});
-			Credential cred = credential();
-			setLineEditEndpointUrl(req.endpoint.url_chat(confp->model, cred, false));
-			
-			// モデル名も comboBox_model に設定
-			ui->comboBox_model->setCurrentText(QString::fromStdString(confp->model.model_name()));
+		ui->lineEdit_name->setText(QString::fromStdString(conf.name));
+		
+		// プロバイダ設定		
+		{
+			bool b1 = ui->comboBox_provider->blockSignals(true);
+			ui->comboBox_provider->setCurrentIndex(ui->comboBox_provider->findData((int)conf.model.provider_id()));
+			ui->comboBox_provider->blockSignals(b1);
 		}
+		
+		// API タイプ設定
+		{
+			bool b1 = ui->comboBox_api_type->blockSignals(true);
+			ui->comboBox_api_type->setCurrentIndex(ui->comboBox_api_type->findData((int)conf.model.api_compatibility()));
+			ui->comboBox_api_type->blockSignals(b1);
+		}
+		
+		// エンドポイントURLを表示
+		setLineEditEndpointUrl(conf.model.endpoint_url());
+		
+		// API キー表示欄を更新
+		setTextAndDeselect(ui->lineEdit_cred_symbol, conf.api_key_symbol);
+		
+		// モデル名を comboBox_model に設定
+		ui->comboBox_model->setCurrentText(QString::fromStdString(conf.model.model_name()));
 	}
 }
 
