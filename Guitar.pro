@@ -99,7 +99,7 @@ use_cudachi {
 # zlib
 
 win32 {
-	LIBS += -lzlib
+	LIBS += -lz
 	LIBS += -lzstd
 }
 
