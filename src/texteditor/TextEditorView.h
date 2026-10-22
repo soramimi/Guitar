@@ -42,6 +42,7 @@ private:
 	QColor defaultForegroundColor();
 	QColor defaultBackgroundColor();
 	QColor colorForIndex(CharAttr const &attr, bool foreground);
+	QColor textColor(CharAttr const &ch);
 public:
 	void updateScrollBarRange() override;
 private:

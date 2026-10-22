@@ -457,15 +457,31 @@ CharBuffer AbstractTextEditorApplication::_parse_line(TextEditorContext const *c
 	// 解析結果は表示行番号ではなくLine自身に帰属させる。行の挿入・削除で
 	// 表示行番号が変化しても、同じLineのキャッシュはそのまま利用できる。
 	Document::LineProperty *detail = line->detail();
-	if (detail &&
-		detail->text_revision == line->sp->meta.text_revision &&
-		detail->metrics_revision == m->metrics_revision) {
+	if (detail
+			&& detail->text_revision == line->sp->meta.text_revision
+			&& detail->metrics_revision == m->metrics_revision) {
 		return detail->chars;
 	}
 	
 	CharBuffer ret;
 	
 	std::string_view text = line->text();
+
+	std::vector<char32_t> debug_char32;
+	size_t debug_offset = 0;
+	size_t debug_length = 0;
+	char const *debug_text = "git";
+	{
+		utf8 u8(debug_text, strlen(debug_text));
+		while (1) {
+			char32_t c = u8.next();
+			if (c == 0) break;
+			debug_char32.push_back(c);
+		}
+	}
+	if (text.find(debug_text) != std::string_view::npos) {
+		qDebug();
+	}
 	
 	int col = 0;
 	size_t len = text.size();
@@ -491,7 +507,33 @@ CharBuffer AbstractTextEditorApplication::_parse_line(TextEditorContext const *c
 				}
 			}
 			col += n;
-			ret.emplace_back(c);
+
+			size_t curr_offset = ret.size();
+
+			Character r(c);
+// r.attr.color = 0x0000ff;
+			ret.emplace_back(r);
+			{
+				// debug_textが見つかった場合は赤色にする。
+				if (debug_length < debug_char32.size()) {
+					if (c == debug_char32[debug_length]) {
+						if (debug_length == 0) {
+							debug_offset = curr_offset;
+						}
+						debug_length++;
+						if (debug_length == debug_char32.size()) {
+							size_t end = ret.size();
+							for (size_t i = debug_offset; i < end; i++) {
+								ret[i].attr.color = 0xff0000;
+							}
+							debug_length = 0;
+						}
+					} else {
+						debug_length = 0;
+						debug_offset = 0;
+					}
+				}
+			}
 		}
 	}
 	
@@ -734,7 +776,7 @@ std::vector<Document::Line> AbstractTextEditorApplication::_wrap_line(Document::
 			for (Character const &c : *w.vec) {
 				unicode_helper_::encode_utf8(c.unicode, [&](char d){v.push_back(d);});
 			}
-			Document::Line line(v);
+			Document::Line line(std::move(v));
 			line.sp->meta.logical_col_pos = logical_col;
 			line.sp->meta.logical_col_len = w.size();
 			ret.emplace_back(line);
@@ -863,6 +905,12 @@ bool AbstractTextEditorApplication::update_visual_line(row_index_t lrow, bool fo
 {
 	std::vector<Document::Line> *llines = &document()->logical_lines;
 	if (lrow >= 0 && static_cast<size_t>(lrow) < llines->size()) {
+		{
+			Document::Line::D *d = (*llines)[lrow].sp.get();
+
+
+			
+		}
 		_update_line(lrow, std::nullopt, force, nullptr);
 		return true;
 	}
@@ -1394,14 +1442,11 @@ bool AbstractTextEditorApplication::isWidthFixed() const
 	return (wrappingMode() != WrappingMode::NoWrap);
 }
 
-std::optional<texteditor::SavedPos> AbstractTextEditorApplication::savePos()
+texteditor::SavedPos AbstractTextEditorApplication::savePos()
 {
 	TextEditorContext *p = editor_cx.get();
-	if (!p) return std::nullopt;
-		
-		// p->saved_pos.vrow = current_visual_row();
-		// p->saved_pos.vcol = current_visual_col();
-	
+	if (!p) return {};
+
 	texteditor::SavedPos pos;
 	pos.vrow = current_visual_row();
 	pos.vcol = current_visual_col();

@@ -492,6 +492,11 @@ QColor TextEditorView::colorForIndex(CharAttr const &attr, bool foreground)
 	return foreground ? defaultForegroundColor() : Qt::transparent;//defaultBackgroundColor();
 }
 
+QColor TextEditorView::textColor(CharAttr const &attr)
+{
+	return QColor(QRgb(attr.color | 0xff000000));
+}
+
 void TextEditorView::drawFocusFrame(QPainter *pr)
 {
 	misc::drawFrame(pr, 0, 0, width(), height(), QColor(0, 128, 255, 128));
@@ -558,8 +563,6 @@ void TextEditorView::drawCursor(QPainter *pr)
 {
 	drawCursor(current_visual_row(), current_visual_col(), pr);
 }
-
-
 
 void TextEditorView::paintEvent(QPaintEvent *)
 {
@@ -796,7 +799,8 @@ void TextEditorView::paintEvent(QPaintEvent *)
 								auto IsDiffMarker = [&](int value) {
 									return flags[j].diff_marker == value;
 								};
-								pr.setPen(defaultForegroundColor()); // 文字色
+								// QColor textcolor((QRgb)(attr.color | 0xff000000));//defaultForegroundColor();
+								pr.setPen(textColor(attr)); // 文字色
 								int x = text_origin_x_px + left_x;
 								int w = right_x - left_x;
 								int h = line_height;
@@ -954,7 +958,8 @@ void TextEditorView::mousePressEvent(QMouseEvent *event)
 	sync_selection();
 
 	if (isTerminalMode()) {
-		restorePos();
+		// restorePos();
+		restorePos(saved_pos);
 	}
 }
 

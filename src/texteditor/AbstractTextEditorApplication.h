@@ -35,11 +35,12 @@ enum EscapeCode {
 }
 
 struct CharAttr {
-	uint16_t flags= 0;
-	uint32_t color = 0;
+	uint16_t flags : 8 = 0;
+	uint32_t color : 24 = 0;
 	CharAttr(int index = 0)
 		: flags(index)
 	{
+		// color = 0xff0000;
 	}
 	bool operator == (CharAttr const &r) const
 	{
@@ -215,6 +216,7 @@ public:
 		};
 		struct D {
 			varline_t text = std::string_view(); // 改行コードを含み得るUTF-8列
+			// CharAttr attr;                       // 描画属性
 			Meta meta;                           // textから導出される情報と表示属性
 		};
 		// LineのコピーはDを共有する浅いコピー。折り返し断片のvector自体は
@@ -226,10 +228,10 @@ public:
 		{
 		}
 		
-		explicit Line(std::vector<char> const &ba, LineType type = Normal)
+		explicit Line(std::vector<char> &&ba, LineType type = Normal)
 			: sp(std::make_shared<D>())
 		{
-			sp->text = ba;
+			sp->text = std::move(ba);
 			sp->meta.type = type;
 		}
 		
@@ -308,7 +310,7 @@ public:
 			if (!source_text.empty()) {
 				owned_text.assign(source_text.begin(), source_text.end());
 			}
-			Line line(owned_text, sp->meta.type);
+			Line line(std::move(owned_text), sp->meta.type);
 			line.sp->meta.text_revision = sp->meta.text_revision;
 			line.sp->meta.logical_col_pos = sp->meta.logical_col_pos;
 			line.sp->meta.logical_col_len = sp->meta.logical_col_len;
@@ -742,7 +744,7 @@ protected:
 	void paintLineNumbers(std::function<void(int, QString const &, Document::Line const *)> const &draw);
 	bool isAutoLayout() const;
 	
-	std::optional<texteditor::SavedPos> savePos();
+	texteditor::SavedPos savePos();
 	void restorePos();
 	void restorePos(texteditor::SavedPos const &pos);
 public:
