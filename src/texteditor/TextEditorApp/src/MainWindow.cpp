@@ -29,7 +29,7 @@ MainWindow::MainWindow(QWidget *parent)
 	ui->setupUi(this);
 	m->need_to_layout = true;
 
-	texteditor()->setTheme(TextEditorTheme::Dark());
+	texteditor()->setTheme(TextEditorTheme::Light());
 
 	m->engine = std::make_shared<TextEditorEngine>();
 	texteditor()->setTextEditorEngine(m->engine);

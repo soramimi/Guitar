@@ -467,21 +467,29 @@ CharBuffer AbstractTextEditorApplication::_parse_line(TextEditorContext const *c
 	
 	std::string_view text = line->text();
 
-	std::vector<char32_t> debug_char32;
-	size_t debug_offset = 0;
-	size_t debug_length = 0;
-	char const *debug_text = "git";
-	{
-		utf8 u8(debug_text, strlen(debug_text));
-		while (1) {
-			char32_t c = u8.next();
-			if (c == 0) break;
-			debug_char32.push_back(c);
+	// experimental: キーワード検出
+	struct Pattern {
+		std::vector<char32_t> chars;
+		size_t offset = 0;
+		size_t length = 0;
+		Pattern() = default;
+		Pattern(std::string const &text)
+		{
+			utf8 u8(text.data(), text.size());
+			while (1) {
+				char32_t c = u8.next();
+				if (c == 0) break;
+				chars.push_back(c);
+			}
 		}
-	}
-	if (text.find(debug_text) != std::string_view::npos) {
-		qDebug();
-	}
+	};
+	std::vector<std::string> keywords = {
+		"if", "else", "for", "while", "switch", "case", "break",
+		"continue", "return", "int", "float", "double", "char",
+		"void", "struct", "class", "public", "private", "protected",
+		"virtual", "override", "const", "static"
+	};
+	std::vector<std::shared_ptr<Pattern>> patterns;
 	
 	int col = 0;
 	size_t len = text.size();
@@ -513,25 +521,38 @@ CharBuffer AbstractTextEditorApplication::_parse_line(TextEditorContext const *c
 			Character r(c);
 // r.attr.color = 0x0000ff;
 			ret.emplace_back(r);
-			{
+
+			// debug_textの検出は、パターンの長さが一致するまで保持し、最後に一致した範囲を赤色にする。
+			for (size_t i = patterns.size(); i > 0; i--) {
+				auto pattern = patterns[i - 1];
 				// debug_textが見つかった場合は赤色にする。
-				if (debug_length < debug_char32.size()) {
-					if (c == debug_char32[debug_length]) {
-						if (debug_length == 0) {
-							debug_offset = curr_offset;
+				if (pattern->length < pattern->chars.size()) {
+					if (c == pattern->chars[pattern->length]) {
+						if (pattern->length == 0) {
+							pattern->offset = curr_offset;
 						}
-						debug_length++;
-						if (debug_length == debug_char32.size()) {
+						pattern->length++;
+						if (pattern->length == pattern->chars.size()) {
 							size_t end = ret.size();
-							for (size_t i = debug_offset; i < end; i++) {
+							for (size_t i = pattern->offset; i < end; i++) {
 								ret[i].attr.color = 0xff0000;
 							}
-							debug_length = 0;
+							pattern->length = 0;
 						}
 					} else {
-						debug_length = 0;
-						debug_offset = 0;
+						// pattern->length = 0;
+						// pattern->offset = 0;
+						patterns.erase(patterns.begin() + (i - 1)); // 不一致になったパターンは削除する
 					}
+				}
+			}
+			// キーワードの先頭文字が一致した場合は、パターンを追加する。
+			for (auto const &kw : keywords) {
+				if (c == kw[0]) {
+					auto pattern = std::make_shared<Pattern>(kw);
+					pattern->offset = curr_offset;
+					pattern->length = 1;
+					patterns.push_back(pattern);
 				}
 			}
 		}
