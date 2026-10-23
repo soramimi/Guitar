@@ -22,17 +22,10 @@ INCLUDEPATH += file
 unix:LIBS += -ldl
 win32:LIBS += -lole32 -loleaut32
 
-# zlib
+# zlib / zstd
 
-win32 {
-	LIBS += -lzlib
-	LIBS += -lzstd
-}
-
-!win32 {
-	LIBS += -lz
-	LIBS += -lzstd
-}
+LIBS += -lz
+LIBS += -lzstd
 
 #
 
