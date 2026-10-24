@@ -22,16 +22,8 @@ DEFINES += USE_CUSTOM_DICTIONARY_LOADER
 unix:LIBS += -ldl
 win32:LIBS += -lole32 -loleaut32
 
-win32 {
-	LIBS += -lzlib
-	LIBS += -lzstd
-}
-
-!win32 {
-	LIBS += -lz
-	LIBS += -lzstd
-}
-
+LIBS += -lz
+LIBS += -lzstd
 
 # CONFIG += use_cudachi
 use_cudachi {

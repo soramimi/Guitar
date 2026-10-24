@@ -18,6 +18,7 @@
 #include <ai/GenerativeAI.h>
 #include <common/jstream.h>
 #include <sys/stat.h>
+#include <QClipboard>
 
 using namespace GenerativeAI;
 
@@ -197,6 +198,23 @@ GenerativeAI::Credential SelectAiModelDialog::credential() const
 	return cred;
 }
 
+ProviderInfo const *SelectAiModelDialog::current_provider_info() const
+{
+	ProviderInfo const *provider = nullptr;
+	
+	ModelConf const *confp = current_modelconf();
+	if (confp) {
+		for (GenerativeAI::ProviderInfo const &info : GenerativeAI::complete_provider_table()) {
+			if (info.id == confp->model.provider_id()) {
+				provider = &info;
+				break;
+			}
+		}
+	}
+	
+	return provider;
+}
+
 // 「プリセット読み込み」ボタン押下時: プリセットダイアログからモデルを選択し、各入力欄に反映する
 void SelectAiModelDialog::on_pushButton_load_preset_clicked()
 {
@@ -241,7 +259,12 @@ void SelectAiModelDialog::on_pushButton_load_preset_clicked()
 		setLineEditEndpointUrl(conf.model.endpoint_url());
 		
 		// API キー表示欄を更新
-		setTextAndDeselect(ui->lineEdit_cred_symbol, conf.api_key_symbol);
+		// setTextAndDeselect(ui->lineEdit_cred_symbol, conf.api_key_symbol);
+		ProviderInfo const *provider = current_provider_info();
+		if (provider) {
+			conf.api_key_symbol = provider->env_name;
+		}
+		ui->lineEdit_cred_symbol->setText(QString::fromStdString(conf.api_key_symbol));
 		
 		// モデル名を comboBox_model に設定
 		ui->comboBox_model->setCurrentText(QString::fromStdString(conf.model.model_name()));
@@ -278,13 +301,8 @@ void SelectAiModelDialog::on_comboBox_provider_currentIndexChanged(int index)
 {
 	if (index >= 0 && index < ui->comboBox_provider->count()) {
 		GenerativeAI::ProviderID provider_id = (GenerativeAI::ProviderID)ui->comboBox_provider->itemData(index).toInt();
-		ProviderInfo const *provider = nullptr;
-		for (GenerativeAI::ProviderInfo const &info : GenerativeAI::complete_provider_table()) {
-			if (info.id == provider_id) {
-				provider = &info;
-				break;
-			}
-		}
+		
+		ProviderInfo const *provider = current_provider_info();
 		if (!provider) return;
 		
 		ModelConf *conf = current_modelconf();
@@ -807,7 +825,7 @@ int SelectAiModelDialog::exec(QWidget *parent)
 {
 	constexpr char const *kDefaultModelGUID = "DefaultModelGUID";
 	
-	localvault::Vault *vault = global->unlockVault(parent);
+	auto *vault = global->unlockVault(parent);
 	if (!vault) return QDialog::Rejected;
 	
 	std::string fav;
@@ -859,6 +877,15 @@ void SelectAiModelDialog::on_pushButton_set_as_default_clicked()
 	if (conf) {
 		m->default_model_guid = conf->guid;
 		ui->listWidget_items->viewport()->update();
+	}
+}
+
+void SelectAiModelDialog::on_toolButton_copy_model_name_clicked()
+{
+	QString modelname = ui->comboBox_model->currentText();
+	if (!modelname.isEmpty()) {
+		QClipboard *clipboard = QGuiApplication::clipboard();
+		clipboard->setText(modelname);
 	}
 }
 

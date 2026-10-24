@@ -10,7 +10,7 @@ namespace localvault {
 
 namespace {
 
-	constexpr char MARKER_KEY[] = "storage-backend";
+constexpr char MARKER_KEY[] = "storage-backend";
 
 } // namespace
 

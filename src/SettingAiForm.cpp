@@ -39,13 +39,29 @@ void SettingAiForm::exchange(bool save)
 	ApplicationSettings *s = settings();
 
 	if (save) { // UI -> 設定ファイル
-
+		
 		s->generate_commit_message_with_ai = ui->groupBox_generate_commit_message_by_ai->isChecked();
-
+		
+		if (ui->radioButton_kek_store_local_file->isChecked()) {
+			global->vault_backend_kind = localvault::BackendKind::File;
+		} else if (ui->radioButton_kek_store_system_secure_storage->isChecked()) {
+			global->vault_backend_kind = localvault::BackendKind::System;
+		}
+		
+		localvault::setEmptyPinAllowed(ui->checkBox_allow_empty_pin->isChecked());
+		
 	} else { // 設定ファイル -> UI
 
 		ui->groupBox_generate_commit_message_by_ai->setChecked(s->generate_commit_message_with_ai);
-
+		
+		if (global->vault_backend_kind == localvault::BackendKind::File) {
+			ui->radioButton_kek_store_local_file->setChecked(true);
+		} else if (global->vault_backend_kind == localvault::BackendKind::System) {
+			ui->radioButton_kek_store_system_secure_storage->setChecked(true);
+		}
+		
+		ui->checkBox_allow_empty_pin->setChecked(localvault::isEmptyPinAllowed());
+		
 	}
 }
 
@@ -78,10 +94,11 @@ void SettingAiForm::on_pushButton_model_config_clicked()
 
 void SettingAiForm::lockVault()
 {
-	Q_ASSERT(global->vault_.get());
-	if (global->vault_->vault && global->vault_->vault->isUnlocked()) {
-		global->vault_->vault->lock();
-		global->vault_->vault.reset();
+	if (global->vault_) {
+		if (global->vault_->vault) {
+			global->vault_->vault->lock();
+		}
+		global->resetVault();
 	}
 }
 
@@ -100,28 +117,28 @@ void SettingAiForm::on_pushButton_lock_vault_clicked()
 
 void SettingAiForm::on_pushButton_destroy_vault_clicked()
 {
+	{
 #if 0
 	auto r = QMessageBox::question(this, tr("Destroy Vault"), tr("Are you sure you want to destroy the Vault? This action cannot be undone."), QMessageBox::Yes | QMessageBox::No);
 	if (r != QMessageBox::Yes) {
 		return;
 	}
 #else
-	QMessageBox mb(QMessageBox::Question, tr("Destroy Vault"), tr("Are you sure you want to destroy the Vault? This action cannot be undone."), QMessageBox::Yes | QMessageBox::No, this);
-	mb.setDefaultButton(QMessageBox::No);
-	if (mb.exec() != QMessageBox::Yes) {
-		goto done;
-	}
+		QMessageBox mb(QMessageBox::Question, tr("Destroy Vault"), tr("Are you sure you want to destroy the Vault? This action cannot be undone."), QMessageBox::Yes | QMessageBox::No, this);
+		mb.setDefaultButton(QMessageBox::No);
+		if (mb.exec() != QMessageBox::Yes) {
+			goto done;
+		}
 #endif
-	
-	on_pushButton_lock_vault_clicked();
-	{
-		auto vault = global->unlockVault(this);
+		
+		lockVault();
+		auto *vault = global->unlockVault(this, false);
 		if (vault) {
-			vault->destroy();
-			global->vault_.reset();
+			global->destroyVault();
+		} else {
+			QMessageBox::warning(this, tr("Destroy Vault"), tr("Failed to unlock the Vault."));
 		}
 	}
-	
 done:;	
 	ui->pushButton_destroy_vault->setEnabled(false);
 	ui->checkBox_confirm_destroy_vault->setChecked(false);
@@ -131,3 +148,21 @@ void SettingAiForm::on_checkBox_confirm_destroy_vault_checkStateChanged(const Qt
 {
 	ui->pushButton_destroy_vault->setEnabled(arg1 == Qt::Checked);
 }
+
+void SettingAiForm::on_radioButton_kek_store_local_file_clicked()
+{
+	global->vault_backend_kind = localvault::BackendKind::File;
+}
+
+
+void SettingAiForm::on_radioButton_kek_store_system_secure_storage_clicked()
+{
+	global->vault_backend_kind = localvault::BackendKind::System;
+}
+
+
+void SettingAiForm::on_checkBox_allow_empty_pin_checkStateChanged(const Qt::CheckState &arg1)
+{
+	localvault::setEmptyPinAllowed(arg1 == Qt::Checked);
+}
+

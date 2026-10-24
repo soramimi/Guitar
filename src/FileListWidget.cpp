@@ -35,7 +35,7 @@ public:
 		Add(global->prefix_add, "Add", QColor(180, 240, 180), QIcon(":/image/add.svg"));
 		Add(global->prefix_del, "Del", QColor(255, 200, 200), QIcon(":/image/del.svg"));
 		Add(global->prefix_ren, "Ren", QColor(200, 210, 255), QIcon(":/image/ren.svg"));
-		Add(global->prefix_cpy, "Cpy", QColor(200, 210, 255), QIcon(":/image/cpy.svg"));
+		Add(global->prefix_cpy, "Cpy", QColor(200, 210, 255), QIcon(":/image/copy.svg"));
 	}
 	/**
 	 * @brief ファイルリストの1行分を描画する

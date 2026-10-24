@@ -357,6 +357,9 @@
            </item>
            <item row="5" column="1">
             <layout class="QHBoxLayout" name="horizontalLayout_3">
+             <property name="spacing">
+              <number>1</number>
+             </property>
              <item>
               <widget class="QComboBox" name="comboBox_model">
                <property name="sizePolicy">
@@ -367,6 +370,17 @@
                </property>
                <property name="editable">
                 <bool>true</bool>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QToolButton" name="toolButton_copy_model_name">
+               <property name="text">
+                <string/>
+               </property>
+               <property name="icon">
+                <iconset resource="resources/resources.qrc">
+                 <normaloff>:/image/copy.svg</normaloff>:/image/copy.svg</iconset>
                </property>
               </widget>
              </item>
@@ -496,15 +510,19 @@
   <tabstop>lineEdit_cred_symbol</tabstop>
   <tabstop>radioButton_cred_environ</tabstop>
   <tabstop>radioButton_cred_custom</tabstop>
+  <tabstop>lineEdit_account</tabstop>
   <tabstop>lineEdit_cred_api_key</tabstop>
   <tabstop>comboBox_model</tabstop>
+  <tabstop>toolButton_copy_model_name</tabstop>
   <tabstop>pushButton_query_models</tabstop>
   <tabstop>checkBox_show_api_key</tabstop>
   <tabstop>pushButton_manage_api_keys</tabstop>
   <tabstop>pushButton_3</tabstop>
   <tabstop>pushButton_4</tabstop>
  </tabstops>
- <resources/>
+ <resources>
+  <include location="resources/resources.qrc"/>
+ </resources>
  <connections>
   <connection>
    <sender>pushButton_3</sender>

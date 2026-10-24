@@ -10,11 +10,8 @@ class LocalVaultTest;
 
 namespace localvault {
 
-#ifdef VAULT_ALLOW_EMPTY_PIN
-constexpr bool allow_empty_pin = true;
-#else
-constexpr bool allow_empty_pin = false;
-#endif
+bool isEmptyPinAllowed();
+void setEmptyPinAllowed(bool allow);
 
 namespace secure_memory {
 
@@ -116,7 +113,7 @@ public:
 
 static inline bool validate_pin(SecureBuffer const &pin)
 {
-	if (!allow_empty_pin && pin.empty()) {
+	if (!isEmptyPinAllowed() && pin.empty()) {
 		return false;
 	}
 	return true;

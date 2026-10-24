@@ -6,6 +6,10 @@
 
 #include <ai/GenerativeAI.h>
 
+namespace GenerativeAI {
+class ProviderInfo;
+}
+
 namespace Ui {
 class SelectAiModelDialog;
 }
@@ -46,6 +50,7 @@ private:
 	
 	void save_api_keys();
 	std::string default_model_guid() const;
+	const GenerativeAI::ProviderInfo *current_provider_info() const;
 public:
 	explicit SelectAiModelDialog(QWidget *parent);
 	~SelectAiModelDialog();
@@ -75,6 +80,8 @@ private slots:
 	void on_toolButton_clicked();
 	void on_pushButton_manage_api_keys_clicked();
 	void on_pushButton_set_as_default_clicked();
+	
+	void on_toolButton_copy_model_name_clicked();
 	
 public slots:
 	int exec(QWidget *parent);

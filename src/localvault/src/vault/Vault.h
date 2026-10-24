@@ -61,6 +61,7 @@ enum class VaultState {
  * スレッドセーフではない。Qt 非依存。
  */
 class Vault {
+	friend class VaultWithBackend;
 private:
 	ISecretStorageBackend *backend_;
 	std::string emkKey_;

@@ -8,6 +8,7 @@
 #include <optional>
 
 #include <localvault/src/vault/Vault.h>
+#include <localvault/src/app//BackendSelector.h>
 
 #define ORGANIZATION_NAME "soramimi.jp"
 #define APPLICATION_NAME "Guitar"

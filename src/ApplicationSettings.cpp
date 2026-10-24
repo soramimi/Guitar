@@ -126,6 +126,14 @@ ApplicationSettings ApplicationSettings::loadSettings()
 
 	s.beginGroup("AI");
 	GetValue<bool>(s, "GenerateCommitMessageWithAI")         >> as.generate_commit_message_with_ai;
+	{
+		QString vault_backend = s.value("VaultBackend").toString().trimmed();
+		if (vault_backend == "system") {
+			global->vault_backend_kind = localvault::BackendKind::System;
+		} else /*if (vault_backend == "file")*/ {
+			global->vault_backend_kind = localvault::BackendKind::File;
+		}
+	}
 	s.endGroup();
 
 #ifdef Q_OS_WIN
@@ -202,6 +210,15 @@ void ApplicationSettings::saveSettings() const
 		}
 	}
 	SetValue<bool>(s, "GenerateCommitMessageWithAI")         << this->generate_commit_message_with_ai;
+	{
+		QString vault_backend = "file";
+		if (global->vault_backend_kind == localvault::BackendKind::System) {
+			vault_backend = "system";
+		} else /*if (global->vault_backend_kind == localvault::BackendKind::File)*/ {
+			vault_backend = "file";
+		}
+		s.setValue("VaultBackend", vault_backend);
+	}
 	s.endGroup();
 
 #ifdef Q_OS_WIN

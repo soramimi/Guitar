@@ -283,7 +283,7 @@ localvault::SecureStoreGUI::SecureStoreGUI(QWidget *parent, StoragePreference st
 {
 }
 
-localvault::VaultWithBackend localvault::SecureStoreGUI::execUnlock(QString const &confdir, QString const &schema)
+localvault::VaultWithBackend localvault::SecureStoreGUI::execUnlock(QString const &confdir, QString const &schema, bool setup)
 {
 	BackendSelection selection;
 	BackendSelector selector = makeBackendSelector(confdir, schema);
@@ -300,9 +300,13 @@ localvault::VaultWithBackend localvault::SecureStoreGUI::execUnlock(QString cons
 			QMessageBox::critical(parent_, QObject::tr("Vault Storage Error"), vaultErrorMessage(VaultError::StorageError));
 			return {};
 		case VaultState::NotSetup:
-			if (!setupVault(vault.get(), true)) return {};
-			recordBackend(selector, &selection);
-			ready = true;
+			if (setup) {
+				if (!setupVault(vault.get(), true)) return {};
+				recordBackend(selector, &selection);
+				ready = true;
+			} else {
+				return {};
+			}
 			break;
 		case VaultState::Locked: {
 				UnlockVaultDialog dlg(parent_);

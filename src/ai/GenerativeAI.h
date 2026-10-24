@@ -27,6 +27,7 @@ enum class ProviderID {
 	OrcaRouter,
 	Requesty,
 	Merge,
+	Kilo,
 	Ollama, // experimental
 	LMStudio, // experimental
 	LLAMACPP, // experimental
@@ -52,6 +53,7 @@ public:
 	virtual T case_OrcaRouter() = 0;
 	virtual T case_Requesty() = 0;
 	virtual T case_Merge() = 0;
+	virtual T case_Kilo() = 0;
 	virtual T case_Ollama() = 0;
 	virtual T case_LMStudio() = 0;
 	virtual T case_LLAMACPP() = 0;
@@ -75,6 +77,7 @@ public:
 		case ProviderID::OrcaRouter:              return case_OrcaRouter();
 		case ProviderID::Requesty:                return case_Requesty();
 		case ProviderID::Merge:                   return case_Merge();
+		case ProviderID::Kilo:                    return case_Kilo();
 		case ProviderID::Ollama:                  return case_Ollama();
 		case ProviderID::LMStudio:                return case_LMStudio();
 		case ProviderID::LLAMACPP:                return case_LLAMACPP();

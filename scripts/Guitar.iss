@@ -54,8 +54,9 @@ Source: "{#ProjectRoot}\_bin\D3Dcompiler_47.dll"; DestDir: "{app}"; Flags: ignor
 Source: "{#ProjectRoot}\_bin\Guitar.exe"; DestDir: "{app}"; Flags: ignoreversion
 Source: "{#ProjectRoot}\_bin\filetypeplugin.dll"; DestDir: "{app}"; Flags: ignoreversion
 Source: "{#ProjectRoot}\_bin\incrementalsearchplugin.dll"; DestDir: "{app}"; Flags: ignoreversion
-Source: "{#ProjectRoot}\_bin\zlib1.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "{#ProjectRoot}\_bin\z.dll"; DestDir: "{app}"; Flags: ignoreversion
 Source: "{#ProjectRoot}\_bin\zstd.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "{#ProjectRoot}\_bin\libsodium.dll"; DestDir: "{app}"; Flags: ignoreversion
 Source: "{#ProjectRoot}\_bin\libcrypto-3-x64.dll"; DestDir: "{app}"; Flags: ignoreversion
 Source: "{#ProjectRoot}\_bin\libssl-3-x64.dll"; DestDir: "{app}"; Flags: ignoreversion
 Source: "{#ProjectRoot}\_bin\opengl32sw.dll"; DestDir: "{app}"; Flags: ignoreversion

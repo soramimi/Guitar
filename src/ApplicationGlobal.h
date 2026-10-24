@@ -163,9 +163,12 @@ public:
 	
 	QString aimodels_json_path() const;
 	
+	localvault::BackendKind vault_backend_kind = localvault::BackendKind::File;
 	QString vault_schema() const;
 	std::unique_ptr<localvault::VaultWithBackend> vault_;
-	localvault::Vault *unlockVault(QWidget *parent);
+	void resetVault();
+	localvault::Vault *unlockVault(QWidget *parent, bool setup = true);
+	void destroyVault();
 	
 	static bool load_api_keys(QWidget *parent, AiApiKeys *apikeys);
 	static bool save_api_keys(QWidget *parent, const AiApiKeys &apikeys);
