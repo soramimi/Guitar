@@ -1,4 +1,6 @@
 #include "AbstractTextEditorApplication.h"
+#include "EscapeSequence.h"
+#include "PatternState.h"
 #include "UnicodeWidth.h"
 #include "unicode.h"
 #include <QApplication>
@@ -31,70 +33,6 @@ row_index_t to_row_count(uint64_t count)
 
 using namespace texteditor;
 
-// このファイルで扱う行データの関係:
-//
-//   Document::logical_lines                 文書の正本
-//     -> Line::Meta::visual_lines            論理行ごとの折り返し結果
-//     -> TextEditorContext::line_index_map   論理座標 <-> 表示座標の索引
-//     -> Line::Meta::detail                  UTF-8解析・文字位置計算キャッシュ
-//
-// 表示行の平坦なコピーは持たない。表示行vrowはLineIndexMapで
-// (logical row, wrap index)へ変換し、論理行内のvisual_linesを直接参照する。
-
-class EsccapeSequence {
-private:
-	int offset = 0;            // 現在受信中のエスケープシーケンス長
-	unsigned char data[100];   // 受信中シーケンスの固定長バッファ
-	int color_fg = -1;         // ANSI前景色番号（-1は既定色）
-	int color_bg = -1;         // ANSI背景色番号（-1は既定色）
-public:
-	bool isActive() const
-	{
-		return offset > 0;
-	}
-	void write(char c)
-	{
-		if (c == 0x1b) {
-			data[0] = c;
-			offset = 1;
-			return;
-		}
-		data[offset] = c;
-		if (offset > 0) {
-			if (c == 'm') {
-				if (data[1] == '[' && isdigit(data[2]) && isdigit(data[3])) {
-					data[offset] = 0;
-					if (data[2] == '3') {
-						color_fg = atoi((char const *)data + 3);
-						if (color_fg == 9) {
-							color_fg = -1;
-						}
-					}
-					if (data[2] == '4') {
-						color_bg = atoi((char const *)data + 3);
-						if (color_bg == 9) {
-							color_bg = -1;
-						}
-					}
-				}
-				offset = 0;
-				return;
-			}
-			if (offset + 1 < (int)sizeof(data)) {
-				offset++;
-			}
-		}
-	}
-	int fg_color_code() const
-	{
-		return color_fg == 9 ? -1 : color_fg;
-	}
-	int bg_color_code() const
-	{
-		return color_bg == 9 ? -1 : color_bg;
-	}
-};
-
 struct AbstractTextEditorApplication::Private {
 	bool is_changed = false;        // 保存後に文書が変更されたか
 	bool is_read_only = false;      // trueなら文書を変更する操作を拒否する
@@ -115,7 +53,6 @@ struct AbstractTextEditorApplication::Private {
 	Qt::KeyboardModifiers keyboard_modifiers = Qt::KeyboardModifier::NoModifier; // 最後の入力修飾キー
 	bool ctrl_modifier = false;           // keyboard_modifiersから展開したCtrl状態
 	bool shift_modifier = false;          // keyboard_modifiersから展開したShift状態
-	EsccapeSequence escape_sequence;      // terminal mode用ANSIシーケンス解析状態
 
 	bool cursor_moved_by_mouse = false; // terminal modeで末尾追従を判断するための移動元
 
@@ -467,120 +404,10 @@ CharBuffer AbstractTextEditorApplication::_parse_line(TextEditorContext const *c
 	
 	std::string_view text = line->text();
 
-	// experimental: キーワード検出
-	class Pattern {
-		friend class Keywords;
-	private:
-		std::vector<char32_t> chars_;
-		size_t offset_ = 0;
-		size_t length_ = 0;
-	public:
-		Pattern() = default;
-		Pattern(std::string const &text)
-		{
-			utf8 u8(text.data(), text.size());
-			while (1) {
-				char32_t c = u8.next();
-				if (c == 0) break;
-				chars_.push_back(c);
-			}
-		}
-		enum State {
-			Fail,
-			Continue,
-			Accept,
-		};
-		State match(char32_t c)
-		{
-			if (length_ < chars_.size()) {
-				if (c == chars_[length_]) {
-					length_++;
-					if (length_ == chars_.size()) {
-						length_ = 0;
-						return Accept;
-					}
-					return Continue;
-				}
-			}
-			return Fail;
-		}
-		size_t offset() const
-		{
-			return offset_;
-		}
-	};
-	class Keywords {
-	public:
-		void first(char32_t c, size_t offset, std::vector<std::unique_ptr<Pattern>> *patterns)
-		{
-			static std::vector<std::string_view> keywords = {
-				"if", "else", "for", "while", "switch", "case", "break",
-				"continue", "return", "int", "float", "double", "char",
-				"void", "struct", "class", "public", "private", "protected",
-				"virtual", "override", "const", "static"
-			};
-			for (auto const &kw : keywords) {
-				if (c == kw[0]) {
-					auto pattern = std::make_unique<Pattern>(std::string(kw));
-					pattern->offset_ = offset;
-					pattern->length_ = 1;
-					patterns->push_back(std::move(pattern));
-				}
-			}
-		}
-	};
 
-	std::vector<std::unique_ptr<Pattern>> patterns;
+	std::vector<std::unique_ptr<PatternState>> patterns;
 	Keywords keywords;
 	
-	// experimental: escape sequence
-	class EscapeSequence {
-	public:
-		std::string chars_;
-		uint32_t color_ = 0;
-		EscapeSequence()
-		{
-			chars_.reserve(20);
-		}
-		void clear()
-		{
-			chars_.clear();
-		}
-		bool update(char c)
-		{
-			if (chars_.empty()) {
-				if (c == '\x1b') {
-					chars_.push_back(c);
-				}
-			} else {
-				chars_.push_back(c);
-				if (chars_ == "\x1b[0m") {
-					color_ = 0;
-					clear();
-					return true;
-				}
-				if (chars_ == "\x1b[31m") {
-					color_ = 0xff0000;
-					clear();
-					return true;
-				}
-				if (chars_ == "\x1b[32m") {
-					color_ = 0x00ff00;
-					clear();
-					return true;
-				}
-			}
-			return false;
-		}
-		bool empty() const
-		{
-			return chars_.empty();
-		}
-		uint32_t color() const
-		{
-			return color_;
-		}
-	};
 	EscapeSequence escseq;
 	
 	int col = 0;
@@ -631,13 +458,13 @@ CharBuffer AbstractTextEditorApplication::_parse_line(TextEditorContext const *c
 				auto *pattern = patterns[i - 1].get();
 				// debug_textが見つかった場合は赤色にする。
 				auto r = pattern->match(c);
-				if (r == Pattern::Accept) {
+				if (r == PatternState::Accept) {
 					size_t end = ret.size();
 					for (size_t i = pattern->offset(); i < end; i++) {
 						ret[i].attr.color = 0xff0000;
 					}
 					patterns.erase(patterns.begin() + (i - 1));
-				} else if (r == Pattern::Fail) {
+				} else if (r == PatternState::Fail) {
 					patterns.erase(patterns.begin() + (i - 1));
 				}
 			}
@@ -1499,19 +1326,6 @@ void AbstractTextEditorApplication::pressEnter()
 {
 	deleteIfSelected();
 	writeNewLine();
-}
-
-void AbstractTextEditorApplication::pressEscape()
-{
-	if (isTerminalMode()) {
-		m->escape_sequence.write(0x1b);
-		return;
-	}
-	
-	update_visibility_option_t opt;
-	opt.ensure_current_line_visible = false;
-	opt.auto_scroll = false;
-	updateVisibility(opt);
 }
 
 AbstractTextEditorApplication::State AbstractTextEditorApplication::state() const
@@ -2566,10 +2380,6 @@ void AbstractTextEditorApplication::write(uint32_t c, bool by_keyboard)
 		if (m->cursor_moved_by_mouse) {
 			moveToBottom();
 		}
-		if (c == 0x1b || m->escape_sequence.isActive()) {
-			m->escape_sequence.write(c);
-			return;
-		}
 	}
 
 	bool ok = !(isTerminalMode() && by_keyboard);
@@ -2592,10 +2402,6 @@ void AbstractTextEditorApplication::write(uint32_t c, bool by_keyboard)
 			if (ok) {
 				writeCR();
 			}
-		} else if (c == 0x1b) {
-			pressEscape();
-		// } else if (c >= 1 && c <= 26) {
-		// 	pressLetterWithControl(c);
 		}
 	} else if (c == 0x7f) {
 		if (ok) {

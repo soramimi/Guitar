@@ -779,7 +779,6 @@ public:
 	bool saveFile(QString const &path, QString *error_message = nullptr);
 	void loadExampleFile();
 	void pressEnter();
-	void pressEscape();
 	State state() const;
 	bool isLineNumberVisible() const;
 	void showLineNumber(bool show, int left_margin = LINE_NUMBER_AREA_WIDTH);
