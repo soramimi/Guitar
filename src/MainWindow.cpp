@@ -7587,4 +7587,5 @@ void MainWindow::on_action_reset_and_clean_triggered()
 
 void MainWindow::test()
 {
+	global->writeLog(std::string_view("\x1b[31mHello,\x1b[32m world\x1b[0m\n"));
 }

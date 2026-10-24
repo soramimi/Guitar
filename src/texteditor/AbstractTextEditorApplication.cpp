@@ -468,10 +468,13 @@ CharBuffer AbstractTextEditorApplication::_parse_line(TextEditorContext const *c
 	std::string_view text = line->text();
 
 	// experimental: キーワード検出
-	struct Pattern {
-		std::vector<char32_t> chars;
-		size_t offset = 0;
-		size_t length = 0;
+	class Pattern {
+		friend class Keywords;
+	private:
+		std::vector<char32_t> chars_;
+		size_t offset_ = 0;
+		size_t length_ = 0;
+	public:
 		Pattern() = default;
 		Pattern(std::string const &text)
 		{
@@ -479,17 +482,106 @@ CharBuffer AbstractTextEditorApplication::_parse_line(TextEditorContext const *c
 			while (1) {
 				char32_t c = u8.next();
 				if (c == 0) break;
-				chars.push_back(c);
+				chars_.push_back(c);
+			}
+		}
+		enum State {
+			Fail,
+			Continue,
+			Accept,
+		};
+		State match(char32_t c)
+		{
+			if (length_ < chars_.size()) {
+				if (c == chars_[length_]) {
+					length_++;
+					if (length_ == chars_.size()) {
+						length_ = 0;
+						return Accept;
+					}
+					return Continue;
+				}
+			}
+			return Fail;
+		}
+		size_t offset() const
+		{
+			return offset_;
+		}
+	};
+	class Keywords {
+	public:
+		void first(char32_t c, size_t offset, std::vector<std::unique_ptr<Pattern>> *patterns)
+		{
+			static std::vector<std::string_view> keywords = {
+				"if", "else", "for", "while", "switch", "case", "break",
+				"continue", "return", "int", "float", "double", "char",
+				"void", "struct", "class", "public", "private", "protected",
+				"virtual", "override", "const", "static"
+			};
+			for (auto const &kw : keywords) {
+				if (c == kw[0]) {
+					auto pattern = std::make_unique<Pattern>(std::string(kw));
+					pattern->offset_ = offset;
+					pattern->length_ = 1;
+					patterns->push_back(std::move(pattern));
+				}
 			}
 		}
 	};
-	std::vector<std::string> keywords = {
-		"if", "else", "for", "while", "switch", "case", "break",
-		"continue", "return", "int", "float", "double", "char",
-		"void", "struct", "class", "public", "private", "protected",
-		"virtual", "override", "const", "static"
+
+	std::vector<std::unique_ptr<Pattern>> patterns;
+	Keywords keywords;
+	
+	// experimental: escape sequence
+	class EscapeSequence {
+	public:
+		std::string chars_;
+		uint32_t color_ = 0;
+		EscapeSequence()
+		{
+			chars_.reserve(20);
+		}
+		void clear()
+		{
+			chars_.clear();
+		}
+		bool update(char c)
+		{
+			if (chars_.empty()) {
+				if (c == '\x1b') {
+					chars_.push_back(c);
+				}
+			} else {
+				chars_.push_back(c);
+				if (chars_ == "\x1b[0m") {
+					color_ = 0;
+					clear();
+					return true;
+				}
+				if (chars_ == "\x1b[31m") {
+					color_ = 0xff0000;
+					clear();
+					return true;
+				}
+				if (chars_ == "\x1b[32m") {
+					color_ = 0x00ff00;
+					clear();
+					return true;
+				}
+			}
+			return false;
+		}
+		bool empty() const
+		{
+			return chars_.empty();
+		}
+		uint32_t color() const
+		{
+			return color_;
+		}
 	};
-	std::vector<std::shared_ptr<Pattern>> patterns;
+	EscapeSequence escseq;
 	
 	int col = 0;
 	size_t len = text.size();
@@ -517,44 +609,40 @@ CharBuffer AbstractTextEditorApplication::_parse_line(TextEditorContext const *c
 			col += n;
 
 			size_t curr_offset = ret.size();
-
-			Character r(c);
-// r.attr.color = 0x0000ff;
-			ret.emplace_back(r);
-
+			
+			bool printable = true;
+			
+			if (isTerminalMode()) {
+				if (escseq.update(c)) {
+					printable = false;
+				} else if (!escseq.empty()) {
+					printable = false;
+				}
+			}
+			
+			if (printable != false) {
+				Character r(c);
+				r.attr.color = escseq.color();
+				ret.emplace_back(r);
+			}
+			
 			// debug_textの検出は、パターンの長さが一致するまで保持し、最後に一致した範囲を赤色にする。
 			for (size_t i = patterns.size(); i > 0; i--) {
-				auto pattern = patterns[i - 1];
+				auto *pattern = patterns[i - 1].get();
 				// debug_textが見つかった場合は赤色にする。
-				if (pattern->length < pattern->chars.size()) {
-					if (c == pattern->chars[pattern->length]) {
-						if (pattern->length == 0) {
-							pattern->offset = curr_offset;
-						}
-						pattern->length++;
-						if (pattern->length == pattern->chars.size()) {
-							size_t end = ret.size();
-							for (size_t i = pattern->offset; i < end; i++) {
-								ret[i].attr.color = 0xff0000;
-							}
-							pattern->length = 0;
-						}
-					} else {
-						// pattern->length = 0;
-						// pattern->offset = 0;
-						patterns.erase(patterns.begin() + (i - 1)); // 不一致になったパターンは削除する
+				auto r = pattern->match(c);
+				if (r == Pattern::Accept) {
+					size_t end = ret.size();
+					for (size_t i = pattern->offset(); i < end; i++) {
+						ret[i].attr.color = 0xff0000;
 					}
+					patterns.erase(patterns.begin() + (i - 1));
+				} else if (r == Pattern::Fail) {
+					patterns.erase(patterns.begin() + (i - 1));
 				}
 			}
 			// キーワードの先頭文字が一致した場合は、パターンを追加する。
-			for (auto const &kw : keywords) {
-				if (c == kw[0]) {
-					auto pattern = std::make_shared<Pattern>(kw);
-					pattern->offset = curr_offset;
-					pattern->length = 1;
-					patterns.push_back(pattern);
-				}
-			}
+			keywords.first(c, curr_offset, &patterns);
 		}
 	}
 	
