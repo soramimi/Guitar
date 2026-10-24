@@ -24,6 +24,9 @@ private slots:
 	void on_checkBox_confirm_destroy_vault_checkStateChanged(const Qt::CheckState &arg1);
 	void on_pushButton_destroy_vault_clicked();
 	void on_pushButton_lock_vault_clicked();
+	void on_radioButton_kek_store_local_file_clicked();
+	void on_radioButton_kek_store_system_secure_storage_clicked();
+	void on_checkBox_allow_empty_pin_checkStateChanged(const Qt::CheckState &arg1);
 };
 
 #endif // SETTINGAIFORM_H

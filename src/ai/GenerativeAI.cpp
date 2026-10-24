@@ -48,6 +48,7 @@ const std::vector<ProviderInfo> &complete_provider_table()
 		{ProviderID::OrcaRouter,                   "orcarouter",                      "OrcaRouter",                       "ORCAROUTER_API_KEY"},
 		{ProviderID::Requesty,                     "requesty",                        "Requesty",                         "REQUESTY_API_KEY"},
 		{ProviderID::Merge,                        "merge",                           "Merge Gateway",                    "MERGE_API_KEY"},
+		{ProviderID::Kilo,                         "kilo",                            "Kilo Gateway",                     "KILO_API_KEY"},
 		{ProviderID::Ollama,                       "ollama",                          "Ollama",                           "OLLAMA_API_KEY"},
 		{ProviderID::LMStudio,                     "lmstudio",                        "LM Studio",                        "LMSTUDIO_API_KEY"},
 		{ProviderID::LLAMACPP,                     "llamacpp",                        "llama.cpp",                        "LLAMACPP_API_KEY"},
@@ -110,6 +111,7 @@ std::vector<Model> const &ai_model_presets()
 		{ProviderID::OrcaRouter,       "orcarouter:deepseek/deepseek-v4.1-flash-free"},
 		{ProviderID::Requesty,         "requesty:google/gemma-4-31b-it"},
 		{ProviderID::Merge,            "merge:openai/gpt-5.6-terra"},
+		{ProviderID::Kilo,             "kilo:anthropic/claude-sonnet-5.5"},
 		{ProviderID::Ollama,           "ollama:///gemma4"},
 		{ProviderID::LMStudio,         "lmstudio:///meta-llama-3-8b-instruct"},
 		{ProviderID::LLAMACPP,         "llamacpp://localhost:8080/"},
@@ -140,6 +142,7 @@ std::vector<ProviderID> const &ai_provider_id_list_for_present_to_users()
 		ProviderID::OrcaRouter,
 		ProviderID::Requesty,
 		ProviderID::Merge,
+		ProviderID::Kilo,
 		ProviderID::Ollama,
 		ProviderID::LMStudio,
 		ProviderID::LLAMACPP,
@@ -175,6 +178,7 @@ Model Model::from_name(std::string const &name)
 		{ProviderID::OrcaRouter, "^orcarouter:"},
 		{ProviderID::Requesty, "^requesty:"},
 		{ProviderID::Requesty, "^merge:"},
+		{ProviderID::Kilo, "^kilo:"},
 		{ProviderID::Ollama, "^ollama://"},
 		{ProviderID::LMStudio, "^lmstudio://"},
 		{ProviderID::LLAMACPP, "^llamacpp://"},
@@ -236,6 +240,7 @@ void Model::parse_model(const std::string &model_uri)
 	if (Parse("orcarouter:", 443)) return;
 	if (Parse("requesty:", 443)) return;
 	if (Parse("merge:", 443)) return;
+	if (Parse("kilo:", 443)) return;
 	if (Parse("ollama://", 11434)) return;
 	if (Parse("lmstudio://", 1234)) return;
 	if (Parse("llamacpp://", 8080)) return;
@@ -379,6 +384,10 @@ struct _ApiBaseUrl : public AbstractVisitor<std::string> {
 	std::string case_Merge()
 	{
 		return "https://api-gateway.merge.dev/v1/";
+	}
+	std::string case_Kilo()
+	{
+		return "https://ai-gateway.kilo.ai/api/v1/";
 	}
 	std::string case_Ollama()
 	{
@@ -567,6 +576,15 @@ struct _MakeRequest : public AbstractVisitor<Request> {
 	}
 	
 	Request case_Merge()
+	{
+		Request r;
+		r.model_name = model_.model_name();
+		r.endpoint.set_chat_endpoint_url(_generic_endpoint_url(), cred_);
+		set_authorization_bearer_cred(&r, cred_);
+		return r;
+	}
+	
+	Request case_Kilo()
 	{
 		Request r;
 		r.model_name = model_.model_name();

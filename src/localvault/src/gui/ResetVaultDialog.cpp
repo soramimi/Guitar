@@ -10,7 +10,7 @@ ResetVaultDialog::ResetVaultDialog(
 {
 	ui->setupUi(this);
 	
-	ui->label_no_pin->setVisible(localvault::allow_empty_pin);
+	ui->label_no_pin->setVisible(localvault::isEmptyPinAllowed());
 }
 
 ResetVaultDialog::~ResetVaultDialog()
@@ -25,7 +25,7 @@ bool ResetVaultDialog::pin(localvault::SecureBuffer *out) const
 
 void ResetVaultDialog::accept()
 {
-	if (!localvault::allow_empty_pin && ui->widget_new_pin->isEmpty()) {
+	if (!localvault::isEmptyPinAllowed() && ui->widget_new_pin->isEmpty()) {
 		QMessageBox::warning(this, tr("Invalid PIN"), tr("PIN cannot be empty."));
 		return;
 	}

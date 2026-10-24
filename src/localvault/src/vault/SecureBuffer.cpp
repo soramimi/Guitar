@@ -5,6 +5,28 @@
 
 namespace localvault {
 
+#ifdef VAULT_ALLOW_EMPTY_PIN
+bool allow_empty_pin_ = true;
+bool isEmptyPinAllowed()
+{
+	return allow_empty_pin_;
+}
+void setEmptyPinAllowed(bool allow)
+{
+	allow_empty_pin_ = allow;
+}
+
+#else
+bool isEmptyPinAllowed()
+{
+	return false;
+}
+void setEmptyPinAllowed(bool allow)
+{
+	(void)allow;
+}
+#endif
+
 namespace secure_memory {
 
 	void *allocate(size_t size)

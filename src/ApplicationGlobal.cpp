@@ -22,6 +22,8 @@
 #include <common/joinpath.h>
 #include <common/misc.h>
 #include <memory>
+#include "localvault/src/app/BackendSelector.h"
+#include "localvault/src/gui/SecureStoreGUI.h"
 
 namespace ver {
 #include "../version.c"
@@ -40,8 +42,6 @@ ApplicationGlobal::ApplicationGlobal()
 	webcx()->set_http_version(WebClient::HTTP_1_0);
 	
 	avatar_loader_ = std::make_unique<AvatarLoader>();
-	
-	vault_ = std::make_unique<localvault::VaultWithBackend>();
 }
 
 ApplicationGlobal::~ApplicationGlobal()
@@ -239,22 +239,49 @@ QString ApplicationGlobal::vault_schema() const
 	return "jp.soramimi.GenerativeAI";
 }
 
-localvault::Vault *ApplicationGlobal::unlockVault(QWidget *parent)
+void ApplicationGlobal::resetVault()
 {
-	Q_ASSERT(global->vault_);
+	vault_ = std::make_unique<localvault::VaultWithBackend>();
+}
+
+localvault::Vault *ApplicationGlobal::unlockVault(QWidget *parent, bool setup)
+{
+	// Q_ASSERT(global->vault_);
+	if (!global->vault_) {
+		global->resetVault();
+	}
 	if (!global->vault_->vault) {
 		QString confdir = global->app_secret_config_dir;
 		QString schema = global->vault_schema();
 		
-		localvault::SecureStoreGUI store(parent, localvault::StoragePreference::FileOnly);
+		localvault::StoragePreference storagePref =
+			global->vault_backend_kind == localvault::BackendKind::File
+				? localvault::StoragePreference::FileOnly
+				: localvault::StoragePreference::PreferSystem;
+		localvault::SecureStoreGUI store(parent, storagePref);
 		
-		*global->vault_ = store.execUnlock(confdir, schema);
+		*global->vault_ = store.execUnlock(confdir, schema, setup);
 		if (!global->vault_) {
 			QMessageBox::critical(parent, QApplication::tr("Vault Error"), QApplication::tr("Failed to unlock the Vault. Please check your Vault configuration."));
 			return nullptr;
 		}
 	}
 	return global->vault_->vault.get();
+}
+
+void ApplicationGlobal::destroyVault()
+{
+	if (vault_ && vault_->vault) {
+		vault_->vault->destroy();
+	}
+	vault_ = {};
+	
+	QString confdir = global->app_secret_config_dir;
+	QString schema = global->vault_schema();
+	
+	auto dir = localvault::SecureStoreGUI::QStringToPath(confdir);
+	localvault::BackendSelector sel(dir, schema.toStdString(), localvault::SecureStoreGUI::EMK_KEY);
+	sel.forget();
 }
 
 bool ApplicationGlobal::load_api_keys(QWidget *parent, AiApiKeys *apikeys)

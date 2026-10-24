@@ -10,7 +10,7 @@ SetupVaultDialog::SetupVaultDialog(
 {
 	ui->setupUi(this);
 	
-	ui->label_no_pin->setVisible(localvault::allow_empty_pin);
+	ui->label_no_pin->setVisible(localvault::isEmptyPinAllowed());
 }
 
 SetupVaultDialog::~SetupVaultDialog()

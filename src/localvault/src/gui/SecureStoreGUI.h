@@ -50,7 +50,7 @@ private:
 	localvault::BackendSelector makeBackendSelector(const QString &confdir, const QString &schema);
 public:
 	SecureStoreGUI(QWidget *parent, StoragePreference storagePreference = StoragePreference::PreferSystem);
-	VaultWithBackend execUnlock(QString const &confdir, QString const &schema);
+	VaultWithBackend execUnlock(QString const &confdir, QString const &schema, bool setup = true);
 	VaultWithBackend execUnlock2(QString const &confdir, QString const &schema, localvault::SecureBuffer const &pin);
 	void setStoragePreference(StoragePreference storagePreference);
 	StoragePreference storagePreference() const;

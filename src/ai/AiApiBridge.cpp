@@ -482,6 +482,11 @@ struct AiChatResponseParser : public GenerativeAI::AbstractVisitor<AiResult> {
 		return case_Custom();
 	}
 	
+	AiResult case_Kilo()
+	{
+		return case_Custom();
+	}
+	
 	/**
 	 * @brief Ollama のレスポンスを解析する。
 	 *
@@ -795,6 +800,11 @@ struct _PromptJsonGenerator : public GenerativeAI::AbstractVisitor<std::string> 
 			
 		});
 		return w;
+	}
+	
+	std::string case_Kilo()
+	{
+		return case_OpenAI_chat_completions();
 	}
 	
 	/// LM Studio：Ollama 互換形式

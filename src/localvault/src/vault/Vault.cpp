@@ -459,7 +459,8 @@ VaultError Vault::decryptToSecureBuffer(Blob const &cipher, SecureBuffer *plain)
 
 VaultError Vault::changePin(SecureBuffer const &oldPin, SecureBuffer const &newPin)
 {
-	if (!validate_pin(oldPin)) return VaultError::InvalidArgument;
+	// ↓古いPINの検証はしない（空PINを通過させる）
+	// if (!validate_pin(oldPin)) return VaultError::InvalidArgument;
 	if (!validate_pin(newPin)) return VaultError::InvalidArgument;
 	if (!isUnlocked()) return VaultError::Locked;
 	SecureBuffer verifiedMaster;
