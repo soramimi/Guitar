@@ -404,7 +404,8 @@ CharBuffer AbstractTextEditorApplication::_parse_line(TextEditorContext const *c
 	
 	std::string_view text = line->text();
 
-
+	// experimental: keyword matching
+	constexpr bool experimental_keyword_matching = false;
 	std::vector<std::unique_ptr<PatternState>> patterns;
 	Keywords keywords;
 	
@@ -453,23 +454,25 @@ CharBuffer AbstractTextEditorApplication::_parse_line(TextEditorContext const *c
 				ret.emplace_back(r);
 			}
 			
-			// debug_textの検出は、パターンの長さが一致するまで保持し、最後に一致した範囲を赤色にする。
-			for (size_t i = patterns.size(); i > 0; i--) {
-				auto *pattern = patterns[i - 1].get();
-				// debug_textが見つかった場合は赤色にする。
-				auto r = pattern->match(c);
-				if (r == PatternState::Accept) {
-					size_t end = ret.size();
-					for (size_t i = pattern->offset(); i < end; i++) {
-						ret[i].attr.color = 0xff0000;
+			if (experimental_keyword_matching) {
+				// debug_textの検出は、パターンの長さが一致するまで保持し、最後に一致した範囲を赤色にする。
+				for (size_t i = patterns.size(); i > 0; i--) {
+					auto *pattern = patterns[i - 1].get();
+					// debug_textが見つかった場合は赤色にする。
+					auto r = pattern->match(c);
+					if (r == PatternState::Accept) {
+						size_t end = ret.size();
+						for (size_t i = pattern->offset(); i < end; i++) {
+							ret[i].attr.color = 0xff0000;
+						}
+						patterns.erase(patterns.begin() + (i - 1));
+					} else if (r == PatternState::Fail) {
+						patterns.erase(patterns.begin() + (i - 1));
 					}
-					patterns.erase(patterns.begin() + (i - 1));
-				} else if (r == PatternState::Fail) {
-					patterns.erase(patterns.begin() + (i - 1));
 				}
+				// キーワードの先頭文字が一致した場合は、パターンを追加する。
+				keywords.first(c, curr_offset, &patterns);
 			}
-			// キーワードの先頭文字が一致した場合は、パターンを追加する。
-			keywords.first(c, curr_offset, &patterns);
 		}
 	}
 	
