@@ -1,72 +1,104 @@
 # Building Guitar on Ubuntu
 
-This guide provides step-by-step instructions for building Guitar, a cross-platform Git GUI client, on Ubuntu and other Debian-based Linux distributions.
+This guide explains how to build Guitar on Ubuntu and other Debian-based Linux distributions.
+
+Guitar consists of three projects, all of which must be built:
+
+| Project | Location | Output |
+|---|---|---|
+| FileTypePlugin (libmagic based file type detection) | `subprojects/FileTypePlugin` | `lib/soramimi.jp/` |
+| IncrementalSearchPlugin (MeCab based incremental search) | `subprojects/IncrementalSearchPlugin` | `lib/soramimi.jp/` |
+| Guitar (main application) | repository root | `_bin/Guitar` |
 
 ## Prerequisites
 
-Before you begin, you'll need to install the required dependencies:
-
 ```bash
-sudo apt install build-essential ruby qmake6 libqt6core6 libqt6gui6 libqt6svg6-dev libqt6core5compat6-dev zlib1g-dev libgl1-mesa-dev libssl-dev
+sudo apt install \
+  build-essential ruby git \
+  autoconf automake libtool \
+  qmake6 qt6-base-dev qt6-svg-dev libqt6svg6-dev libqt6core5compat6-dev \
+  zlib1g-dev libzstd-dev zstd \
+  libssl-dev libsodium-dev libcurl4-openssl-dev libsecret-1-dev \
+  libgl1-mesa-dev \
+  mecab-utils
 ```
 
-These packages include:
-- C++ build tools
-- Ruby (required for the preparation script)
-- Qt6 development libraries
-- Other necessary dependencies
+- `ruby` runs the build scripts (`scripts/make_all.rb`, `prepare.rb`).
+- `autoconf`, `automake` and `libtool` are used to build libmagic (`file`) and oniguruma bundled with FileTypePlugin.
+- `mecab-utils` provides `/usr/lib/mecab/mecab-dict-index`, and `zstd`, `iconv`, `perl` and `gzip` are used to build the dictionary embedded in IncrementalSearchPlugin.
 
-## Building Process
-
-### 1. Clone the Repository
-
-First, clone the Guitar repository:
+## Clone the Repository
 
 ```bash
 git clone https://github.com/soramimi/Guitar.git
 cd Guitar
 ```
 
-### 2. Run the Preparation Script
+## Build Everything (Recommended)
 
-The preparation script sets up the build environment:
+If you do not want to set up the build environment yourself, just run:
+
+```bash
+ruby scripts/make_all.rb
+```
+
+This script cleans `_bin`, `lib` and `_build`, runs `prepare.rb` (generates `version.c` etc.), and then builds, in order:
+
+1. FileTypePlugin (`subprojects/FileTypePlugin/build-gcc.sh`)
+2. IncrementalSearchPlugin (`subprojects/IncrementalSearchPlugin/build-gcc.sh`)
+3. Guitar (`scripts/gcc_make_guitar_app.sh`)
+
+Only the release configuration is built by default. To also build the debug configuration, set `$make_debug = true` in `scripts/make_all.rb`.
+
+After a successful build, run:
+
+```bash
+_bin/Guitar
+```
+
+(The debug build is `_bin/Guitard`.) The plugins are placed in `lib/soramimi.jp/`.
+
+## Build Manually
+
+The following is what `make_all.rb` does. Each script honors these environment variables:
+
+- `QMAKE` : qmake executable (default: `qmake6`)
+- `NO_DEBUG=1` : skip the debug build
+- `NO_RELEASE=1` : skip the release build
+
+Note that the scripts below build both debug and release unless told otherwise. `NO_DEBUG=1` is used in the examples to build release only.
+
+### 1. Run the Preparation Script
 
 ```bash
 ruby prepare.rb
 ```
 
-This script performs necessary setup tasks for the build process.
-
-### 3. Build the libmagic Dependency
-
-Guitar uses libmagic for file type detection and requires it to be statically linked for consistent cross-platform behavior. Run the provided build script:
+### 2. Build FileTypePlugin
 
 ```bash
-cd filetype
-./build-gcc.sh
-cd ..
+cd subprojects/FileTypePlugin
+NO_DEBUG=1 bash build-gcc.sh
+cd ../..
 ```
 
-This script will automatically build all required libmagic components including libfile, liboniguruma, and libfiletype.
+This builds libmagic (`file`), oniguruma, and the plugin itself.
+An error such as `'sandbox' undeclared` while building `file` is expected and can be ignored. Only the libmagic library is needed, not the `file` command.
 
-### 4. Configure and Build
-
-Create a build directory and compile the project:
+### 3. Build IncrementalSearchPlugin
 
 ```bash
-mkdir build
-cd build
-qmake6 ../Guitar.pro
-make -j8
+cd subprojects/IncrementalSearchPlugin
+NO_DEBUG=1 bash build-gcc.sh
+cd ../..
 ```
 
-The `-j8` flag enables parallel compilation using 8 threads. You can adjust this number based on your CPU cores.
+This converts the MeCab dictionary to UTF-8, builds and compresses it, builds the bundled MeCab, and then builds the plugin.
 
-### 5. Running Guitar
-
-After successful compilation, you can run Guitar from the build directory:
+### 4. Build Guitar
 
 ```bash
-../_bin/Guitar
+NO_DEBUG=1 bash scripts/gcc_make_guitar_app.sh
 ```
 
+The build is done in `_build/` and the executable is written to `_bin/`.

@@ -1,106 +1,94 @@
 # Building Guitar on Windows
 
-This guide provides step-by-step instructions for building Guitar, a cross-platform Git GUI client, on Windows using Visual Studio and Qt.
+This guide explains how to build Guitar on Windows using Visual Studio (MSVC) and Qt.
+
+Guitar consists of three projects, all of which must be built:
+
+| Project | Location |
+|---|---|
+| FileTypePlugin (libmagic based file type detection) | `subprojects/FileTypePlugin` |
+| IncrementalSearchPlugin (MeCab based incremental search) | `subprojects/IncrementalSearchPlugin` |
+| Guitar (main application) | repository root |
+
+All outputs are placed in `_bin`.
 
 ## Prerequisites
 
-Before you begin, you'll need to install the following software:
-
-- **Visual Studio** with C++ development tools
-  - Visual Studio 2022 Community Edition is recommended
-- **Qt 6.9.0** or later for Windows/MSVC
-  - Available from the [Qt website](https://www.qt.io/download)
+- **Visual Studio 2022** with C++ development tools (Community Edition is fine)
+- **Qt 6.11.0** (MSVC 2022 64-bit) and **Qt Creator** tools (for `jom`)
+  - Default location: `C:\Qt\6.11.0\msvc2022_64` and `C:\Qt\Tools\QtCreator\bin\jom\jom.exe`
 - **Ruby for Windows**
-  - Required for the preparation script
 - **Git for Windows**
-  - For cloning the repository
-- **7-Zip**
-  - For extracting Windows tools archive
+- **7-Zip** (`7z` must be on `PATH`; used to extract `misc\win32tools.zip`)
+- **vcpkg** installed at `C:\vcpkg` with the `x64-windows` triplet, providing the headers/libraries for zlib, zstd, OpenSSL and libsodium:
 
-## Building Process
+  ```cmd
+  C:\vcpkg\vcpkg install zlib zstd openssl libsodium --triplet x64-windows
+  ```
 
-### 1. Set Up the Development Environment
+- **Inno Setup 6** (optional; only used to create the installer)
 
-Open a command prompt with Visual Studio environment variables:
-
-```cmd
-"C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build\vcvars64.bat"
-```
-
-### 2. Clone the Repository
-
-Clone the Guitar repository:
+## Clone the Repository
 
 ```cmd
 git clone https://github.com/soramimi/Guitar.git
 cd Guitar
 ```
 
-### 3. Run the Preparation Script
+## Configure Tool Paths
 
-The preparation script sets up the build environment:
+`scripts\winconf.rb` holds the tool locations used by `make_all.rb`. Edit it if your installation differs:
+
+```ruby
+$qt_win = "C:/Qt/6.11.0/msvc2022_64"
+$windeployqt = "#{$qt_win}/bin/windeployqt.exe"
+$jom_win = "C:/Qt/Tools/QtCreator/bin/jom/jom.exe"
+$vcvars_bat = "C:/Program Files/Microsoft Visual Studio/2022/Community/VC/Auxiliary/Build/vcvars64.bat"
+$innosetup = "C:/Program Files (x86)/Inno Setup 6/ISCC.exe"
+```
+
+The vcpkg location (`C:/vcpkg/installed/x64-windows`) is set in `common.pri`.
+
+## Build Everything (Recommended)
+
+```cmd
+ruby scripts\make_all.rb
+```
+
+This script cleans `_bin`, `lib` and `_build`, runs `prepare.rb`, and then builds, in order:
+
+1. FileTypePlugin (`scripts\win_make_filetypeplugin.bat`)
+2. IncrementalSearchPlugin (`scripts\win_make_incrementalsearchplugin.bat`)
+3. Guitar (`scripts\win_make_guitar_app.bat`), which also extracts `misc\win32tools.zip` (helper tools and runtime DLLs such as libsodium, OpenSSL, zlib and zstd) into `_bin` and runs `windeployqt`
+
+Each batch file calls `vcvars64.bat` by itself, so a Developer Command Prompt is not required.
+
+Only the release configuration is built by default. To also build the debug configuration, set `$make_debug = true` in `scripts\make_all.rb`.
+
+Finally `make_all.rb` creates the installer with Inno Setup (`_release\Setup-Guitar-*.exe`). Note that the final step also attempts to upload the installer to the server configured in `scripts\deployconf.rb`. If you only want a local build, you can ignore the upload failure, or run the batch files individually as described below.
+
+## Build Manually
+
+The batch files read these optional environment variables (defaults point to the paths above):
+
+- `QMAKE`, `JOM`, `VCVARS_BAT`, `WINDEPLOYQT`
+- `NO_DEBUG=1` : skip the debug build
+- `NO_RELEASE=1` : skip the release build
+
+Run `ruby prepare.rb` first, then, from the repository root (using `NO_DEBUG=1` to build release only):
 
 ```cmd
 ruby prepare.rb
+set NO_DEBUG=1
+scripts\win_make_filetypeplugin.bat
+scripts\win_make_incrementalsearchplugin.bat
+scripts\win_make_guitar_app.bat
 ```
 
-### 4. Build the zlib Dependency
-
-Guitar requires zlib to be built first:
+## Running Guitar
 
 ```cmd
-rmdir /s /q build
-mkdir build
-cd build
-c:\Qt\6.9.0\msvc2022_64\bin\qmake.exe ..\zlib.pro
-C:\Qt\Tools\QtCreator\bin\jom\jom.exe
-cd ..
+_bin\Guitar.exe
 ```
 
-Note: Adjust the Qt path according to your installation.
-
-### 5. Build the libmagic Dependency
-
-Guitar uses libmagic for file type detection and requires it to be statically linked for consistent cross-platform behavior. Run the provided build script:
-
-```cmd
-cd filetype
-build-msvc.bat
-cd ..
-```
-
-This script will automatically build all required libmagic components including libfile, liboniguruma, and libfiletype.
-
-### 6. Build Guitar
-
-Now build the main application:
-
-```cmd
-rmdir /s /q build
-mkdir build
-cd build
-c:\Qt\6.9.0\msvc2022_64\bin\qmake.exe ../Guitar.pro
-C:\Qt\Tools\QtCreator\bin\jom\jom.exe
-cd ..
-```
-
-### 7. Prepare the Executable
-
-Finally, set up the executable with required dependencies:
-
-```cmd
-cd _bin
-del libz.lib
-7z e ..\misc\win32tools.zip
-C:\Qt\6.9.0\msvc2022_64\bin\windeployqt.exe Guitar.exe
-```
-
-This uses the Qt deployment tool to copy all required Qt libraries to the application folder.
-
-### 8. Running Guitar
-
-After successful completion, you can run Guitar from the `_bin` directory:
-
-```cmd
-Guitar.exe
-```
+(The debug build is `_bin\Guitard.exe`.)
