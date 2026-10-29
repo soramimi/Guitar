@@ -7,6 +7,8 @@
 #include <QRect>
 #include <QString>
 #include <functional>
+#include <iterator>
+#include <list>
 #include <memory>
 #include <optional>
 #include <variant>
@@ -39,9 +41,61 @@ namespace texteditor {
 class Font {
 public:
 	struct TextWidthCache {
-		// 同じ文字列のhorizontalAdvance()呼び出しを抑える。
-		// フォント変更時には必ず全消去する。
-		std::unordered_map<QString, int> map;
+		static constexpr size_t max_entries = 4096;
+		static constexpr qsizetype max_key_length = 64;
+
+		struct Entry {
+			int width = 0;
+			std::list<QString>::iterator lru_position;
+		};
+
+		// 先頭が最近使用されたキー、末尾が最も古いキー。
+		std::list<QString> lru;
+		std::unordered_map<QString, Entry> map;
+
+		void clear()
+		{
+			map.clear();
+			lru.clear();
+		}
+
+		bool lookup(QString const &text, int *width)
+		{
+			auto it = map.find(text);
+			if (it == map.end()) return false;
+			lru.splice(lru.begin(), lru, it->second.lru_position);
+			it->second.lru_position = lru.begin();
+			*width = it->second.width;
+			return true;
+		}
+
+		void insert(QString const &text, int width)
+		{
+			// 件数だけでなくキー長も制限し、1件の巨大な文字列がキャッシュへ
+			// 居続けることを防ぐ。長い文字列は呼び出し側で毎回計測する。
+			if (text.size() > max_key_length) return;
+
+			auto existing = map.find(text);
+			if (existing != map.end()) {
+				existing->second.width = width;
+				lru.splice(lru.begin(), lru, existing->second.lru_position);
+				existing->second.lru_position = lru.begin();
+				return;
+			}
+
+			lru.push_front(text);
+			map.emplace(text, Entry{width, lru.begin()});
+			if (map.size() > max_entries) {
+				auto oldest = std::prev(lru.end());
+				map.erase(*oldest);
+				lru.erase(oldest);
+			}
+		}
+
+		size_t size() const
+		{
+			return map.size();
+		}
 	};
 	QFont font_;                               // 計測対象フォント
 	std::unique_ptr<QFontMetrics> fm_;         // font_に対応するメトリクス
@@ -54,7 +108,7 @@ public:
 	void set_font(QFont const &font)
 	{
 		font_ = font;
-		text_width_cache_.map.clear();
+		text_width_cache_.clear();
 
 		// QPixmapはGUIスレッド専用なので、ワーカースレッドでも使えるQImageを使う。
 		// 主スレッド側とワーカー側で同じ種類のデバイスを使い、計測結果を一致させる。
@@ -100,32 +154,49 @@ public:
 	int text_width(QString const &text) const
 	{
 		int ret = 0;
-		auto it = text_width_cache_.map.find(text);
-		if (it != text_width_cache_.map.end()) {
-			ret = it->second;
-		} else {
+		if (!text_width_cache_.lookup(text, &ret)) {
 			QTextOption opt;
 			opt.setTabStopDistance(tab_stop_distance_);
 			ret = fm_->horizontalAdvance(text, opt);
-			text_width_cache_.map[text] = ret;
+			text_width_cache_.insert(text, ret);
 		}
 		return ret;
 	}
 	void set_tab_stop_distance(int x)
 	{
+		if (tab_stop_distance_ == x) return;
 		tab_stop_distance_ = x;
+		text_width_cache_.clear();
 	}
 };
 
 }
 
 struct CharAttr {
+	enum Flag : uint8_t {
+		ForegroundColorSpecified = 1 << 0,
+	};
+
 	uint16_t flags : 8 = 0;
 	uint32_t color : 24 = 0;
 	CharAttr(int index = 0)
 		: flags(index)
 	{
 		// color = 0xff0000;
+	}
+	bool has_foreground_color() const
+	{
+		return (flags & ForegroundColorSpecified) != 0;
+	}
+	void set_foreground_color(uint32_t value)
+	{
+		color = value & 0x00ffffff;
+		flags |= ForegroundColorSpecified;
+	}
+	void clear_foreground_color()
+	{
+		flags &= ~ForegroundColorSpecified;
+		color = 0;
 	}
 	bool operator == (CharAttr const &r) const
 	{

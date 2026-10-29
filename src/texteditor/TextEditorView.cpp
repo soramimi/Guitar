@@ -434,14 +434,17 @@ QColor TextEditorView::defaultBackgroundColor()
 QColor TextEditorView::colorForIndex(CharAttr const &attr, bool foreground)
 {
 	if (foreground) {
-		return (QRgb)attr.color;
+		if (attr.has_foreground_color()) {
+			return QColor(QRgb(attr.color | 0xff000000));
+		}
+		return defaultForegroundColor();
 	}
-	return foreground ? defaultForegroundColor() : Qt::transparent;//defaultBackgroundColor();
+	return Qt::transparent;
 }
 
 QColor TextEditorView::textColor(CharAttr const &attr)
 {
-	return QColor(QRgb(attr.color | 0xff000000));
+	return colorForIndex(attr, true);
 }
 
 void TextEditorView::drawFocusFrame(QPainter *pr)

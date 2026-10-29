@@ -35,6 +35,8 @@ MainWindow (QMainWindow, TextEditorApp/src)
   Qt 非依存アルゴリズム。`WrapAlgorithm/` に GoogleTest を持つ
 - **EscapeSequence.h/.cpp** — ターミナルモード用ANSIエスケープシーケンス解析(実験機能)
 - **PatternState.h/.cpp** — キーワード一致検出(実験機能、既定では無効)
+- **TextEditorCoreTest/** — 幅LRU、タブ幅による失効、文字色属性、ANSI色状態を確認する
+  Qt依存のGoogleTest
 - **LineIndexMap/** — 折り返し行の論理行⇔表示行マッピング用 B+-tree(独立ライブラリ、
   GoogleTest によるテスト完備)。詳細は [LineIndexMap/AGENTS.md](LineIndexMap/AGENTS.md) を参照
 - **TextEditorApp/** — 上記部品を組み込んだ実行可能アプリ(サンプル/動作確認用)
@@ -79,6 +81,11 @@ MainWindow (QMainWindow, TextEditorApp/src)
 - 通常の文字編集では変更された論理行だけを再解析・再折り返しする。後続論理行は再計算しない
 - 幅変更では全論理行の折り返し境界を更新するが、フォントが同じならデコード・文字幅計測結果を
   再利用する。同じ幅での再レイアウト要求は `full_wrap_update_needed` によりスキップする
+- `Font::text_width()` の文字列幅キャッシュは最大4,096件のLRU。64 UTF-16コード単位を超える
+  キーは登録せず、フォントまたはタブ幅が変わったときに全消去する。並列折り返しでは
+  スレッドごとに独立した `Font` とLRUを使用する
+- `CharAttr::ForegroundColorSpecified` が立っていない文字はテーマの既定前景色で描画する。
+  色値0は明示的な黒にもなるため、色値そのものを「指定なし」の番兵として使わない
 - `Document::Line` と `CharBuffer` は `shared_ptr` を使う浅いコピー。ただし `setDocument()` は
   呼び出し元への編集波及と並列レイアウト時の競合を防ぐため、テキストと表示属性を複製し、
   解析・折り返しキャッシュを引き継がない
@@ -91,12 +98,16 @@ qmake プロジェクト。アプリ本体はC++20、独立テストはC++17。
   (Qt6 系は `core5compat` も追加)。ビルド成果物は `TextEditorApp/_bin/`
 - `LineIndexMap/LineIndexMap.pro` — Qt 非依存のヘッダオンリーライブラリ + GoogleTest
 - `WrapAlgorithm/WrapAlgorithm.pro` — Qt 非依存の折り返しアルゴリズム + GoogleTest
+- `TextEditorCoreTest/TextEditorCoreTest.pro` — Qt依存のキャッシュ・属性テスト + GoogleTest
 
 ```
 (cd TextEditorApp/build/Qt_6_9_0_Debug && qmake6 ../../TextEditorApp.pro && make)
 
 (cd WrapAlgorithm && qmake6 WrapAlgorithm.pro && make && ./WrapAlgorithm)
 # 期待出力: [  PASSED  ] 6 tests.
+
+(cd TextEditorCoreTest && qmake6 TextEditorCoreTest.pro && make && ./TextEditorCoreTest)
+# 期待出力: [  PASSED  ] 5 tests.
 ```
 
 ## 既知の未実装・不完全な箇所
@@ -124,6 +135,10 @@ qmake プロジェクト。アプリ本体はC++20、独立テストはC++17。
   同じ更新処理内で同期させる。表示行番号だけを安定したキャッシュキーとして使用しない
 - テキスト・フォント・タブ幅など、文字位置へ影響する値を追加するときは、対応する revision の
   更新と `full_wrap_update_needed` の設定を忘れないこと
+- `Font` の幅計測条件を変えるときはLRUを失効させる。LRUのmapと使用順listは必ず同じ処理で
+  更新し、長いキーを無制限に登録しない
+- `CharAttr::color == 0` は明示的な黒として有効なので、前景色の有無は必ず
+  `ForegroundColorSpecified` で判定する
 - 折り返し規則を変更するときは `WrapAlgorithm/` の固定テストと貪欲法によるランダム比較を更新し、
   空文字列・幅0・長い単語でも終端位置が必ず前進することを確認する
 - `LineIndexMap` は独立ライブラリとして扱い、変更する際は

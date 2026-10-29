@@ -13,11 +13,13 @@ private:
 public:
 	std::string chars_;
 	uint32_t color_ = 0;
+	bool has_color_ = false;
 	EscapeSequence();
 	void clear();
 	bool update(char c);
 	bool empty() const;
 	uint32_t color() const;
+	bool has_color() const;
 };
 
 #endif // ESCAPESEQUENCE_H

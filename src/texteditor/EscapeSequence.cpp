@@ -64,9 +64,11 @@ bool EscapeSequence::update(char c)
 						int num = parse_int(args[0]);
 						if (num == 0) {
 							color_ = 0;
+							has_color_ = false;
 							ret = true;
 						} else if (num >= 30 && num <= 37) {
 							color_ = colors[num - 30];
+							has_color_ = true;
 							ret = true;
 						}
 					}
@@ -89,4 +91,9 @@ bool EscapeSequence::empty() const
 uint32_t EscapeSequence::color() const
 {
 	return color_;
+}
+
+bool EscapeSequence::has_color() const
+{
+	return has_color_;
 }

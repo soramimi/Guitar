@@ -452,7 +452,9 @@ CharBuffer AbstractTextEditorApplication::_parse_line(TextEditorContext const *c
 			
 			if (printable != false) {
 				Character r(c);
-				r.attr.color = escseq.color();
+				if (escseq.has_color()) {
+					r.attr.set_foreground_color(escseq.color());
+				}
 				ret.emplace_back(r);
 			}
 			
@@ -465,7 +467,7 @@ CharBuffer AbstractTextEditorApplication::_parse_line(TextEditorContext const *c
 					if (r == PatternState::Accept) {
 						size_t end = ret.size();
 						for (size_t i = pattern->offset(); i < end; i++) {
-							ret[i].attr.color = 0xff0000;
+							ret[i].attr.set_foreground_color(0xff0000);
 						}
 						patterns.erase(patterns.begin() + (i - 1));
 					} else if (r == PatternState::Fail) {
