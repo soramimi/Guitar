@@ -382,7 +382,7 @@ void AbstractTextEditorApplication::clear_selection()
 
 
 /**
- * @brief UTF-8行をCharacter列へ変換し、全文字のX座標を計算する
+ * @brief UTF-8行をCharacter列へ変換する。X座標はCharBufferが必要時に一括計算する
  *
  * LinePropertyのtext_revisionとmetrics_revisionが一致する場合は計算済みの
  * CharBufferを返す。幅変更だけではこのキャッシュを失効させない。
@@ -390,7 +390,7 @@ void AbstractTextEditorApplication::clear_selection()
  * @param line
  * @return
  */
-CharBuffer AbstractTextEditorApplication::_parse_line(TextEditorContext const *cx, Document::Line const *line, std::mutex *mutex) const
+CharBuffer AbstractTextEditorApplication::_parse_line(TextEditorContext const *cx, Document::Line const *line) const
 {
 	if (!line) return {};
 
@@ -492,18 +492,17 @@ CharBuffer AbstractTextEditorApplication::_parse_line(TextEditorContext const *c
 }
 
 /**
- * @brief 行を解析してCharacterの配列を返す（全文字のX座標を計算する）
+ * @brief 行を解析してCharacterの配列を返す（X座標はCharBufferが必要時に一括計算する）
  * @param line
- * @param mutex
  * @return
  */
-CharBuffer AbstractTextEditorApplication::_parse_line(Document::Line const *line, std::mutex *mutex) const
+CharBuffer AbstractTextEditorApplication::_parse_line(Document::Line const *line) const
 {
-	return _parse_line(cx(), line, mutex);
+	return _parse_line(cx(), line);
 }
 
 /**
- * @brief 行を解析してCharacterの配列を返す（全文字のX座標を計算する）
+ * @brief 行を解析してCharacterの配列を返す（X座標はCharBufferが必要時に一括計算する）
  * @param vrow
  * @return
  */
@@ -614,12 +613,11 @@ size_t AbstractTextEditorApplication::layoutThreadCount() const
  * 開始位置からの幅は候補位置に対して単調増加であることを二分探索の前提とする。
  *
  * @param line 論理行
- * @param mutex 排他制御用のmutex（nullptrの場合は排他制御なし）
  * @param textfont 幅の計測に使うフォント。nullptrならtext_font()。
  *        Fontはスレッドセーフではないため、並列処理ではスレッドごとの複製を渡す。
  * @return 折り返し断片
  */
-std::vector<Document::Line> AbstractTextEditorApplication::_wrap_line(Document::Line line, std::mutex *mutex, texteditor::Font const *textfont) const
+std::vector<Document::Line> AbstractTextEditorApplication::_wrap_line(Document::Line line, texteditor::Font const *textfont) const
 {
 	if (wrappingMode() == WrappingMode::NoWrap) return {};
 	
@@ -632,7 +630,7 @@ std::vector<Document::Line> AbstractTextEditorApplication::_wrap_line(Document::
 	std::vector<CharBuffer> chrs_out;
 	// _parse_line()はtext/metrics revisionが一致すればデコード・文字幅計算済みの
 	// CharBufferを返す。したがって幅だけの変更では分割位置の探索だけをやり直す。
-	const CharBuffer chrs_in = _parse_line(&line, mutex);
+	const CharBuffer chrs_in = _parse_line(&line);
 	
 	if (chrs_in.empty()) {
 		chrs_out.push_back({});
@@ -681,6 +679,21 @@ std::vector<Document::Line> AbstractTextEditorApplication::_wrap_line(Document::
 			Document::Line line(std::move(v));
 			line.sp->meta.logical_col_pos = logical_col;
 			line.sp->meta.logical_col_len = w.size();
+			// 端末モードでは論理行の解析時にANSI SGRを除去して文字属性へ
+			// 変換している。断片をUTF-8から再解析すると属性が復元できないため、
+			// 属性を断片自身のキャッシュへ引き継ぐ。X座標は論理行を基準にした
+			// 値を流用できないため、断片単位で必要時に再計算させる。
+			Document::LineProperty *detail = line.new_detail();
+			CharBuffer cached_chars;
+			cached_chars.reserve(w.size());
+			for (Character const &source : *w.vec) {
+				Character character(source.unicode);
+				character.attr = source.attr;
+				cached_chars.push_back(character);
+			}
+			detail->chars = cached_chars;
+			detail->text_revision = line.sp->meta.text_revision;
+			detail->metrics_revision = m->metrics_revision;
 			ret.emplace_back(line);
 			logical_col += w.size();
 		}
@@ -688,7 +701,7 @@ std::vector<Document::Line> AbstractTextEditorApplication::_wrap_line(Document::
 	return ret;
 }
 
-void AbstractTextEditorApplication::wrap_line(Document::Line *ll, bool force, std::mutex *mutex, texteditor::Font const *textfont)
+void AbstractTextEditorApplication::wrap_line(Document::Line *ll, bool force, texteditor::Font const *textfont)
 {
 	// 通常の1行編集ではset_text()がvisual_linesを空にするためforce不要。
 	// 幅・フォント・モード変更では既存断片が残っていても再計算するためforce=trueを使う。
@@ -696,7 +709,7 @@ void AbstractTextEditorApplication::wrap_line(Document::Line *ll, bool force, st
 		if (wrappingMode() == WrappingMode::NoWrap) {
 			ll->sp->meta.visual_lines.resize(1);
 		} else {
-			ll->sp->meta.visual_lines = _wrap_line(*ll, mutex, textfont); // 折り返し処理
+			ll->sp->meta.visual_lines = _wrap_line(*ll, textfont); // 折り返し処理
 		}
 	}
 }
@@ -740,9 +753,8 @@ RowCol AbstractTextEditorApplication::visual_position(SelectionAnchor const &a) 
  * @brief 論理行に対応する物理行数を更新する（line_index_map）
  * @param lrow 論理行インデックス
  * @param ll 論理行情報
- * @param mutex 排他制御用のmutex（nullptrの場合は排他制御なし）
  */
-void AbstractTextEditorApplication::update_line_index_map(row_index_t lrow, Document::Line *ll, std::mutex *mutex)
+void AbstractTextEditorApplication::update_line_index_map(row_index_t lrow, Document::Line *ll)
 {
 	// ValueItemには折り返し数だけでなく各断片のコードポイント数も入れる。
 	// これにより行番号だけでなく、論理列と表示列も相互変換できる。
@@ -751,9 +763,7 @@ void AbstractTextEditorApplication::update_line_index_map(row_index_t lrow, Docu
 		col_list.push_back(vl.sp->meta.logical_col_len);
 	}
 
-	if (mutex) mutex->lock();
 	cx()->line_index_map.update(lrow, col_list); // 論理行に対応する物理行数を更新
-	if (mutex) mutex->unlock();	
 }
 
 /**
@@ -761,10 +771,9 @@ void AbstractTextEditorApplication::update_line_index_map(row_index_t lrow, Docu
  * @param lrow 論理行番号
  * @param text 更新するテキスト（nulloptの場合はテキストを更新しない）
  * @param force 強制的に折り返し処理を行うかどうか
- * @param mutex 排他制御用のmutex（nullptrの場合は排他制御なし）
  * @return 物理行数が変化したかどうか
  */
-bool AbstractTextEditorApplication::_update_line(row_index_t lrow, std::optional<std::vector<char>> text, bool force, std::mutex *mutex)
+bool AbstractTextEditorApplication::_update_line(row_index_t lrow, std::optional<std::vector<char>> text, bool force)
 {
 	bool vline_count_changed = false;
 	
@@ -785,8 +794,8 @@ bool AbstractTextEditorApplication::_update_line(row_index_t lrow, std::optional
 		
 		// visual_linesとLineIndexMapは必ずこの順で同じ処理内から更新する。
 		// 片方だけが新しい状態になる期間を関数外へ持ち出さない。
-		wrap_line(ll, force, mutex); // 折り返し処理を行う
-		update_line_index_map(lrow, ll, mutex); // 論理行に対応する物理行数を更新
+		wrap_line(ll, force); // 折り返し処理を行う
+		update_line_index_map(lrow, ll); // 論理行に対応する物理行数を更新
 		
 		vline_count_changed = (nvlines != ll->sp->meta.visual_lines.size()); // 折り返し後の物理行数が変化したかどうか
 	}
@@ -807,7 +816,7 @@ bool AbstractTextEditorApplication::update_visual_line(row_index_t lrow, bool fo
 {
 	std::vector<Document::Line> *llines = &document()->logical_lines;
 	if (lrow >= 0 && static_cast<size_t>(lrow) < llines->size()) {
-		_update_line(lrow, std::nullopt, force, nullptr);
+		_update_line(lrow, std::nullopt, force);
 		return true;
 	}
 	return false;
@@ -839,9 +848,7 @@ void AbstractTextEditorApplication::update_visual_lines_all()
 	}
 	
 	if (m->wrapping_mode != WrappingMode::NoWrap) {
-		size_t const num_threads = std::min(
-			m->layout_thread_count,
-			std::max<size_t>(1, llines->size()));
+		size_t const num_threads = std::min(m->layout_thread_count, std::max<size_t>(1, llines->size()));
 		if (num_threads == 1) { // シングルスレッド
 			for (row_index_t lrow = 0; lrow < (row_index_t)llines->size(); lrow++) {
 				update_visual_line(lrow, true);
@@ -868,7 +875,7 @@ void AbstractTextEditorApplication::update_visual_lines_all()
 							size_t lrow = index++;
 							if (lrow >= nlines) break;
 							Document::Line *ll = &(*llines)[lrow];
-							wrap_line(ll, true, nullptr, &textfont);
+							wrap_line(ll, true, &textfont);
 						}
 					});
 				}
@@ -882,7 +889,7 @@ void AbstractTextEditorApplication::update_visual_lines_all()
 				std::vector<Document::Line> *llines = &document()->logical_lines;
 				Document::Line *ll = &(*llines)[lrow];
 				// 論理行に対応する物理行数を更新
-				update_line_index_map(lrow, ll, nullptr);
+				update_line_index_map(lrow, ll);
 			}
 			// 物理行数キャッシュを無効化する
 			invalidate_nlines_cache();
@@ -929,7 +936,7 @@ bool AbstractTextEditorApplication::commit_line(row_index_t lrow, CharBuffer con
 	
 	invalidate_logical_row_info(lrow);
 	
-	return _update_line(lrow, ba, false, nullptr);
+	return _update_line(lrow, ba, false);
 }
 
 void AbstractTextEditorApplication::layoutEditor()
@@ -945,6 +952,8 @@ void AbstractTextEditorApplication::initEditor()
 {
 	editor_cx = std::make_shared<TextEditorContext>();
 	layoutEditor();
+	// initEditor()前に設定されたフォントにも、ここで確定したタブ幅を反映する。
+	update_font();
 }
 
 bool AbstractTextEditorApplication::isLineNumberVisible() const
@@ -1393,7 +1402,9 @@ void AbstractTextEditorApplication::updateSelectionAnchor2(bool auto_scroll)
 
 void AbstractTextEditorApplication::update_font()
 {
-	Q_ASSERT(editor_cx); // must be called after initEditor()
+	// View生成前にフォントだけ設定する利用を許可する。コンテキスト生成後に
+	// initEditor()から改めて呼ばれ、タブ幅とrevisionを確定する。
+	if (!editor_cx) return;
 
 	int tab_stop_distance = fixed_font().basis_char_width() * cx()->tab_indent_size;
 	m->font.text.set_tab_stop_distance(tab_stop_distance);

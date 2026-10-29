@@ -9,6 +9,7 @@
 #include <functional>
 #include <iterator>
 #include <list>
+#include <limits>
 #include <memory>
 #include <optional>
 #include <string>
@@ -22,6 +23,8 @@
 #include <QImage>
 #include <QPainter>
 #include <QFontMetrics>
+#include <QTextLayout>
+#include <QtMath>
 
 #include "LineIndexMap/LineIndexMap.h"
 
@@ -192,6 +195,10 @@ public:
 			text_width_cache_.insert(text, ret);
 		}
 		return ret;
+	}
+	int tab_stop_distance() const
+	{
+		return tab_stop_distance_;
 	}
 	void set_tab_stop_distance(int x)
 	{
@@ -379,36 +386,71 @@ public:
 	{
 		vec->erase(first, last);
 	}
-	int left_x(int pos, texteditor::Font const &textfont) const
+	void calculate_x_positions(texteditor::Font const &textfont) const
 	{
-		int x = 0;
-		if (pos > 0) {
-			if (pos < vec->size()) {
-				x = (*vec)[pos].left_x();
-			} else {
-				x = -1;
-			}
-			if (x < 0) {
-				int n = pos;
-				QString text;
-				for (int i = 0; i < n; i++) {
-					text.push_back(QString::fromUcs4(&(*vec)[i].unicode, 1));
-				}
-				x = textfont.text_width(text);
-				if (pos < vec->size()) {
-					(*vec)[pos].set_left_x(x);
-				}
-				if (pos > 0) {
-					int prev = pos - 1;
-					(*vec)[prev].set_right_x(x);
-				}
+		if (vec->empty()) return;
+
+		// 左端0と最終文字の右端がそろっていれば、この関数が全位置を
+		// 計算済みである。従来の遅延計算で一部だけ入ったキャッシュは
+		// ここでは完了扱いにせず、全文字分を改めてそろえる。
+		if ((*vec).front().left_x() == 0 && (*vec).back().right_x() >= 0) return;
+
+		QString text;
+		std::vector<qsizetype> offsets;
+		offsets.reserve(vec->size() + 1);
+		for (Character const &ch : *vec) {
+			offsets.push_back(text.size());
+			// Document::Lineには行末のCR/LFが含まれる。QTextLayoutに渡すと
+			// 別のQTextLineになるため、行末文字は幅0として現在位置に置く。
+			if (ch.unicode != U'\r' && ch.unicode != U'\n') {
+				text.append(QString::fromUcs4(&ch.unicode, 1));
 			}
 		}
-		return x;
+		offsets.push_back(text.size());
+
+		QTextLayout layout(text, textfont.font());
+		QTextOption option;
+		option.setWrapMode(QTextOption::NoWrap);
+		option.setTabStopDistance(textfont.tab_stop_distance());
+		layout.setTextOption(option);
+		layout.beginLayout();
+		QTextLine line = layout.createLine();
+		if (line.isValid()) {
+			line.setLineWidth(std::numeric_limits<qreal>::max());
+		}
+		layout.endLayout();
+
+		for (size_t i = 0; i < vec->size(); i++) {
+			int left = 0;
+			int right = 0;
+			if (line.isValid()) {
+				left = qRound(line.cursorToX(offsets[i]));
+				right = qRound(line.cursorToX(offsets[i + 1]));
+			}
+			(*vec)[i].set_left_x(left);
+			(*vec)[i].set_right_x(right);
+		}
+	}
+	int left_x(int pos, texteditor::Font const &textfont) const
+	{
+		if (pos <= 0 || vec->empty()) {
+			if (!vec->empty()) calculate_x_positions(textfont);
+			return 0;
+		}
+		calculate_x_positions(textfont);
+		if (pos >= static_cast<int>(vec->size())) {
+			return (*vec).back().right_x();
+		}
+		return (*vec)[pos].left_x();
 	}
 	int right_x(int pos, texteditor::Font const &textfont) const
 	{
-		return left_x(pos + 1, textfont);
+		if (pos < 0 || vec->empty()) return 0;
+		calculate_x_positions(textfont);
+		if (pos >= static_cast<int>(vec->size())) {
+			return (*vec).back().right_x();
+		}
+		return (*vec)[pos].right_x();
 	}
 	void set_left_x(int i, int x)
 	{
@@ -908,9 +950,9 @@ protected:
 	CharBuffer parse_logical_line(const TextEditorContext *cx, row_index_t lrow) const;
 	const CharBuffer *parse_current_line() const;
 private:
-	CharBuffer _parse_line(const TextEditorContext *cx, const Document::Line *line, std::mutex *mutex) const;
+	CharBuffer _parse_line(const TextEditorContext *cx, const Document::Line *line) const;
 protected:
-	CharBuffer _parse_line(Document::Line const *line, std::mutex *mutex = nullptr) const;
+	CharBuffer _parse_line(Document::Line const *line) const;
 	CharBuffer *parse_line(row_index_t vrow) const;
 
 	virtual void updateScrollBarRange() {}
@@ -1011,12 +1053,12 @@ protected:
 private:
 	// 1論理行を現在の幅とWrappingModeで表示行へ分割する。
 	// 入力行のLinePropertyが有効ならUTF-8解析と文字幅計測は再利用される。
-	std::vector<Document::Line> _wrap_line(Document::Line line, std::mutex *mutex, texteditor::Font const *textfont = nullptr) const;
+	std::vector<Document::Line> _wrap_line(Document::Line line, texteditor::Font const *textfont = nullptr) const;
 	
-	void wrap_line(Document::Line *ll, bool force, std::mutex *mutex, texteditor::Font const *textfont = nullptr);
-	void update_line_index_map(row_index_t lrow, Document::Line *ll, std::mutex *mutex);
+	void wrap_line(Document::Line *ll, bool force, texteditor::Font const *textfont = nullptr);
+	void update_line_index_map(row_index_t lrow, Document::Line *ll);
 	
-	bool _update_line(row_index_t lrow, std::optional<std::vector<char>> text, bool force, std::mutex *mutex);
+	bool _update_line(row_index_t lrow, std::optional<std::vector<char>> text, bool force);
 protected:
 	bool update_visual_line(row_index_t lrow, bool force);
 	

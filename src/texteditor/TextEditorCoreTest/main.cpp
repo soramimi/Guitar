@@ -43,6 +43,37 @@ public:
 		setDocument(&lines);
 	}
 
+	std::vector<Character> flattened_visual_characters() const
+	{
+		std::vector<Character> result;
+		for (row_index_t vrow = 0; vrow < visual_nlines(); vrow++) {
+			CharBuffer *chars = parse_line(vrow);
+			if (!chars) continue;
+			result.insert(result.end(), chars->begin(), chars->end());
+		}
+		return result;
+	}
+
+	row_index_t visual_line_count() const
+	{
+		return visual_nlines();
+	}
+
+	bool visual_fragment_positions_match_text_width() const
+	{
+		for (row_index_t vrow = 0; vrow < visual_nlines(); vrow++) {
+			CharBuffer *chars = parse_line(vrow);
+			if (!chars || chars->empty()) continue;
+			QString text;
+			for (Character const &ch : *chars->vec) {
+				text.append(QString::fromUcs4(&ch.unicode, 1));
+			}
+			if (chars->left_x(0, text_font()) != 0) return false;
+			if (chars->right_x(static_cast<int>(chars->size()) - 1, text_font()) != text_font().text_width(text)) return false;
+		}
+		return true;
+	}
+
 	LayoutSnapshot snapshot() const
 	{
 		LayoutSnapshot result;
@@ -106,6 +137,40 @@ std::vector<Document::Line> layout_test_lines()
 	return lines;
 }
 
+class FontInitializationTestApplication : public AbstractTextEditorApplication {
+public:
+	void set_fonts_before_initialization(QFont const &font)
+	{
+		set_fixed_font(font);
+		set_text_font(font);
+	}
+
+	void initialize()
+	{
+		initEditor();
+	}
+
+	int text_tab_stop_distance() const
+	{
+		return text_font().tab_stop_distance();
+	}
+
+	int expected_tab_stop_distance() const
+	{
+		return fixed_font().basis_char_width() * 4;
+	}
+
+protected:
+	texteditor::PositionX currentPixelX() const override
+	{
+		return {};
+	}
+
+	void updateVisibility(update_visibility_option_t const &) override
+	{
+	}
+};
+
 }
 
 TEST(TextWidthCache, EvictsLeastRecentlyUsedEntry)
@@ -149,6 +214,63 @@ TEST(Font, TabStopChangeClearsWidthCache)
 	EXPECT_EQ(font.text_width_cache_.size(), 0u);
 }
 
+TEST(Font, CanBeConfiguredBeforeEditorInitialization)
+{
+	FontInitializationTestApplication app;
+	QFont font("DejaVu Sans");
+	font.setPixelSize(14);
+
+	app.set_fonts_before_initialization(font);
+	app.initialize();
+
+	EXPECT_EQ(app.text_tab_stop_distance(), app.expected_tab_stop_distance());
+}
+
+TEST(CharBuffer, CalculatesAllXPositionsWithLayout)
+{
+	texteditor::Font font;
+	QFont qfont("DejaVu Sans");
+	qfont.setPixelSize(14);
+	font.set_font(qfont);
+	font.set_tab_stop_distance(font.basis_char_width() * 4);
+
+	std::vector<Character> source{
+		Character(U'A'),
+		Character(U'V'), // カーニングがある組み合わせ
+		Character(U'\t'),
+		Character(U'e'),
+		Character(U'\u0301'), // 結合文字
+		Character(U'\U0001f600'),
+	};
+	CharBuffer chars(source);
+
+	// 最初の問い合わせで、行全体の座標が埋まる。
+	EXPECT_EQ(chars.left_x(0, font), 0);
+	for (size_t i = 0; i < chars.size(); i++) {
+		EXPECT_GE(chars[i].left_x(), 0);
+		EXPECT_GE(chars[i].right_x(), chars[i].left_x());
+		if (i + 1 < chars.size()) {
+			EXPECT_EQ(chars[i].right_x(), chars[i + 1].left_x());
+		}
+	}
+
+	QString const text = QString::fromUcs4(U"AV\te\u0301\U0001f600");
+	EXPECT_EQ(chars.right_x(static_cast<int>(chars.size()) - 1, font), font.text_width(text));
+}
+
+TEST(CharBuffer, TreatsLineTerminatorsAsZeroWidth)
+{
+	texteditor::Font font;
+	QFont qfont("DejaVu Sans");
+	qfont.setPixelSize(14);
+	font.set_font(qfont);
+
+	CharBuffer chars(std::vector<Character>{Character(U'A'), Character(U'\r'), Character(U'\n')});
+	EXPECT_EQ(chars.right_x(0, font), chars.left_x(1, font));
+	EXPECT_EQ(chars.left_x(1, font), chars.right_x(1, font));
+	EXPECT_EQ(chars.left_x(2, font), chars.right_x(2, font));
+}
+
 TEST(CharAttr, DistinguishesDefaultAndExplicitBlack)
 {
 	CharAttr attr;
@@ -171,6 +293,27 @@ TEST(EscapeSequence, ResetClearsExplicitColor)
 	EXPECT_EQ(sequence.color(), 0u);
 
 	for (char c : std::string("\x1b[0m")) sequence.update(c);
+	EXPECT_FALSE(sequence.has_color());
+}
+
+TEST(EscapeSequence, SupportsEmptyAndMultipleSgrParameters)
+{
+	EscapeSequence sequence;
+	auto update = [&](std::string const &text){
+		bool consumed = false;
+		for (char c : text) consumed = sequence.update(c);
+		return consumed;
+	};
+
+	EXPECT_TRUE(update("\x1b[1;31m"));
+	EXPECT_TRUE(sequence.has_color());
+	EXPECT_EQ(sequence.color(), 0x800000u);
+
+	EXPECT_TRUE(update("\x1b[m"));
+	EXPECT_FALSE(sequence.has_color());
+
+	// 色を変えないSGRも、終端の'm'を本文へ流出させない。
+	EXPECT_TRUE(update("\x1b[1m"));
 	EXPECT_FALSE(sequence.has_color());
 }
 
@@ -201,6 +344,29 @@ TEST(Layout, SingleAndEightThreadsProduceIdenticalResults)
 	EXPECT_EQ(single.total_logical_rows, lines.size());
 	EXPECT_GT(single.total_visual_rows, single.total_logical_rows);
 	EXPECT_TRUE(single == parallel);
+}
+
+TEST(TerminalLayout, PreservesColorsAcrossWrappedFragments)
+{
+	LayoutTestApplication app(1);
+	app.setTerminalMode(true);
+
+	std::string const red = "red red red red red red red ";
+	std::string const plain = "plain plain";
+	std::string const input = std::string("\x1b[1;31m") + red + "\x1b[m" + plain;
+	app.load({Document::Line(input)});
+
+	EXPECT_GT(app.visual_line_count(), 1);
+	EXPECT_TRUE(app.visual_fragment_positions_match_text_width());
+	std::vector<Character> const chars = app.flattened_visual_characters();
+	ASSERT_EQ(chars.size(), red.size() + plain.size());
+	for (size_t i = 0; i < red.size(); i++) {
+		EXPECT_TRUE(chars[i].attr.has_foreground_color());
+		EXPECT_EQ(chars[i].attr.color, 0x800000u);
+	}
+	for (size_t i = red.size(); i < chars.size(); i++) {
+		EXPECT_FALSE(chars[i].attr.has_foreground_color());
+	}
 }
 
 int main(int argc, char **argv)

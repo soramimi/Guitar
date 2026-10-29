@@ -99,7 +99,8 @@ MainWindow (QMainWindow, TextEditorApp/src)
 
 ## ビルド
 
-qmake プロジェクト。アプリ本体はC++20、独立テストはC++17。
+qmake プロジェクト。アプリ本体とQt依存の`TextEditorCoreTest`はC++20、
+Qt非依存の`LineIndexMap`・`WrapAlgorithm`テストはC++17。
 
 - `TextEditorApp/TextEditorApp.pro` — アプリ本体。`QT += core gui widgets`
   (Qt6 系は `core5compat` も追加)。ビルド成果物は `TextEditorApp/_bin/`
@@ -114,7 +115,7 @@ qmake プロジェクト。アプリ本体はC++20、独立テストはC++17。
 # 期待出力: [  PASSED  ] 7 tests.
 
 (cd TextEditorCoreTest && qmake6 TextEditorCoreTest.pro && make && ./TextEditorCoreTest)
-# 期待出力: [  PASSED  ] 7 tests.
+# 期待出力: [  PASSED  ] 12 tests.
 
 # 並列折り返しのThreadSanitizer検証
 (cd TextEditorCoreTest && make distclean && \
