@@ -11,6 +11,9 @@
 #include <list>
 #include <memory>
 #include <optional>
+#include <string>
+#include <string_view>
+#include <unordered_map>
 #include <variant>
 #include <vector>
 #include <mutex>
@@ -38,6 +41,34 @@ enum EscapeCode {
 }
 
 namespace texteditor {
+class Utf16Text {
+private:
+	QString text_;
+	std::vector<qsizetype> offsets_;
+public:
+	explicit Utf16Text(std::u32string_view text)
+		: text_(QString::fromUcs4(text.data(), static_cast<qsizetype>(text.size())))
+	{
+		offsets_.reserve(text.size() + 1);
+		qsizetype offset = 0;
+		for (char32_t c : text) {
+			offsets_.push_back(offset);
+			offset += QChar::requiresSurrogates(c) ? 2 : 1;
+		}
+		offsets_.push_back(offset);
+		Q_ASSERT(offset == text_.size());
+	}
+
+	QString mid(size_t from, size_t to) const
+	{
+		Q_ASSERT(from <= to);
+		Q_ASSERT(to < offsets_.size());
+		qsizetype utf16_from = offsets_[from];
+		qsizetype utf16_to = offsets_[to];
+		return text_.mid(utf16_from, utf16_to - utf16_from);
+	}
+};
+
 class Font {
 public:
 	struct TextWidthCache {
@@ -1022,6 +1053,10 @@ public:
 	
 	void setWrappingMode(WrappingMode mode);
 	AbstractTextEditorApplication::WrappingMode wrappingMode() const;
+	// 全行再レイアウトに使うスレッド数。0は1として扱う。
+	// 主に1スレッドと並列結果の一致検証に使用する。
+	void setLayoutThreadCount(size_t count);
+	size_t layoutThreadCount() const;
 
 	bool save(std::function<bool (char const *p, size_t n)> callback) const
 	{

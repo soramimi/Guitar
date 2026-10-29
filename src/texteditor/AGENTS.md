@@ -57,6 +57,10 @@ MainWindow (QMainWindow, TextEditorApp/src)
 - `_wrap_line()` は論理行をコードポイント列へ変換し、Qt 非依存の
   `wrap_algorithm::compute_wrap_points()` に幅計測コールバックを渡す。戻された終端位置から
   `Document::Line` の折り返し断片を組み立てる
+- 候補探索は現在位置から1、2、4、8…個先を測る指数探索で幅超過区間を見つけ、その区間だけを
+  二分探索する。表示行ごとに残り全体の中央を測らないことが長い行での二乗化を防ぐ
+- 論理行は `Utf16Text` により一度だけQStringへ変換し、コードポイント位置からUTF-16位置への
+  オフセット表を作る。幅計測時はこの表から `mid()` の範囲を決め、サロゲートペアを分断しない
 - CharWrap は全文字境界を分割候補とする
 - WordWrap も論理行の先頭ではCharWrap状態から開始する。最初の分割可能位置に到達した後で
   WordWrapへ切り替え、論理行末までCharWrapへ戻さない
@@ -89,6 +93,9 @@ MainWindow (QMainWindow, TextEditorApp/src)
 - `Document::Line` と `CharBuffer` は `shared_ptr` を使う浅いコピー。ただし `setDocument()` は
   呼び出し元への編集波及と並列レイアウト時の競合を防ぐため、テキストと表示属性を複製し、
   解析・折り返しキャッシュを引き継がない
+- 全行再折り返しは既定8スレッドで、`setLayoutThreadCount()` により変更できる。実際に生成する
+  スレッド数は論理行数以下とする。1スレッドと8スレッドの断片・LineIndexMap一致は
+  `TextEditorCoreTest` で検証する
 
 ## ビルド
 
@@ -104,10 +111,15 @@ qmake プロジェクト。アプリ本体はC++20、独立テストはC++17。
 (cd TextEditorApp/build/Qt_6_9_0_Debug && qmake6 ../../TextEditorApp.pro && make)
 
 (cd WrapAlgorithm && qmake6 WrapAlgorithm.pro && make && ./WrapAlgorithm)
-# 期待出力: [  PASSED  ] 6 tests.
+# 期待出力: [  PASSED  ] 7 tests.
 
 (cd TextEditorCoreTest && qmake6 TextEditorCoreTest.pro && make && ./TextEditorCoreTest)
-# 期待出力: [  PASSED  ] 5 tests.
+# 期待出力: [  PASSED  ] 7 tests.
+
+# 並列折り返しのThreadSanitizer検証
+(cd TextEditorCoreTest && make distclean && \
+ qmake6 TextEditorCoreTest.pro 'CONFIG+=thread_sanitizer' && make && \
+ ./TextEditorCoreTest --gtest_filter=Layout.SingleAndEightThreadsProduceIdenticalResults)
 ```
 
 ## 既知の未実装・不完全な箇所
@@ -141,5 +153,7 @@ qmake プロジェクト。アプリ本体はC++20、独立テストはC++17。
   `ForegroundColorSpecified` で判定する
 - 折り返し規則を変更するときは `WrapAlgorithm/` の固定テストと貪欲法によるランダム比較を更新し、
   空文字列・幅0・長い単語でも終端位置が必ず前進することを確認する
+- 並列レイアウトを変更するときは1スレッドと8スレッドの統合テストに加え、
+  `thread_sanitizer` CONFIGでデータ競合がないことを確認する
 - `LineIndexMap` は独立ライブラリとして扱い、変更する際は
   [LineIndexMap/AGENTS.md](LineIndexMap/AGENTS.md) の不変条件・テスト方針も確認する

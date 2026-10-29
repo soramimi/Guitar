@@ -182,3 +182,17 @@ TEST(WrapAlgorithm, MatchesGreedyReferenceForRandomInputs)
 		}
 	}
 }
+
+TEST(WrapAlgorithm, GallopingSearchKeepsMeasuredTextNearLinear)
+{
+	std::u32string const text(4000, U'x');
+	uint64_t measured_code_points = 0;
+	auto measure = [&](size_t from, size_t to){
+		measured_code_points += to - from;
+		return static_cast<int>(to - from);
+	};
+
+	auto points = texteditor::wrap_algorithm::compute_wrap_points(text, 40, Mode::CharWrap, measure);
+	ASSERT_EQ(points.back(), text.size());
+	EXPECT_LT(measured_code_points, text.size() * 12);
+}

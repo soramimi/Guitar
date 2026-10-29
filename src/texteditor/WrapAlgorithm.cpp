@@ -101,8 +101,25 @@ std::vector<size_t> compute_wrap_points(
 		// WordWrapでは1単語、CharWrapでは1コードポイントの幅超過となる。
 		size_t best = candidate_index;
 		if (measure(begin, candidates[candidate_index]) <= width) {
-			size_t lo = candidate_index + 1;
-			size_t hi = candidates.size();
+			// 1, 2, 4, 8...個先を指数探索する。残り全体の中央から測る
+			// 二分探索と異なり、各表示行の近傍だけを計測して上限を見つける。
+			size_t upper = candidates.size();
+			size_t const remaining = candidates.size() - candidate_index;
+			for (size_t step = 1; step < remaining;) {
+				size_t probe = candidate_index + step;
+				if (measure(begin, candidates[probe]) > width) {
+					upper = probe;
+					break;
+				}
+				best = probe;
+				if (step > remaining / 2) break;
+				step *= 2;
+			}
+
+			// 最後に収まった候補と、最初に幅を超えた候補（または行末）の
+			// 間だけを二分探索する。upper自身は幅超過と判明済みなので含めない。
+			size_t lo = best + 1;
+			size_t hi = upper;
 			while (lo < hi) {
 				size_t mid = lo + (hi - lo) / 2;
 				if (measure(begin, candidates[mid]) <= width) {

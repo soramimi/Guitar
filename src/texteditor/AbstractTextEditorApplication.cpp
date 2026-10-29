@@ -79,6 +79,7 @@ struct AbstractTextEditorApplication::Private {
 	uint64_t metrics_revision = 1;
 	// 幅・フォント・折り返しモード・文書全体が変化し、全行の再折り返しが必要な状態。
 	bool full_wrap_update_needed = true;
+	size_t layout_thread_count = 8; // 全行再折り返しの並列数
 };
 
 AbstractTextEditorApplication::AbstractTextEditorApplication()
@@ -590,6 +591,16 @@ AbstractTextEditorApplication::WrappingMode AbstractTextEditorApplication::wrapp
 	return m->wrapping_mode;
 }
 
+void AbstractTextEditorApplication::setLayoutThreadCount(size_t count)
+{
+	m->layout_thread_count = std::max<size_t>(1, count);
+}
+
+size_t AbstractTextEditorApplication::layoutThreadCount() const
+{
+	return m->layout_thread_count;
+}
+
 /**
  * @brief 論理行を折り返し幅で分割する
  *
@@ -632,20 +643,11 @@ std::vector<Document::Line> AbstractTextEditorApplication::_wrap_line(Document::
 			text.push_back(c.unicode);
 		}
 
-		// 文字ごとのQStringを使い回し、部分文字列を組み立てるたびの変換を省く。
-		std::vector<QString> ucs4cache(chrs_in.size());
+		// 論理行を一度だけQStringへ変換し、コードポイント位置からUTF-16位置への
+		// 対応表を使って計測範囲を切り出す。サロゲートペアも2 code unitとして扱う。
+		texteditor::Utf16Text utf16_text(text);
 		auto measure = [&](size_t from, size_t to){
-			QString measured_text;
-			measured_text.reserve(static_cast<int>(to - from));
-			for (size_t i = from; i < to; i++) {
-				QString s = ucs4cache[i];
-				if (s.isEmpty()) {
-					s = QString::fromUcs4(&chrs_in[i].unicode, 1);
-					ucs4cache[i] = s;
-				}
-				measured_text.append(s);
-			}
-			return textfont->text_width(measured_text);
+			return textfont->text_width(utf16_text.mid(from, to));
 		};
 		wrap_algorithm::Mode mode = wrappingMode() == WrappingMode::WordWrap
 			? wrap_algorithm::Mode::WordWrap : wrap_algorithm::Mode::CharWrap;
@@ -837,8 +839,10 @@ void AbstractTextEditorApplication::update_visual_lines_all()
 	}
 	
 	if (m->wrapping_mode != WrappingMode::NoWrap) {
-		constexpr size_t NUM_THREADS = 8;
-		if (NUM_THREADS == 1) { // シングルスレッド
+		size_t const num_threads = std::min(
+			m->layout_thread_count,
+			std::max<size_t>(1, llines->size()));
+		if (num_threads == 1) { // シングルスレッド
 			for (row_index_t lrow = 0; lrow < (row_index_t)llines->size(); lrow++) {
 				update_visual_line(lrow, true);
 			}
@@ -846,13 +850,13 @@ void AbstractTextEditorApplication::update_visual_lines_all()
 			{ // 並列処理で折り返し処理を行う
 				// 各スレッドは別々の論理行だけを書き換える。Fontの幅キャッシュと
 				// QFontMetricsはスレッドセーフではないため、折り返し幅の計測には
-				// スレッドごとに複製したFontを使う。_parse_line()内でtext_font()を
-				// 使う箇所はmutexで保護される。
+				// スレッドごとに複製したFontを使う。mutexは元Fontからの複製だけを
+				// 直列化し、折り返し計算自体は独立したLineとFontで並列実行する。
 				std::mutex mutex;
-				std::vector<std::thread> thread(NUM_THREADS);
+				std::vector<std::thread> thread(num_threads);
 				std::atomic<size_t> index = 0;
 				const size_t nlines = llines->size();
-				for (int i = 0; i < NUM_THREADS; i++) {
+				for (size_t i = 0; i < num_threads; i++) {
 					thread[i] = std::thread([&](){
 						texteditor::Font textfont;
 						{
@@ -864,12 +868,12 @@ void AbstractTextEditorApplication::update_visual_lines_all()
 							size_t lrow = index++;
 							if (lrow >= nlines) break;
 							Document::Line *ll = &(*llines)[lrow];
-							wrap_line(ll, true, &mutex, &textfont);
+							wrap_line(ll, true, nullptr, &textfont);
 						}
 					});
 				}
-				for (int i = 0; i < thread.size(); i++) {
-					thread[i].join();
+				for (std::thread &worker : thread) {
+					worker.join();
 				}
 			}
 			// 並列計算完了後、論理行順に索引を構築する。LineIndexMap自体は
