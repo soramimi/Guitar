@@ -7585,6 +7585,21 @@ void MainWindow::on_action_reset_and_clean_triggered()
 	}
 }
 
+void debug();
+
 void MainWindow::test()
 {
+#if 0
+	global->writeLog(std::string_view("\x1b[31mHello,\x1b[32m world\x1b[0m\n"));
+#else
+	debug();
+	// FILE *fp = fopen("c:\\a\\longtext.txt", "wb");
+	// if (fp) {
+	// 	static constexpr std::string_view text = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+	// 	for (int i = 0; i < 3000; i++) {
+	// 		putc(text[rand() % text.size()], fp);
+	// 	}
+	// 	fclose(fp);
+	// }
+#endif
 }

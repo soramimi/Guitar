@@ -12,6 +12,7 @@
 #include <QTimer>
 #include <QStyle>
 #include <memory>
+#include <QShortcut>
 
 struct MainWindow::Private {
 	bool need_to_layout;
@@ -29,7 +30,9 @@ MainWindow::MainWindow(QWidget *parent)
 	ui->setupUi(this);
 	m->need_to_layout = true;
 
-	texteditor()->setTheme(TextEditorTheme::Dark());
+	connect(new QShortcut(QKeySequence("Ctrl+T"), this), &QShortcut::activated, this, &MainWindow::test);
+
+	texteditor()->setTheme(TextEditorTheme::Light());
 
 	m->engine = std::make_shared<TextEditorEngine>();
 	texteditor()->setTextEditorEngine(m->engine);
@@ -43,8 +46,8 @@ MainWindow::MainWindow(QWidget *parent)
 	texteditor()->setWriteMode(AbstractTextEditorApplication::WriteMode::Insert);
 
 	texteditor()->set_auto_layout(true);
-	texteditor()->setWrappingMode(TextEditorView::WrappingMode::WordWrap);
-	// texteditor()->setWrappingMode(TextEditorView::WrappingMode::CharWrap);
+	// texteditor()->setWrappingMode(TextEditorView::WrappingMode::WordWrap);
+	texteditor()->setWrappingMode(TextEditorView::WrappingMode::CharWrap);
 
 	// texteditor()->loadExampleFile();
 
@@ -169,11 +172,6 @@ void MainWindow::moveEvent(QMoveEvent *)
 	m->tm.start(100);
 }
 
-void MainWindow::on_action_test_triggered()
-{
-	texteditor()->debug();
-}
-
 bool MainWindow::saveFile(QString const &path)
 {
 	QString error_message;
@@ -196,4 +194,12 @@ void MainWindow::on_action_file_save_as_triggered()
 		}
 		texteditor()->setRecentlyUsedPath(path);
 	}
+}
+
+void debug();
+
+void MainWindow::test()
+{
+	debug();
+
 }

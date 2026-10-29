@@ -14,6 +14,7 @@
 #include <mutex>
 #include <QFont>
 #include <QPixmap>
+#include <QImage>
 #include <QPainter>
 #include <QFontMetrics>
 
@@ -34,12 +35,97 @@ enum EscapeCode {
 };
 }
 
+namespace texteditor {
+class Font {
+public:
+	struct TextWidthCache {
+		// 同じ文字列のhorizontalAdvance()呼び出しを抑える。
+		// フォント変更時には必ず全消去する。
+		std::unordered_map<QString, int> map;
+	};
+	QFont font_;                               // 計測対象フォント
+	std::unique_ptr<QFontMetrics> fm_;         // font_に対応するメトリクス
+	int ascent_ = 0;                           // ベースラインより上の高さ
+	int descent_ = 0;                          // ベースラインより下の高さ
+	QSize basic_character_size_;               // 基準文字"0"の幅とフォントの高さ
+	mutable TextWidthCache text_width_cache_;  // 文字列単位の幅キャッシュ
+	int tab_stop_distance_ = 80;                 // タブ幅（ピクセル）
+
+	void set_font(QFont const &font)
+	{
+		font_ = font;
+		text_width_cache_.map.clear();
+
+		// QPixmapはGUIスレッド専用なので、ワーカースレッドでも使えるQImageを使う。
+		// 主スレッド側とワーカー側で同じ種類のデバイスを使い、計測結果を一致させる。
+		QImage img(1, 1, QImage::Format_ARGB32_Premultiplied);
+		QPainter pr(&img);
+		pr.setFont(font_);
+		fm_ = std::make_unique<QFontMetrics>(pr.fontMetrics());
+		ascent_ = fm_->ascent();
+		descent_ = fm_->descent();
+		basic_character_size_ = QSize(fm_->horizontalAdvance("0"), fm_->height());
+	}
+	/**
+	 * @brief 別スレッドで使うための独立したコピーを作る
+	 *
+	 * Fontは幅キャッシュとQFontMetricsを持ち、スレッドセーフではない。
+	 * 並列処理では各スレッドがこの関数で自分専用のFontを用意すること。
+	 * 呼び出し中は元のFontを他スレッドが変更しないこと。
+	 */
+	void clone_for_thread(Font const &src)
+	{
+		// QFontのコピーは内部データ(QFontPrivate)とフォントエンジンのキャッシュを
+		// 共有する。値を変えて戻す書き込み操作でdetachさせ、スレッドごとに独立させる。
+		QFont f = src.font_;
+		f.setKerning(!f.kerning());
+		f.setKerning(!f.kerning());
+		set_font(f);
+		tab_stop_distance_ = src.tab_stop_distance_;
+	}
+	QFont font() const
+	{
+		return font_;
+	}
+	int basis_char_width() const
+	{
+		int w = basic_character_size_.width();
+		return w > 0 ? w : 1;
+	}
+	int basis_char_height() const
+	{
+		int h = basic_character_size_.height();
+		return h > 0 ? h : 1;
+	}
+	int text_width(QString const &text) const
+	{
+		int ret = 0;
+		auto it = text_width_cache_.map.find(text);
+		if (it != text_width_cache_.map.end()) {
+			ret = it->second;
+		} else {
+			QTextOption opt;
+			opt.setTabStopDistance(tab_stop_distance_);
+			ret = fm_->horizontalAdvance(text, opt);
+			text_width_cache_.map[text] = ret;
+		}
+		return ret;
+	}
+	void set_tab_stop_distance(int x)
+	{
+		tab_stop_distance_ = x;
+	}
+};
+
+}
+
 struct CharAttr {
-	uint16_t flags= 0;
-	uint32_t color = 0;
+	uint16_t flags : 8 = 0;
+	uint32_t color : 24 = 0;
 	CharAttr(int index = 0)
 		: flags(index)
 	{
+		// color = 0xff0000;
 	}
 	bool operator == (CharAttr const &r) const
 	{
@@ -71,8 +157,8 @@ struct CharFlags {
 
 struct Character {
 	char32_t unicode = 0; // Unicodeコードポイント。UTF-16のcode unitではない
-	int left_x = 0;       // 行頭を0とする文字左端のピクセル座標
-	int right_x = 0;      // 行頭を0とする文字右端のピクセル座標
+	int _left_x_ = -1;       // 行頭を0とする文字左端のピクセル座標（-1は未計算）
+	int _right_x_ = -1;      // 行頭を0とする文字右端のピクセル座標（-1は未計算）
 	CharAttr attr;        // 描画属性
 	Character() = default;
 	Character(char32_t unicode)
@@ -82,6 +168,24 @@ struct Character {
 	operator char32_t () const
 	{
 		return unicode;
+	}
+
+public:
+	int left_x() const
+	{
+		return _left_x_;
+	}
+	void set_left_x(int x)
+	{
+		_left_x_ = x;
+	}
+	int right_x() const
+	{
+		return _right_x_;
+	}
+	void set_right_x(int x)
+	{
+		_right_x_ = x;
 	}
 };
 class CharBuffer {
@@ -173,6 +277,49 @@ public:
 	{
 		vec->erase(first, last);
 	}
+	int left_x(int pos, texteditor::Font const &textfont) const
+	{
+		int x = 0;
+		if (pos > 0) {
+			if (pos < vec->size()) {
+				x = (*vec)[pos].left_x();
+			} else {
+				x = -1;
+			}
+			if (x < 0) {
+				int n = pos;
+				QString text;
+				for (int i = 0; i < n; i++) {
+					text.push_back(QString::fromUcs4(&(*vec)[i].unicode, 1));
+				}
+				x = textfont.text_width(text);
+				if (pos < vec->size()) {
+					(*vec)[pos].set_left_x(x);
+				}
+				if (pos > 0) {
+					int prev = pos - 1;
+					(*vec)[prev].set_right_x(x);
+				}
+			}
+		}
+		return x;
+	}
+	int right_x(int pos, texteditor::Font const &textfont) const
+	{
+		return left_x(pos + 1, textfont);
+	}
+	void set_left_x(int i, int x)
+	{
+		if (i >= 0 && i < (int)vec->size()) {
+			(*vec)[i].set_left_x(x);
+		}
+	}
+	void set_right_x(int i, int x)
+	{
+		if (i >= 0 && i < (int)vec->size()) {
+			(*vec)[i].set_right_x(x);
+		}
+	}
 };
 
 typedef int32_t row_index_t;
@@ -215,6 +362,7 @@ public:
 		};
 		struct D {
 			varline_t text = std::string_view(); // 改行コードを含み得るUTF-8列
+			// CharAttr attr;                       // 描画属性
 			Meta meta;                           // textから導出される情報と表示属性
 		};
 		// LineのコピーはDを共有する浅いコピー。折り返し断片のvector自体は
@@ -226,10 +374,10 @@ public:
 		{
 		}
 		
-		explicit Line(std::vector<char> const &ba, LineType type = Normal)
+		explicit Line(std::vector<char> &&ba, LineType type = Normal)
 			: sp(std::make_shared<D>())
 		{
-			sp->text = ba;
+			sp->text = std::move(ba);
 			sp->meta.type = type;
 		}
 		
@@ -308,7 +456,7 @@ public:
 			if (!source_text.empty()) {
 				owned_text.assign(source_text.begin(), source_text.end());
 			}
-			Line line(owned_text, sp->meta.type);
+			Line line(std::move(owned_text), sp->meta.type);
 			line.sp->meta.text_revision = sp->meta.text_revision;
 			line.sp->meta.logical_col_pos = sp->meta.logical_col_pos;
 			line.sp->meta.logical_col_len = sp->meta.logical_col_len;
@@ -524,60 +672,6 @@ struct TextEditorContext {
 
 class AbstractTextEditorApplication {
 public:
-	class Font {
-	public:
-		struct TextWidthCache {
-			// 同じ文字列のhorizontalAdvance()呼び出しを抑える。
-			// フォント変更時には必ず全消去する。
-			std::unordered_map<QString, int> map;
-		};
-		QFont font_;                               // 計測対象フォント
-		std::unique_ptr<QFontMetrics> fm_;         // font_に対応するメトリクス
-		int ascent_ = 0;                           // ベースラインより上の高さ
-		int descent_ = 0;                          // ベースラインより下の高さ
-		QSize basic_character_size_;               // 基準文字"0"の幅とフォントの高さ
-		mutable TextWidthCache text_width_cache_;  // 文字列単位の幅キャッシュ
-		
-		void set_font(QFont const &font)
-		{
-			font_ = font;
-			text_width_cache_.map.clear();
-
-			QPixmap pm(1, 1);
-			QPainter pr(&pm);
-			pr.setFont(font_);
-			fm_ = std::make_unique<QFontMetrics>(pr.fontMetrics());
-			ascent_ = fm_->ascent();
-			descent_ = fm_->descent();
-			basic_character_size_ = QSize(fm_->horizontalAdvance("0"), fm_->height());
-		}
-		QFont font() const
-		{
-			return font_;
-		}
-		int basis_char_width() const
-		{
-			int w = basic_character_size_.width();
-			return w > 0 ? w : 1;
-		}
-		int basis_char_height() const
-		{
-			int h = basic_character_size_.height();
-			return h > 0 ? h : 1;
-		}
-		int text_width(QString const &text) const
-		{
-			int ret = 0;
-			auto it = text_width_cache_.map.find(text);
-			if (it != text_width_cache_.map.end()) {
-				ret = it->second;
-			} else {
-				ret = fm_->horizontalAdvance(text);
-				text_width_cache_.map[text] = ret;
-			}
-			return ret;
-		}
-	};
 
 	static const int LINE_NUMBER_AREA_WIDTH = 8;
 	
@@ -688,8 +782,6 @@ protected:
 
 	LineIndexMap::LogicalPosition query_logical_for_visual_row(row_index_t vrow) const;
 
-	virtual void calc_pos_x(CharBuffer *chars) const {}
-	
 private:
 	void internalWrite(const ushort *begin, const ushort *end);
 	SelectionAnchor currentAnchor(bool enabled) const;
@@ -742,7 +834,7 @@ protected:
 	void paintLineNumbers(std::function<void(int, QString const &, Document::Line const *)> const &draw);
 	bool isAutoLayout() const;
 	
-	std::optional<texteditor::SavedPos> savePos();
+	texteditor::SavedPos savePos();
 	void restorePos();
 	void restorePos(texteditor::SavedPos const &pos);
 public:
@@ -777,7 +869,6 @@ public:
 	bool saveFile(QString const &path, QString *error_message = nullptr);
 	void loadExampleFile();
 	void pressEnter();
-	void pressEscape();
 	State state() const;
 	bool isLineNumberVisible() const;
 	void showLineNumber(bool show, int left_margin = LINE_NUMBER_AREA_WIDTH);
@@ -818,9 +909,9 @@ protected:
 private:
 	// 1論理行を現在の幅とWrappingModeで表示行へ分割する。
 	// 入力行のLinePropertyが有効ならUTF-8解析と文字幅計測は再利用される。
-	std::vector<Document::Line> _wrap_line(Document::Line line, std::mutex *mutex) const;
+	std::vector<Document::Line> _wrap_line(Document::Line line, std::mutex *mutex, texteditor::Font const *textfont = nullptr) const;
 	
-	void wrap_line(Document::Line *ll, bool force, std::mutex *mutex);
+	void wrap_line(Document::Line *ll, bool force, std::mutex *mutex, texteditor::Font const *textfont = nullptr);
 	void update_line_index_map(row_index_t lrow, Document::Line *ll, std::mutex *mutex);
 	
 	bool _update_line(row_index_t lrow, std::optional<std::vector<char>> text, bool force, std::mutex *mutex);
@@ -840,15 +931,16 @@ protected:
 protected:
 	void write_(char const *ptr, bool by_keyboard);
 	void write_(QString const &text, bool by_keyboard);
-	
+
 	bool hasSelection() const;
 	void updateSelectionAnchor1(bool auto_scroll);
 	void updateSelectionAnchor2(bool auto_scroll);
-	
+
+	void update_font();
 	void set_fixed_font(const QFont &font);
 	void set_text_font(const QFont &font);
-	Font const &fixed_font() const;
-	Font const &text_font() const;
+	texteditor::Font const &fixed_font() const;
+	texteditor::Font const &text_font() const;
 	void set_line_margin_px(int top, int bottom);	
 	int line_baseline_px() const;
 	void need_to_update_scroll_bar();

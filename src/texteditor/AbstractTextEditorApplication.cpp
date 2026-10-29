@@ -1,5 +1,8 @@
 #include "AbstractTextEditorApplication.h"
+#include "EscapeSequence.h"
+#include "PatternState.h"
 #include "UnicodeWidth.h"
+#include "WrapAlgorithm.h"
 #include "unicode.h"
 #include <QApplication>
 #include <QClipboard>
@@ -15,7 +18,6 @@
 using WriteMode = AbstractTextEditorApplication::WriteMode;
 // using FormattedLine = AbstractTextEditorApplication::FormattedLine;
 
-
 namespace texteditor {
 
 // Character列や折り返しキャッシュは元データの数倍に膨らむため、単一ファイルの
@@ -27,73 +29,11 @@ row_index_t to_row_count(uint64_t count)
 	return static_cast<row_index_t>(std::min<uint64_t>(count, static_cast<uint64_t>(std::numeric_limits<row_index_t>::max())));
 }
 
+
+
 }
 
 using namespace texteditor;
-
-// このファイルで扱う行データの関係:
-//
-//   Document::logical_lines                 文書の正本
-//     -> Line::Meta::visual_lines            論理行ごとの折り返し結果
-//     -> TextEditorContext::line_index_map   論理座標 <-> 表示座標の索引
-//     -> Line::Meta::detail                  UTF-8解析・文字位置計算キャッシュ
-//
-// 表示行の平坦なコピーは持たない。表示行vrowはLineIndexMapで
-// (logical row, wrap index)へ変換し、論理行内のvisual_linesを直接参照する。
-
-class EsccapeSequence {
-private:
-	int offset = 0;            // 現在受信中のエスケープシーケンス長
-	unsigned char data[100];   // 受信中シーケンスの固定長バッファ
-	int color_fg = -1;         // ANSI前景色番号（-1は既定色）
-	int color_bg = -1;         // ANSI背景色番号（-1は既定色）
-public:
-	bool isActive() const
-	{
-		return offset > 0;
-	}
-	void write(char c)
-	{
-		if (c == 0x1b) {
-			data[0] = c;
-			offset = 1;
-			return;
-		}
-		data[offset] = c;
-		if (offset > 0) {
-			if (c == 'm') {
-				if (data[1] == '[' && isdigit(data[2]) && isdigit(data[3])) {
-					data[offset] = 0;
-					if (data[2] == '3') {
-						color_fg = atoi((char const *)data + 3);
-						if (color_fg == 9) {
-							color_fg = -1;
-						}
-					}
-					if (data[2] == '4') {
-						color_bg = atoi((char const *)data + 3);
-						if (color_bg == 9) {
-							color_bg = -1;
-						}
-					}
-				}
-				offset = 0;
-				return;
-			}
-			if (offset + 1 < (int)sizeof(data)) {
-				offset++;
-			}
-		}
-	}
-	int fg_color_code() const
-	{
-		return color_fg == 9 ? -1 : color_fg;
-	}
-	int bg_color_code() const
-	{
-		return color_bg == 9 ? -1 : color_bg;
-	}
-};
 
 struct AbstractTextEditorApplication::Private {
 	bool is_changed = false;        // 保存後に文書が変更されたか
@@ -115,7 +55,6 @@ struct AbstractTextEditorApplication::Private {
 	Qt::KeyboardModifiers keyboard_modifiers = Qt::KeyboardModifier::NoModifier; // 最後の入力修飾キー
 	bool ctrl_modifier = false;           // keyboard_modifiersから展開したCtrl状態
 	bool shift_modifier = false;          // keyboard_modifiersから展開したShift状態
-	EsccapeSequence escape_sequence;      // terminal mode用ANSIシーケンス解析状態
 
 	bool cursor_moved_by_mouse = false; // terminal modeで末尾追従を判断するための移動元
 
@@ -129,8 +68,8 @@ struct AbstractTextEditorApplication::Private {
 	Selection selection;
 	
 	struct {
-		AbstractTextEditorApplication::Font fixed; // タブ・基準セル・行番号に使う等幅フォント
-		AbstractTextEditorApplication::Font text;  // 本文描画と実際の文字幅計測に使うフォント
+		texteditor::Font fixed; // タブ・基準セル・行番号に使う等幅フォント
+		texteditor::Font text;  // 本文描画と実際の文字幅計測に使うフォント
 	} font;
 	
 	int top_margin_px = 0;    // 1表示行の上側余白
@@ -457,15 +396,22 @@ CharBuffer AbstractTextEditorApplication::_parse_line(TextEditorContext const *c
 	// 解析結果は表示行番号ではなくLine自身に帰属させる。行の挿入・削除で
 	// 表示行番号が変化しても、同じLineのキャッシュはそのまま利用できる。
 	Document::LineProperty *detail = line->detail();
-	if (detail &&
-		detail->text_revision == line->sp->meta.text_revision &&
-		detail->metrics_revision == m->metrics_revision) {
+	if (detail
+			&& detail->text_revision == line->sp->meta.text_revision
+			&& detail->metrics_revision == m->metrics_revision) {
 		return detail->chars;
 	}
 	
 	CharBuffer ret;
 	
 	std::string_view text = line->text();
+
+	// experimental: keyword matching
+	constexpr bool experimental_keyword_matching = false;
+	std::vector<std::unique_ptr<PatternState>> patterns;
+	Keywords keywords;
+	
+	EscapeSequence escseq;
 	
 	int col = 0;
 	size_t len = text.size();
@@ -491,16 +437,47 @@ CharBuffer AbstractTextEditorApplication::_parse_line(TextEditorContext const *c
 				}
 			}
 			col += n;
-			ret.emplace_back(c);
+
+			size_t curr_offset = ret.size();
+			
+			bool printable = true;
+			
+			if (isTerminalMode()) {
+				if (escseq.update(c)) {
+					printable = false;
+				} else if (!escseq.empty()) {
+					printable = false;
+				}
+			}
+			
+			if (printable != false) {
+				Character r(c);
+				r.attr.color = escseq.color();
+				ret.emplace_back(r);
+			}
+			
+			if (experimental_keyword_matching) {
+				// debug_textの検出は、パターンの長さが一致するまで保持し、最後に一致した範囲を赤色にする。
+				for (size_t i = patterns.size(); i > 0; i--) {
+					auto *pattern = patterns[i - 1].get();
+					// debug_textが見つかった場合は赤色にする。
+					auto r = pattern->match(c);
+					if (r == PatternState::Accept) {
+						size_t end = ret.size();
+						for (size_t i = pattern->offset(); i < end; i++) {
+							ret[i].attr.color = 0xff0000;
+						}
+						patterns.erase(patterns.begin() + (i - 1));
+					} else if (r == PatternState::Fail) {
+						patterns.erase(patterns.begin() + (i - 1));
+					}
+				}
+				// キーワードの先頭文字が一致した場合は、パターンを追加する。
+				keywords.first(c, curr_offset, &patterns);
+			}
 		}
 	}
 	
-	// calc_pos_x()はFont::text_width_cache_を更新する。全行の並列折り返し時は
-	// その共有キャッシュへのアクセスだけを直列化する。
-	if (mutex) mutex->lock();
-	calc_pos_x(&ret); // 内部でキャッシュを更新するのでmutexで保護する必要がある
-	if (mutex) mutex->unlock();
-
 	if (!detail) {
 		detail = const_cast<Document::Line *>(line)->new_detail();
 	}
@@ -592,8 +569,6 @@ void AbstractTextEditorApplication::invalidate_visual_line_details(row_index_t v
 	}
 }
 
-
-
 CharBuffer const *AbstractTextEditorApplication::parse_current_line() const
 {
 	return parse_line(current_visual_row());
@@ -613,11 +588,33 @@ AbstractTextEditorApplication::WrappingMode AbstractTextEditorApplication::wrapp
 	return m->wrapping_mode;
 }
 
-std::vector<Document::Line> AbstractTextEditorApplication::_wrap_line(Document::Line line, std::mutex *mutex) const
+/**
+ * @brief 論理行を折り返し幅で分割する
+ *
+ * 候補位置の列挙と幅に収まる終端の選択は、Qt非依存のWrapAlgorithmで行う。
+ * WordWrapでも論理行の先頭はCharWrap状態から開始し、最初の分割可能位置以降で
+ * WordWrapへ切り替える。切り替え後に長い単語が幅を超える場合は、その単語を
+ * 文字単位には分割せず、単語終端までを1表示行として出力する。
+ *
+ * 文字ごとのX座標を積み上げるのではなく部分文字列全体を計測するため、
+ * カーニングやタブ（Fontのタブストップ設定）を含む実際の描画幅で判定される。
+ * 開始位置からの幅は候補位置に対して単調増加であることを二分探索の前提とする。
+ *
+ * @param line 論理行
+ * @param mutex 排他制御用のmutex（nullptrの場合は排他制御なし）
+ * @param textfont 幅の計測に使うフォント。nullptrならtext_font()。
+ *        Fontはスレッドセーフではないため、並列処理ではスレッドごとの複製を渡す。
+ * @return 折り返し断片
+ */
+std::vector<Document::Line> AbstractTextEditorApplication::_wrap_line(Document::Line line, std::mutex *mutex, texteditor::Font const *textfont) const
 {
 	if (wrappingMode() == WrappingMode::NoWrap) return {};
 	
-	const int width_px = m->content_width_px;
+	if (!textfont) {
+		textfont = &text_font();
+	}
+	
+	const int width_px = m->content_width_px; // 折り返し幅（ピクセル単位）
 	
 	std::vector<CharBuffer> chrs_out;
 	// _parse_line()はtext/metrics revisionが一致すればデコード・文字幅計算済みの
@@ -627,101 +624,44 @@ std::vector<Document::Line> AbstractTextEditorApplication::_wrap_line(Document::
 	if (chrs_in.empty()) {
 		chrs_out.push_back({});
 	} else {
-		int left_px = 0;
-		int right_px = 0;
-
-		auto Out = [&](size_t i, size_t n){
-			CharBuffer chrs;
-			for (size_t j = 0; j < n; j++) {
-				Character c = chrs_in[i + j];
-				c.left_x = right_px - left_px;
-				chrs.push_back(c);
-			}
-			chrs_out.push_back(chrs);
-		};
-		
-		auto IsBreakable = [](char32_t b, char32_t c){ // 分割可能テスト
-			if (b < 0x80 && c < 0x80) {
-				if (isspace(b) && isspace(c)) return false; // 連続する空白では折り返し不可
-				if (isupper(b) && isalnum(c)) return false; // 大文字と英数字の間は折り返し不可
-				if (isalnum(b)) {
-					if (isupper(c)) return true;  // 小文字と大文字の間は折り返し可
-					if (isalnum(c)) return false; // 英数字の間は折り返し不可
-					if (isspace(c)) return false; // 英数字に後続する空白では折り返さない
-				}
-			}
-			return true;
-		};
-
-		size_t last = 0;
-		size_t curr = 0;
-		const size_t N = chrs_in.size();
-		char32_t b = '\n'; // before
-		char32_t c = '\n'; // current
-		
-		WrappingMode wrapping_mode;
-		auto Reset = [&](){
-			wrapping_mode = WrappingMode::CharWrap; // 初期状態は文字単位での折り返し
-			c = '\n';
-		};
-		Reset();
-		
-		while (curr < N) {
-			Character const *ch = &chrs_in[curr];
-			right_px = ch->right_x;
-			b = c;
-			c = ch->unicode;
-			if (c == '\r') {
-				c = '\n';
-			}
-			size_t next = curr + 1;
-			if (wrapping_mode == WrappingMode::CharWrap) {
-				// 分割可能な位置に来たら、折り返しモードを単語単位に切り替えます。
-				// （最初の分割可能位置までは、常に文字単位での折り返し）
-				if (last < curr && IsBreakable(b, c)) {
-					wrapping_mode = wrappingMode();
-					// WordWrapの場合、そのまま下のifに入る
-				}
-			}
-			if (wrapping_mode == WrappingMode::WordWrap) {
-				// 次の分割可能位置を探す
-				char32_t d = c;
-				while (next <= N) { // next == N means end of line
-					b = d;
-					d = -1;
-					if (next < N) { // next < N means not end of line
-						d = chrs_in[next].unicode; // next character
-						if (d == '\r') {
-							d = '\n';
-						}
-					}
-					if (IsBreakable(b, d)) break;
-					right_px = chrs_in[next].right_x;
-					next++;
-				}
-			}
-
-			// 幅が制限を超えた場合、lastからcurr（またはnext）までの行を出力し、lastとcurrを適切に更新します。
-			if (right_px - left_px > width_px) {
-				if (last < curr) {
-					Out(last, curr - last);
-					left_px = ch->left_x;
-					last = curr;
-				} else { // 現在の文字自体が幅の制限を超えている場合、それを出力し、次の文字に移動します。
-					Out(last, next - last);
-					if (c == '\n') break;
-					last = curr = next;
-				}
-				// 折り返しモードを文字単位に戻します。
-				Reset();
-			} else { // それ以外の場合、currをnextに移動します。
-				if (next == N || c == '\n') { // 次の文字が行末の場合、残りの文字を出力します。
-					Out(last, next - last);
-					break;
-				}
-				curr = next;
-			}
+		std::u32string text;
+		text.reserve(chrs_in.size());
+		for (Character const &c : *chrs_in.vec) {
+			text.push_back(c.unicode);
 		}
+
+		// 文字ごとのQStringを使い回し、部分文字列を組み立てるたびの変換を省く。
+		std::vector<QString> ucs4cache(chrs_in.size());
+		auto measure = [&](size_t from, size_t to){
+			QString measured_text;
+			measured_text.reserve(static_cast<int>(to - from));
+			for (size_t i = from; i < to; i++) {
+				QString s = ucs4cache[i];
+				if (s.isEmpty()) {
+					s = QString::fromUcs4(&chrs_in[i].unicode, 1);
+					ucs4cache[i] = s;
+				}
+				measured_text.append(s);
+			}
+			return textfont->text_width(measured_text);
+		};
+		wrap_algorithm::Mode mode = wrappingMode() == WrappingMode::WordWrap
+			? wrap_algorithm::Mode::WordWrap : wrap_algorithm::Mode::CharWrap;
+		std::vector<size_t> points = wrap_algorithm::compute_wrap_points(text, width_px, mode, measure);
+
+		size_t begin = 0;
+		for (size_t end : points) {
+			Q_ASSERT(end > begin);
+			Q_ASSERT(end <= chrs_in.size());
+			CharBuffer chars;
+			chars.reserve(end - begin);
+			for (size_t i = begin; i < end; i++) {
+				chars.push_back(chrs_in[i]);
+			}
+			chrs_out.push_back(chars);
+			begin = end;
+		}
+		Q_ASSERT(begin == chrs_in.size());
 	}
 	
 	std::vector<Document::Line> ret;
@@ -734,7 +674,7 @@ std::vector<Document::Line> AbstractTextEditorApplication::_wrap_line(Document::
 			for (Character const &c : *w.vec) {
 				unicode_helper_::encode_utf8(c.unicode, [&](char d){v.push_back(d);});
 			}
-			Document::Line line(v);
+			Document::Line line(std::move(v));
 			line.sp->meta.logical_col_pos = logical_col;
 			line.sp->meta.logical_col_len = w.size();
 			ret.emplace_back(line);
@@ -744,7 +684,7 @@ std::vector<Document::Line> AbstractTextEditorApplication::_wrap_line(Document::
 	return ret;
 }
 
-void AbstractTextEditorApplication::wrap_line(Document::Line *ll, bool force, std::mutex *mutex)
+void AbstractTextEditorApplication::wrap_line(Document::Line *ll, bool force, std::mutex *mutex, texteditor::Font const *textfont)
 {
 	// 通常の1行編集ではset_text()がvisual_linesを空にするためforce不要。
 	// 幅・フォント・モード変更では既存断片が残っていても再計算するためforce=trueを使う。
@@ -752,7 +692,7 @@ void AbstractTextEditorApplication::wrap_line(Document::Line *ll, bool force, st
 		if (wrappingMode() == WrappingMode::NoWrap) {
 			ll->sp->meta.visual_lines.resize(1);
 		} else {
-			ll->sp->meta.visual_lines = _wrap_line(*ll, mutex); // 折り返し処理
+			ll->sp->meta.visual_lines = _wrap_line(*ll, mutex, textfont); // 折り返し処理
 		}
 	}
 }
@@ -895,26 +835,34 @@ void AbstractTextEditorApplication::update_visual_lines_all()
 	}
 	
 	if (m->wrapping_mode != WrappingMode::NoWrap) {
-		constexpr size_t NUM_THREADS = 1;
+		constexpr size_t NUM_THREADS = 8;
 		if (NUM_THREADS == 1) { // シングルスレッド
 			for (row_index_t lrow = 0; lrow < (row_index_t)llines->size(); lrow++) {
 				update_visual_line(lrow, true);
 			}
 		} else {
 			{ // 並列処理で折り返し処理を行う
-				// 各スレッドは別々の論理行だけを書き換える。共有されるフォント幅
-				// キャッシュは_parse_line()内でmutex保護される。
+				// 各スレッドは別々の論理行だけを書き換える。Fontの幅キャッシュと
+				// QFontMetricsはスレッドセーフではないため、折り返し幅の計測には
+				// スレッドごとに複製したFontを使う。_parse_line()内でtext_font()を
+				// 使う箇所はmutexで保護される。
 				std::mutex mutex;
 				std::vector<std::thread> thread(NUM_THREADS);
 				std::atomic<size_t> index = 0;
 				const size_t nlines = llines->size();
 				for (int i = 0; i < NUM_THREADS; i++) {
 					thread[i] = std::thread([&](){
+						texteditor::Font textfont;
+						{
+							// 複製中に他スレッドのmutex保護区間で元のFontが使われないよう排他する
+							std::lock_guard lock(mutex);
+							textfont.clone_for_thread(text_font());
+						}
 						while (1) {
 							size_t lrow = index++;
 							if (lrow >= nlines) break;
 							Document::Line *ll = &(*llines)[lrow];
-							wrap_line(ll, true, &mutex);
+							wrap_line(ll, true, &mutex, &textfont);
 						}
 					});
 				}
@@ -1344,19 +1292,6 @@ void AbstractTextEditorApplication::pressEnter()
 	writeNewLine();
 }
 
-void AbstractTextEditorApplication::pressEscape()
-{
-	if (isTerminalMode()) {
-		m->escape_sequence.write(0x1b);
-		return;
-	}
-	
-	update_visibility_option_t opt;
-	opt.ensure_current_line_visible = false;
-	opt.auto_scroll = false;
-	updateVisibility(opt);
-}
-
 AbstractTextEditorApplication::State AbstractTextEditorApplication::state() const
 {
 	return m->state;
@@ -1394,14 +1329,11 @@ bool AbstractTextEditorApplication::isWidthFixed() const
 	return (wrappingMode() != WrappingMode::NoWrap);
 }
 
-std::optional<texteditor::SavedPos> AbstractTextEditorApplication::savePos()
+texteditor::SavedPos AbstractTextEditorApplication::savePos()
 {
 	TextEditorContext *p = editor_cx.get();
-	if (!p) return std::nullopt;
-		
-		// p->saved_pos.vrow = current_visual_row();
-		// p->saved_pos.vcol = current_visual_col();
-	
+	if (!p) return {};
+
 	texteditor::SavedPos pos;
 	pos.vrow = current_visual_row();
 	pos.vcol = current_visual_col();
@@ -1453,28 +1385,35 @@ void AbstractTextEditorApplication::updateSelectionAnchor2(bool auto_scroll)
 	}
 }
 
+void AbstractTextEditorApplication::update_font()
+{
+	Q_ASSERT(editor_cx); // must be called after initEditor()
+
+	int tab_stop_distance = fixed_font().basis_char_width() * cx()->tab_indent_size;
+	m->font.text.set_tab_stop_distance(tab_stop_distance);
+
+	m->metrics_revision++;
+	m->full_wrap_update_needed = true;
+}
+
 void AbstractTextEditorApplication::set_fixed_font(const QFont &font)
 {
 	m->font.fixed.set_font(font);
-	// タブ幅や基準セル幅が変わるため、全LinePropertyの計測結果を世代で失効させる。
-	m->metrics_revision++;
-	m->full_wrap_update_needed = true;
+	update_font(); // タブ幅や基準セル幅が変わるため、全LinePropertyの計測結果を世代で失効させる。
 }
 
 void AbstractTextEditorApplication::set_text_font(const QFont &font)
 {
 	m->font.text.set_font(font);
-	// 本文の実ピクセル幅が変わるため、計測と折り返しの両方をやり直す。
-	m->metrics_revision++;
-	m->full_wrap_update_needed = true;
+	update_font(); // 本文の実ピクセル幅が変わるため、計測と折り返しの両方をやり直す。
 }
 
-AbstractTextEditorApplication::Font const &AbstractTextEditorApplication::fixed_font() const
+texteditor::Font const &AbstractTextEditorApplication::fixed_font() const
 {
 	return m->font.fixed;
 }
 
-AbstractTextEditorApplication::Font const &AbstractTextEditorApplication::text_font() const
+texteditor::Font const &AbstractTextEditorApplication::text_font() const
 {
 	return m->font.text;
 }
@@ -2412,10 +2351,6 @@ void AbstractTextEditorApplication::write(uint32_t c, bool by_keyboard)
 		if (m->cursor_moved_by_mouse) {
 			moveToBottom();
 		}
-		if (c == 0x1b || m->escape_sequence.isActive()) {
-			m->escape_sequence.write(c);
-			return;
-		}
 	}
 
 	bool ok = !(isTerminalMode() && by_keyboard);
@@ -2438,10 +2373,6 @@ void AbstractTextEditorApplication::write(uint32_t c, bool by_keyboard)
 			if (ok) {
 				writeCR();
 			}
-		} else if (c == 0x1b) {
-			pressEscape();
-		// } else if (c >= 1 && c <= 26) {
-		// 	pressLetterWithControl(c);
 		}
 	} else if (c == 0x7f) {
 		if (ok) {

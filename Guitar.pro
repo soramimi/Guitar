@@ -323,7 +323,10 @@ SOURCES += \
 	$$SRC/SelectAiModelPresetDialog.cpp \
 	$$SRC/QueryAiModelDialog.cpp \
 	$$SRC/ManageApiKeysDialog.cpp \
-	$$SRC/EditApiKeyDialog.cpp
+	$$SRC/EditApiKeyDialog.cpp \
+	src/texteditor/EscapeSequence.cpp \
+	src/texteditor/PatternState.cpp \
+	src/texteditor/WrapAlgorithm.cpp
 	
 
 HEADERS += \
@@ -549,7 +552,10 @@ HEADERS += \
 	$$SRC/SelectAiModelPresetDialog.h \
 	$$SRC/QueryAiModelDialog.h \
 	$$SRC/ManageApiKeysDialog.h \
-	$$SRC/EditApiKeyDialog.h
+	$$SRC/EditApiKeyDialog.h \
+	src/texteditor/EscapeSequence.h \
+	src/texteditor/PatternState.h \
+	src/texteditor/WrapAlgorithm.h
 
 FORMS += \
 	$$SRC/AboutDialog.ui \

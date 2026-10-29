@@ -24,13 +24,17 @@ MainWindow (QMainWindow, TextEditorApp/src)
   `QKeyEvent` / `QColor` / `QFont` などの Qt 型に依存している
 - **TextEditorView.h/.cpp** — `AbstractTextEditorApplication` を継承した `QWidget`。
   `paintEvent` での描画、マウス/キーボード/IME イベント処理、フォントメトリクスのキャッシュ
-  (`AbstractTextEditorApplication::Font`)を担当。連続 resize は 75ms デバウンスしてから
+  (`AbstractTextEditorApplication::Font`)を担当。連続 resize は 30ms デバウンスしてから
   折り返し幅を更新する
 - **TextEditorWidget.h/.cpp** — View と横/縦スクロールバーをまとめる薄いコンテナ
 - **TextEditorTheme.h/.cpp** — Light/Dark の配色定義
 - **InputMethodPopup.h/.cpp** — IME 変換候補ポップアップ(プラットフォームによっては無効化)
 - **unicode.h/.cpp** — UTF-8/16/32 の相互変換ライブラリ(Qt 非依存)
 - **UnicodeWidth.h/.cpp** — 文字の表示幅判定(East Asian Width)
+- **WrapAlgorithm.h/.cpp** — コードポイント列と幅計測コールバックから折り返し終端を求める
+  Qt 非依存アルゴリズム。`WrapAlgorithm/` に GoogleTest を持つ
+- **EscapeSequence.h/.cpp** — ターミナルモード用ANSIエスケープシーケンス解析(実験機能)
+- **PatternState.h/.cpp** — キーワード一致検出(実験機能、既定では無効)
 - **LineIndexMap/** — 折り返し行の論理行⇔表示行マッピング用 B+-tree(独立ライブラリ、
   GoogleTest によるテスト完備)。詳細は [LineIndexMap/AGENTS.md](LineIndexMap/AGENTS.md) を参照
 - **TextEditorApp/** — 上記部品を組み込んだ実行可能アプリ(サンプル/動作確認用)
@@ -40,11 +44,26 @@ MainWindow (QMainWindow, TextEditorApp/src)
 
 ## 編集・描画のデータフロー
 
-1. キー入力 → `TextEditorView::keyPressEvent()` → `AbstractTextEditorApplication::write(QKeyEvent*)`
+1. キー入力 → `MainWindow::keyPressEvent()` → `AbstractTextEditorApplication::write(QKeyEvent*)`
 2. 文字の挿入/削除 → `Document::Line` を変更
 3. `commit_line()` → `_update_line()` → `wrap_line()` → `LineIndexMap` を更新
-4. `TextEditorView::paintEvent()` → `queryFormattedLine()` → `parseLine()` で解析済み文字列を取得
+4. `TextEditorView::paintEvent()` → `property_of_visual_line()` → `parse_line()` で解析済み文字列を取得
    → `QPainter` で描画(テキスト・選択範囲・カーソル・行番号)
+
+## 折り返しアルゴリズム
+
+- `_wrap_line()` は論理行をコードポイント列へ変換し、Qt 非依存の
+  `wrap_algorithm::compute_wrap_points()` に幅計測コールバックを渡す。戻された終端位置から
+  `Document::Line` の折り返し断片を組み立てる
+- CharWrap は全文字境界を分割候補とする
+- WordWrap も論理行の先頭ではCharWrap状態から開始する。最初の分割可能位置に到達した後で
+  WordWrapへ切り替え、論理行末までCharWrapへ戻さない
+- WordWrap切り替え後の1単語が表示幅を超える場合は文字単位に分割せず、単語終端までを
+  1表示行として幅超過を許容する。行頭から最初の分割可能位置までにある長い文字列は
+  CharWrapとして分割される
+- 終端位置は必ず単調増加し、空でない論理行の最後の終端はコードポイント数と一致する。
+  幅が0以下、または最初の候補だけで幅を超える場合も、最低1候補進めて無限ループを防ぐ
+- 幅計測結果は、同じ開始位置に対して終端が進むほど単調非減少であることを二分探索の前提とする
 
 ## 行管理とレイアウトキャッシュ
 
@@ -66,14 +85,18 @@ MainWindow (QMainWindow, TextEditorApp/src)
 
 ## ビルド
 
-qmake プロジェクト(Qt Creator, C++17)。
+qmake プロジェクト。アプリ本体はC++20、独立テストはC++17。
 
 - `TextEditorApp/TextEditorApp.pro` — アプリ本体。`QT += core gui widgets`
   (Qt6 系は `core5compat` も追加)。ビルド成果物は `TextEditorApp/_bin/`
 - `LineIndexMap/LineIndexMap.pro` — Qt 非依存のヘッダオンリーライブラリ + GoogleTest
+- `WrapAlgorithm/WrapAlgorithm.pro` — Qt 非依存の折り返しアルゴリズム + GoogleTest
 
 ```
-cd TextEditorApp/build/Qt_6_9_0_Debug && qmake6 ../../TextEditorApp.pro && make
+(cd TextEditorApp/build/Qt_6_9_0_Debug && qmake6 ../../TextEditorApp.pro && make)
+
+(cd WrapAlgorithm && qmake6 WrapAlgorithm.pro && make && ./WrapAlgorithm)
+# 期待出力: [  PASSED  ] 6 tests.
 ```
 
 ## 既知の未実装・不完全な箇所
@@ -87,18 +110,21 @@ cd TextEditorApp/build/Qt_6_9_0_Debug && qmake6 ../../TextEditorApp.pro && make
   メモリ使用量が問題になる場合は、安定した行IDをキーとするLRUなどを検討する
 - `openFile()` は解析・折り返しキャッシュによるメモリ増幅を抑えるため、入力を 64 MiB 以下に
   制限している。大容量ファイル対応にはストリーミングまたは遅延読み込みの別設計が必要
-- エディタ本体には LineIndexMap のような常設の自動テストがまだない。折り返し・編集・座標変換を
-  「毎回全再計算する参照実装」と比較するランダムテストの追加が望ましい
+- 折り返し終端の選択には常設の単体・ランダムテストがあるが、Document編集・座標変換・描画を
+  統合したエディタ本体の自動テストはまだない。編集結果を「毎回全再計算する参照実装」と
+  比較するランダムテストの追加が望ましい
 
 ## 規約・注意点
 
 - インデントはタブ(既存コードに合わせる)
-- `unicode.*`、`UnicodeWidth.*`、`LineIndexMap` は Qt 非依存として維持すること。
+- `unicode.*`、`UnicodeWidth.*`、`WrapAlgorithm.*`、`LineIndexMap` は Qt 非依存として維持すること。
   `AbstractTextEditorApplication` は現在 Qt 型に依存しているため、Qt 非依存化する場合は
   入力イベント・色・フォント計測・クリップボード/ファイルI/Oの境界を先に設計する
 - 行管理を変更するときは `logical_lines`、各行の `visual_lines`、`LineIndexMap` の三者を
   同じ更新処理内で同期させる。表示行番号だけを安定したキャッシュキーとして使用しない
 - テキスト・フォント・タブ幅など、文字位置へ影響する値を追加するときは、対応する revision の
   更新と `full_wrap_update_needed` の設定を忘れないこと
+- 折り返し規則を変更するときは `WrapAlgorithm/` の固定テストと貪欲法によるランダム比較を更新し、
+  空文字列・幅0・長い単語でも終端位置が必ず前進することを確認する
 - `LineIndexMap` は独立ライブラリとして扱い、変更する際は
   [LineIndexMap/AGENTS.md](LineIndexMap/AGENTS.md) の不変条件・テスト方針も確認する

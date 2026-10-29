@@ -42,12 +42,11 @@ private:
 	QColor defaultForegroundColor();
 	QColor defaultBackgroundColor();
 	QColor colorForIndex(CharAttr const &attr, bool foreground);
+	QColor textColor(CharAttr const &ch);
 public:
 	void updateScrollBarRange() override;
 private:
 	void moveCursorByMouse();
-	
-	static void _calc_pos_x(CharBuffer *chars, const TextEditorContext *cx, const Font &fixed_tm, const Font &text_tm);
 	
 	int view_y_from_vrow(row_index_t vrow) const;
 	
@@ -60,8 +59,6 @@ protected:
 protected:
 	void timerEvent(QTimerEvent *) override;
 	void setCursorRow(row_index_t row, bool auto_scroll, bool by_mouse) override;
-	
-	void calc_pos_x(CharBuffer *chars) const;
 	
 public:
 	const Document::LineProperty *property_of_visual_line(row_index_t vrow) const;

@@ -47,6 +47,8 @@ TextEditorView::TextEditorView(QWidget *parent)
 {
 	size_t n = sizeof(LineIndexMap::ValueItem);
 	
+	initEditor();
+
 #ifdef Q_OS_WIN
 
 	{
@@ -73,7 +75,6 @@ TextEditorView::TextEditorView(QWidget *parent)
 
 #endif
 
-	initEditor();
 
 	setAttribute(Qt::WA_InputMethodEnabled);
 #ifdef Q_OS_WIN
@@ -156,45 +157,6 @@ static inline QString appendUnicode(QString const &s, char32_t u)
 }
 
 /**
- * @brief 全文字のX座標を計算する
- * @param chars
- * @param fm
- */
-void TextEditorView::_calc_pos_x(CharBuffer *chars, TextEditorContext const *cx, Font const &fixed_tm, Font const &text_tm)
-{
-	// 通常文字は行頭または直前のタブからの文字列としてまとめて計測し、
-	// kerningなどを含む実際の描画幅を各Characterの左右座標へ記録する。
-	// タブは等幅フォントを基準に次のタブストップへ進め、そこで計測区間をリセットする。
-	int base_x = 0;
-	int left_x = 0;
-	QString text;
-	for (size_t i = 0; i < chars->size(); i++) {
-		(*chars)[i].left_x = left_x;
-		char32_t u = (*chars)[i].unicode;
-		if (u == '\t') {
-			int right_x = left_x;
-			int tab_indent = fixed_tm.basis_char_width() * cx->tab_indent_size;
-			if (tab_indent > 0) {
-				right_x = (right_x / tab_indent + 1) * tab_indent;
-			}
-			(*chars)[i].right_x = right_x;
-			base_x = left_x = right_x;
-			text.clear();
-		} else {
-			text = appendUnicode(text, u);
-			int right_x = base_x + text_tm.text_width(text);
-			(*chars)[i].right_x = right_x;
-			left_x = right_x;
-		}
-	}
-}
-
-void TextEditorView::calc_pos_x(CharBuffer *chars) const
-{
-	_calc_pos_x(chars, cx(), fixed_font(), text_font());
-}
-
-/**
  * @brief 物理行番号からLinePropertyを取得する
  * @param vrow 物理行番号
  * @return LinePropertyへのポインタ。vrowが範囲外の場合はnullptr
@@ -235,7 +197,8 @@ PositionX TextEditorView::pos_x_px(row_index_t vrow, col_index_t vcol) const
 	ret.absolute_x_px = 0; // 行番号表示領域とスクロール位置を考慮しない絶対X座標
 	
 	if (vcol > 0 && vcol - 1 < (col_index_t)line->chars.size()) {
-		ret.absolute_x_px = (int)line->chars[vcol - 1].right_x;
+		// ret.absolute_x_px = (int)line->chars[vcol - 1].right_x;
+		ret.absolute_x_px = line->chars.right_x(vcol - 1, text_font());
 	}
 
 	ret.visual_x_px = ret.absolute_x_px + linenum_area_width_px() - scroll_horz_pos_px(); // 行番号表示領域とスクロール位置を考慮したX座標
@@ -275,7 +238,8 @@ texteditor::RowCol TextEditorView::vpos_from_px(QPoint const &pt)
 			size_t end = chars->size();
 			int left = 0;
 			for (size_t col = 0; col < end; col++) {
-				int right = (*chars)[col].right_x;
+				// int right = (*chars)[col].right_x;
+				int right = chars->right_x(col, text_font());
 				if (x < right) {
 					int l = left - x;
 					int r = right - x;
@@ -329,23 +293,6 @@ void TextEditorView::bind_scroll_bar(QScrollBar *vsb, QScrollBar *hsb)
 {
 	m->scroll_bar_v = vsb;
 	m->scroll_bar_h = hsb;
-
-#if 0
-	connect(m->scroll_bar_v, &QScrollBar::sliderPressed, this, [this]() {
-		m->dragging_scroll_bar = m->scroll_bar_v;
-	});
-	connect(m->scroll_bar_v, &QScrollBar::sliderReleased, this, [this]() {
-		m->dragging_scroll_bar = nullptr;
-		updateScrollBarRange();
-	});
-
-	connect(m->scroll_bar_h, &QScrollBar::sliderPressed, this, [this]() {
-		m->dragging_scroll_bar = m->scroll_bar_h;
-	});
-	connect(m->scroll_bar_h, &QScrollBar::sliderReleased, this, [this]() {
-		m->dragging_scroll_bar = nullptr;
-	});
-#endif
 }
 
 void TextEditorView::setup_for_log_widget(TextEditorThemePtr const &theme)
@@ -492,6 +439,11 @@ QColor TextEditorView::colorForIndex(CharAttr const &attr, bool foreground)
 	return foreground ? defaultForegroundColor() : Qt::transparent;//defaultBackgroundColor();
 }
 
+QColor TextEditorView::textColor(CharAttr const &attr)
+{
+	return QColor(QRgb(attr.color | 0xff000000));
+}
+
 void TextEditorView::drawFocusFrame(QPainter *pr)
 {
 	misc::drawFrame(pr, 0, 0, width(), height(), QColor(0, 128, 255, 128));
@@ -558,8 +510,6 @@ void TextEditorView::drawCursor(QPainter *pr)
 {
 	drawCursor(current_visual_row(), current_visual_col(), pr);
 }
-
-
 
 void TextEditorView::paintEvent(QPaintEvent *)
 {
@@ -707,7 +657,8 @@ void TextEditorView::paintEvent(QPaintEvent *)
 						int left_x = 0;
 						int right_x = 0;
 						if (!chars.empty()) {
-							right_x = chars.back().right_x;
+							// right_x = chars.back().right_x;
+							right_x = chars.right_x(chars.size() - 1, text_font());
 						}
 						// NoWrapではLineIndexMapが空なので、モードを考慮する共通変換を使う。
 						RowCol vlower = visual_position(selection_lower);
@@ -720,7 +671,7 @@ void TextEditorView::paintEvent(QPaintEvent *)
 							auto Do = [&](int xpos, RowCol vpos, row_index_t vrow){
 								if (vpos.row == vrow) {
 									if (vpos.col > 0 && vpos.col - 1 < (col_index_t)chars.size()) {
-										xpos = chars[vpos.col - 1].right_x;
+										xpos = chars.right_x(vpos.col - 1, text_font());
 									} else {
 										xpos = 0;
 									}
@@ -757,11 +708,13 @@ void TextEditorView::paintEvent(QPaintEvent *)
 							CharAttr attr;
 							while (j + n < chars.size()) {
 								if (n == 0) {
-									left_x = chars[j].left_x;
-									right_x = chars[j].right_x;
+									// left_x = chars[j].left_x;
+									left_x = chars.left_x(j, text_font());
+									// right_x = chars[j].right_x;
+									right_x = chars.right_x(j, text_font());
 									attr = chars[j].attr;
 								} else { // 2文字目以降
-									if (right_x != chars[j + n].left_x) break; // x座標がつながっていないなら抜ける
+									if (right_x != chars.left_x(j + n, text_font())) break; // x座標がつながっていないなら抜ける
 									if (chars[j].attr != chars[j + n].attr) break; // 属性が異なっていたら抜ける
 									if (flags[j].all != flags[j + n].all) break; // フラグが異なっていたら抜ける
 								}
@@ -789,14 +742,16 @@ void TextEditorView::paintEvent(QPaintEvent *)
 									break; // タブなら抜ける
 								}
 								text = appendUnicode(text, u); // 文字を追加
-								right_x = chars[j + n].right_x;
+								// right_x = chars[j + n].right_x;
+								right_x = chars.right_x(j + n, text_font());
 								n++;
 							}
-							if (!text.isEmpty() && left_x < right_x) {
+							if (!text.isEmpty()/* && left_x < right_x*/) {
 								auto IsDiffMarker = [&](int value) {
 									return flags[j].diff_marker == value;
 								};
-								pr.setPen(defaultForegroundColor()); // 文字色
+								// QColor textcolor((QRgb)(attr.color | 0xff000000));//defaultForegroundColor();
+								pr.setPen(textColor(attr)); // 文字色
 								int x = text_origin_x_px + left_x;
 								int w = right_x - left_x;
 								int h = line_height;
@@ -811,6 +766,7 @@ void TextEditorView::paintEvent(QPaintEvent *)
 									DrawDiffMarker(theme()->bg_diff_char_add); // 追加された文字の下線
 								}
 								pr.drawText(QRect(x, text_origin_y, w, h), text, opt); // テキスト描画
+								// pr.drawText(QRect(x, text_origin_y, width(), h), text, opt); // テキスト描画
 							}
 							if (n == 0) {
 								n = 1;
@@ -954,7 +910,8 @@ void TextEditorView::mousePressEvent(QMouseEvent *event)
 	sync_selection();
 
 	if (isTerminalMode()) {
-		restorePos();
+		// restorePos();
+		restorePos(saved_pos);
 	}
 }
 
@@ -1023,7 +980,6 @@ void TextEditorView::reflectScrollBar()
 {
 	int v = m->scroll_bar_v ? m->scroll_bar_v->value() : -1;
 	int h = m->scroll_bar_h ? m->scroll_bar_h->value() : -1;
-	// qDebug() << v << h;
 	move(-1, -1, v, h, false);
 }
 
@@ -1049,7 +1005,8 @@ void TextEditorView::resizeEvent(QResizeEvent * /*event*/)
 	if (isAutoLayout()) {
 		set_client_size(width(), height(), false);
 		AbstractTextEditorApplication::layoutEditor();
-		m->resize_timer.start(75);
+		constexpr int debounce_ms = 30;
+		m->resize_timer.start(debounce_ms);
 	}
 	updateScrollBarRange();
 }
@@ -1099,8 +1056,6 @@ void TextEditorView::timerEvent(QTimerEvent *)
 			update();
 		}
 	}
-	
-	// qDebug() << m->dragging_scroll_bar;
 }
 
 void TextEditorView::contextMenuEvent(QContextMenuEvent *event)
@@ -1130,12 +1085,9 @@ void TextEditorView::contextMenuEvent(QContextMenuEvent *event)
 
 void TextEditorView::debug()
 {
-#if 0
-	edit_copy();
-	QString str = qApp->clipboard()->text();
-	qDebug() << str;
-#else
-	qApp->clipboard()->setText("Hello,\n world");
-	edit_paste();
-#endif
 }
+
+void debug()
+{
+}
+
