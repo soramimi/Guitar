@@ -24,7 +24,7 @@ MainWindow (QMainWindow, TextEditorApp/src)
   `QKeyEvent` / `QColor` / `QFont` などの Qt 型に依存している
 - **TextEditorView.h/.cpp** — `AbstractTextEditorApplication` を継承した `QWidget`。
   `paintEvent` での描画、マウス/キーボード/IME イベント処理、フォントメトリクスのキャッシュ
-  (`AbstractTextEditorApplication::Font`)を担当。連続 resize は 75ms デバウンスしてから
+  (`AbstractTextEditorApplication::Font`)を担当。連続 resize は 30ms デバウンスしてから
   折り返し幅を更新する
 - **TextEditorWidget.h/.cpp** — View と横/縦スクロールバーをまとめる薄いコンテナ
 - **TextEditorTheme.h/.cpp** — Light/Dark の配色定義

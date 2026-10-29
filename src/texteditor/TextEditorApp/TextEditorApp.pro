@@ -4,7 +4,7 @@ greaterThan(QT_MAJOR_VERSION, 5) {
     QT += core5compat
 }
 
-CONFIG += c++17
+CONFIG += c++20
 TARGET = TextEditorApp
 TEMPLATE = app
 
@@ -25,6 +25,8 @@ SOURCES += \
 	../../common/realpath.cpp \
 	../../common/unicode_conversion.cpp \
 	../../common/wstring.cpp \
+	../EscapeSequence.cpp \
+	../PatternState.cpp \
 	../TextEditorTheme.cpp \
 	../TextEditorView.cpp \
 	../TextEditorWidget.cpp \
@@ -44,7 +46,9 @@ HEADERS  += \
 	../../common/realpath.h \
 	../../common/unicode_conversion.h \
 	../../common/wstring.h \
+	../EscapeSequence.h \
 	../LineIndexMap/LineIndexMap.h \
+	../PatternState.h \
 	../TextEditorTheme.h \
 	../TextEditorView.h \
 	../TextEditorWidget.h \

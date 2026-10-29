@@ -10,13 +10,13 @@
 #include <QSaveFile>
 #include <atomic>
 #include <common/misc.h>
+#include <QElapsedTimer>
 #include <limits>
 #include <memory>
 #include <thread>
 
 using WriteMode = AbstractTextEditorApplication::WriteMode;
 // using FormattedLine = AbstractTextEditorApplication::FormattedLine;
-
 
 namespace texteditor {
 
@@ -28,6 +28,8 @@ row_index_t to_row_count(uint64_t count)
 {
 	return static_cast<row_index_t>(std::min<uint64_t>(count, static_cast<uint64_t>(std::numeric_limits<row_index_t>::max())));
 }
+
+
 
 }
 
@@ -66,8 +68,8 @@ struct AbstractTextEditorApplication::Private {
 	Selection selection;
 	
 	struct {
-		AbstractTextEditorApplication::Font fixed; // タブ・基準セル・行番号に使う等幅フォント
-		AbstractTextEditorApplication::Font text;  // 本文描画と実際の文字幅計測に使うフォント
+		texteditor::Font fixed; // タブ・基準セル・行番号に使う等幅フォント
+		texteditor::Font text;  // 本文描画と実際の文字幅計測に使うフォント
 	} font;
 	
 	int top_margin_px = 0;    // 1表示行の上側余白
@@ -573,8 +575,6 @@ void AbstractTextEditorApplication::invalidate_visual_line_details(row_index_t v
 	}
 }
 
-
-
 CharBuffer const *AbstractTextEditorApplication::parse_current_line() const
 {
 	return parse_line(current_visual_row());
@@ -598,7 +598,7 @@ std::vector<Document::Line> AbstractTextEditorApplication::_wrap_line(Document::
 {
 	if (wrappingMode() == WrappingMode::NoWrap) return {};
 	
-	const int width_px = m->content_width_px;
+	const int width_px = m->content_width_px; // 折り返し幅（ピクセル単位）
 	
 	std::vector<CharBuffer> chrs_out;
 	// _parse_line()はtext/metrics revisionが一致すればデコード・文字幅計算済みの
@@ -608,19 +608,7 @@ std::vector<Document::Line> AbstractTextEditorApplication::_wrap_line(Document::
 	if (chrs_in.empty()) {
 		chrs_out.push_back({});
 	} else {
-		int left_px = 0;
-		int right_px = 0;
 
-		auto Out = [&](size_t i, size_t n){
-			CharBuffer chrs;
-			for (size_t j = 0; j < n; j++) {
-				Character c = chrs_in[i + j];
-				c.left_x = right_px - left_px;
-				chrs.push_back(c);
-			}
-			chrs_out.push_back(chrs);
-		};
-		
 		auto IsBreakable = [](char32_t b, char32_t c){ // 分割可能テスト
 			if (b < 0x80 && c < 0x80) {
 				if (isspace(b) && isspace(c)) return false; // 連続する空白では折り返し不可
@@ -634,75 +622,133 @@ std::vector<Document::Line> AbstractTextEditorApplication::_wrap_line(Document::
 			return true;
 		};
 
-		size_t last = 0;
-		size_t curr = 0;
-		const size_t N = chrs_in.size();
-		char32_t b = '\n'; // before
-		char32_t c = '\n'; // current
-		
-		WrappingMode wrapping_mode;
-		auto Reset = [&](){
-			wrapping_mode = WrappingMode::CharWrap; // 初期状態は文字単位での折り返し
-			c = '\n';
-		};
-		Reset();
-		
-		while (curr < N) {
-			Character const *ch = &chrs_in[curr];
-			right_px = ch->right_x;
-			b = c;
-			c = ch->unicode;
-			if (c == '\r') {
-				c = '\n';
-			}
-			size_t next = curr + 1;
-			if (wrapping_mode == WrappingMode::CharWrap) {
-				// 分割可能な位置に来たら、折り返しモードを単語単位に切り替えます。
-				// （最初の分割可能位置までは、常に文字単位での折り返し）
-				if (last < curr && IsBreakable(b, c)) {
-					wrapping_mode = wrappingMode();
-					// WordWrapの場合、そのまま下のifに入る
-				}
-			}
-			if (wrapping_mode == WrappingMode::WordWrap) {
-				// 次の分割可能位置を探す
-				char32_t d = c;
-				while (next <= N) { // next == N means end of line
-					b = d;
-					d = -1;
-					if (next < N) { // next < N means not end of line
-						d = chrs_in[next].unicode; // next character
-						if (d == '\r') {
-							d = '\n';
-						}
-					}
-					if (IsBreakable(b, d)) break;
-					right_px = chrs_in[next].right_x;
-					next++;
-				}
-			}
+		QElapsedTimer t;
+		t.start();
 
-			// 幅が制限を超えた場合、lastからcurr（またはnext）までの行を出力し、lastとcurrを適切に更新します。
-			if (right_px - left_px > width_px) {
-				if (last < curr) {
-					Out(last, curr - last);
-					left_px = ch->left_x;
-					last = curr;
-				} else { // 現在の文字自体が幅の制限を超えている場合、それを出力し、次の文字に移動します。
-					Out(last, next - last);
-					if (c == '\n') break;
-					last = curr = next;
+		const size_t N = chrs_in.size();
+
+		std::vector<int> points;
+		size_t last_pos = 0;
+		{
+			points.reserve(N);
+
+			size_t curr_pos = 0;
+			char32_t b = '\n'; // before
+			char32_t c = '\n'; // current
+
+			WrappingMode wrapping_mode = WrappingMode::CharWrap; // 初期状態は文字単位での折り返し
+
+			// 分割可能位置を求める
+			while (curr_pos < N) {
+				Character const *ch = &chrs_in[curr_pos];
+				b = c;
+				c = ch->unicode;
+				if (c == '\r') {
+					c = '\n';
 				}
-				// 折り返しモードを文字単位に戻します。
-				Reset();
-			} else { // それ以外の場合、currをnextに移動します。
-				if (next == N || c == '\n') { // 次の文字が行末の場合、残りの文字を出力します。
-					Out(last, next - last);
-					break;
+				size_t next = curr_pos + 1;
+				if (wrapping_mode == WrappingMode::CharWrap) {
+					// 分割可能な位置に来たら、折り返しモードを単語単位に切り替える
+					// （最初の分割可能位置までは、常に文字単位での折り返し）
+					if (last_pos < curr_pos && IsBreakable(b, c)) {
+						wrapping_mode = wrappingMode();
+						// WordWrapの場合、そのまま下のifに入る
+					}
 				}
-				curr = next;
+				if (wrapping_mode == WrappingMode::WordWrap) {
+					// 次の分割可能位置を探す
+					char32_t d = c;
+					while (next <= N) { // next == N means end of line
+						b = d;
+						d = -1;
+						if (next < N) { // next < N means not end of line
+							d = chrs_in[next].unicode; // next character
+							if (d == '\r') {
+								d = '\n';
+							}
+						}
+						if (IsBreakable(b, d)) break;
+						next++;
+					}
+				}
+				points.push_back(next);
+				curr_pos = next;
 			}
 		}
+
+		{
+			std::vector<QString> ucs4cache(chrs_in.size());
+
+			int index = 0;
+			int curr_pos = 0;
+			while (index < points.size()) {
+				struct PosWidth {
+					int pos = 0;
+					int width = 0;
+				};
+				PosWidth a;
+				{ // 分割位置を二分探索
+					std::optional<PosWidth> b; // オーバーフローしなかった最後の結果を覚えておく
+					size_t lo = index;
+					size_t hi = points.size();
+					while (lo < hi) {
+						int mid = (lo + hi) / 2;
+						a.pos = points[mid];
+						{ // 部分文字列の長さを求める
+							QString text;
+							text.reserve(a.pos - curr_pos);
+							for (int j = curr_pos; j < a.pos; j++) {
+								QString s = ucs4cache[j];
+								if (s.isEmpty()) {
+									s = QString::fromUcs4(&chrs_in[j].unicode, 1);
+									ucs4cache[j] = s;
+								}
+								text.append(s);
+							}
+							a.width = text_font().text_width(text); // テキストのピクセル長を求める
+						}
+						if (lo + 1 == hi) { // 最後の区間
+							if (a.width > width_px) { // オーバーフローした
+								if (b) {
+									a = *b; // オーバーフローしなかった最後の結果を最終結果とする
+								}
+							}
+							break;
+						}
+						if (a.width > width_px) { // オーバーフローした
+							hi = mid;
+						} else { // オーバーフローしなかった
+							lo = mid + 1;
+							b = a; // オーバーフローしなかった最後の結果を覚えておく
+						}
+					}
+					index = lo;
+				}
+
+				auto Flush = [&](int from, int to){
+					if (to > from) {
+						const int n = to - from;
+						CharBuffer chrs;
+						chrs.reserve(n);
+						for (size_t i = 0; i < n; i++) {
+							Character c = chrs_in[from + i];
+							chrs.push_back(c);
+						}
+						chrs_out.push_back(chrs);
+					}
+				};
+				if (a.pos > last_pos) {
+					Flush(last_pos, a.pos);
+				} else {
+					Flush(a.pos, N);
+					break;
+				}
+
+				last_pos = curr_pos = a.pos;
+			}
+		}
+
+		// qDebug() << "wrap_line: " << t.elapsed() << "ms";
 	}
 	
 	std::vector<Document::Line> ret;
@@ -844,12 +890,6 @@ bool AbstractTextEditorApplication::update_visual_line(row_index_t lrow, bool fo
 {
 	std::vector<Document::Line> *llines = &document()->logical_lines;
 	if (lrow >= 0 && static_cast<size_t>(lrow) < llines->size()) {
-		{
-			Document::Line::D *d = (*llines)[lrow].sp.get();
-
-
-			
-		}
 		_update_line(lrow, std::nullopt, force, nullptr);
 		return true;
 	}
@@ -1424,28 +1464,35 @@ void AbstractTextEditorApplication::updateSelectionAnchor2(bool auto_scroll)
 	}
 }
 
+void AbstractTextEditorApplication::update_font()
+{
+	Q_ASSERT(editor_cx); // must be called after initEditor()
+
+	int tab_stop_distance = fixed_font().basis_char_width() * cx()->tab_indent_size;
+	m->font.text.set_tab_stop_distance(tab_stop_distance);
+
+	m->metrics_revision++;
+	m->full_wrap_update_needed = true;
+}
+
 void AbstractTextEditorApplication::set_fixed_font(const QFont &font)
 {
 	m->font.fixed.set_font(font);
-	// タブ幅や基準セル幅が変わるため、全LinePropertyの計測結果を世代で失効させる。
-	m->metrics_revision++;
-	m->full_wrap_update_needed = true;
+	update_font(); // タブ幅や基準セル幅が変わるため、全LinePropertyの計測結果を世代で失効させる。
 }
 
 void AbstractTextEditorApplication::set_text_font(const QFont &font)
 {
 	m->font.text.set_font(font);
-	// 本文の実ピクセル幅が変わるため、計測と折り返しの両方をやり直す。
-	m->metrics_revision++;
-	m->full_wrap_update_needed = true;
+	update_font(); // 本文の実ピクセル幅が変わるため、計測と折り返しの両方をやり直す。
 }
 
-AbstractTextEditorApplication::Font const &AbstractTextEditorApplication::fixed_font() const
+texteditor::Font const &AbstractTextEditorApplication::fixed_font() const
 {
 	return m->font.fixed;
 }
 
-AbstractTextEditorApplication::Font const &AbstractTextEditorApplication::text_font() const
+texteditor::Font const &AbstractTextEditorApplication::text_font() const
 {
 	return m->font.text;
 }

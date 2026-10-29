@@ -50,7 +50,6 @@
     </property>
     <addaction name="action_file_open"/>
     <addaction name="action_file_save"/>
-    <addaction name="action_test"/>
     <addaction name="action_file_save_as"/>
    </widget>
    <addaction name="menu_File"/>

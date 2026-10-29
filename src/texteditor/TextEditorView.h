@@ -48,7 +48,7 @@ public:
 private:
 	void moveCursorByMouse();
 	
-	static void _calc_pos_x(CharBuffer *chars, const TextEditorContext *cx, const Font &fixed_tm, const Font &text_tm);
+	static void _calc_pos_x(CharBuffer *chars, const TextEditorContext *cx, const texteditor::Font &fixed_tm, const texteditor::Font &text_tm);
 	
 	int view_y_from_vrow(row_index_t vrow) const;
 	

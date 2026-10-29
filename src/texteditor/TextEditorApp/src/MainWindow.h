@@ -43,9 +43,9 @@ private slots:
 	void on_horizontalScrollBar_valueChanged(int value);
 	void on_action_file_open_triggered();
 	void on_action_file_save_triggered();
-	void on_action_test_triggered();
 	void updateIm();
 	void on_action_file_save_as_triggered();
+	void test();
 	
 protected:
 	void moveEvent(QMoveEvent *);
