@@ -2,6 +2,7 @@
 #include "EscapeSequence.h"
 #include "PatternState.h"
 #include "UnicodeWidth.h"
+#include "WrapAlgorithm.h"
 #include "unicode.h"
 #include <QApplication>
 #include <QClipboard>
@@ -10,7 +11,6 @@
 #include <QSaveFile>
 #include <atomic>
 #include <common/misc.h>
-#include <QElapsedTimer>
 #include <limits>
 #include <memory>
 #include <thread>
@@ -591,12 +591,10 @@ AbstractTextEditorApplication::WrappingMode AbstractTextEditorApplication::wrapp
 /**
  * @brief 論理行を折り返し幅で分割する
  *
- * 処理は2段階で行う。
- *  1. 分割候補位置の列挙: 「この直前で改行してよい」文字位置を昇順に points へ集める。
- *     CharWrapでは全文字境界、WordWrapでは単語境界（IsBreakable()が真になる位置）が候補になる。
- *  2. 分割位置の決定: 表示行の開始位置から各候補までの部分文字列を実際に描画幅で計測し、
- *     width_pxに収まる最も遠い候補を二分探索で選ぶ。選んだ位置までを1表示行として出力し、
- *     その位置を次の表示行の開始位置として繰り返す。
+ * 候補位置の列挙と幅に収まる終端の選択は、Qt非依存のWrapAlgorithmで行う。
+ * WordWrapでも論理行の先頭はCharWrap状態から開始し、最初の分割可能位置以降で
+ * WordWrapへ切り替える。切り替え後に長い単語が幅を超える場合は、その単語を
+ * 文字単位には分割せず、単語終端までを1表示行として出力する。
  *
  * 文字ごとのX座標を積み上げるのではなく部分文字列全体を計測するため、
  * カーニングやタブ（Fontのタブストップ設定）を含む実際の描画幅で判定される。
@@ -626,171 +624,44 @@ std::vector<Document::Line> AbstractTextEditorApplication::_wrap_line(Document::
 	if (chrs_in.empty()) {
 		chrs_out.push_back({});
 	} else {
+		std::u32string text;
+		text.reserve(chrs_in.size());
+		for (Character const &c : *chrs_in.vec) {
+			text.push_back(c.unicode);
+		}
 
-		// 文字bと文字cの間（cの直前）で改行してよいかを判定する。
-		// ASCII同士の組み合わせだけを判定し、非ASCIIを含む場合は常に分割可能とする。
-		auto IsBreakable = [](char32_t b, char32_t c){ // 分割可能テスト
-			if (b < 0x80 && c < 0x80) {
-				if (isspace(b) && isspace(c)) return false; // 連続する空白では折り返し不可
-				if (isupper(b) && isalnum(c)) return false; // 大文字と英数字の間は折り返し不可
-				if (isalnum(b)) {
-					if (isupper(c)) return true;  // 小文字と大文字の間は折り返し可
-					if (isalnum(c)) return false; // 英数字の間は折り返し不可
-					if (isspace(c)) return false; // 英数字に後続する空白では折り返さない
+		// 文字ごとのQStringを使い回し、部分文字列を組み立てるたびの変換を省く。
+		std::vector<QString> ucs4cache(chrs_in.size());
+		auto measure = [&](size_t from, size_t to){
+			QString measured_text;
+			measured_text.reserve(static_cast<int>(to - from));
+			for (size_t i = from; i < to; i++) {
+				QString s = ucs4cache[i];
+				if (s.isEmpty()) {
+					s = QString::fromUcs4(&chrs_in[i].unicode, 1);
+					ucs4cache[i] = s;
 				}
+				measured_text.append(s);
 			}
-			return true;
+			return textfont->text_width(measured_text);
 		};
+		wrap_algorithm::Mode mode = wrappingMode() == WrappingMode::WordWrap
+			? wrap_algorithm::Mode::WordWrap : wrap_algorithm::Mode::CharWrap;
+		std::vector<size_t> points = wrap_algorithm::compute_wrap_points(text, width_px, mode, measure);
 
-		QElapsedTimer t;
-		t.start();
-
-		const size_t N = chrs_in.size();
-
-		// points: 分割候補位置（chrs_inのインデックス）の昇順リスト。
-		// points[i] は「chrs_in[points[i]]の直前で改行できる」ことを表し、
-		// 末尾の要素は常にN（行末）になる。位置0は含まない。
-		std::vector<int> points;
-		size_t last_pos = 0; // 直前に出力した表示行の終端位置（＝現在の表示行の開始位置）
-		{ // 段階1: 分割候補位置を列挙する
-			points.reserve(N);
-
-			size_t curr_pos = 0;
-			char32_t b = '\n'; // before
-			char32_t c = '\n'; // current
-
-			// 論理行の先頭は文字単位で候補を作り、最初の単語境界に達した時点で
-			// wrappingMode()に切り替える（以降は戻らない）。これにより、行頭の単語が
-			// 幅を超える場合でも途中で分割できる。
-			// 注意: この段階ではlast_posは常に0なので、下の last_pos < curr_pos は
-			// 「先頭文字ではない」ことを意味する。
-			WrappingMode wrapping_mode = WrappingMode::CharWrap; // 初期状態は文字単位での折り返し
-
-			// 分割可能位置を求める
-			while (curr_pos < N) {
-				Character const *ch = &chrs_in[curr_pos];
-				b = c;
-				c = ch->unicode;
-				if (c == '\r') {
-					c = '\n';
-				}
-				size_t next = curr_pos + 1;
-				if (wrapping_mode == WrappingMode::CharWrap) {
-					// 分割可能な位置に来たら、折り返しモードを単語単位に切り替える
-					// （最初の分割可能位置までは、常に文字単位での折り返し）
-					if (last_pos < curr_pos && IsBreakable(b, c)) {
-						wrapping_mode = wrappingMode();
-						// WordWrapの場合、そのまま下のifに入る
-					}
-				}
-				// CharWrapの間は next == curr_pos + 1 のまま、つまり全文字境界が候補になる。
-				if (wrapping_mode == WrappingMode::WordWrap) {
-					// 次の分割可能位置を探す。隣接する2文字(b, d)の間が分割可能になるまで
-					// nextを進める。行末(next == N)では d に非ASCIIの番兵値を入れるため、
-					// IsBreakable()は必ず真になりループを抜ける。
-					char32_t d = c;
-					while (next <= N) { // next == N means end of line
-						b = d;
-						d = -1;
-						if (next < N) { // next < N means not end of line
-							d = chrs_in[next].unicode; // next character
-							if (d == '\r') {
-								d = '\n';
-							}
-						}
-						if (IsBreakable(b, d)) break;
-						next++;
-					}
-				}
-				points.push_back(next);
-				curr_pos = next;
+		size_t begin = 0;
+		for (size_t end : points) {
+			Q_ASSERT(end > begin);
+			Q_ASSERT(end <= chrs_in.size());
+			CharBuffer chars;
+			chars.reserve(end - begin);
+			for (size_t i = begin; i < end; i++) {
+				chars.push_back(chrs_in[i]);
 			}
+			chrs_out.push_back(chars);
+			begin = end;
 		}
-
-		{ // 段階2: 候補位置の中から各表示行の終端を決める
-			// 文字ごとのQStringを使い回し、部分文字列を組み立てるたびの変換を省く。
-			std::vector<QString> ucs4cache(chrs_in.size());
-
-			int index = 0;    // 次の二分探索を開始するpointsのインデックス
-			int curr_pos = 0; // 現在の表示行の開始位置（last_posと同じ値を保つ）
-			while (index < points.size()) {
-				struct PosWidth {
-					int pos = 0;   // 候補位置（chrs_inのインデックス）
-					int width = 0; // curr_posからposまでの部分文字列の描画幅
-				};
-				PosWidth a; // 探索結果: この表示行の終端位置
-				{ // 分割位置を二分探索
-					// points[index, size) の中で、curr_posからの幅がwidth_px以下となる
-					// 最も遠い候補を探す。
-					// 1つも収まらない場合（先頭の候補だけで幅を超える長い単語など）は、
-					// 最初に見つかった候補（幅超過）をそのまま採用し、1表示行として出力する。
-					std::optional<PosWidth> b; // オーバーフローしなかった最後の結果を覚えておく
-					size_t lo = index;
-					size_t hi = points.size();
-					while (lo < hi) {
-						int mid = (lo + hi) / 2;
-						a.pos = points[mid];
-						{ // 部分文字列[curr_pos, a.pos)の描画幅を求める
-							QString text;
-							text.reserve(a.pos - curr_pos);
-							for (int j = curr_pos; j < a.pos; j++) {
-								QString s = ucs4cache[j];
-								if (s.isEmpty()) {
-									s = QString::fromUcs4(&chrs_in[j].unicode, 1);
-									ucs4cache[j] = s;
-								}
-								text.append(s);
-							}
-							a.width = textfont->text_width(text); // テキストのピクセル長を求める
-						}
-						// 範囲が残り1要素(mid == lo)になったら、その結果で確定する。
-						// 幅を超えていれば、それまでに収まった最後の候補bを採用する。
-						if (lo + 1 == hi) { // 最後の区間
-							if (a.width > width_px) { // オーバーフローした
-								if (b) {
-									a = *b; // オーバーフローしなかった最後の結果を最終結果とする
-								}
-							}
-							break;
-						}
-						if (a.width > width_px) { // オーバーフローした
-							hi = mid;
-						} else { // オーバーフローしなかった
-							lo = mid + 1;
-							b = a; // オーバーフローしなかった最後の結果を覚えておく
-						}
-					}
-					// 次の表示行はa.posから始まる。loはa.posの候補自身、またはその次の
-					// 候補を指す。前者の場合、次回の探索の先頭候補は幅0の空文字列になる。
-					index = lo;
-				}
-
-				// chrs_in[from, to) を1表示行として出力する
-				auto Flush = [&](int from, int to){
-					if (to > from) {
-						const int n = to - from;
-						CharBuffer chrs;
-						chrs.reserve(n);
-						for (size_t i = 0; i < n; i++) {
-							Character c = chrs_in[from + i];
-							chrs.push_back(c);
-						}
-						chrs_out.push_back(chrs);
-					}
-				};
-				if (a.pos > last_pos) { // 開始位置より先へ進んだ: [last_pos, a.pos)を1表示行とする
-					Flush(last_pos, a.pos);
-				} else {
-					// 先へ進めなかった（a.posが開始位置のまま）。通常は行末(a.pos == N)に
-					// 達して出力済みの場合で、Flushは何もせず終了する。
-					// それ以外の場合は残り全体を1表示行として出力して終了する。
-					Flush(a.pos, N);
-					break;
-				}
-
-				last_pos = curr_pos = a.pos; // 次の表示行の開始位置
-			}
-		}
+		Q_ASSERT(begin == chrs_in.size());
 	}
 	
 	std::vector<Document::Line> ret;

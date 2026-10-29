@@ -325,7 +325,8 @@ SOURCES += \
 	$$SRC/ManageApiKeysDialog.cpp \
 	$$SRC/EditApiKeyDialog.cpp \
 	src/texteditor/EscapeSequence.cpp \
-	src/texteditor/PatternState.cpp
+	src/texteditor/PatternState.cpp \
+	src/texteditor/WrapAlgorithm.cpp
 	
 
 HEADERS += \
@@ -553,7 +554,8 @@ HEADERS += \
 	$$SRC/ManageApiKeysDialog.h \
 	$$SRC/EditApiKeyDialog.h \
 	src/texteditor/EscapeSequence.h \
-	src/texteditor/PatternState.h
+	src/texteditor/PatternState.h \
+	src/texteditor/WrapAlgorithm.h
 
 FORMS += \
 	$$SRC/AboutDialog.ui \

@@ -31,6 +31,7 @@ SOURCES += \
 	../TextEditorView.cpp \
 	../TextEditorWidget.cpp \
 	../UnicodeWidth.cpp \
+	../WrapAlgorithm.cpp \
 	../unicode.cpp \
 	../AbstractTextEditorApplication.cpp \
 	src/MainWindow.cpp \
@@ -53,6 +54,7 @@ HEADERS  += \
 	../TextEditorView.h \
 	../TextEditorWidget.h \
 	../UnicodeWidth.h \
+	../WrapAlgorithm.h \
 	../unicode.h \
 	../AbstractTextEditorApplication.h \
 	src/MainWindow.h \
