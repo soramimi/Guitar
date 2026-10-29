@@ -478,12 +478,6 @@ CharBuffer AbstractTextEditorApplication::_parse_line(TextEditorContext const *c
 		}
 	}
 	
-	// calc_pos_x()はFont::text_width_cache_を更新する。全行の並列折り返し時は
-	// その共有キャッシュへのアクセスだけを直列化する。
-	if (mutex) mutex->lock();
-	calc_pos_x(&ret); // 内部でキャッシュを更新するのでmutexで保護する必要がある
-	if (mutex) mutex->unlock();
-
 	if (!detail) {
 		detail = const_cast<Document::Line *>(line)->new_detail();
 	}
@@ -594,9 +588,33 @@ AbstractTextEditorApplication::WrappingMode AbstractTextEditorApplication::wrapp
 	return m->wrapping_mode;
 }
 
-std::vector<Document::Line> AbstractTextEditorApplication::_wrap_line(Document::Line line, std::mutex *mutex) const
+/**
+ * @brief 論理行を折り返し幅で分割する
+ *
+ * 処理は2段階で行う。
+ *  1. 分割候補位置の列挙: 「この直前で改行してよい」文字位置を昇順に points へ集める。
+ *     CharWrapでは全文字境界、WordWrapでは単語境界（IsBreakable()が真になる位置）が候補になる。
+ *  2. 分割位置の決定: 表示行の開始位置から各候補までの部分文字列を実際に描画幅で計測し、
+ *     width_pxに収まる最も遠い候補を二分探索で選ぶ。選んだ位置までを1表示行として出力し、
+ *     その位置を次の表示行の開始位置として繰り返す。
+ *
+ * 文字ごとのX座標を積み上げるのではなく部分文字列全体を計測するため、
+ * カーニングやタブ（Fontのタブストップ設定）を含む実際の描画幅で判定される。
+ * 開始位置からの幅は候補位置に対して単調増加であることを二分探索の前提とする。
+ *
+ * @param line 論理行
+ * @param mutex 排他制御用のmutex（nullptrの場合は排他制御なし）
+ * @param textfont 幅の計測に使うフォント。nullptrならtext_font()。
+ *        Fontはスレッドセーフではないため、並列処理ではスレッドごとの複製を渡す。
+ * @return 折り返し断片
+ */
+std::vector<Document::Line> AbstractTextEditorApplication::_wrap_line(Document::Line line, std::mutex *mutex, texteditor::Font const *textfont) const
 {
 	if (wrappingMode() == WrappingMode::NoWrap) return {};
+	
+	if (!textfont) {
+		textfont = &text_font();
+	}
 	
 	const int width_px = m->content_width_px; // 折り返し幅（ピクセル単位）
 	
@@ -609,6 +627,8 @@ std::vector<Document::Line> AbstractTextEditorApplication::_wrap_line(Document::
 		chrs_out.push_back({});
 	} else {
 
+		// 文字bと文字cの間（cの直前）で改行してよいかを判定する。
+		// ASCII同士の組み合わせだけを判定し、非ASCIIを含む場合は常に分割可能とする。
 		auto IsBreakable = [](char32_t b, char32_t c){ // 分割可能テスト
 			if (b < 0x80 && c < 0x80) {
 				if (isspace(b) && isspace(c)) return false; // 連続する空白では折り返し不可
@@ -627,15 +647,23 @@ std::vector<Document::Line> AbstractTextEditorApplication::_wrap_line(Document::
 
 		const size_t N = chrs_in.size();
 
+		// points: 分割候補位置（chrs_inのインデックス）の昇順リスト。
+		// points[i] は「chrs_in[points[i]]の直前で改行できる」ことを表し、
+		// 末尾の要素は常にN（行末）になる。位置0は含まない。
 		std::vector<int> points;
-		size_t last_pos = 0;
-		{
+		size_t last_pos = 0; // 直前に出力した表示行の終端位置（＝現在の表示行の開始位置）
+		{ // 段階1: 分割候補位置を列挙する
 			points.reserve(N);
 
 			size_t curr_pos = 0;
 			char32_t b = '\n'; // before
 			char32_t c = '\n'; // current
 
+			// 論理行の先頭は文字単位で候補を作り、最初の単語境界に達した時点で
+			// wrappingMode()に切り替える（以降は戻らない）。これにより、行頭の単語が
+			// 幅を超える場合でも途中で分割できる。
+			// 注意: この段階ではlast_posは常に0なので、下の last_pos < curr_pos は
+			// 「先頭文字ではない」ことを意味する。
 			WrappingMode wrapping_mode = WrappingMode::CharWrap; // 初期状態は文字単位での折り返し
 
 			// 分割可能位置を求める
@@ -655,8 +683,11 @@ std::vector<Document::Line> AbstractTextEditorApplication::_wrap_line(Document::
 						// WordWrapの場合、そのまま下のifに入る
 					}
 				}
+				// CharWrapの間は next == curr_pos + 1 のまま、つまり全文字境界が候補になる。
 				if (wrapping_mode == WrappingMode::WordWrap) {
-					// 次の分割可能位置を探す
+					// 次の分割可能位置を探す。隣接する2文字(b, d)の間が分割可能になるまで
+					// nextを進める。行末(next == N)では d に非ASCIIの番兵値を入れるため、
+					// IsBreakable()は必ず真になりループを抜ける。
 					char32_t d = c;
 					while (next <= N) { // next == N means end of line
 						b = d;
@@ -676,25 +707,30 @@ std::vector<Document::Line> AbstractTextEditorApplication::_wrap_line(Document::
 			}
 		}
 
-		{
+		{ // 段階2: 候補位置の中から各表示行の終端を決める
+			// 文字ごとのQStringを使い回し、部分文字列を組み立てるたびの変換を省く。
 			std::vector<QString> ucs4cache(chrs_in.size());
 
-			int index = 0;
-			int curr_pos = 0;
+			int index = 0;    // 次の二分探索を開始するpointsのインデックス
+			int curr_pos = 0; // 現在の表示行の開始位置（last_posと同じ値を保つ）
 			while (index < points.size()) {
 				struct PosWidth {
-					int pos = 0;
-					int width = 0;
+					int pos = 0;   // 候補位置（chrs_inのインデックス）
+					int width = 0; // curr_posからposまでの部分文字列の描画幅
 				};
-				PosWidth a;
+				PosWidth a; // 探索結果: この表示行の終端位置
 				{ // 分割位置を二分探索
+					// points[index, size) の中で、curr_posからの幅がwidth_px以下となる
+					// 最も遠い候補を探す。
+					// 1つも収まらない場合（先頭の候補だけで幅を超える長い単語など）は、
+					// 最初に見つかった候補（幅超過）をそのまま採用し、1表示行として出力する。
 					std::optional<PosWidth> b; // オーバーフローしなかった最後の結果を覚えておく
 					size_t lo = index;
 					size_t hi = points.size();
 					while (lo < hi) {
 						int mid = (lo + hi) / 2;
 						a.pos = points[mid];
-						{ // 部分文字列の長さを求める
+						{ // 部分文字列[curr_pos, a.pos)の描画幅を求める
 							QString text;
 							text.reserve(a.pos - curr_pos);
 							for (int j = curr_pos; j < a.pos; j++) {
@@ -705,8 +741,10 @@ std::vector<Document::Line> AbstractTextEditorApplication::_wrap_line(Document::
 								}
 								text.append(s);
 							}
-							a.width = text_font().text_width(text); // テキストのピクセル長を求める
+							a.width = textfont->text_width(text); // テキストのピクセル長を求める
 						}
+						// 範囲が残り1要素(mid == lo)になったら、その結果で確定する。
+						// 幅を超えていれば、それまでに収まった最後の候補bを採用する。
 						if (lo + 1 == hi) { // 最後の区間
 							if (a.width > width_px) { // オーバーフローした
 								if (b) {
@@ -722,9 +760,12 @@ std::vector<Document::Line> AbstractTextEditorApplication::_wrap_line(Document::
 							b = a; // オーバーフローしなかった最後の結果を覚えておく
 						}
 					}
+					// 次の表示行はa.posから始まる。loはa.posの候補自身、またはその次の
+					// 候補を指す。前者の場合、次回の探索の先頭候補は幅0の空文字列になる。
 					index = lo;
 				}
 
+				// chrs_in[from, to) を1表示行として出力する
 				auto Flush = [&](int from, int to){
 					if (to > from) {
 						const int n = to - from;
@@ -737,18 +778,19 @@ std::vector<Document::Line> AbstractTextEditorApplication::_wrap_line(Document::
 						chrs_out.push_back(chrs);
 					}
 				};
-				if (a.pos > last_pos) {
+				if (a.pos > last_pos) { // 開始位置より先へ進んだ: [last_pos, a.pos)を1表示行とする
 					Flush(last_pos, a.pos);
 				} else {
+					// 先へ進めなかった（a.posが開始位置のまま）。通常は行末(a.pos == N)に
+					// 達して出力済みの場合で、Flushは何もせず終了する。
+					// それ以外の場合は残り全体を1表示行として出力して終了する。
 					Flush(a.pos, N);
 					break;
 				}
 
-				last_pos = curr_pos = a.pos;
+				last_pos = curr_pos = a.pos; // 次の表示行の開始位置
 			}
 		}
-
-		// qDebug() << "wrap_line: " << t.elapsed() << "ms";
 	}
 	
 	std::vector<Document::Line> ret;
@@ -771,7 +813,7 @@ std::vector<Document::Line> AbstractTextEditorApplication::_wrap_line(Document::
 	return ret;
 }
 
-void AbstractTextEditorApplication::wrap_line(Document::Line *ll, bool force, std::mutex *mutex)
+void AbstractTextEditorApplication::wrap_line(Document::Line *ll, bool force, std::mutex *mutex, texteditor::Font const *textfont)
 {
 	// 通常の1行編集ではset_text()がvisual_linesを空にするためforce不要。
 	// 幅・フォント・モード変更では既存断片が残っていても再計算するためforce=trueを使う。
@@ -779,7 +821,7 @@ void AbstractTextEditorApplication::wrap_line(Document::Line *ll, bool force, st
 		if (wrappingMode() == WrappingMode::NoWrap) {
 			ll->sp->meta.visual_lines.resize(1);
 		} else {
-			ll->sp->meta.visual_lines = _wrap_line(*ll, mutex); // 折り返し処理
+			ll->sp->meta.visual_lines = _wrap_line(*ll, mutex, textfont); // 折り返し処理
 		}
 	}
 }
@@ -922,26 +964,34 @@ void AbstractTextEditorApplication::update_visual_lines_all()
 	}
 	
 	if (m->wrapping_mode != WrappingMode::NoWrap) {
-		constexpr size_t NUM_THREADS = 1;
+		constexpr size_t NUM_THREADS = 8;
 		if (NUM_THREADS == 1) { // シングルスレッド
 			for (row_index_t lrow = 0; lrow < (row_index_t)llines->size(); lrow++) {
 				update_visual_line(lrow, true);
 			}
 		} else {
 			{ // 並列処理で折り返し処理を行う
-				// 各スレッドは別々の論理行だけを書き換える。共有されるフォント幅
-				// キャッシュは_parse_line()内でmutex保護される。
+				// 各スレッドは別々の論理行だけを書き換える。Fontの幅キャッシュと
+				// QFontMetricsはスレッドセーフではないため、折り返し幅の計測には
+				// スレッドごとに複製したFontを使う。_parse_line()内でtext_font()を
+				// 使う箇所はmutexで保護される。
 				std::mutex mutex;
 				std::vector<std::thread> thread(NUM_THREADS);
 				std::atomic<size_t> index = 0;
 				const size_t nlines = llines->size();
 				for (int i = 0; i < NUM_THREADS; i++) {
 					thread[i] = std::thread([&](){
+						texteditor::Font textfont;
+						{
+							// 複製中に他スレッドのmutex保護区間で元のFontが使われないよう排他する
+							std::lock_guard lock(mutex);
+							textfont.clone_for_thread(text_font());
+						}
 						while (1) {
 							size_t lrow = index++;
 							if (lrow >= nlines) break;
 							Document::Line *ll = &(*llines)[lrow];
-							wrap_line(ll, true, &mutex);
+							wrap_line(ll, true, &mutex, &textfont);
 						}
 					});
 				}

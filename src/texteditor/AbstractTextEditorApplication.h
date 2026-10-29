@@ -14,6 +14,7 @@
 #include <mutex>
 #include <QFont>
 #include <QPixmap>
+#include <QImage>
 #include <QPainter>
 #include <QFontMetrics>
 
@@ -55,13 +56,32 @@ public:
 		font_ = font;
 		text_width_cache_.map.clear();
 
-		QPixmap pm(1, 1);
-		QPainter pr(&pm);
+		// QPixmapはGUIスレッド専用なので、ワーカースレッドでも使えるQImageを使う。
+		// 主スレッド側とワーカー側で同じ種類のデバイスを使い、計測結果を一致させる。
+		QImage img(1, 1, QImage::Format_ARGB32_Premultiplied);
+		QPainter pr(&img);
 		pr.setFont(font_);
 		fm_ = std::make_unique<QFontMetrics>(pr.fontMetrics());
 		ascent_ = fm_->ascent();
 		descent_ = fm_->descent();
 		basic_character_size_ = QSize(fm_->horizontalAdvance("0"), fm_->height());
+	}
+	/**
+	 * @brief 別スレッドで使うための独立したコピーを作る
+	 *
+	 * Fontは幅キャッシュとQFontMetricsを持ち、スレッドセーフではない。
+	 * 並列処理では各スレッドがこの関数で自分専用のFontを用意すること。
+	 * 呼び出し中は元のFontを他スレッドが変更しないこと。
+	 */
+	void clone_for_thread(Font const &src)
+	{
+		// QFontのコピーは内部データ(QFontPrivate)とフォントエンジンのキャッシュを
+		// 共有する。値を変えて戻す書き込み操作でdetachさせ、スレッドごとに独立させる。
+		QFont f = src.font_;
+		f.setKerning(!f.kerning());
+		f.setKerning(!f.kerning());
+		set_font(f);
+		tab_stop_distance_ = src.tab_stop_distance_;
 	}
 	QFont font() const
 	{
@@ -286,27 +306,7 @@ public:
 	}
 	int right_x(int pos, texteditor::Font const &textfont) const
 	{
-#if 0
-		int x = (*vec)[pos].right_x();
-		if (x < 0) {
-			int n = pos;
-			if (n < vec->size()) {
-				n++;
-			}
-			QString text;
-			for (int i = 0; i < n; i++) {
-				text.push_back(QString::fromUcs4(&(*vec)[i].unicode, 1));
-			}
-			x = textfont.text_width(text);
-			(*vec)[pos].set_right_x(x);
-			if (pos + 1 < vec->size()) {
-				(*vec)[pos + 1].set_left_x(x);
-			}
-		}
-		return pos >= 0 && pos < (int)vec->size() ? x : 0;
-#else
 		return left_x(pos + 1, textfont);
-#endif
 	}
 	void set_left_x(int i, int x)
 	{
@@ -782,8 +782,6 @@ protected:
 
 	LineIndexMap::LogicalPosition query_logical_for_visual_row(row_index_t vrow) const;
 
-	virtual void calc_pos_x(CharBuffer *chars) const {}
-	
 private:
 	void internalWrite(const ushort *begin, const ushort *end);
 	SelectionAnchor currentAnchor(bool enabled) const;
@@ -911,9 +909,9 @@ protected:
 private:
 	// 1論理行を現在の幅とWrappingModeで表示行へ分割する。
 	// 入力行のLinePropertyが有効ならUTF-8解析と文字幅計測は再利用される。
-	std::vector<Document::Line> _wrap_line(Document::Line line, std::mutex *mutex) const;
+	std::vector<Document::Line> _wrap_line(Document::Line line, std::mutex *mutex, texteditor::Font const *textfont = nullptr) const;
 	
-	void wrap_line(Document::Line *ll, bool force, std::mutex *mutex);
+	void wrap_line(Document::Line *ll, bool force, std::mutex *mutex, texteditor::Font const *textfont = nullptr);
 	void update_line_index_map(row_index_t lrow, Document::Line *ll, std::mutex *mutex);
 	
 	bool _update_line(row_index_t lrow, std::optional<std::vector<char>> text, bool force, std::mutex *mutex);

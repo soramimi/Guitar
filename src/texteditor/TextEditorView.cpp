@@ -157,49 +157,6 @@ static inline QString appendUnicode(QString const &s, char32_t u)
 }
 
 /**
- * @brief 全文字のX座標を計算する
- * @param chars
- * @param fm
- */
-void TextEditorView::_calc_pos_x(CharBuffer *chars, TextEditorContext const *cx, Font const &fixed_tm, Font const &text_tm)
-{
-return;
-	// 通常文字は行頭または直前のタブからの文字列としてまとめて計測し、
-	// kerningなどを含む実際の描画幅を各Characterの左右座標へ記録する。
-	// タブは等幅フォントを基準に次のタブストップへ進め、そこで計測区間をリセットする。
-	int base_x = 0;
-	int left_x = 0;
-	QString text;
-	for (size_t i = 0; i < chars->size(); i++) {
-		// (*chars)[i].left_x = left_x;
-		chars->set_left_x(i, left_x);
-		char32_t u = (*chars)[i].unicode;
-		if (u == '\t') {
-			int right_x = left_x;
-			int tab_indent = fixed_tm.basis_char_width() * cx->tab_indent_size;
-			if (tab_indent > 0) {
-				right_x = (right_x / tab_indent + 1) * tab_indent;
-			}
-			// (*chars)[i].right_x = right_x;
-			chars->set_right_x(i, right_x);
-			base_x = left_x = right_x;
-			text.clear();
-		} else {
-			text = appendUnicode(text, u);
-			int right_x = base_x + text_tm.text_width(text);
-			// (*chars)[i].right_x = right_x;
-			chars->set_right_x(i, right_x);
-			left_x = right_x;
-		}
-	}
-}
-
-void TextEditorView::calc_pos_x(CharBuffer *chars) const
-{
-	_calc_pos_x(chars, cx(), fixed_font(), text_font());
-}
-
-/**
  * @brief 物理行番号からLinePropertyを取得する
  * @param vrow 物理行番号
  * @return LinePropertyへのポインタ。vrowが範囲外の場合はnullptr
@@ -336,23 +293,6 @@ void TextEditorView::bind_scroll_bar(QScrollBar *vsb, QScrollBar *hsb)
 {
 	m->scroll_bar_v = vsb;
 	m->scroll_bar_h = hsb;
-
-#if 0
-	connect(m->scroll_bar_v, &QScrollBar::sliderPressed, this, [this]() {
-		m->dragging_scroll_bar = m->scroll_bar_v;
-	});
-	connect(m->scroll_bar_v, &QScrollBar::sliderReleased, this, [this]() {
-		m->dragging_scroll_bar = nullptr;
-		updateScrollBarRange();
-	});
-
-	connect(m->scroll_bar_h, &QScrollBar::sliderPressed, this, [this]() {
-		m->dragging_scroll_bar = m->scroll_bar_h;
-	});
-	connect(m->scroll_bar_h, &QScrollBar::sliderReleased, this, [this]() {
-		m->dragging_scroll_bar = nullptr;
-	});
-#endif
 }
 
 void TextEditorView::setup_for_log_widget(TextEditorThemePtr const &theme)
@@ -1040,7 +980,6 @@ void TextEditorView::reflectScrollBar()
 {
 	int v = m->scroll_bar_v ? m->scroll_bar_v->value() : -1;
 	int h = m->scroll_bar_h ? m->scroll_bar_h->value() : -1;
-	// qDebug() << v << h;
 	move(-1, -1, v, h, false);
 }
 
@@ -1117,8 +1056,6 @@ void TextEditorView::timerEvent(QTimerEvent *)
 			update();
 		}
 	}
-	
-	// qDebug() << m->dragging_scroll_bar;
 }
 
 void TextEditorView::contextMenuEvent(QContextMenuEvent *event)
@@ -1152,57 +1089,5 @@ void TextEditorView::debug()
 
 void debug()
 {
-	std::string chars = "p1KaLmIg2kB7fZp5Tm1qbi6dss92C31aPGJK9Lvk7DMPDONXrwD2yVLZrHBio74sokyOsSq7ShEkCnbOllc0g8G8rUSNMnTY8kzx71zWMKbM1E9nQmIB3LNU2WvkjdhMBYIiPYQUt7b1TLndDrfYpykWoKtcgpmryjiPijFLGu9WMuIbGLO4jW1PGmSGXhINinNDyt7cx0ZdQpb8svYiQ7vchZ3VTlyRIcEu6Sqd7cvBMAAQY9YVW1lK8pUeed2QMyblv2k05Gezn5XS2X1w6evXF4J3D3qtC342jLk4Pu1PMTMwjPY5BaNSShTXjSJFrPa1HHLSOv8m3EKtGZUxjz9bsUizjqxcYUv0IK91R0NyQVEbR808hDqFK88GBvoNidDMOgIUGJ1uvZQ3pebCSjCwLBcHXV3CxaptDcVDhL8Swmsad0fkKexT5ewRfaQ2dw5Ro4cOLWcZrCaGnaKt8EUt2pchPEiZIk1PDcVVx8DAUU9sR3blYOC4I05TZDLGes4BqTADYrwg5xHWS1JyNedYhHXiOujq9ex8B26YlnicO5gbLV9jACrGHi1v5LxnxEmhZkykUuFvaxDDrpXgZq1IIBxZHf7OOEPnqmVJpYZ8mJIlSIJ0dZP382VBaEQdYZ6NHuu0Z0aFZXOOp4dvMRJgzSikZRgpedtvdYctDsRHTdb2liRBDDd8gVSLEQD2fA8uZn2HRhCHUlXMM83TbIM4GhPz3OSZGI5IjnfGAQhKZjRKNC5aug1z0s6nyDR1n3G9Dvcdzqdzbzbfm6yGRWI4KINJoOEjKN3w5g5XCAVLRcuNG01HTBrKudueP5WKAYckJBoJq0fXLoqBAqKSEYW17PCv3bZgkmU6r9a86Il87SP6Yap7Pi8A044lzM9SHBWbfYqNuyIpxZivkzn57ve2LRCJMwDYbiup1tbjNn6GVmzhDDoBSY6gbC4kK3";
-	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";
-	QPixmap pm(1, 1);
-	QPainter p(&pm);
-	QFontMetrics fm = p.fontMetrics();
-	QElapsedTimer t;
-	t.start();
-	QString text;
-#if 1
-	int adv = 0;
-	int sum = 0;
-	for (size_t i = 0; i < chars.size(); i++) {
-		char32_t u = chars[i];
-		QString s = QString::fromUcs4(&u, 1);
-		text.push_back(s);
-		adv = fm.horizontalAdvance(text);
-		sum += fm.horizontalAdvance(s);
-	}
-	qDebug() << adv << sum << "elapsed:" << t.elapsed() << "ms";
-#elif 1
-	const int x = 1000;
-	QString qs = QString::fromStdString(chars);
-	int lo = 0;
-	int hi = qs.size();
-	int mid = 0;
-	int adv = 0;
-	while (lo < hi) {
-		mid = (lo + hi) / 2;
-		QString s = qs.mid(0, mid);
-		adv = fm.horizontalAdvance(s);
-		if (adv < x) {
-			lo = mid + 1;
-		} else {
-			hi = mid;
-		}
-	}
-	int index = mid;
-	int act = adv;//fm.horizontalAdvance(qs.mid(0, index));
-	while (act > x && index > 0) {
-		index--;
-		act = fm.horizontalAdvance(qs.mid(0, index));
-	}
-	qDebug() << "index:" << index << "adv:" << act;
-	while (act < x && index < qs.size()) {
-		index++;
-		act = fm.horizontalAdvance(qs.mid(0, index));
-	}
-	qDebug() << "index:" << index << "adv:" << act;
-	qDebug() << "elapsed:" << t.elapsed() << "ms";
-#else
-	adv = fm.horizontalAdvance(QString::fromStdString(chars));
-#endif
 }
 
