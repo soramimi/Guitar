@@ -40,43 +40,18 @@ bool is_breakable(char32_t before, char32_t current)
 	return true;
 }
 
-std::vector<size_t> collect_candidates(std::u32string_view text, Mode requested_mode)
+std::vector<size_t> collect_break_positions(std::u32string_view text)
 {
-	std::vector<size_t> candidates;
-	candidates.reserve(text.size());
-
-	Mode current_mode = Mode::CharWrap;
-	size_t pos = 0;
-	char32_t before = U'\n';
-	char32_t current = U'\n';
-	while (pos < text.size()) {
-		before = current;
-		current = normalized(text[pos]);
-		size_t next = pos + 1;
-
-		if (current_mode == Mode::CharWrap && pos > 0 && is_breakable(before, current)) {
-			current_mode = requested_mode;
+	std::vector<size_t> positions;
+	positions.reserve(text.size());
+	for (size_t pos = 1; pos < text.size(); pos++) {
+		if (is_breakable(normalized(text[pos - 1]), normalized(text[pos]))) {
+			positions.push_back(pos);
 		}
-		if (current_mode == Mode::WordWrap) {
-			char32_t previous = current;
-			while (next <= text.size()) {
-				// 非ASCIIの番兵は、行末を常に分割可能にする。
-				char32_t following = U'\x80';
-				if (next < text.size()) {
-					following = normalized(text[next]);
-				}
-				if (is_breakable(previous, following)) break;
-				previous = following;
-				next++;
-			}
-		}
-
-		assert(next > pos);
-		assert(next <= text.size());
-		candidates.push_back(next);
-		pos = next;
 	}
-	return candidates;
+	// 行末は直前の文字種にかかわらず、常に最後の候補とする。
+	positions.push_back(text.size());
+	return positions;
 }
 
 }
@@ -90,29 +65,50 @@ std::vector<size_t> compute_wrap_points(
 	std::vector<size_t> result;
 	if (text.empty()) return result;
 
-	std::vector<size_t> const candidates = collect_candidates(text, mode);
+	std::vector<size_t> const break_positions = mode == Mode::WordWrap
+		? collect_break_positions(text) : std::vector<size_t>{};
 	size_t begin = 0;
-	size_t candidate_index = 0;
+	size_t break_index = 0;
 	while (begin < text.size()) {
-		assert(candidate_index < candidates.size());
-		assert(candidates[candidate_index] > begin);
+		size_t char_candidate_count = text.size() - begin;
+		size_t candidate_count = char_candidate_count;
+		if (mode == Mode::WordWrap) {
+			// 採用済みの表示行より前にある分割可能位置を読み飛ばす。
+			// break_indexは論理行全体を通じて前進するだけなので、全体でO(n)。
+			while (break_positions[break_index] <= begin) {
+				break_index++;
+			}
+			assert(break_index < break_positions.size());
+			char_candidate_count = break_positions[break_index] - begin;
+			// 最初の分割可能位置までは全文字境界、それ以降は分割可能位置だけを使う。
+			candidate_count = char_candidate_count
+				+ break_positions.size() - break_index - 1;
+		}
+		assert(candidate_count > 0);
+
+		auto candidate_at = [&](size_t index) {
+			assert(index < candidate_count);
+			if (mode == Mode::CharWrap || index < char_candidate_count) {
+				return begin + index + 1;
+			}
+			return break_positions[
+				break_index + 1 + index - char_candidate_count];
+		};
 
 		// 最初の候補すら収まらない場合は、その候補を採用して必ず前進する。
-		// WordWrapでは1単語、CharWrapでは1コードポイントの幅超過となる。
-		size_t best = candidate_index;
-		if (measure(begin, candidates[candidate_index]) <= width) {
+		// どちらのモードも表示行の先頭はCharWrapなので、最初の候補は1コードポイント。
+		size_t best = 0;
+		if (measure(begin, candidate_at(0)) <= width) {
 			// 1, 2, 4, 8...個先を指数探索する。残り全体の中央から測る
 			// 二分探索と異なり、各表示行の近傍だけを計測して上限を見つける。
-			size_t upper = candidates.size();
-			size_t const remaining = candidates.size() - candidate_index;
-			for (size_t step = 1; step < remaining;) {
-				size_t probe = candidate_index + step;
-				if (measure(begin, candidates[probe]) > width) {
-					upper = probe;
+			size_t upper = candidate_count;
+			for (size_t step = 1; step < candidate_count;) {
+				if (measure(begin, candidate_at(step)) > width) {
+					upper = step;
 					break;
 				}
-				best = probe;
-				if (step > remaining / 2) break;
+				best = step;
+				if (step > candidate_count / 2) break;
 				step *= 2;
 			}
 
@@ -122,7 +118,7 @@ std::vector<size_t> compute_wrap_points(
 			size_t hi = upper;
 			while (lo < hi) {
 				size_t mid = lo + (hi - lo) / 2;
-				if (measure(begin, candidates[mid]) <= width) {
+				if (measure(begin, candidate_at(mid)) <= width) {
 					best = mid;
 					lo = mid + 1;
 				} else {
@@ -131,12 +127,11 @@ std::vector<size_t> compute_wrap_points(
 			}
 		}
 
-		size_t end = candidates[best];
+		size_t end = candidate_at(best);
 		assert(end > begin);
 		assert(end <= text.size());
 		result.push_back(end);
 		begin = end;
-		candidate_index = best + 1;
 	}
 
 	assert(!result.empty());

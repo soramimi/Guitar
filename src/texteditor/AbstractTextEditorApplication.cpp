@@ -604,9 +604,9 @@ size_t AbstractTextEditorApplication::layoutThreadCount() const
  * @brief 論理行を折り返し幅で分割する
  *
  * 候補位置の列挙と幅に収まる終端の選択は、Qt非依存のWrapAlgorithmで行う。
- * WordWrapでも論理行の先頭はCharWrap状態から開始し、最初の分割可能位置以降で
- * WordWrapへ切り替える。切り替え後に長い単語が幅を超える場合は、その単語を
- * 文字単位には分割せず、単語終端までを1表示行として出力する。
+ * WordWrapでは各表示行の先頭をCharWrap状態から開始し、最初の分割可能位置以降で
+ * WordWrapへ切り替える。次の表示行ではCharWrapへ戻るため、表示行の先頭にある
+ * 長い単語は文字単位で分割される。
  *
  * 文字ごとのX座標を積み上げるのではなく部分文字列全体を計測するため、
  * カーニングやタブ（Fontのタブストップ設定）を含む実際の描画幅で判定される。

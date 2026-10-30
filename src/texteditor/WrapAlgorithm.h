@@ -22,9 +22,9 @@ using Measure = std::function<int(size_t from, size_t to)>;
  * measure(from, to) は [from, to) の描画幅を返し、同じ from に対して to が増えると
  * 幅が単調非減少になることを前提とする。
  *
- * WordWrapでも論理行の先頭はCharWrapとして候補を作り、最初の分割可能位置に
- * 到達してからWordWrapへ切り替える。切り替え後に1単語がwidthを超える場合は、
- * その単語の終端候補を採用して幅超過を許容する。
+ * WordWrapでは各表示行の先頭をCharWrapとして候補を作り、最初の分割可能位置に
+ * 到達してから、その表示行の終端を選ぶまでWordWrapの候補を使う。次の表示行では
+ * 再びCharWrapから開始するため、表示行の先頭にある長い単語は文字単位で分割される。
  */
 std::vector<size_t> compute_wrap_points(
 	std::u32string_view text,

@@ -45,18 +45,16 @@ bool breakable(char32_t before, char32_t current)
 	return true;
 }
 
-std::vector<size_t> reference_candidates(std::u32string_view text, Mode requested_mode)
+std::vector<size_t> reference_candidates(std::u32string_view text, size_t begin, Mode requested_mode)
 {
 	std::vector<size_t> candidates;
 	Mode current_mode = Mode::CharWrap;
-	size_t pos = 0;
-	char32_t before = U'\n';
-	char32_t current = U'\n';
+	size_t pos = begin;
 	while (pos < text.size()) {
-		before = current;
-		current = normalized(text[pos]);
+		char32_t current = normalized(text[pos]);
 		size_t next = pos + 1;
-		if (current_mode == Mode::CharWrap && pos > 0 && breakable(before, current)) {
+		if (current_mode == Mode::CharWrap && pos > begin
+			&& breakable(normalized(text[pos - 1]), current)) {
 			current_mode = requested_mode;
 		}
 		if (current_mode == Mode::WordWrap) {
@@ -77,22 +75,20 @@ std::vector<size_t> reference_candidates(std::u32string_view text, Mode requeste
 template <typename Measure>
 std::vector<size_t> reference_wrap(std::u32string_view text, int width, Mode mode, Measure measure)
 {
-	std::vector<size_t> candidates = reference_candidates(text, mode);
 	std::vector<size_t> result;
 	size_t begin = 0;
-	size_t index = 0;
 	while (begin < text.size()) {
-		size_t best = index;
+		std::vector<size_t> candidates = reference_candidates(text, begin, mode);
+		size_t best = 0;
 		bool found_fitting = false;
-		for (size_t i = index; i < candidates.size(); i++) {
+		for (size_t i = 0; i < candidates.size(); i++) {
 			if (measure(begin, candidates[i]) > width) break;
 			best = i;
 			found_fitting = true;
 		}
-		if (!found_fitting) best = index;
+		if (!found_fitting) best = 0;
 		begin = candidates[best];
 		result.push_back(begin);
-		index = best + 1;
 	}
 	return result;
 }
@@ -127,12 +123,13 @@ TEST(WrapAlgorithm, CharWrapUsesEveryCharacterBoundary)
 		(std::vector<size_t>{1, 2, 3}));
 }
 
-TEST(WrapAlgorithm, WordWrapStartsAsCharWrapThenStaysWordWrap)
+TEST(WrapAlgorithm, WordWrapRestartsAsCharWrapOnEveryVisualLine)
 {
 	std::u32string const text = U"ab cdefghij kl mn op";
 	auto measure = [](size_t from, size_t to){ return static_cast<int>(to - from); };
 	auto points = texteditor::wrap_algorithm::compute_wrap_points(text, 5, Mode::WordWrap, measure);
-	EXPECT_EQ(split(text, points), (std::vector<std::u32string>{U"ab ", U"cdefghij ", U"kl ", U"mn op"}));
+	EXPECT_EQ(split(text, points),
+		(std::vector<std::u32string>{U"ab ", U"cdefg", U"hij ", U"kl ", U"mn op"}));
 }
 
 TEST(WrapAlgorithm, WordWithoutBreakablePositionRemainsCharWrap)
@@ -143,12 +140,13 @@ TEST(WrapAlgorithm, WordWithoutBreakablePositionRemainsCharWrap)
 	EXPECT_EQ(split(text, points), (std::vector<std::u32string>{U"abcd", U"efgh", U"ij"}));
 }
 
-TEST(WrapAlgorithm, LongWordAfterSwitchMayExceedWidth)
+TEST(WrapAlgorithm, LongWordAtVisualLineStartUsesCharWrap)
 {
 	std::u32string const text = U"aa bbbbbbbbbbbbbbbb cc";
 	auto measure = [](size_t from, size_t to){ return static_cast<int>(to - from); };
 	auto points = texteditor::wrap_algorithm::compute_wrap_points(text, 6, Mode::WordWrap, measure);
-	EXPECT_EQ(split(text, points), (std::vector<std::u32string>{U"aa ", U"bbbbbbbbbbbbbbbb ", U"cc"}));
+	EXPECT_EQ(split(text, points),
+		(std::vector<std::u32string>{U"aa ", U"bbbbbb", U"bbbbbb", U"bbbb ", U"cc"}));
 }
 
 TEST(WrapAlgorithm, MatchesGreedyReferenceForRandomInputs)
@@ -179,11 +177,18 @@ TEST(WrapAlgorithm, MatchesGreedyReferenceForRandomInputs)
 			EXPECT_EQ(actual.back(), text.size());
 			EXPECT_TRUE(std::is_sorted(actual.begin(), actual.end()));
 			EXPECT_EQ(std::adjacent_find(actual.begin(), actual.end()), actual.end());
+			size_t begin = 0;
+			for (size_t end : actual) {
+				if (width > 0 && measure(begin, end) > width) {
+					EXPECT_EQ(end - begin, 1u) << "iteration=" << iteration;
+				}
+				begin = end;
+			}
 		}
 	}
 }
 
-TEST(WrapAlgorithm, GallopingSearchKeepsMeasuredTextNearLinear)
+TEST(WrapAlgorithm, GallopingSearchKeepsMeasuredTextNearLinearInWordWrap)
 {
 	std::u32string const text(4000, U'x');
 	uint64_t measured_code_points = 0;
@@ -192,7 +197,7 @@ TEST(WrapAlgorithm, GallopingSearchKeepsMeasuredTextNearLinear)
 		return static_cast<int>(to - from);
 	};
 
-	auto points = texteditor::wrap_algorithm::compute_wrap_points(text, 40, Mode::CharWrap, measure);
+	auto points = texteditor::wrap_algorithm::compute_wrap_points(text, 40, Mode::WordWrap, measure);
 	ASSERT_EQ(points.back(), text.size());
 	EXPECT_LT(measured_code_points, text.size() * 12);
 }
