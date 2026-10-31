@@ -275,14 +275,26 @@ TEST(CharAttr, DistinguishesDefaultAndExplicitBlack)
 {
 	CharAttr attr;
 	EXPECT_FALSE(attr.has_foreground_color());
+	EXPECT_FALSE(attr.has_background_color());
 
 	attr.set_foreground_color(0x000000);
 	EXPECT_TRUE(attr.has_foreground_color());
 	EXPECT_EQ(attr.color, 0u);
+	EXPECT_FALSE(attr.has_background_color());
+
+	attr.set_background_color(0x000000);
+	EXPECT_TRUE(attr.has_background_color());
+	EXPECT_EQ(attr.background_color, 0u);
+	EXPECT_TRUE(attr.has_foreground_color());
 
 	attr.clear_foreground_color();
 	EXPECT_FALSE(attr.has_foreground_color());
 	EXPECT_EQ(attr.color, 0u);
+	EXPECT_TRUE(attr.has_background_color());
+
+	attr.clear_background_color();
+	EXPECT_FALSE(attr.has_background_color());
+	EXPECT_EQ(attr.background_color, 0u);
 }
 
 TEST(EscapeSequence, ResetClearsExplicitColor)
@@ -294,6 +306,7 @@ TEST(EscapeSequence, ResetClearsExplicitColor)
 
 	for (char c : std::string("\x1b[0m")) sequence.update(c);
 	EXPECT_FALSE(sequence.has_color());
+	EXPECT_FALSE(sequence.has_background_color());
 }
 
 TEST(EscapeSequence, SupportsEmptyAndMultipleSgrParameters)
@@ -315,6 +328,66 @@ TEST(EscapeSequence, SupportsEmptyAndMultipleSgrParameters)
 	// 色を変えないSGRも、終端の'm'を本文へ流出させない。
 	EXPECT_TRUE(update("\x1b[1m"));
 	EXPECT_FALSE(sequence.has_color());
+
+	for (char c : std::string("\x1b[36m")) sequence.update(c);
+	EXPECT_TRUE(sequence.has_color());
+	EXPECT_EQ(sequence.color(), 0x008080u);
+	EXPECT_TRUE(update("\x1b[39m"));
+	EXPECT_FALSE(sequence.has_color());
+
+	// neofetchが出力するカーソル表示・折り返し制御も、未対応の表示文字として
+	// 終端の'h'や'l'を本文へ流出させず、CSI全体を消費する。
+	EXPECT_TRUE(update("\x1b[?25l"));
+	EXPECT_TRUE(sequence.empty());
+	EXPECT_TRUE(update("\x1b[?7h"));
+	EXPECT_TRUE(sequence.empty());
+	EXPECT_TRUE(update("\x1b[41C"));
+	EXPECT_TRUE(sequence.empty());
+}
+
+TEST(EscapeSequence, SupportsBackgroundAndExtendedColors)
+{
+	EscapeSequence sequence;
+	auto update = [&](std::string const &text){
+		bool consumed = false;
+		for (char c : text) consumed = sequence.update(c);
+		return consumed;
+	};
+
+	EXPECT_TRUE(update("\x1b[31;44m"));
+	EXPECT_TRUE(sequence.has_color());
+	EXPECT_EQ(sequence.color(), 0x800000u);
+	EXPECT_TRUE(sequence.has_background_color());
+	EXPECT_EQ(sequence.background_color(), 0x000080u);
+
+	EXPECT_TRUE(update("\x1b[49m"));
+	EXPECT_TRUE(sequence.has_color());
+	EXPECT_FALSE(sequence.has_background_color());
+
+	EXPECT_TRUE(update("\x1b[48;5;0m"));
+	EXPECT_TRUE(sequence.has_background_color());
+	EXPECT_EQ(sequence.background_color(), 0x000000u);
+	EXPECT_TRUE(update("\x1b[48;5;196m"));
+	EXPECT_EQ(sequence.background_color(), 0xff0000u);
+	EXPECT_TRUE(update("\x1b[48;5;232m"));
+	EXPECT_EQ(sequence.background_color(), 0x080808u);
+	EXPECT_TRUE(update("\x1b[103m"));
+	EXPECT_EQ(sequence.background_color(), 0xffff00u);
+
+	EXPECT_TRUE(update("\x1b[48;2;10;20;30m"));
+	EXPECT_EQ(sequence.background_color(), 0x0a141eu);
+	EXPECT_TRUE(update("\x1b[38;5;46m"));
+	EXPECT_EQ(sequence.color(), 0x00ff00u);
+
+	uint32_t const saved_background = sequence.background_color();
+	EXPECT_TRUE(update("\x1b[48;5m"));
+	EXPECT_EQ(sequence.background_color(), saved_background);
+	EXPECT_TRUE(update("\x1b[48;2;1;2m"));
+	EXPECT_EQ(sequence.background_color(), saved_background);
+
+	EXPECT_TRUE(update("\x1b[0m"));
+	EXPECT_FALSE(sequence.has_color());
+	EXPECT_FALSE(sequence.has_background_color());
 }
 
 TEST(Utf16Text, MapsCodePointRangesToUtf16Ranges)
@@ -353,7 +426,8 @@ TEST(TerminalLayout, PreservesColorsAcrossWrappedFragments)
 
 	std::string const red = "red red red red red red red ";
 	std::string const plain = "plain plain";
-	std::string const input = std::string("\x1b[1;31m") + red + "\x1b[m" + plain;
+	std::string const input = std::string("\x1b[?25l\x1b[1;31;44m")
+		+ red + "\x1b[m" + plain + "\x1b[?25h";
 	app.load({Document::Line(input)});
 
 	EXPECT_GT(app.visual_line_count(), 1);
@@ -363,9 +437,12 @@ TEST(TerminalLayout, PreservesColorsAcrossWrappedFragments)
 	for (size_t i = 0; i < red.size(); i++) {
 		EXPECT_TRUE(chars[i].attr.has_foreground_color());
 		EXPECT_EQ(chars[i].attr.color, 0x800000u);
+		EXPECT_TRUE(chars[i].attr.has_background_color());
+		EXPECT_EQ(chars[i].attr.background_color, 0x000080u);
 	}
 	for (size_t i = red.size(); i < chars.size(); i++) {
 		EXPECT_FALSE(chars[i].attr.has_foreground_color());
+		EXPECT_FALSE(chars[i].attr.has_background_color());
 	}
 }
 

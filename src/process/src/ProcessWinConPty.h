@@ -21,6 +21,7 @@ public:
 	void close_input() override;
 	void write_input(char const *ptr, int len) override;
 	int read_output(char *ptr, int len);
+	void resize_terminal(int columns, int rows) override;
 	void set_no_window(bool no_window);
 	void set_options(BasicProcessWinConPty::Options const &options);
 };

@@ -1,6 +1,7 @@
 
 #include "MainWindow.h"
 #include "MySettings.h"
+#include "PtyProcessController.h"
 #include "ui_MainWindow.h"
 
 #include <QDebug>
@@ -9,6 +10,7 @@
 #include <QPainter>
 #include <QTextFormat>
 #include <QFileDialog>
+#include <QStandardPaths>
 #include <QTimer>
 #include <QStyle>
 #include <memory>
@@ -21,6 +23,7 @@ struct MainWindow::Private {
 	TextEditorEngine_sp engine2;
 	QString last_used_file;
 	QTimer tm;
+	PtyProcessController neofetch;
 };
 
 MainWindow::MainWindow(QWidget *parent)
@@ -33,7 +36,7 @@ MainWindow::MainWindow(QWidget *parent)
 
 	ui->splitter->setSizes({500, 500});
 	
-	connect(new QShortcut(QKeySequence("Ctrl+T"), this), &QShortcut::activated, this, &MainWindow::debug);
+	// connect(new QShortcut(QKeySequence("Ctrl+T"), this), &QShortcut::activated, this, &MainWindow::debug);
 
 	// setup text editor
 	
@@ -51,7 +54,8 @@ MainWindow::MainWindow(QWidget *parent)
 	texteditor()->setWriteMode(AbstractTextEditorApplication::WriteMode::Insert);
 
 	texteditor()->set_auto_layout(true);
-	texteditor()->setWrappingMode(TextEditorView::WrappingMode::WordWrap);
+	texteditor()->setWrappingMode(TextEditorView::WrappingMode::NoWrap);
+	// texteditor()->setWrappingMode(TextEditorView::WrappingMode::WordWrap);
 	// texteditor()->setWrappingMode(TextEditorView::WrappingMode::CharWrap);
 
 	// setup terminal
@@ -62,6 +66,24 @@ MainWindow::MainWindow(QWidget *parent)
 	terminal()->set_auto_layout(true);
 	terminal()->showLineNumber(false);
 	terminal()->setTerminalMode(true);
+
+	connect(&m->neofetch, &PtyProcessController::outputReady, this,
+		[this](QByteArray const &output){
+			writeToTerminal(std::string_view(
+				output.constData(), static_cast<size_t>(output.size())));
+		});
+	connect(&m->neofetch, &PtyProcessController::completed, this,
+		[this](int exit_code, QString const &error_message){
+			if (exit_code == 0 && error_message.isEmpty()) return;
+			QString text = error_message.isEmpty()
+				? tr("[neofetchが異常終了しました: exit code %1]\n").arg(exit_code)
+				: tr("[neofetchを起動できませんでした: %1]\n").arg(error_message);
+			QByteArray const message = text.toUtf8();
+			writeToTerminal(std::string_view(
+				message.constData(), static_cast<size_t>(message.size())));
+		});
+	connect(terminal(), &TextEditorView::terminalSizeChanged,
+		&m->neofetch, &PtyProcessController::resizeTerminal);
 	
 	connect(&m->tm, SIGNAL(timeout()), this, SLOT(updateIm()));
 }
@@ -237,12 +259,26 @@ void MainWindow::writeToTerminal(const std::string_view &str)
 	terminal()->moveToBottom();
 }
 
-void MainWindow::debug()
+
+
+
+void MainWindow::on_action_debug_triggered()
 {
-	std::string str = "\x1b[31mHello,\x1b[32m world\x1b[0m\n";
-	writeToTerminal(str);
+	if (m->neofetch.isRunning()) {
+		writeToTerminal("[neofetchはすでに実行中です]\n");
+		return;
+	}
+
+	QString const executable = QStandardPaths::findExecutable("neofetch");
+	if (executable.isEmpty()) {
+		writeToTerminal("[neofetchが見つかりません]\n");
+		return;
+	}
+
+	writeToTerminal("$ neofetch --off --color_blocks off\n");
+	if (!m->neofetch.start(executable,
+		{"--off", "--color_blocks", "off"}, terminal()->terminalSizeInCells())) {
+		writeToTerminal("[neofetchを起動できませんでした]\n");
+	}
 }
-
-
-
 

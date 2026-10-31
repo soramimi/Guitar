@@ -15,11 +15,15 @@ public:
 		bool output_vector = false;
 		bool output_queue = false;
 		bool vt_stripped = true;
+		bool forward_parent_stdin = true;
+		int columns = 80;
+		int rows = 25;
 	};
 
 	BasicProcessWinConPty(Options const &options = Options());
 	~BasicProcessWinConPty();
 	void set_change_dir(process::helper::dir_string_t const &dir);
+	void set_environment(std::string const &environment);
 	void set_options(Options const &options);
 
 	bool start(std::string const &cmd);
@@ -28,6 +32,7 @@ public:
 	void close_input();
 	int write_input(char const *ptr, int n);
 	int read_output(char *ptr, int len);
+	void resize_terminal(int columns, int rows);
 	bool is_running() const;
 	int get_exit_code() const;
 	std::vector<char> const &stdout_bytes() const;

@@ -42,7 +42,8 @@ make
 ```text
 process-example.pro              - 実験/サンプル実行用 qmake プロジェクト
 conpty-worker.pro                - Windows ConPTY worker 用 qmake プロジェクト
-process.pri                      - ライブラリのソース/ヘッダ一覧 (両 .pro から include される)
+process.pri                      - 全バックエンドのソース/ヘッダ一覧 (両 .pro から include される)
+ptyprocess.pri                   - 組み込み用のPOSIX PTY / Windows ConPTYだけを含む最小構成
 
 src/                             - ライブラリ本体
   AbstractProcess.h/cpp          - 抽象インターフェース。AbstractProcess / AbstractPtyProcess
@@ -78,7 +79,10 @@ README.md                        - プロジェクト概覧 (現行コードに�
 - `AbstractProcess`: 通常の stdin/stdout/stderr パイプ型プロセス。純粋仮想のみ (`start(command, use_input)`, `wait`, `stop`, `is_running`, `get_exit_code`, `write_input`, `close_input`, `stdout_bytes`, `stderr_bytes`)。
 - `AbstractPtyProcess`: 疑似端末型プロセス。共有状態 (`mutex_`, `cond_`, `change_dir_`, `completed_fn_`, `user_data_`, `output_queue_`, `output_vector_`, `stderr_bytes_`) を基底クラスが直接保持し、非 virtual の `write_output()` / `pop_output()` / `set_change_dir()` / `set_completion_callback()` / `notify_completed()` を提供する。
 - 出力バッファ (output_queue_ / output_vector_) のロックは基底の `mutex_` に一元化されている。各実装は `write_output()` で追記し、`read_output()` は `pop_output()` に委譲する。独自 mutex でこれらを触ってはいけない。
-- `set_max_output_queue_size()` で output_queue_ を上限付きにできる (0 = 無制限、超過時は古い方から破棄)。output_vector_ (結果バッファ) は常に無制限。
+- `set_max_output_queue_size()` で output_queue_ を上限付きにできる (0 = 無制限、超過時は古い方から破棄)。
+- `set_capture_output_vector(false)`で結果ベクタの重複保持を止め、逐次キューだけを使える。
+- `resize_terminal(columns, rows)`はPTYサイズ変更API。未対応の互換バックエンドでは既定のno-op、
+  `ProcessPosixPty`と`ProcessWinConPty`では実際のPTYへ反映する。
 - `AbstractPtyProcess::get_message()` は deprecated。`clear_message()` あり。
 - `set_completion_callback()` は `start()` 前に設定すること (実行中の変更はスレッドセーフではない)。
 - `APP_GUITAR` / `QT_VERSION` 用の Qt 連携フックは削除済み (ヘッダに include の残骸があるのみ)。
@@ -98,7 +102,7 @@ README.md                        - プロジェクト概覧 (現行コードに�
 | クラス | ファイル | 方式 | 主な特徴 |
 |---|---|---|---|
 | `BasicProcessWin` | `src/BasicProcessWin.h/cpp` | 匿名パイプ + `CreateProcessW` | stdout/stderr を同じパイプに統合。`Options` で stdout 中継 / 結果ベクタ / 逐次キューを切替。`wait_for_output()` と完了コールバック (`set_completion_callback` / `notify_completed`) を持つ。 |
-| `BasicProcessWinConPty` | `src/BasicProcessWinConPty.h/cpp` | `CreatePseudoConsole` + `CreateProcessW` | ConPTY を直接所有。入力転送スレッド、出力読み取りスレッド、状態保持型 `VtStripper` を持つ。`Options::vt_stripped` (既定 true)、`Options::no_window` / `set_no_window()`。 |
+| `BasicProcessWinConPty` | `src/BasicProcessWinConPty.h/cpp` | `CreatePseudoConsole` + `CreateProcessW` | ConPTY を直接所有。入力転送スレッド、出力読み取りスレッド、状態保持型 `VtStripper` を持つ。`Options`でVT除去、親stdin転送、初期列数・行数を設定し、実行中は`ResizePseudoConsole()`で変更できる。NUL区切りの環境変数上書きを親環境へマージする。 |
 
 - `misc::get_error_message()` と `misc::build_command_line()` は `src/BasicProcessWin.h` で宣言、`src/BasicProcessWin.cpp` で定義されている (sampleapp の misc とは別物なので注意)。
 - RAII ハンドル (`AutoHandle` / `AutoProcessInformation` / `AutoPseudoConsole`) と `VtStripper`、`write_all`、UTF-8/UTF-16 変換 (`convert_str_to_wstr` / `convert_wstr_to_str`)、`getProgram` は `src/ProcessWinHelper.h` にヘッダのみ実装 (匿名名前空間)。旧 `wstring.h/cpp` は削除済み。
@@ -109,7 +113,7 @@ README.md                        - プロジェクト概覧 (現行コードに�
 | クラス | ファイル | 基底 | ラップ対象 | 備考 |
 |---|---|---|---|---|
 | `ProcessWin` | `src/ProcessWin.h/cpp` | `AbstractProcess` | 内部の `ProcessWinThread` | 通常パイプ版。stdout/stderr を別キューで取得。環境変数ブロックをキャッシュし `LANG=en_US.UTF8` を追加 (既存の LANG は尊重)。`stop()` は `TerminateProcess` で強制終了してから wait する。起動失敗は `get_error_code()` / `get_error_message()` で取得可能。 |
-| `ProcessWinConPty` | `src/ProcessWinConPty.h/cpp` | `AbstractPtyProcess` | `BasicProcessWinConPty` | ConPTY 直接所有版。`output_vector` 既定オン。stderr は空扱い。`set_no_window()` / `set_options()` を持つ。`wait()` は `conpty.wait()` でブロックしている間に state mutex を保持しないため、待機中の `write_input()` / `read_output()` / `stop()` が機能する。`stop()` は `terminate()` で子を終了させてから回収する。 |
+| `ProcessWinConPty` | `src/ProcessWinConPty.h/cpp` | `AbstractPtyProcess` | `BasicProcessWinConPty` | ConPTY 直接所有版。既定は逐次キュー有効・結果ベクタ無効・VT保持・親stdin転送無効。終了後の残留出力も`read_output()`できる。stderr は空扱い。`set_no_window()` / `set_options()` / `resize_terminal()`を持つ。 |
 | `ProcessWinPty` | `src/ProcessWinPty.h/cpp` | `AbstractPtyProcess` | winpty | 互換用。現在の主経路ではない。起動失敗の理由は `get_error_message()` に入る (exit code は一律 127)。 |
 | `ProcessWinConPtyWithWorker` | `src/ProcessWinConPtyWithWorker.h/cpp` | `AbstractPtyProcess` | `BasicProcessWin` + `conpty-worker.exe` | ConPTY を別プロセスへ分離する構成。Qt Creator など外側の疑似端末との干渉回避が目的。`wait_for_output()` で worker 出力からプロンプト検出できる。`stop()` は worker を強制終了してから回収する。 |
 
@@ -132,14 +136,19 @@ README.md                        - プロジェクト概覧 (現行コードに�
 | クラス | 基底 | 方式 | 主な特徴 |
 |---|---|---|---|
 | `ProcessPosix` | `AbstractProcess` | `pipe()` + `fork()` + `execvp()` | stdout/stderr を別パイプで取得。入力はキュー経由で子 stdin へ書き込む。子で `LANG=C` を設定。exec 失敗時は `_exit(127)`。 |
-| `ProcessPosixPty` | `AbstractPtyProcess` | `posix_openpt()` + `fork()` + `execvp()` | PTY master/slave を使い、`select()` で master fd を監視。VT ストリッピングは行わない。 |
+| `ProcessPosixPty` | `AbstractPtyProcess` | `posix_openpt()` + `fork()` + `execvp()` | PTY master/slave を使い、`select()` で master fd を監視。VT ストリッピングは行わず、初期サイズと`TIOCSWINSZ`によるresizeに対応する。 |
 
 POSIX 側の安定化機構:
 
 - **SIGPIPE 対策**: `ProcessPosixThread` のスレッドは開始時に `pthread_sigmask()` で SIGPIPE をブロックする。子が stdin を閉じた後の `write()` は EPIPE エラーとして処理され、ホストプロセスがシグナルで落ちることはない。
 - **強制終了エスカレーション**: `stop()` / デストラクタは SIGTERM を送り、約 2 秒で終了しない子には SIGKILL へエスカレーションする (終了コードは `128 + signal`)。SIGTERM を無視する子でハングしない。
 - **PTY 出力の drain**: `ProcessPosixPty` は子の終了を検出した後、master fd が EIO/EOF になるまで残りの出力を読み切ってから close する (最後の出力を取りこぼさない)。
-- **fork 安全性**: argv 構築と env 文字列のコピーは fork 前に済ませ、fork 後の子では `execvp` と `write(2)` のみを使う (`fprintf` は使わない)。子の `setenv`/`putenv` は残っている (下記「既知の未整理点」参照)。
+- **端末設定**: slaveをcontrolling terminalとして取得し、`ICANON | ECHO | ISIG`と
+  `OPOST | ONLCR`を有効にする。GUIプロセス自身のstdin設定には依存しない。
+- **環境変数**: `env`は従来の単一`NAME=VALUE`に加えて、NUL区切りの複数上書きを受け付ける。
+  親環境は継承し、PTY版は`LANG=C`へ強制変更しない。
+- **fork 安全性**: argv 構築と env 配列の展開は fork 前に済ませ、fork 後の子ではstdioを使わない。
+  子の`putenv`は残っている (下記「既知の未整理点」参照)。
 - pipe/fork 失敗時の `error_message` は `get_error_message()` で取得できる。
 
 POSIX 側の注意:

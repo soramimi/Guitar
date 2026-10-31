@@ -80,7 +80,7 @@
      <x>0</x>
      <y>0</y>
      <width>606</width>
-     <height>21</height>
+     <height>18</height>
     </rect>
    </property>
    <widget class="QMenu" name="menu_File">
@@ -99,8 +99,15 @@
     <addaction name="action_edit_copy"/>
     <addaction name="action_edit_paste"/>
    </widget>
+   <widget class="QMenu" name="menuExperimental">
+    <property name="title">
+     <string>Experimental</string>
+    </property>
+    <addaction name="action_debug"/>
+   </widget>
    <addaction name="menu_File"/>
    <addaction name="menu_Edit"/>
+   <addaction name="menuExperimental"/>
   </widget>
   <action name="action_file_open">
    <property name="text">
@@ -142,6 +149,22 @@
    </property>
    <property name="shortcut">
     <string>Ctrl+V</string>
+   </property>
+  </action>
+  <action name="action_test">
+   <property name="text">
+    <string>test</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+T</string>
+   </property>
+  </action>
+  <action name="action_debug">
+   <property name="text">
+    <string>Debug</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+T</string>
    </property>
   </action>
  </widget>

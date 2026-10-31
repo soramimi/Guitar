@@ -456,6 +456,9 @@ CharBuffer AbstractTextEditorApplication::_parse_line(TextEditorContext const *c
 				if (escseq.has_color()) {
 					r.attr.set_foreground_color(escseq.color());
 				}
+				if (escseq.has_background_color()) {
+					r.attr.set_background_color(escseq.background_color());
+				}
 				ret.emplace_back(r);
 			}
 			

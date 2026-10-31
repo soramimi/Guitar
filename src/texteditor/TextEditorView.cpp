@@ -39,6 +39,7 @@ struct TextEditorView::Private {
 	
 	QTimer update_scroll_bar_timer; // 最大行幅の変化後、横スクロール範囲更新を遅延実行する
 	QTimer resize_timer; // 連続resize完了後に折り返し幅を反映するデバウンスタイマー
+	QSize terminal_size;
 };
 
 TextEditorView::TextEditorView(QWidget *parent)
@@ -94,6 +95,11 @@ TextEditorView::TextEditorView(QWidget *parent)
 	m->resize_timer.setSingleShot(true);
 	connect(&m->resize_timer, &QTimer::timeout, this, [this](){
 		layoutEditor();
+		QSize const size = terminalSizeInCells();
+		if (size != m->terminal_size) {
+			m->terminal_size = size;
+			emit terminalSizeChanged(size);
+		}
 	});
 }
 
@@ -110,6 +116,14 @@ int TextEditorView::basic_character_width_px() const
 {
 	// 固定幅フォントの '0' を基準文字幅とする
 	return fixed_font().basis_char_width();
+}
+
+QSize TextEditorView::terminalSizeInCells() const
+{
+	int const char_width = std::max(1, basic_character_width_px());
+	int const columns = std::max(1, editor_viewport_width_px() / char_width);
+	int const rows = std::max(1, editor_viewport_height());
+	return QSize(columns, rows);
 }
 	
 void TextEditorView::setTheme(TextEditorThemePtr const &theme)
@@ -439,6 +453,9 @@ QColor TextEditorView::colorForIndex(CharAttr const &attr, bool foreground)
 		}
 		return defaultForegroundColor();
 	}
+	if (attr.has_background_color()) {
+		return QColor(QRgb(attr.background_color | 0xff000000));
+	}
 	return Qt::transparent;
 }
 
@@ -654,6 +671,38 @@ void TextEditorView::paintEvent(QPaintEvent *)
 						int h = N;
 						pr.fillRect(x, y, w, h, theme()->fg_current_line); // アンダーライン
 					};
+
+					// ANSI SGRで指定された文字背景。空白とタブも文字幅の矩形を塗る。
+					auto DrawCharacterBackgrounds = [&](){
+						std::size_t begin = 0;
+						pr.save();
+						pr.setClipRect(TextAreaRectForClip());
+						while (begin < chars.size()) {
+							CharAttr const &attr = chars[begin].attr;
+							if (!attr.has_background_color()) {
+								begin++;
+								continue;
+							}
+
+							std::size_t end = begin + 1;
+							int right_x = chars.right_x(begin, text_font());
+							while (end < chars.size()
+								&& chars[end].attr.has_background_color()
+								&& chars[end].attr.background_color == attr.background_color
+								&& right_x == chars.left_x(end, text_font())) {
+								right_x = chars.right_x(end, text_font());
+								end++;
+							}
+
+							int const left_x = chars.left_x(begin, text_font());
+							if (left_x < right_x) {
+								pr.fillRect(text_origin_x_px + left_x, text_origin_y,
+									right_x - left_x, line_height, colorForIndex(attr, false));
+							}
+							begin = end;
+						}
+						pr.restore();
+					};
 	
 					// 選択範囲
 					auto DrawSelectionArea = [&](){
@@ -786,6 +835,7 @@ void TextEditorView::paintEvent(QPaintEvent *)
 						if (vrow_to_lrow(vrow) == current_logical_row()) {
 							DrawCurrentLineBackground();
 						}
+						DrawCharacterBackgrounds();
 						break;
 					case 1:
 						DrawSelectionArea();

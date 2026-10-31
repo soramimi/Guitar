@@ -15,6 +15,12 @@ unix:QMAKE_CXXFLAGS += -Wall -Wextra -Werror=return-type -Werror=trigraphs -Wno-
 INCLUDEPATH += $$PWD/../../
 INCLUDEPATH += $$PWD/../../texteditor
 
+PROCESS_SRC = $$PWD/../../process/src
+PROCESS_PRI = $$PWD/../../process/ptyprocess.pri
+INCLUDEPATH += $$PROCESS_SRC
+DISTFILES += $$PROCESS_PRI
+include($$PROCESS_PRI)
+
 win32:LIBS += -lole32
 
 SOURCES += \
@@ -35,6 +41,7 @@ SOURCES += \
 	../unicode.cpp \
 	../AbstractTextEditorApplication.cpp \
 	src/MainWindow.cpp \
+	src/PtyProcessController.cpp \
 	src/MySettings.cpp \
 	src/main.cpp
 
@@ -58,6 +65,7 @@ HEADERS  += \
 	../unicode.h \
 	../AbstractTextEditorApplication.h \
 	src/MainWindow.h \
+	src/PtyProcessController.h \
 	src/MySettings.h
 
 FORMS    += \

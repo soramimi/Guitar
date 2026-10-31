@@ -83,9 +83,11 @@ protected:
 	std::vector<char> stderr_bytes_;
 
 	size_t max_output_queue_size_ = 0; // 0 = unlimited
+	bool capture_output_vector_ = true;
 
 	void write_output(char const *buf, size_t len);
 	int pop_output(char *ptr, int len);
+	void reset_output();
 
 public:
 	virtual ~AbstractPtyProcess() { }
@@ -101,6 +103,13 @@ public:
 	{
 		std::lock_guard<std::mutex> lock(mutex_);
 		max_output_queue_size_ = n;
+	}
+
+	void set_capture_output_vector(bool enabled)
+	{
+		std::lock_guard<std::mutex> lock(mutex_);
+		capture_output_vector_ = enabled;
+		if (!enabled) output_vector_.clear();
 	}
 
 	// start() 前に設定すること。実行中の変更はスレッドセーフではない。
@@ -138,6 +147,12 @@ public:
 	virtual void write_input(char const *ptr, int len) = 0;
 	virtual int read_output(char *ptr, int len) = 0;
 	virtual void close_input() = 0;
+	// PTYサイズ変更をサポートしない既存バックエンドとの互換性を保つ。
+	virtual void resize_terminal(int columns, int rows)
+	{
+		(void)columns;
+		(void)rows;
+	}
 };
 
 #endif // ABSTRACTPROCESS_H

@@ -213,14 +213,15 @@ public:
 struct CharAttr {
 	enum Flag : uint8_t {
 		ForegroundColorSpecified = 1 << 0,
+		BackgroundColorSpecified = 1 << 1,
 	};
 
-	uint16_t flags : 8 = 0;
-	uint32_t color : 24 = 0;
+	uint8_t flags = 0;
+	uint32_t color = 0;
+	uint32_t background_color = 0;
 	CharAttr(int index = 0)
-		: flags(index)
+		: flags(static_cast<uint8_t>(index))
 	{
-		// color = 0xff0000;
 	}
 	bool has_foreground_color() const
 	{
@@ -236,9 +237,24 @@ struct CharAttr {
 		flags &= ~ForegroundColorSpecified;
 		color = 0;
 	}
+	bool has_background_color() const
+	{
+		return (flags & BackgroundColorSpecified) != 0;
+	}
+	void set_background_color(uint32_t value)
+	{
+		background_color = value & 0x00ffffff;
+		flags |= BackgroundColorSpecified;
+	}
+	void clear_background_color()
+	{
+		flags &= ~BackgroundColorSpecified;
+		background_color = 0;
+	}
 	bool operator == (CharAttr const &r) const
 	{
-		return flags == r.flags && color == r.color;
+		return flags == r.flags && color == r.color
+			&& background_color == r.background_color;
 	}
 	bool operator != (CharAttr const &r) const
 	{

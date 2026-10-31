@@ -12,14 +12,17 @@ struct ProcessWinConPty::Private {
 	std::condition_variable cv;
 	bool running = false;
 	int exit_code = -1;
+	std::string error_message;
 };
 
 ProcessWinConPty::ProcessWinConPty()
 	: m(new Private())
 {
 	BasicProcessWinConPty::Options opts;
-	opts.output_vector = true;
+	opts.output_vector = false;
 	opts.output_queue = true;
+	opts.vt_stripped = false;
+	opts.forward_parent_stdin = false;
 	set_options(opts);
 }
 
@@ -39,7 +42,6 @@ void ProcessWinConPty::set_options(BasicProcessWinConPty::Options const &options
 
 void ProcessWinConPty::start(std::string const &command, std::string const &env, bool use_input)
 {
-	(void)env;
 	(void)use_input;
 	std::unique_lock<std::mutex> op(m->op_mutex);
 	{
@@ -54,12 +56,19 @@ void ProcessWinConPty::start(std::string const &command, std::string const &env,
 	if (command.empty()) {
 		return;
 	}
+	reset_output();
 	if (!BasicProcessWinConPty::is_conpty_available()) {
+		{
+			std::lock_guard<std::mutex> state_lock(m->state_mutex);
+			m->error_message = "ConPTY is not available";
+		}
+		notify_completed();
 		return;
 	}
 	{
 		std::lock_guard<std::mutex> state_lock(m->state_mutex);
 		m->exit_code = -1;
+		m->error_message.clear();
 		m->running = true;
 	}
 	{
@@ -68,13 +77,19 @@ void ProcessWinConPty::start(std::string const &command, std::string const &env,
 		stderr_bytes_.clear();
 	}
 	m->conpty.set_change_dir(change_dir_);
+	m->conpty.set_environment(env);
 	m->thread = std::thread([this](std::string const &command){
-		m->conpty.start(command);
+		{
+			// start中のConPTYハンドル構築とresize/read/writeを直列化する。
+			std::lock_guard<std::mutex> lock(m->state_mutex);
+			m->conpty.start(command);
+		}
 		auto result = m->conpty.wait();
 		{
 			std::lock_guard<std::mutex> lock(m->state_mutex);
 			m->running = false;
 			m->exit_code = result.exit_code_;
+			m->error_message = result.error_message_;
 		}
 		{
 			std::lock_guard<std::mutex> output_lock(mutex_);
@@ -97,6 +112,7 @@ ProcessResult ProcessWinConPty::wait(int time)
 		if (m->exit_code != -1) {
 			result.exit_code_ = static_cast<std::uint32_t>(m->exit_code);
 		}
+		result.error_message_ = m->error_message;
 	}
 	{
 		std::unique_lock<std::mutex> op(m->op_mutex);
@@ -126,6 +142,7 @@ ProcessResult ProcessWinConPty::wait(int time)
 	if (m->exit_code != -1) {
 		result.exit_code_ = static_cast<std::uint32_t>(m->exit_code);
 	}
+	result.error_message_ = m->error_message;
 	return result;
 }
 
@@ -135,31 +152,20 @@ void ProcessWinConPty::stop()
 	{
 		std::lock_guard<std::mutex> lock(m->state_mutex);
 		running = m->running;
+		if (running) {
+			// Basic側のstart完了後にstate_mutexが解放されるため、起動直後でも
+			// 有効なプロセスハンドルに対して停止を要求できる。
+			m->conpty.terminate();
+		}
 	}
 	if (running) {
-		// 先に子プロセスを終了させる。別スレッドが wait() でブロックしていても、
-		// これによりその待機が解除される (terminate() は内部で競合対策済み)。
-		m->conpty.terminate();
+		// Basic側のwait()はワーカースレッドだけが所有する。ここから二重にwaitせず、
+		// terminateで解除されたワーカーの完了通知を待つ。
 		std::unique_lock<std::mutex> op(m->op_mutex);
-		{
+		m->cv.wait(op, [this]() {
 			std::lock_guard<std::mutex> lock(m->state_mutex);
-			running = m->running;
-		}
-		if (running) {
-			m->conpty.close_input();
-			m->conpty.wait();
-			{
-				std::lock_guard<std::mutex> lock(m->state_mutex);
-				m->running = false;
-				m->exit_code = m->conpty.get_exit_code();
-			}
-			{
-				std::lock_guard<std::mutex> output_lock(mutex_);
-				std::vector<char> const &out = m->conpty.stdout_bytes();
-				output_vector_.assign(out.begin(), out.end());
-				stderr_bytes_.clear();
-			}
-		}
+			return !m->running;
+		});
 	}
 	if (m->thread.joinable()) {
 		m->thread.join();
@@ -195,10 +201,13 @@ int ProcessWinConPty::read_output(char *ptr, int len)
 		return 0;
 	}
 	std::lock_guard<std::mutex> lock(m->state_mutex);
-	if (m->running) {
-		return m->conpty.read_output(ptr, len);
-	}
-	return 0;
+	return m->conpty.read_output(ptr, len);
+}
+
+void ProcessWinConPty::resize_terminal(int columns, int rows)
+{
+	std::lock_guard<std::mutex> lock(m->state_mutex);
+	m->conpty.resize_terminal(columns, rows);
 }
 
 void ProcessWinConPty::set_no_window(bool no_window)

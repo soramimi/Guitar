@@ -50,6 +50,7 @@ public:
 	int get_exit_code() const override;
 	int get_error_code() const;
 	std::string const &get_error_message() const;
+	void resize_terminal(int columns, int rows) override;
 
 };
 

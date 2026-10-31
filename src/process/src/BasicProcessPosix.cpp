@@ -1,5 +1,6 @@
 #include "BasicProcessPosix.h"
 #include "ProcessHelper.h"
+#include <algorithm>
 #include <cstring>
 #include <deque>
 #include <mutex>
@@ -598,6 +599,8 @@ struct ProcessPosixPty::Private {
 	int exit_code = -1;
 	int error_code = 0;
 	std::string error_message;
+	int columns = 80;
+	int rows = 25;
 };
 
 ProcessPosixPty::ProcessPosixPty()
@@ -647,6 +650,7 @@ void ProcessPosixPty::start(std::string const &cmd, std::string const &env, bool
 	m->exit_code = -1;
 	m->error_code = 0;
 	m->error_message.clear();
+	reset_output();
 	{
 		std::lock_guard<std::mutex> lock(m->mutex);
 		m->completed = false;
@@ -666,6 +670,7 @@ void ProcessPosixPty::start(std::string const &cmd, std::string const &env, bool
 			m->completed = true;
 		}
 		m->cv.notify_all();
+		notify_completed();
 	});
 }
 
@@ -710,14 +715,10 @@ std::string const &ProcessPosixPty::get_error_message() const
 
 void ProcessPosixPty::run()
 {
-	struct termios orig_termios = { };
-	struct winsize orig_winsize = { 25, 80, 0, 0 };
+	struct winsize orig_winsize = { };
 
 	// TraceLogger trace;
 	// trace.begin("process", QString::fromStdString(m->command));
-
-	tcgetattr(STDIN_FILENO, &orig_termios);
-	ioctl(STDIN_FILENO, TIOCGWINSZ, (char *)&orig_winsize);
 
 	// argv は fork 前に構築する。fork 後の子プロセスで std::vector や文字列構築
 	// (malloc) を行うと、親の他スレッドが保持しているロックとデッドロックしうる。
@@ -729,27 +730,37 @@ void ProcessPosixPty::run()
 		m->error_code = EINVAL;
 		m->error_message = "empty command";
 		m->exit_code = -1;
-		notify_completed();
 		return;
 	}
 	argv.push_back(nullptr);
-	// putenv は渡した文字列を保持するため、fork 前にコピーを確保しておく
-	std::string envcopy = m->env;
+	// NUL区切りの環境変数上書きをfork前に展開する。従来の単一NAME=VALUEも扱える。
+	std::vector<char> envbuf(m->env.begin(), m->env.end());
+	envbuf.push_back('\0');
+	std::vector<char *> envvars;
+	for (char *entry = envbuf.data(); *entry;) {
+		envvars.push_back(entry);
+		entry += strlen(entry) + 1;
+	}
 
-	m->pty_master = posix_openpt(O_RDWR);
-	if (m->pty_master < 0 || grantpt(m->pty_master) < 0 || unlockpt(m->pty_master) < 0) {
+	int const pty_master = posix_openpt(O_RDWR);
+	if (pty_master < 0 || grantpt(pty_master) < 0 || unlockpt(pty_master) < 0) {
 		// PTYを確保できない場合はforkせずに失敗として終了する。
 		// ここでforkに進むと、壊れたfdを子プロセスに渡してしまい原因不明な不具合になる。
 		m->error_code = errno;
 		m->error_message = "failed: posix_openpt/grantpt/unlockpt";
 		// fprintf(stderr, "%s\n", m->error_message.c_str());
-		if (m->pty_master >= 0) {
-			close(m->pty_master);
-			m->pty_master = -1;
+		if (pty_master >= 0) {
+			close(pty_master);
 		}
 		m->exit_code = -1;
-		notify_completed();
 		return;
+	}
+	{
+		std::lock_guard<std::mutex> lock(m->mutex);
+		orig_winsize.ws_row = static_cast<unsigned short>(m->rows);
+		orig_winsize.ws_col = static_cast<unsigned short>(m->columns);
+		ioctl(pty_master, TIOCSWINSZ, &orig_winsize);
+		m->pty_master = pty_master;
 	}
 
 	pid_t pid = fork();
@@ -757,24 +768,25 @@ void ProcessPosixPty::run()
 		m->error_code = errno;
 		m->error_message = "failed: fork";
 		// fprintf(stderr, "%s\n", m->error_message.c_str());
-		close(m->pty_master);
-		m->pty_master = -1;
+		{
+			std::lock_guard<std::mutex> lock(m->mutex);
+			m->pty_master = -1;
+			close(pty_master);
+		}
 		m->exit_code = -1;
-		notify_completed();
 		return;
 	}
 	if (pid == 0) {
 		// fork 後の子プロセス。malloc/stdio などロック取得を伴うAPIは
 		// デッドロックの危険があるため最小限に留める。
 		setsid();
-		setenv("LANG", "C", 1);
-		if (!envcopy.empty()) {
-			putenv(envcopy.data());
+		for (char *entry : envvars) {
+			putenv(entry);
 		}
 
-		char *pts_name = ptsname(m->pty_master);
-		int pty_slave = pts_name ? open(pts_name, O_RDWR) : -1;
-		close(m->pty_master);
+		char *pts_name = ptsname(pty_master);
+		int pty_slave = pts_name ? open(pts_name, O_RDWR | O_NOCTTY) : -1;
+		close(pty_master);
 		if (pty_slave < 0) {
 			char const msg[] = "failed: open pty slave\n";
 			if (write(STDERR_FILENO, msg, sizeof(msg) - 1) < 0) {
@@ -783,15 +795,14 @@ void ProcessPosixPty::run()
 			_exit(127);
 		}
 
+		ioctl(pty_slave, TIOCSCTTY, 0);
 		struct termios tio;
-		memset(&tio, 0, sizeof(tio));
-		cfmakeraw(&tio);
-		tio.c_cc[VMIN] = 1;
-		tio.c_cc[VTIME] = 0;
-		tio.c_lflag |= ECHO;
-		tcsetattr(pty_slave, TCSANOW, &tio);
-		ioctl(pty_slave, TIOCSWINSZ, &orig_winsize);
-
+		if (tcgetattr(pty_slave, &tio) == 0) {
+			tio.c_iflag |= ICRNL;
+			tio.c_oflag |= OPOST | ONLCR;
+			tio.c_lflag |= ISIG | ICANON | ECHO;
+			tcsetattr(pty_slave, TCSANOW, &tio);
+		}
 		dup2(pty_slave, STDIN_FILENO);
 		dup2(pty_slave, STDOUT_FILENO);
 		dup2(pty_slave, STDERR_FILENO);
@@ -840,14 +851,14 @@ void ProcessPosixPty::run()
 				while (1) {
 					fd_set fds;
 					FD_ZERO(&fds);
-					FD_SET(m->pty_master, &fds);
+					FD_SET(pty_master, &fds);
 					timeval tv;
 					tv.tv_sec = 0;
 					tv.tv_usec = 10000;
-					int sr = select(m->pty_master + 1, &fds, nullptr, nullptr, &tv);
+					int sr = select(pty_master + 1, &fds, nullptr, nullptr, &tv);
 					if (sr <= 0) break;
 					char buf[1024];
-					int len = read(m->pty_master, buf, sizeof(buf));
+					int len = read(pty_master, buf, sizeof(buf));
 					if (len <= 0) break;
 					write_output(buf, len);
 				}
@@ -857,15 +868,15 @@ void ProcessPosixPty::run()
 			{
 				fd_set fds;
 				FD_ZERO(&fds);
-				FD_SET(m->pty_master, &fds);
+				FD_SET(pty_master, &fds);
 				timeval tv;
 				tv.tv_sec = 0;
 				tv.tv_usec = 10000;
-				int r = select(m->pty_master + 1, &fds, nullptr, nullptr, &tv);
+				int r = select(pty_master + 1, &fds, nullptr, nullptr, &tv);
 				if (r < 0) break;
 				if (r > 0) {
 					char buf[1024];
-					int len = read(m->pty_master, buf, sizeof(buf));
+					int len = read(pty_master, buf, sizeof(buf));
 					if (len > 0) {
 						write_output(buf, len);
 					}
@@ -893,12 +904,13 @@ void ProcessPosixPty::run()
 			}
 			if (WIFSIGNALED(status)) m->exit_code = 128 + WTERMSIG(status);
 		}
-		close(m->pty_master);
-		m->pty_master = -1;
+		{
+			std::lock_guard<std::mutex> lock(m->mutex);
+			m->pty_master = -1;
+			close(pty_master);
+		}
 
 		// trace.end();
-
-		notify_completed();
 
 		(void)ok;
 	}
@@ -917,4 +929,19 @@ int ProcessPosixPty::get_exit_code() const
 
 void ProcessPosixPty::close_input()
 {
+}
+
+void ProcessPosixPty::resize_terminal(int columns, int rows)
+{
+	columns = std::max(1, std::min(columns, 65535));
+	rows = std::max(1, std::min(rows, 65535));
+	std::lock_guard<std::mutex> lock(m->mutex);
+	m->columns = columns;
+	m->rows = rows;
+	if (m->pty_master >= 0) {
+		struct winsize size = { };
+		size.ws_col = static_cast<unsigned short>(columns);
+		size.ws_row = static_cast<unsigned short>(rows);
+		ioctl(m->pty_master, TIOCSWINSZ, &size);
+	}
 }

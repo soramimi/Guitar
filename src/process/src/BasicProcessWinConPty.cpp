@@ -1,4 +1,5 @@
 #include "BasicProcessWinConPty.h"
+#include <algorithm>
 #include <windows.h>
 #include "ProcessWinHelper.h" // This file must be included after <windows.h>
 
@@ -20,12 +21,15 @@ struct BasicProcessWinConPty::Private {
 	mutable std::mutex output_mutex;
 	BasicProcessWinConPty::Options options;
 	process::helper::dir_string_t change_dir;
+	std::string environment;
 	std::vector<char> output_bytes;
 	std::atomic<bool> stop_input { false };
 	std::thread input_writer;
 	std::thread output_reader;
 	std::mutex input_mutex;
+	std::mutex pseudo_console_mutex;
 	std::mutex snap_mutex;
+	std::deque<char> remaining_output_queue;
 	HANDLE hProcess_snap = nullptr;
 	DWORD last_exit_code = static_cast<DWORD>(-1);
 };
@@ -48,6 +52,11 @@ void BasicProcessWinConPty::set_change_dir(process::helper::dir_string_t const &
 	m->change_dir = dir;
 }
 
+void BasicProcessWinConPty::set_environment(std::string const &environment)
+{
+	m->environment = environment;
+}
+
 void BasicProcessWinConPty::set_options(Options const &options)
 {
 	m->options = options;
@@ -58,6 +67,10 @@ bool BasicProcessWinConPty::start(std::string const &cmd)
 	wait();
 	if (cmd.empty()) return false;
 	m->d = { };
+	{
+		std::lock_guard<std::mutex> lock(m->output_mutex);
+		m->remaining_output_queue.clear();
+	}
 
 	// ConPTYから見た入力用と出力用の2本の匿名パイプを用意する。
 	if (!CreatePipe(&m->d.hPipeInRead, &m->d.hPipeInWrite, nullptr, 0)) {
@@ -74,7 +87,10 @@ bool BasicProcessWinConPty::start(std::string const &cmd)
 		return false;
 	}
 
-	COORD size = { 80, 25 };
+	COORD size = {
+		static_cast<SHORT>(std::max(1, std::min(m->options.columns, 32767))),
+		static_cast<SHORT>(std::max(1, std::min(m->options.rows, 32767)))
+	};
 	HRESULT hr = CreatePseudoConsole(size, m->d.hPipeInRead, m->d.hPipeOutWrite, 0, &m->d.hPC);
 	// ConPTY に接続する子プロセスを作成するまで、パイプ端は保持する。
 	if (FAILED(hr)) {
@@ -111,6 +127,45 @@ bool BasicProcessWinConPty::start(std::string const &cmd)
 	}
 
 	std::wstring wcmd = convert_str_to_wstr(cmd);
+	std::vector<wchar_t> environment_block;
+	if (!m->environment.empty()) {
+		std::vector<std::wstring> entries;
+		wchar_t *parent = GetEnvironmentStringsW();
+		if (parent) {
+			for (wchar_t const *entry = parent; *entry; entry += wcslen(entry) + 1) {
+				entries.emplace_back(entry);
+			}
+			FreeEnvironmentStringsW(parent);
+		}
+		for (size_t offset = 0; offset < m->environment.size();) {
+			size_t const end = m->environment.find('\0', offset);
+			size_t const length = end == std::string::npos
+				? m->environment.size() - offset : end - offset;
+			std::wstring value = convert_str_to_wstr(
+				std::string_view(m->environment.data() + offset, length));
+			size_t const separator = value.find(L'=');
+			if (separator != std::wstring::npos && separator > 0) {
+				std::wstring const name = value.substr(0, separator);
+				auto it = std::find_if(entries.begin(), entries.end(), [&name](std::wstring const &entry){
+					return entry.size() > name.size()
+						&& entry[name.size()] == L'='
+						&& _wcsnicmp(entry.c_str(), name.c_str(), name.size()) == 0;
+				});
+				if (it == entries.end()) entries.push_back(std::move(value));
+				else *it = std::move(value);
+			}
+			if (end == std::string::npos) break;
+			offset = end + 1;
+		}
+		std::sort(entries.begin(), entries.end(), [](std::wstring const &a, std::wstring const &b){
+			return _wcsicmp(a.c_str(), b.c_str()) < 0;
+		});
+		for (std::wstring const &entry : entries) {
+			environment_block.insert(environment_block.end(), entry.begin(), entry.end());
+			environment_block.push_back(L'\0');
+		}
+		environment_block.push_back(L'\0');
+	}
 
 	DWORD creation_flags = CREATE_SUSPENDED | EXTENDED_STARTUPINFO_PRESENT | CREATE_UNICODE_ENVIRONMENT;
 	if (m->options.no_window) {
@@ -119,7 +174,7 @@ bool BasicProcessWinConPty::start(std::string const &cmd)
 
 	bool ok = CreateProcessW(nullptr,
 		wcmd.data(),
-		nullptr,
+		environment_block.empty() ? nullptr : environment_block.data(),
 		nullptr,
 		FALSE,
 		creation_flags,
@@ -168,7 +223,7 @@ bool BasicProcessWinConPty::start(std::string const &cmd)
 	// PeekNamedPipeでデータの有無を確認してから読むことでReadFileの永久待機を避け、
 	// Git終了後にstop_input_でこのスレッドを確実に停止できるようにする。
 	m->stop_input = false;
-	m->input_writer = std::thread([this, hStdInput] {
+	if (m->options.forward_parent_stdin) m->input_writer = std::thread([this, hStdInput] {
 		if (IS_VALID_HANDLE(m->d.hPipeInWrite) && IS_VALID_HANDLE(hStdInput)) {
 			char buf[256];
 			while (!m->stop_input) {
@@ -243,7 +298,10 @@ bool BasicProcessWinConPty::start(std::string const &cmd)
 			m->input_writer.join();
 		}
 		close_input();
-		m->d.hPC.close();
+		{
+			std::lock_guard<std::mutex> lock(m->pseudo_console_mutex);
+			m->d.hPC.close();
+		}
 		if (m->output_reader.joinable()) {
 			m->output_reader.join();
 		}
@@ -283,12 +341,21 @@ ProcessResult BasicProcessWinConPty::wait()
 		close_input();
 
 		// ClosePseudoConsole が生成する最終出力も、読み取りスレッドで受け取る。
-		m->d.hPC.close();
+		{
+			std::lock_guard<std::mutex> lock(m->pseudo_console_mutex);
+			m->d.hPC.close();
+		}
 
 		if (m->output_reader.joinable()) {
 			m->output_reader.join();
 		}
 		m->d.hPipeOutRead.close();
+		{
+			std::lock_guard<std::mutex> lock(m->output_mutex);
+			m->remaining_output_queue.insert(m->remaining_output_queue.end(),
+				m->d.output_queue.begin(), m->d.output_queue.end());
+			m->d.output_queue.clear();
+		}
 	}
 
 	m->output_bytes = std::move(m->d.output_vector);
@@ -338,14 +405,29 @@ int BasicProcessWinConPty::read_output(char *ptr, int len)
 		return 0;
 	}
 	std::lock_guard<std::mutex> lock(m->output_mutex);
-	if (m->d.output_queue.empty()) return 0;
+	std::deque<char> *queue = !m->d.output_queue.empty()
+		? &m->d.output_queue : &m->remaining_output_queue;
+	if (queue->empty()) return 0;
 
-	int n = std::min(len, static_cast<int>(m->d.output_queue.size()));
+	int n = std::min(len, static_cast<int>(queue->size()));
 	for (int i = 0; i < n; ++i) {
-		ptr[i] = m->d.output_queue.front();
-		m->d.output_queue.pop_front();
+		ptr[i] = queue->front();
+		queue->pop_front();
 	}
 	return n;
+}
+
+void BasicProcessWinConPty::resize_terminal(int columns, int rows)
+{
+	columns = std::max(1, std::min(columns, 32767));
+	rows = std::max(1, std::min(rows, 32767));
+	m->options.columns = columns;
+	m->options.rows = rows;
+	std::lock_guard<std::mutex> lock(m->pseudo_console_mutex);
+	if (m->d.hPC) {
+		COORD size = { static_cast<SHORT>(columns), static_cast<SHORT>(rows) };
+		ResizePseudoConsole(m->d.hPC, size);
+	}
 }
 
 bool BasicProcessWinConPty::is_running() const

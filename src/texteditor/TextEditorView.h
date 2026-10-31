@@ -5,6 +5,7 @@
 #include "TextEditorTheme.h"
 #include <QTextFormat>
 #include <QWidget>
+#include <QSize>
 #include <cstdint>
 #include <memory>
 #include <vector>
@@ -64,6 +65,7 @@ public:
 	const Document::LineProperty *property_of_visual_line(row_index_t vrow) const;
 	std::pair<row_index_t, row_index_t> visibleRowAndCount();
 	int basisCharWidth() const;
+	QSize terminalSizeInCells() const;
 protected:
 	void paintEvent(QPaintEvent *) override;
 	void mousePressEvent(QMouseEvent *event) override;
@@ -121,6 +123,7 @@ signals:
 	void moved(int cur_row, int cur_col, int scr_row, int scr_col);
 	void updateScrollBar();
 	void idle();
+	void terminalSizeChanged(QSize size);
 	
 public:
 	void debug();

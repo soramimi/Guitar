@@ -11,6 +11,7 @@ C++/Qt による、折り返し(ワードラップ)・Unicode・IME 入力に対
 
 ```
 MainWindow (QMainWindow, TextEditorApp/src)
+ ├─ PtyProcessController → AbstractPtyProcess → POSIX PTY / Windows ConPTY
  └─ TextEditorWidget (View + 縦横スクロールバーのコンテナ)
      └─ TextEditorView (QWidget: 描画・キーボード/マウス/IME入力)
         └─ AbstractTextEditorApplication (編集・折り返し・座標変換ロジックの基底クラス)
@@ -34,13 +35,18 @@ MainWindow (QMainWindow, TextEditorApp/src)
 - **WrapAlgorithm.h/.cpp** — コードポイント列と幅計測コールバックから折り返し終端を求める
   Qt 非依存アルゴリズム。`WrapAlgorithm/` に GoogleTest を持つ
 - **EscapeSequence.h/.cpp** — ターミナルモード用ANSIエスケープシーケンス解析(実験機能)
+- **TextEditorApp/src/PtyProcessController.h/.cpp** — `process/`のPTY実装をQtイベントループへ接続し、
+  プラットフォーム別生成、10msごとの逐次出力、終了通知、端末セルサイズ変更を担当する
 - **PatternState.h/.cpp** — キーワード一致検出(実験機能、既定では無効)
-- **TextEditorCoreTest/** — 幅LRU、タブ幅による失効、文字色属性、ANSI色状態を確認する
+- **TextEditorCoreTest/** — 幅LRU、タブ幅による失効、前景・背景の文字色属性、ANSI色状態を確認する
   Qt依存のGoogleTest
+- **PtyProcessTest/** — POSIX PTYのTTY接続、初期サイズ、ANSI保持、終了時drain、resize/SIGWINCHを
+  確認するQt非依存のGoogleTest
 - **LineIndexMap/** — 折り返し行の論理行⇔表示行マッピング用 B+-tree(独立ライブラリ、
   GoogleTest によるテスト完備)。詳細は [LineIndexMap/AGENTS.md](LineIndexMap/AGENTS.md) を参照
 - **TextEditorApp/** — 上記部品を組み込んだ実行可能アプリ(サンプル/動作確認用)
   - `src/MainWindow.*` — メインウィンドウ、メニュー(File→Open/Save/Test)
+  - Debugアクションは`PtyProcessController`経由で`neofetch`をPTY上に起動し、出力を端末Viewへ渡す
   - `src/MySettings.*` — `QSettings` ラッパーによる設定の永続化(INI)
   - `src/main.cpp` — エントリポイント
 
@@ -89,6 +95,8 @@ MainWindow (QMainWindow, TextEditorApp/src)
   スレッドごとに独立した `Font` とLRUを使用する
 - `CharAttr::ForegroundColorSpecified` が立っていない文字はテーマの既定前景色で描画する。
   色値0は明示的な黒にもなるため、色値そのものを「指定なし」の番兵として使わない
+- `CharAttr::BackgroundColorSpecified` が立っている文字は、行背景より上、選択背景より下に
+  背景色を描画する。標準色・明色・256色・truecolorのANSI SGRに対応する
 - `Document::Line` と `CharBuffer` は `shared_ptr` を使う浅いコピー。ただし `setDocument()` は
   呼び出し元への編集波及と並列レイアウト時の競合を防ぐため、テキストと表示属性を複製し、
   解析・折り返しキャッシュを引き継がない
@@ -99,13 +107,14 @@ MainWindow (QMainWindow, TextEditorApp/src)
 ## ビルド
 
 qmake プロジェクト。アプリ本体とQt依存の`TextEditorCoreTest`はC++20、
-Qt非依存の`LineIndexMap`・`WrapAlgorithm`テストはC++17。
+Qt非依存の`LineIndexMap`・`WrapAlgorithm`・`PtyProcessTest`はC++17。
 
 - `TextEditorApp/TextEditorApp.pro` — アプリ本体。`QT += core gui widgets`
   (Qt6 系は `core5compat` も追加)。ビルド成果物は `TextEditorApp/_bin/`
 - `LineIndexMap/LineIndexMap.pro` — Qt 非依存のヘッダオンリーライブラリ + GoogleTest
 - `WrapAlgorithm/WrapAlgorithm.pro` — Qt 非依存の折り返しアルゴリズム + GoogleTest
 - `TextEditorCoreTest/TextEditorCoreTest.pro` — Qt依存のキャッシュ・属性テスト + GoogleTest
+- `PtyProcessTest/PtyProcessTest.pro` — `process/ptyprocess.pri`を使うPTY統合テスト + GoogleTest
 
 ```
 (cd TextEditorApp/build/Qt_6_9_0_Debug && qmake6 ../../TextEditorApp.pro && make)
@@ -114,7 +123,10 @@ Qt非依存の`LineIndexMap`・`WrapAlgorithm`テストはC++17。
 # 期待出力: [  PASSED  ] 7 tests.
 
 (cd TextEditorCoreTest && qmake6 TextEditorCoreTest.pro && make && ./TextEditorCoreTest)
-# 期待出力: [  PASSED  ] 12 tests.
+# 期待出力: [  PASSED  ] 13 tests.
+
+(cd PtyProcessTest && qmake6 PtyProcessTest.pro && make && ./PtyProcessTest)
+# Linuxでの期待出力: [  PASSED  ] 2 tests.
 
 # 並列折り返しのThreadSanitizer検証
 (cd TextEditorCoreTest && make distclean && \
@@ -127,6 +139,8 @@ Qt非依存の`LineIndexMap`・`WrapAlgorithm`テストはC++17。
 - Undo/Redo、検索・置換、シンタックスハイライト、複数ドキュメント(タブ)は未実装
 - diff 表示用の `CharFlags`/`TextEditorTheme` の配色は定義済みだが、diff 解析処理自体は未実装
 - `MainWindow::on_action_file_save_triggered()` は保存先が `/tmp/test.txt` に固定(暫定実装)
+- ターミナル出力はPTY化済みだが、ANSIカーソル移動と画面モデルは未実装。このためDebugアクションは
+  `neofetch --off --color_blocks off`を維持し、カーソル移動が必要な通常レイアウトをまだ使わない
 - 折り返し断片は現在、元論理行の範囲参照ではなく独立した UTF-8 文字列として生成するため、
   全幅変更時には断片文字列の再生成コストが残る
 - 行ごとの `LineProperty` キャッシュには全体のメモリ上限がない。非常に大きなファイルで
@@ -149,11 +163,13 @@ Qt非依存の`LineIndexMap`・`WrapAlgorithm`テストはC++17。
   更新と `full_wrap_update_needed` の設定を忘れないこと
 - `Font` の幅計測条件を変えるときはLRUを失効させる。LRUのmapと使用順listは必ず同じ処理で
   更新し、長いキーを無制限に登録しない
-- `CharAttr::color == 0` は明示的な黒として有効なので、前景色の有無は必ず
-  `ForegroundColorSpecified` で判定する
+- `CharAttr::color == 0`と`background_color == 0`は明示的な黒として有効なので、色指定の有無は
+  必ず`ForegroundColorSpecified` / `BackgroundColorSpecified`で判定する
 - 折り返し規則を変更するときは `WrapAlgorithm/` の固定テストと貪欲法によるランダム比較を更新し、
   空文字列・幅0・長い単語でも終端位置が必ず前進することを確認する
 - 並列レイアウトを変更するときは1スレッドと8スレッドの統合テストに加え、
   `thread_sanitizer` CONFIGでデータ競合がないことを確認する
 - `LineIndexMap` は独立ライブラリとして扱い、変更する際は
   [LineIndexMap/AGENTS.md](LineIndexMap/AGENTS.md) の不変条件・テスト方針も確認する
+- PTY経路を変更するときは、隣接する`../process/AGENTS.md`にも従い、`PtyProcessTest`でANSIの非改変、
+  終了時drain、初期サイズとresizeを確認する。完了コールバックからWidgetを直接操作しない

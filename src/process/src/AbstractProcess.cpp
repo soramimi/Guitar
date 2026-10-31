@@ -10,7 +10,17 @@ void AbstractPtyProcess::write_output(char const *buf, size_t len)
 			output_queue_.pop_front();
 		}
 	}
-	output_vector_.insert(output_vector_.end(), buf, buf + len);
+	if (capture_output_vector_) {
+		output_vector_.insert(output_vector_.end(), buf, buf + len);
+	}
+}
+
+void AbstractPtyProcess::reset_output()
+{
+	std::lock_guard<std::mutex> lock(mutex_);
+	output_queue_.clear();
+	output_vector_.clear();
+	stderr_bytes_.clear();
 }
 
 int AbstractPtyProcess::pop_output(char *ptr, int len)

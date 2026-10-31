@@ -47,13 +47,12 @@ private slots:
 	void on_action_file_save_triggered();
 	void updateIm();
 	void on_action_file_save_as_triggered();
-	void debug();
 	
 	void on_action_edit_cut_triggered();
-	
 	void on_action_edit_copy_triggered();
-	
 	void on_action_edit_paste_triggered();
+	
+	void on_action_debug_triggered();
 	
 protected:
 	void moveEvent(QMoveEvent *);
