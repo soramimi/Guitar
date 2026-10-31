@@ -47,7 +47,7 @@ struct AbstractTextEditorApplication::Private {
 	int content_width_px = -1;      // 行番号領域を除く折り返し可能幅
 	bool auto_layout = false;       // resize時にビューポートと折り返しを更新するか
 	QString recently_used_path;     // Open/Saveダイアログの基準パス
-	bool show_line_number = true;   // 行番号領域を描画するか
+	bool show_line_number = true;  // 行番号領域を描画するか
 	int left_margin = AbstractTextEditorApplication::LINE_NUMBER_AREA_WIDTH; // 左余白（基準文字数）
 
 	bool is_painting_suppressed = false; // 一括更新中などに再描画を抑える

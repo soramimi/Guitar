@@ -59,6 +59,7 @@ private slots:
 	
 	void on_action_debug_triggered();
 	
+	void test();
 protected:
 	void moveEvent(QMoveEvent *);
 signals:

@@ -183,7 +183,7 @@ TextEditorView::TextEditorView(QWidget *parent)
 
 	setContextMenuPolicy(Qt::DefaultContextMenu);
 
-	showLineNumber(false);
+	// showLineNumber(false);
 
 	update_cursor_rect(true);
 

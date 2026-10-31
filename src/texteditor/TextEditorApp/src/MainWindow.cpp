@@ -38,7 +38,7 @@ MainWindow::MainWindow(QWidget *parent)
 
 	ui->splitter->setSizes({600, 400});
 	
-	// connect(new QShortcut(QKeySequence("Ctrl+T"), this), &QShortcut::activated, this, &MainWindow::debug);
+	connect(new QShortcut(QKeySequence("Ctrl+T"), this), &QShortcut::activated, this, &MainWindow::test);
 
 	// setup text editor
 	
@@ -214,6 +214,8 @@ void MainWindow::moveEvent(QMoveEvent *)
 	m->tm.start(100);
 }
 
+
+
 bool MainWindow::saveFile(QString const &path)
 {
 	QString error_message;
@@ -301,4 +303,9 @@ void MainWindow::on_action_debug_triggered()
 	if (!m->process_controller.start(executable, arguments, terminal_size)) {
 		statusBar()->showMessage(tr("端末プロセスを起動できませんでした: %1").arg(program), 10000);
 	}
+}
+
+void MainWindow::test()
+{
+	qDebug() << focusWidget();
 }
