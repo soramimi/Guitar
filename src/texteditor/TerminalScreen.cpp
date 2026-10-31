@@ -292,6 +292,9 @@ void TerminalScreen::reset()
 	cursor_visible_ = true;
 	auto_wrap_ = true;
 	pending_wrap_ = false;
+	alternate_screen_active_ = false;
+	last_feed_scrolled_ = false;
+	pending_responses_.clear();
 	parser_.reset();
 }
 
@@ -337,6 +340,7 @@ void TerminalScreen::resize(size_t columns, size_t rows)
 
 void TerminalScreen::feed(std::string_view bytes)
 {
+	last_feed_scrolled_ = false;
 	parser_.feed(this, bytes);
 }
 
@@ -348,7 +352,16 @@ size_t TerminalScreen::cursor_column() const { return cursor_column_; }
 size_t TerminalScreen::cursor_document_row() const { return scrollback_.size() + cursor_row_; }
 bool TerminalScreen::cursor_visible() const { return cursor_visible_; }
 bool TerminalScreen::auto_wrap() const { return auto_wrap_; }
+bool TerminalScreen::alternate_screen_active() const { return alternate_screen_active_; }
+bool TerminalScreen::last_feed_scrolled() const { return last_feed_scrolled_; }
 TerminalStyle const &TerminalScreen::current_style() const { return style_; }
+
+std::string TerminalScreen::take_pending_responses()
+{
+	std::string result = std::move(pending_responses_);
+	pending_responses_.clear();
+	return result;
+}
 
 TerminalCell const &TerminalScreen::cell(size_t row, size_t column) const
 {
@@ -444,6 +457,7 @@ void TerminalScreen::line_feed()
 	scrollback_.push_back(std::move(active_rows_.front()));
 	active_rows_.erase(active_rows_.begin());
 	active_rows_.push_back(blank_row());
+	last_feed_scrolled_ = true;
 }
 
 void TerminalScreen::carriage_return()
@@ -462,6 +476,60 @@ void TerminalScreen::horizontal_tab()
 {
 	cursor_column_ = std::min(columns_ - 1, ((cursor_column_ / 8) + 1) * 8);
 	pending_wrap_ = false;
+}
+
+void TerminalScreen::erase_in_display(int mode)
+{
+	auto erase_range = [this](size_t first_row, size_t first_column,
+		size_t last_row, size_t last_column){
+		for (size_t row = first_row; row <= last_row; row++) {
+			size_t const begin = row == first_row ? first_column : 0;
+			size_t const end = row == last_row ? last_column : columns_ - 1;
+			for (size_t column = begin; column <= end; column++) {
+				clear_cell(row, column);
+			}
+		}
+	};
+
+	switch (mode) {
+	case 0:
+		erase_range(cursor_row_, cursor_column_, rows_ - 1, columns_ - 1);
+		break;
+	case 1:
+		erase_range(0, 0, cursor_row_, cursor_column_);
+		break;
+	case 2:
+		erase_range(0, 0, rows_ - 1, columns_ - 1);
+		break;
+	case 3:
+		// xterm extension: CSI 3 J removes saved history but not the active
+		// screen.  It is useful when a shell's clear-scrollback command is used.
+		scrollback_.clear();
+		break;
+	default:
+		break;
+	}
+}
+
+void TerminalScreen::erase_in_line(int mode)
+{
+	size_t first = 0;
+	size_t last = columns_ - 1;
+	if (mode == 0) {
+		first = cursor_column_;
+	} else if (mode == 1) {
+		last = cursor_column_;
+	} else if (mode != 2) {
+		return;
+	}
+	for (size_t column = first; column <= last; column++) {
+		clear_cell(cursor_row_, column);
+	}
+}
+
+void TerminalScreen::queue_response(std::string_view response)
+{
+	pending_responses_.append(response.data(), response.size());
 }
 
 void TerminalScreen::save_cursor()
@@ -556,11 +624,39 @@ void TerminalScreen::dispatch_csi(std::string_view parameters, char command)
 		for (int value : values) {
 			if (value == 25) cursor_visible_ = enabled;
 			else if (value == 7) auto_wrap_ = enabled;
+			else if (value == 47 || value == 1047 || value == 1049) {
+				// P3 will give this mode its own cell buffer.  Tracking the request
+				// now is enough to keep full-screen TUIs from forcing log follow.
+				alternate_screen_active_ = enabled;
+			}
 		}
 		pending_wrap_ = false;
 		return;
 	}
 	if (private_mode) return;
+	if (command == 'n' && values.size() == 1) {
+		if (values.front() == 5) {
+			// Device Status Report: terminal is operating normally.
+			queue_response("\x1b[0n");
+		} else if (values.front() == 6) {
+			// Cursor Position Report uses one-origin row and column values.
+			std::string response = "\x1b[";
+			response += std::to_string(cursor_row_ + 1);
+			response.push_back(';');
+			response += std::to_string(cursor_column_ + 1);
+			response.push_back('R');
+			queue_response(response);
+		}
+		// Queries must not affect the pending-wrap state of the display.
+		return;
+	}
+	if (command == 'c' && (parameters.empty()
+		|| (values.size() == 1 && values.front() == 0))) {
+		// Primary Device Attributes: report the conservative VT100 profile.  Do
+		// not advertise optional capabilities that this screen does not support.
+		queue_response("\x1b[?1;0c");
+		return;
+	}
 
 	switch (command) {
 	case 'A': cursor_row_ = clamp_row(static_cast<long long>(cursor_row_) - movement_parameter(values)); break;
@@ -576,6 +672,8 @@ void TerminalScreen::dispatch_csi(std::string_view parameters, char command)
 		cursor_column_ = 0;
 		break;
 	case 'G': cursor_column_ = clamp_column(static_cast<long long>(movement_parameter(values)) - 1); break;
+	case 'J': erase_in_display(values.empty() ? 0 : values.front()); break;
+	case 'K': erase_in_line(values.empty() ? 0 : values.front()); break;
 	case 'H':
 	case 'f':
 		cursor_row_ = clamp_row(static_cast<long long>(movement_parameter(values, 0)) - 1);

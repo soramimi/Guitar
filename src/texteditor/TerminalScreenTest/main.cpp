@@ -117,6 +117,65 @@ TEST(TerminalScreen, SupportsSavedCursorVisibilityAndAutoWrapModes)
 	EXPECT_EQ(screen.cell(0, 4).character, U'Y');
 }
 
+TEST(TerminalScreen, ErasesTheScreenForTheShellClearSequence)
+{
+	TerminalScreen screen(12, 3);
+	screen.feed("first\r\nsecond\r\nthird\x1b[H\x1b[2J");
+
+	for (size_t row = 0; row < screen.row_count(); row++) {
+		EXPECT_EQ(active_text(screen, row), U"");
+	}
+	EXPECT_EQ(screen.cursor_row(), 0u);
+	EXPECT_EQ(screen.cursor_column(), 0u);
+}
+
+TEST(TerminalScreen, ErasesTheRequestedPartOfTheCurrentLine)
+{
+	TerminalScreen screen(12, 2);
+	screen.feed("abcdef\x1b[4G\x1b[K");
+	EXPECT_EQ(active_text(screen, 0), U"abc");
+
+	screen.feed("\x1b[2J\x1b[Habcdef\x1b[4G\x1b[1K");
+	EXPECT_EQ(active_text(screen, 0), U"    ef");
+}
+
+TEST(TerminalScreen, RepliesToStandardDeviceAndCursorQueries)
+{
+	TerminalScreen screen(12, 4);
+	screen.feed("\x1b[3;4H\x1b[5n\x1b[6n\x1b[c\x1b[0c");
+
+	EXPECT_EQ(screen.take_pending_responses(),
+		"\x1b[0n\x1b[3;4R\x1b[?1;0c\x1b[?1;0c");
+	EXPECT_TRUE(screen.take_pending_responses().empty());
+}
+
+TEST(TerminalScreen, RepliesRemainCorrectAcrossCsiChunkBoundaries)
+{
+	TerminalScreen screen(12, 4);
+	screen.feed("\x1b[");
+	EXPECT_TRUE(screen.take_pending_responses().empty());
+	screen.feed("2;5H\x1b[6");
+	EXPECT_TRUE(screen.take_pending_responses().empty());
+	screen.feed("n");
+	EXPECT_EQ(screen.take_pending_responses(), "\x1b[2;5R");
+}
+
+TEST(TerminalScreen, RecordsActiveScreenScrollAndAlternateScreenMode)
+{
+	TerminalScreen screen(4, 2);
+	screen.feed("a\r\nb\r\n");
+	EXPECT_TRUE(screen.last_feed_scrolled());
+	EXPECT_FALSE(screen.alternate_screen_active());
+
+	screen.feed("\x1b[?1049hA\r\nB\r\n");
+	EXPECT_TRUE(screen.last_feed_scrolled());
+	EXPECT_TRUE(screen.alternate_screen_active());
+
+	screen.feed("\x1b[?1049l");
+	EXPECT_FALSE(screen.last_feed_scrolled());
+	EXPECT_FALSE(screen.alternate_screen_active());
+}
+
 TEST(TerminalScreen, ScrollsAtBottomAndResizesWithoutReflow)
 {
 	TerminalScreen screen(6, 2);
@@ -131,9 +190,9 @@ TEST(TerminalScreen, ScrollsAtBottomAndResizesWithoutReflow)
 	EXPECT_EQ(active_text(screen, 1), U"thre");
 }
 
-TEST(TerminalScreen, DiscardsUnsupportedCsiAndOscSequences)
+TEST(TerminalScreen, ErasesDisplayAndDiscardsOscSequences)
 {
 	TerminalScreen screen(20, 3);
 	screen.feed("A\x1b[2J\x1b]0;title\aB");
-	EXPECT_EQ(active_text(screen, 0), U"AB");
+	EXPECT_EQ(active_text(screen, 0), U" B");
 }

@@ -8,7 +8,7 @@
 #include <QDebug>
 #include <QFile>
 #include <QFontDatabase>
-// #include <QKeyEvent>
+#include <QKeyEvent>
 #include <QMenu>
 #include <QPainter>
 #include <QScrollBar>
@@ -19,6 +19,49 @@
 using namespace texteditor;
 
 constexpr int cursor_animation_cycle = 10;
+
+namespace {
+
+QByteArray terminal_input_for_key_event(QKeyEvent const *event)
+{
+	Qt::KeyboardModifiers const modifiers = event->modifiers();
+	Qt::KeyboardModifiers const control_or_alt = modifiers
+		& (Qt::ControlModifier | Qt::AltModifier | Qt::MetaModifier);
+
+	if ((modifiers & Qt::ControlModifier) && !(modifiers & Qt::AltModifier)) {
+		int const key = event->key();
+		if (key >= Qt::Key_A && key <= Qt::Key_Z) {
+			return QByteArray(1, static_cast<char>(key - Qt::Key_A + 1));
+		}
+	}
+
+	switch (event->key()) {
+	case Qt::Key_Return:
+	case Qt::Key_Enter:
+		return "\r";
+	case Qt::Key_Backspace:
+		return QByteArray(1, '\x7f');
+	case Qt::Key_Escape:
+		return QByteArray(1, '\x1b');
+	default:
+		break;
+	}
+
+	// AltGr is commonly represented as Ctrl+Alt.  It must remain ordinary text,
+	// not be turned into a control sequence merely because those modifiers exist.
+	if (control_or_alt == Qt::NoModifier
+		|| ((modifiers & Qt::ControlModifier) && (modifiers & Qt::AltModifier))) {
+		return event->text().toUtf8();
+	}
+	return {};
+}
+
+bool is_terminal_focus_navigation_key(QKeyEvent const *event)
+{
+	return event->key() == Qt::Key_Tab || event->key() == Qt::Key_Backtab;
+}
+
+}
 
 struct TextEditorView::Private {
 	
@@ -112,6 +155,13 @@ TextEditorView::~TextEditorView()
 	delete m;
 }
 
+void TextEditorView::terminalResponseReady(std::string_view const &responses)
+{
+	if (responses.empty()) return;
+	emit terminalInputRequested(QByteArray(responses.data(),
+		static_cast<qsizetype>(responses.size())));
+}
+
 /**
  * @brief 基準文字幅を取得する
  * @return
@@ -159,6 +209,15 @@ bool TextEditorView::event(QEvent *event)
 {
 	if (event->type() == QEvent::Polish) {
 		updateVisibility();
+	}
+	if (event->type() == QEvent::ShortcutOverride && isTerminalMode()) {
+		auto const *key_event = static_cast<QKeyEvent const *>(event);
+		// Terminal shortcuts, including Ctrl+C, belong to the foreground PTY.
+		// Tab and Shift+Tab remain explicit focus traversal in P0.
+		if (!is_terminal_focus_navigation_key(key_event)) {
+			event->accept();
+			return true;
+		}
 	}
 	return QWidget::event(event);
 }
@@ -405,6 +464,13 @@ std::pair<row_index_t, row_index_t> TextEditorView::visibleRowAndCount()
 	row_index_t row_count = std::min(editor_cx->viewport_height_rows, remaining);
 
 	return std::make_pair(row_start, row_count);
+}
+
+bool TextEditorView::isViewingBottom() const
+{
+	row_index_t const bottom_top = std::max<row_index_t>(0,
+		visual_nlines() - editor_viewport_height());
+	return scrollTopRow() >= bottom_top;
 }
 
 void TextEditorView::move(int cur_row, int cur_col, int scr_y_px, int scr_x_px, bool auto_scroll)
@@ -1016,6 +1082,33 @@ QVariant TextEditorView::inputMethodQuery(Qt::InputMethodQuery q) const
 	return QWidget::inputMethodQuery(q);
 }
 
+void TextEditorView::keyPressEvent(QKeyEvent *event)
+{
+	if (!event) return;
+	if (!isTerminalMode()) {
+		write(event);
+		if (state() == State::Exit) {
+			if (QWidget *top_level = window()) top_level->close();
+		}
+		event->accept();
+		return;
+	}
+
+	if (is_terminal_focus_navigation_key(event)) {
+		bool const next = event->key() == Qt::Key_Tab
+			&& !(event->modifiers() & Qt::ShiftModifier);
+		focusNextPrevChild(next);
+		event->accept();
+		return;
+	}
+
+	QByteArray const input = terminal_input_for_key_event(event);
+	if (!input.isEmpty()) emit terminalInputRequested(input);
+	// Unsupported terminal keys are consumed here.  They must not fall through
+	// into the normal editor or QMainWindow shortcuts.
+	event->accept();
+}
+
 void TextEditorView::inputMethodEvent(QInputMethodEvent *e)
 {
 #ifdef Q_OS_WIN
@@ -1042,8 +1135,13 @@ void TextEditorView::inputMethodEvent(QInputMethodEvent *e)
 #endif
 	QString const &commit_text = e->commitString();
 	if (!commit_text.isEmpty()) {
-		write_(commit_text, true);
+		if (isTerminalMode()) {
+			emit terminalInputRequested(commit_text.toUtf8());
+		} else {
+			write_(commit_text, true);
+		}
 	}
+	e->accept();
 }
 
 void TextEditorView::reflectScrollBar()

@@ -596,6 +596,7 @@ struct ProcessPosixPty::Private {
 	std::string command;
 	std::string env;
 	int pty_master = -1;
+	std::deque<char> input_queue;
 	int exit_code = -1;
 	int error_code = 0;
 	std::string error_message;
@@ -624,14 +625,10 @@ void ProcessPosixPty::write_input(char const *ptr, int len)
 {
 	if (!ptr || len <= 0) return;
 	std::lock_guard<std::mutex> lock(m->mutex);
-	if (m->pty_master < 0) return;
-	while (len > 0) {
-		ssize_t written = write(m->pty_master, ptr, static_cast<size_t>(len));
-		if (written < 0 && errno == EINTR) continue;
-		if (written <= 0) break;
-		ptr += written;
-		len -= static_cast<int>(written);
-	}
+	// Keep launch-time input until the PTY master exists.  The process thread
+	// owns actual writes and uses O_NONBLOCK, so a child which stops reading can
+	// never stall a caller (in particular the GUI thread).
+	m->input_queue.insert(m->input_queue.end(), ptr, ptr + len);
 }
 
 int ProcessPosixPty::read_output(char *ptr, int len)
@@ -654,6 +651,7 @@ void ProcessPosixPty::start(std::string const &cmd, std::string const &env, bool
 	{
 		std::lock_guard<std::mutex> lock(m->mutex);
 		m->completed = false;
+		m->input_queue.clear();
 	}
 	if (cmd.empty()) {
 		m->error_code = EINVAL;
@@ -762,6 +760,8 @@ void ProcessPosixPty::run()
 		ioctl(pty_master, TIOCSWINSZ, &orig_winsize);
 		m->pty_master = pty_master;
 	}
+	int const flags = fcntl(pty_master, F_GETFL);
+	if (flags >= 0) fcntl(pty_master, F_SETFL, flags | O_NONBLOCK);
 
 	pid_t pid = fork();
 	if (pid < 0) {
@@ -831,10 +831,36 @@ void ProcessPosixPty::run()
 
 		bool ok = false;
 		bool child_reaped = false;
+		auto flush_input = [this, pty_master](){
+			while (true) {
+				char input[4096];
+				size_t size = 0;
+				{
+					std::lock_guard<std::mutex> lock(m->mutex);
+					size = std::min(sizeof(input), m->input_queue.size());
+					for (size_t i = 0; i < size; i++) input[i] = m->input_queue[i];
+				}
+				if (size == 0) return;
+
+				ssize_t const written = write(pty_master, input, size);
+				if (written > 0) {
+					std::lock_guard<std::mutex> lock(m->mutex);
+					size_t const consumed = std::min<size_t>(
+						static_cast<size_t>(written), m->input_queue.size());
+					m->input_queue.erase(m->input_queue.begin(),
+						m->input_queue.begin() + static_cast<std::ptrdiff_t>(consumed));
+					continue;
+				}
+				if (written < 0 && errno == EINTR) continue;
+				// EAGAIN keeps the remaining bytes queued for a later select cycle.
+				return;
+			}
+		};
 
 		while (1) {
 			// if (isInterruptionRequested()) break;
 			if (m->interrupted) break;
+			flush_input();
 			int status = 0;
 			int r = waitpid(pid, &status, WNOHANG);
 			if (r < 0) break;
@@ -907,6 +933,7 @@ void ProcessPosixPty::run()
 		{
 			std::lock_guard<std::mutex> lock(m->mutex);
 			m->pty_master = -1;
+			m->input_queue.clear();
 			close(pty_master);
 		}
 

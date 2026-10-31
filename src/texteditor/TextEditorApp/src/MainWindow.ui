@@ -20,6 +20,9 @@
       <property name="orientation">
        <enum>Qt::Orientation::Vertical</enum>
       </property>
+      <property name="handleWidth">
+       <number>6</number>
+      </property>
       <widget class="QFrame" name="frame">
        <property name="frameShape">
         <enum>QFrame::Shape::WinPanel</enum>
@@ -80,7 +83,7 @@
      <x>0</x>
      <y>0</y>
      <width>606</width>
-     <height>18</height>
+     <height>21</height>
     </rect>
    </property>
    <widget class="QMenu" name="menu_File">

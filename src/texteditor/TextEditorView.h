@@ -57,6 +57,7 @@ private:
 	texteditor::PositionX pos_x_px(row_index_t vrow, col_index_t vcol) const;
 protected:
 	texteditor::PositionX currentPixelX() const override;
+	void terminalResponseReady(std::string_view const &responses) override;
 protected:
 	void timerEvent(QTimerEvent *) override;
 	void setCursorRow(row_index_t row, bool auto_scroll, bool by_mouse) override;
@@ -66,8 +67,10 @@ public:
 	std::pair<row_index_t, row_index_t> visibleRowAndCount();
 	int basisCharWidth() const;
 	QSize terminalSizeInCells() const;
+	bool isViewingBottom() const;
 protected:
 	void paintEvent(QPaintEvent *) override;
+	void keyPressEvent(QKeyEvent *event) override;
 	void mousePressEvent(QMouseEvent *event) override;
 	void mouseReleaseEvent(QMouseEvent *event) override;
 	void mouseMoveEvent(QMouseEvent *event) override;
@@ -124,6 +127,8 @@ signals:
 	void updateScrollBar();
 	void idle();
 	void terminalSizeChanged(QSize size);
+	// The terminal owner sends these bytes to its PTY.  TextEditorView never owns a process.
+	void terminalInputRequested(QByteArray const &input);
 	
 public:
 	void debug();

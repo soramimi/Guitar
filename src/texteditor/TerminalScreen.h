@@ -83,9 +83,18 @@ public:
 	size_t cursor_text_column() const;
 	bool cursor_visible() const;
 	bool auto_wrap() const;
+	// This is a mode marker only until P3 implements separate buffers.  It lets
+	// the view avoid treating full-screen applications as scrolling logs.
+	bool alternate_screen_active() const;
+	// True only when the most recent feed() scrolled the active screen upward.
+	bool last_feed_scrolled() const;
 	TerminalCell const &cell(size_t row, size_t column) const;
 	TerminalStyle const &current_style() const;
 	std::vector<std::string> rendered_lines() const;
+	// Returns terminal replies generated while parsing output, then clears them.
+	// Callers must send these bytes back through the PTY input path; they are
+	// protocol data and must never be projected as terminal text.
+	std::string take_pending_responses();
 
 private:
 	friend class TerminalParser;
@@ -103,6 +112,9 @@ private:
 	bool cursor_visible_ = true;
 	bool auto_wrap_ = true;
 	bool pending_wrap_ = false;
+	bool alternate_screen_active_ = false;
+	bool last_feed_scrolled_ = false;
+	std::string pending_responses_;
 	TerminalParser parser_;
 
 	Row blank_row() const;
@@ -114,6 +126,9 @@ private:
 	void backspace();
 	void horizontal_tab();
 	void dispatch_csi(std::string_view parameters, char command);
+	void erase_in_display(int mode);
+	void erase_in_line(int mode);
+	void queue_response(std::string_view response);
 	void update_sgr(std::vector<int> const &parameters);
 	void save_cursor();
 	void restore_cursor();

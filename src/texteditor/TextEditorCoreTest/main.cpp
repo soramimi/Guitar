@@ -1,7 +1,14 @@
 #include "../AbstractTextEditorApplication.h"
 #include "../EscapeSequence.h"
+#include "../TextEditorView.h"
+#include "../TextEditorApp/src/PtyProcessController.h"
 
 #include <QApplication>
+#include <QCoreApplication>
+#include <QElapsedTimer>
+#include <QKeyEvent>
+#include <QThread>
+#include <QTimer>
 #include <gtest/gtest.h>
 
 #include <tuple>
@@ -204,6 +211,25 @@ protected:
 
 	void updateVisibility(update_visibility_option_t const &) override
 	{
+	}
+};
+
+class InputTestView : public TextEditorView {
+public:
+	bool document_empty()
+	{
+		return document()->logical_lines.empty();
+	}
+
+	size_t logical_line_count()
+	{
+		return document()->logical_lines.size();
+	}
+
+	std::string first_line_text()
+	{
+		if (document()->logical_lines.empty()) return {};
+		return std::string(document()->logical_lines.front().text());
 	}
 };
 
@@ -516,6 +542,234 @@ TEST(TerminalLayout, ProjectsScrollbackWithoutBreakingLineIndexMap)
 	EXPECT_EQ(std::u32string({first[0], first[1], first[2]}), U"one");
 	EXPECT_EQ(std::u32string({second[0], second[1], second[2]}), U"two");
 	EXPECT_EQ(std::u32string({third[0], third[1], third[2], third[3], third[4]}), U"three");
+}
+
+#ifndef _WIN32
+TEST(PtyProcessController, QueuesLaunchInputAndKeepsChildOutputSeparate)
+{
+	PtyProcessController controller;
+	QByteArray output;
+	int exit_code = -1;
+	QString error_message;
+	bool completed = false;
+	QObject::connect(&controller, &PtyProcessController::outputReady,
+		[&output](QByteArray const &bytes){ output += bytes; });
+	QObject::connect(&controller, &PtyProcessController::completed,
+		[&](int code, QString const &error){
+			exit_code = code;
+			error_message = error;
+			completed = true;
+		});
+
+	QString const script =
+		"stty -echo; IFS= read -r line; printf 'RX=<%s>\\n' $line; stty size";
+	ASSERT_TRUE(controller.start("/bin/sh", {"-c", script}, QSize(73, 29)));
+	controller.writeInput("launch-input\n");
+
+	QElapsedTimer timer;
+	timer.start();
+	while (!completed && timer.elapsed() < 5000) {
+		QCoreApplication::processEvents(QEventLoop::AllEvents, 10);
+		QThread::msleep(1);
+	}
+
+	ASSERT_TRUE(completed);
+	EXPECT_EQ(exit_code, 0);
+	EXPECT_TRUE(error_message.isEmpty());
+	EXPECT_EQ(controller.state(), PtyProcessController::State::Exited);
+	EXPECT_NE(output.indexOf("RX=<launch-input>\r\n"), -1);
+	EXPECT_NE(output.indexOf("29 73\r\n"), -1);
+}
+
+TEST(PtyProcessController, RoutesTerminalRepliesBackToTheSamePty)
+{
+	InputTestView view;
+	view.setTextEditorEngine(std::make_shared<TextEditorEngine>());
+	view.setTerminalMode(true);
+	view.setTerminalScreenSize(80, 25);
+
+	PtyProcessController controller;
+	QByteArray output;
+	bool completed = false;
+	QObject::connect(&controller, &PtyProcessController::outputReady,
+		[&](QByteArray const &bytes){
+			output += bytes;
+			view.appendBulk(std::string_view(bytes.constData(),
+				static_cast<size_t>(bytes.size())));
+		});
+	QObject::connect(&view, &TextEditorView::terminalInputRequested,
+		&controller, &PtyProcessController::writeInput);
+	QObject::connect(&controller, &PtyProcessController::completed,
+		[&](int exit_code, QString const &error){
+			EXPECT_EQ(exit_code, 0);
+			EXPECT_TRUE(error.isEmpty());
+			completed = true;
+		});
+
+	QString const script =
+		"stty -icanon min 1 time 0 -echo; printf '\\033[6n\\033[c'; "
+		"dd bs=1 count=13 2>/dev/null | od -An -tx1";
+	ASSERT_TRUE(controller.start("/bin/sh", {"-c", script}, QSize(80, 25)));
+
+	QElapsedTimer timer;
+	timer.start();
+	while (!completed && timer.elapsed() < 5000) {
+		QCoreApplication::processEvents(QEventLoop::AllEvents, 10);
+		QThread::msleep(1);
+	}
+
+	ASSERT_TRUE(completed);
+	EXPECT_NE(output.indexOf("1b 5b 31 3b 31 52 1b 5b 3f 31 3b 30 63"), -1)
+		<< output.toHex(' ').constData();
+}
+
+TEST(PtyProcessController, UnreadInputDoesNotBlockTheGuiEventLoop)
+{
+	PtyProcessController controller;
+	bool completed = false;
+	QObject::connect(&controller, &PtyProcessController::completed,
+		[&](int, QString const &){ completed = true; });
+	ASSERT_TRUE(controller.start("/bin/sh", {"-c", "stty -echo; sleep 30"}, QSize(80, 25)));
+
+	// The child deliberately never reads. The controller must queue this work
+	// away from Qt's event loop, then allow an asynchronous stop to complete.
+	controller.writeInput(QByteArray(1024 * 1024, 'x'));
+	bool timer_fired = false;
+	QTimer::singleShot(50, [&timer_fired](){ timer_fired = true; });
+	QElapsedTimer timer;
+	timer.start();
+	while (!timer_fired && timer.elapsed() < 1000) {
+		QCoreApplication::processEvents(QEventLoop::AllEvents, 10);
+		QThread::msleep(1);
+	}
+	EXPECT_TRUE(timer_fired);
+
+	controller.stop();
+	timer.restart();
+	while (!completed && timer.elapsed() < 5000) {
+		QCoreApplication::processEvents(QEventLoop::AllEvents, 10);
+		QThread::msleep(1);
+	}
+	EXPECT_TRUE(completed);
+}
+
+TEST(PtyProcessController, PreservesProgramArgumentBoundaries)
+{
+	PtyProcessController controller;
+	QByteArray output;
+	bool completed = false;
+	QObject::connect(&controller, &PtyProcessController::outputReady,
+		[&output](QByteArray const &bytes){ output += bytes; });
+	QObject::connect(&controller, &PtyProcessController::completed,
+		[&](int exit_code, QString const &error){
+			EXPECT_EQ(exit_code, 0);
+			EXPECT_TRUE(error.isEmpty());
+			completed = true;
+		});
+
+	QString const script = "printf '<%s><%s><%s><%s>' \"$1\" \"$2\" \"$3\" \"$4\"";
+	ASSERT_TRUE(controller.start("/bin/sh", {
+		"-c", script, "argv0", "", "contains space", "quote\"slash\\日本語"}, QSize(80, 25)));
+	QElapsedTimer timer;
+	timer.start();
+	while (!completed && timer.elapsed() < 5000) {
+		QCoreApplication::processEvents(QEventLoop::AllEvents, 10);
+		QThread::msleep(1);
+	}
+
+	ASSERT_TRUE(completed);
+	EXPECT_EQ(output, QByteArray("<><contains space><quote\"slash\\") + "日本語><>");
+}
+#endif
+
+TEST(TextEditorViewInput, TerminalKeysAreRequestedWithoutEditingTheDocument)
+{
+	InputTestView view;
+	view.setTextEditorEngine(std::make_shared<TextEditorEngine>());
+	view.setTerminalMode(true);
+	size_t const line_count_before = view.logical_line_count();
+	QByteArray requested;
+	QObject::connect(&view, &TextEditorView::terminalInputRequested,
+		[&requested](QByteArray const &bytes){ requested += bytes; });
+
+	QKeyEvent text_event(QEvent::KeyPress, Qt::Key_A, Qt::NoModifier, "a");
+	QCoreApplication::sendEvent(&view, &text_event);
+	QKeyEvent enter_event(QEvent::KeyPress, Qt::Key_Return, Qt::NoModifier);
+	QCoreApplication::sendEvent(&view, &enter_event);
+	QKeyEvent control_c_event(QEvent::KeyPress, Qt::Key_C, Qt::ControlModifier);
+	QCoreApplication::sendEvent(&view, &control_c_event);
+	QKeyEvent shortcut_override(QEvent::ShortcutOverride, Qt::Key_C, Qt::ControlModifier);
+	shortcut_override.ignore();
+	QCoreApplication::sendEvent(&view, &shortcut_override);
+
+	EXPECT_EQ(requested, "a\r\x03");
+	EXPECT_EQ(view.logical_line_count(), line_count_before);
+	EXPECT_TRUE(shortcut_override.isAccepted());
+}
+
+TEST(TextEditorViewInput, TerminalResponsesAreForwardedWithoutBecomingText)
+{
+	InputTestView view;
+	view.setTextEditorEngine(std::make_shared<TextEditorEngine>());
+	view.setTerminalMode(true);
+	view.setTerminalScreenSize(12, 4);
+	QByteArray requested;
+	QObject::connect(&view, &TextEditorView::terminalInputRequested,
+		[&requested](QByteArray const &bytes){ requested += bytes; });
+
+	view.appendBulk("\x1b[3;4H\x1b[5n\x1b[6n\x1b[c");
+
+	QByteArray const expected("\x1b[0n\x1b[3;4R\x1b[?1;0c");
+	EXPECT_EQ(requested, expected);
+	EXPECT_EQ(view.first_line_text(), "\n");
+}
+
+TEST(TextEditorViewInput, FollowsNormalTerminalScrollbackButNotAlternateScreen)
+{
+	InputTestView view;
+	view.setTextEditorEngine(std::make_shared<TextEditorEngine>());
+	view.setTerminalMode(true);
+	view.set_client_size(800, 800, true);
+	view.setTerminalScreenSize(10, 2);
+
+	auto write_like_main_window = [&view](std::string const &bytes){
+		bool const was_viewing_bottom = view.isViewingBottom();
+		view.appendBulk(bytes);
+		if (was_viewing_bottom && view.terminalOutputScrolled()
+			&& !view.terminalAlternateScreenActive()) {
+			view.moveToBottom();
+		}
+	};
+	auto lines = [](int count){
+		std::string result;
+		for (int i = 0; i < count; i++) result += "x\r\n";
+		return result;
+	};
+
+	write_like_main_window(lines(40));
+	EXPECT_TRUE(view.isViewingBottom());
+	view.scrollUp();
+	view.scrollUp();
+	EXPECT_FALSE(view.isViewingBottom());
+	write_like_main_window(lines(2));
+	EXPECT_FALSE(view.isViewingBottom());
+
+	view.moveToBottom();
+	write_like_main_window("\x1b[?1049h" + lines(2));
+	EXPECT_TRUE(view.terminalAlternateScreenActive());
+	EXPECT_FALSE(view.isViewingBottom());
+}
+
+TEST(TextEditorViewInput, NormalEditorKeysStillEditTheDocument)
+{
+	InputTestView view;
+	view.setTextEditorEngine(std::make_shared<TextEditorEngine>());
+	view.setNormalTextEditorMode(true);
+	QKeyEvent text_event(QEvent::KeyPress, Qt::Key_A, Qt::NoModifier, "a");
+	QCoreApplication::sendEvent(&view, &text_event);
+
+	ASSERT_FALSE(view.document_empty());
+	EXPECT_EQ(view.first_line_text(), "a");
 }
 
 int main(int argc, char **argv)

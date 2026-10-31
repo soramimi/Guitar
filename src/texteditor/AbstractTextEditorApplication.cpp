@@ -2251,6 +2251,16 @@ bool AbstractTextEditorApplication::isTerminalMode() const
 	return m->is_terminal_mode;
 }
 
+bool AbstractTextEditorApplication::terminalOutputScrolled() const
+{
+	return m->terminal_screen && m->terminal_screen->last_feed_scrolled();
+}
+
+bool AbstractTextEditorApplication::terminalAlternateScreenActive() const
+{
+	return m->terminal_screen && m->terminal_screen->alternate_screen_active();
+}
+
 texteditor::RowCol AbstractTextEditorApplication::terminalCursorPosition() const
 {
 	if (!m->terminal_screen) return {};
@@ -2555,6 +2565,8 @@ void AbstractTextEditorApplication::appendBulk(std::string_view const &str)
 	if (str.empty()) return;
 	if (isTerminalMode()) {
 		m->terminal_screen->feed(str);
+		std::string const responses = m->terminal_screen->take_pending_responses();
+		if (!responses.empty()) terminalResponseReady(responses);
 		projectTerminalScreen();
 		return;
 	}

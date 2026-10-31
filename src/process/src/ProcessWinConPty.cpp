@@ -1,5 +1,7 @@
 #include "ProcessWinConPty.h"
 
+#include <deque>
+
 struct ProcessWinConPty::Private {
 	// state_mutex: started/running/exit_code などの軽い状態と、
 	//   write_input/read_output などの短い操作を保護する。
@@ -11,6 +13,8 @@ struct ProcessWinConPty::Private {
 	std::thread thread;
 	std::condition_variable cv;
 	bool running = false;
+	bool input_ready = false;
+	std::deque<char> pending_input;
 	int exit_code = -1;
 	std::string error_message;
 };
@@ -70,6 +74,8 @@ void ProcessWinConPty::start(std::string const &command, std::string const &env,
 		m->exit_code = -1;
 		m->error_message.clear();
 		m->running = true;
+		m->input_ready = false;
+		m->pending_input.clear();
 	}
 	{
 		std::lock_guard<std::mutex> output_lock(mutex_);
@@ -79,15 +85,27 @@ void ProcessWinConPty::start(std::string const &command, std::string const &env,
 	m->conpty.set_change_dir(change_dir_);
 	m->conpty.set_environment(env);
 	m->thread = std::thread([this](std::string const &command){
+		std::deque<char> pending_input;
 		{
 			// start中のConPTYハンドル構築とresize/read/writeを直列化する。
 			std::lock_guard<std::mutex> lock(m->state_mutex);
 			m->conpty.start(command);
+			m->input_ready = true;
+			pending_input.swap(m->pending_input);
+		}
+		while (!pending_input.empty()) {
+			int const size = std::min<int>(4096, pending_input.size());
+			char input[4096];
+			for (int i = 0; i < size; i++) input[i] = pending_input[i];
+			m->conpty.write_input(input, size);
+			pending_input.erase(pending_input.begin(), pending_input.begin() + size);
 		}
 		auto result = m->conpty.wait();
 		{
 			std::lock_guard<std::mutex> lock(m->state_mutex);
 			m->running = false;
+			m->input_ready = false;
+			m->pending_input.clear();
 			m->exit_code = result.exit_code_;
 			m->error_message = result.error_message_;
 		}
@@ -189,10 +207,17 @@ void ProcessWinConPty::write_input(char const *ptr, int len)
 	if (!ptr || len <= 0) {
 		return;
 	}
-	std::lock_guard<std::mutex> lock(m->state_mutex);
-	if (m->running) {
-		m->conpty.write_input(ptr, len);
+	{
+		std::lock_guard<std::mutex> lock(m->state_mutex);
+		if (!m->running) return;
+		if (!m->input_ready) {
+			m->pending_input.insert(m->pending_input.end(), ptr, ptr + len);
+			return;
+		}
 	}
+	// write_input() can block when the child stops reading.  Do not hold
+	// state_mutex across it: stop() must still be able to terminate the child.
+	m->conpty.write_input(ptr, len);
 }
 
 int ProcessWinConPty::read_output(char *ptr, int len)

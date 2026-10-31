@@ -36,42 +36,50 @@ MainWindow (QMainWindow, TextEditorApp/src)
   Qt 非依存アルゴリズム。`WrapAlgorithm/` に GoogleTest を持つ
 - **EscapeSequence.h/.cpp** — ターミナルモード用ANSIエスケープシーケンス解析(実験機能)
 - **TerminalScreen.h/.cpp** — Qt非依存の端末ストリーム解析・固定セル画面モデル。UTF-8/C0/CSI/SGRを
-  チャンク継続状態で解析し、スクロールバック、端末カーソル、全角・結合文字、前景・背景色を保持する
+  チャンク継続状態で解析し、`CSI J/K`による画面・行消去、標準DA/DSR/カーソル位置照会への
+  返信、スクロールバック、端末カーソル、全角・結合文字、前景・背景色を保持する。返信は
+  `take_pending_responses()`で取り出し、画面テキストとして投影しない。`?47`/`?1047`/`?1049`
+  は追従抑止用のモードとしてだけ追跡し、独立した代替画面バッファはP3で実装する
 - **TextEditorApp/src/PtyProcessController.h/.cpp** — `process/`のPTY実装をQtイベントループへ接続し、
-  プラットフォーム別生成、10msごとの逐次出力、終了通知、端末セルサイズ変更を担当する
+  プラットフォーム別生成、入力キュー、セッションID/状態、10msごとの逐次出力、終了通知、端末セルサイズ変更を担当する。
+  PTY書込み・停止・resizeはGUIスレッドから実行しない。入力待ちキューは1 MiBで上限を設ける
 - **TextEditorApp/src/PtyProcessFactory.h/.cpp** — `createPtyProcess(PtyProcessBackend)`でPTYを生成する。
   Windowsは`Direct`で`ProcessWinConPty`、`Worker`で`ProcessWinConPtyWithWorker`を選択する。
   Controllerは既定で`Worker`を使用し、`setBackend()`で次回起動時の方式を変更できる。
   POSIXではどちらも`ProcessPosixPty`を使用する。Windowsのアプリビルドは対応する
   `conpty-worker.exe`もアプリと同じ出力先へ生成する
 - **PatternState.h/.cpp** — キーワード一致検出(実験機能、既定では無効)
-- **TextEditorCoreTest/** — 幅LRU、タブ幅による失効、前景・背景の文字色属性、ANSI色状態を確認する
-  Qt依存のGoogleTest
-- **PtyProcessTest/** — POSIX PTYのTTY接続、初期サイズ、ANSI保持、終了時drain、resize/SIGWINCHを
-  確認し、通常neofetch出力をTerminalScreenへ適用するQt非依存のGoogleTest
+- **TextEditorCoreTest/** — 幅LRU、タブ幅による失効、前景・背景の文字色属性、ANSI色状態に加え、
+  PTY Controllerの起動時入力・入力未読時のGUI応答・argv境界・端末返信の往復、およびViewの端末/通常入力分離を確認するQt依存のGoogleTest
+- **PtyProcessTest/** — POSIX PTYのTTY接続、初期サイズ、ANSI保持、終了時drain、resize/SIGWINCH、
+  起動直後にキューした入力の到達を確認し、通常neofetch出力をTerminalScreenへ適用するQt非依存のGoogleTest
 - **TerminalScreenTest/** — カーソル移動、C0制御、チャンク分割、Unicodeセル、SGR、スクロール、
-  リサイズを確認するQt非依存のGoogleTest
+  リサイズ、標準端末照会への返信を確認するQt非依存のGoogleTest
 - **LineIndexMap/** — 折り返し行の論理行⇔表示行マッピング用 B+-tree(独立ライブラリ、
   GoogleTest によるテスト完備)。詳細は [LineIndexMap/AGENTS.md](LineIndexMap/AGENTS.md) を参照
 - **TextEditorApp/** — 上記部品を組み込んだ実行可能アプリ(サンプル/動作確認用)
   - `src/MainWindow.*` — メインウィンドウ、メニュー(File→Open/Save/Test)
   - Debugアクションは`on_action_debug_triggered()`先頭の`program`と`arguments`で定義した
-    コマンドを`process_controller`経由でPTY上に起動し、出力を端末Viewへ渡す。
-    既定はWindowsで`git log -n 3`、それ以外で`neofetch`
+    `bash --noprofile --norc -i`を`process_controller`経由でPTY上に起動し、入出力を端末Viewへ渡す
+  - `writeToTerminal()`は、通常画面を表示中で出力前から末尾を表示しており、かつ出力が画面を
+    実際にスクロールした場合だけ末尾へ追従する。代替画面モード中と履歴を閲覧中は追従しない
   - `src/MySettings.*` — `QSettings` ラッパーによる設定の永続化(INI)
   - `src/main.cpp` — エントリポイント
 
 ## 編集・描画のデータフロー
 
-1. キー入力 → `MainWindow::keyPressEvent()` → `AbstractTextEditorApplication::write(QKeyEvent*)`
+1. 通常エディタのキー入力 → `TextEditorView::keyPressEvent()` → `AbstractTextEditorApplication::write(QKeyEvent*)`
 2. 文字の挿入/削除 → `Document::Line` を変更
 3. `commit_line()` → `_update_line()` → `wrap_line()` → `LineIndexMap` を更新
 4. `TextEditorView::paintEvent()` → `property_of_visual_line()` → `parse_line()` で解析済み文字列を取得
    → `QPainter` で描画(テキスト・選択範囲・カーソル・行番号)
 
 端末モードではPTY出力を`TerminalParser`→`TerminalScreen`へ渡し、変更後の固定セル画面を
-自己完結したANSI論理行としてDocumentへ投影する。端末カーソルはエディタの選択カーソルとは独立し、
-`TextEditorView`がセル座標から直接描画する。端末モードは常に`NoWrap`を使用する。
+自己完結したANSI論理行としてDocumentへ投影する。`TextEditorView`は端末フォーカス時に
+`terminalInputRequested(QByteArray)`だけを発行し、`MainWindow`が`PtyProcessController::writeInput()`へ
+接続する。端末入力でDocumentを直接編集・ローカルエコーしない。P0では通常文字、IME確定、Enter、
+Backspace、Escape、Ctrl+A〜Zを送信し、Tab/Shift+Tabはフォーカス移動に使う。特殊キーのVT入力符号化はP1で拡張する。
+端末カーソルはエディタの選択カーソルとは独立し、`TextEditorView`がセル座標から直接描画する。端末モードは常に`NoWrap`を使用する。
 
 ## 折り返しアルゴリズム
 
@@ -139,13 +147,13 @@ Qt非依存の`LineIndexMap`・`WrapAlgorithm`・`PtyProcessTest`・`TerminalScr
 # 期待出力: [  PASSED  ] 7 tests.
 
 (cd TextEditorCoreTest && qmake6 TextEditorCoreTest.pro && make && ./TextEditorCoreTest)
-# 期待出力: [  PASSED  ] 15 tests.
+# 期待出力: [  PASSED  ] 23 tests.
 
 (cd PtyProcessTest && qmake6 PtyProcessTest.pro && make && ./PtyProcessTest)
-# Linuxでneofetchがある場合の期待出力: [  PASSED  ] 3 tests.
+# Linuxでneofetchがある場合の期待出力: [  PASSED  ] 4 tests.
 
 (cd TerminalScreenTest && qmake6 TerminalScreenTest.pro && make && ./TerminalScreenTest)
-# 期待出力: [  PASSED  ] 11 tests.
+# 期待出力: [  PASSED  ] 16 tests.
 
 # 並列折り返しのThreadSanitizer検証
 (cd TextEditorCoreTest && make distclean && \
@@ -168,6 +176,7 @@ Qt非依存の`LineIndexMap`・`WrapAlgorithm`・`PtyProcessTest`・`TerminalScr
 - 折り返し終端の選択には常設の単体・ランダムテストがあるが、Document編集・座標変換・描画を
   統合したエディタ本体の自動テストはまだない。編集結果を「毎回全再計算する参照実装」と
   比較するランダムテストの追加が望ましい
+- P0のPTY入力経路はLinuxで自動テスト済み。Windows Direct/Workerの実機受入試験はP5で残している
 
 ## 規約・注意点
 

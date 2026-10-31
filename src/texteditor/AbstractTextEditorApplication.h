@@ -960,6 +960,10 @@ private:
 	void _set_cursor_col(col_index_t col, bool auto_scroll = true, bool by_mouse = false);
 	std::vector<Document::Line> *documentLinesForWrite(bool check_readonly = true);
 	void projectTerminalScreen();
+	// Called immediately after terminal output is parsed, before its screen
+	// projection is updated.  Derived views forward protocol replies through
+	// their PTY owner; the replies are not display text.
+	virtual void terminalResponseReady(std::string_view const &) {}
 public:
 	row_index_t lrow_to_vrow(row_index_t lrow) const;
 	row_index_t vrow_to_lrow(row_index_t vrow) const;
@@ -1048,6 +1052,8 @@ public:
 	bool isOverwriteMode() const;
 	void setTerminalMode(bool f);
 	bool isTerminalMode() const;
+	bool terminalOutputScrolled() const;
+	bool terminalAlternateScreenActive() const;
 	void moveToTop();
 	void moveToBottom();
 	void set_line_margin(int n);

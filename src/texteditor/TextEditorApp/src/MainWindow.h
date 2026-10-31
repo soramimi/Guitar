@@ -29,12 +29,17 @@ private:
 
 	TextEditorEngine_sp engine();
 	Document *document();
+	
+	enum Mode {
+		TextEditor,
+		Terminal,
+	};
+	
 	TextEditorView *texteditor();
 	TextEditorView *terminal();
+	TextEditorView *target_widget();
 
 	bool saveFile(const QString &path);
-protected:
-	void keyPressEvent(QKeyEvent *);
 
 public:
 	bool event(QEvent *);

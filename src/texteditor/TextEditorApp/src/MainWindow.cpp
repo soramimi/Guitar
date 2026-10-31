@@ -13,10 +13,12 @@
 #include <QStandardPaths>
 #include <QTimer>
 #include <QStyle>
+#include <QStatusBar>
 #include <memory>
 #include <QShortcut>
 
 struct MainWindow::Private {
+	MainWindow::Mode mode = MainWindow::Mode::Terminal;
 	bool need_to_layout;
 	QRect cursor_rect;
 	TextEditorEngine_sp engine;
@@ -74,14 +76,17 @@ MainWindow::MainWindow(QWidget *parent)
 		});
 	connect(&m->process_controller, &PtyProcessController::completed, this,
 		[this](int exit_code, QString const &error_message){
-			if (exit_code == 0 && error_message.isEmpty()) return;
-			QString text = error_message.isEmpty()
-				? tr("[コマンドが異常終了しました: exit code %1]\r\n").arg(exit_code)
-				: tr("[コマンドの実行に失敗しました: %1]\r\n").arg(error_message);
-			QByteArray const message = text.toUtf8();
-			writeToTerminal(std::string_view(
-				message.constData(), static_cast<size_t>(message.size())));
+			if (exit_code == 0 && error_message.isEmpty()) {
+				statusBar()->showMessage(tr("端末プロセスが終了しました"), 3000);
+				return;
+			}
+			QString const message = error_message.isEmpty()
+				? tr("端末プロセスが異常終了しました: exit code %1").arg(exit_code)
+				: tr("端末プロセスの実行に失敗しました: %1").arg(error_message);
+			statusBar()->showMessage(message, 10000);
 		});
+	connect(terminal(), &TextEditorView::terminalInputRequested,
+		&m->process_controller, &PtyProcessController::writeInput);
 	connect(terminal(), &TextEditorView::terminalSizeChanged,
 		&m->process_controller, &PtyProcessController::resizeTerminal);
 	
@@ -104,12 +109,12 @@ TextEditorView *MainWindow::terminal()
 	return ui->widget_terminal->view();
 }
 
-void MainWindow::keyPressEvent(QKeyEvent *e)
+TextEditorView *MainWindow::target_widget()
 {
-	texteditor()->write(e);
-
-	if (texteditor()->state() == TextEditorView::State::Exit) {
-		close();
+	if (m->mode == Mode::TextEditor) {
+		return texteditor();
+	} else {
+		return terminal();
 	}
 }
 
@@ -119,8 +124,8 @@ bool MainWindow::event(QEvent *e)
 	if (e->type() == QEvent::WindowActivate) {
 		if (m->need_to_layout) {
 			m->need_to_layout = false;
-			// int w = texteditor()->basisCharWidth() * texteditor()->screenWidth();
-			// int h = texteditor()->lineHeight() * texteditor()->screenHeight();
+			// int w = target_widget()->basisCharWidth() * target_widget()->screenWidth();
+			// int h = target_widget()->lineHeight() * target_widget()->screenHeight();
 			// int sb = style()->pixelMetric(QStyle::PM_ScrollBarExtent);
 			// w += sb;
 			// h += sb;
@@ -142,32 +147,32 @@ Document *MainWindow::document()
 
 void MainWindow::upArrow()
 {
-	texteditor()->moveCursorUp();
+	target_widget()->moveCursorUp();
 }
 
 void MainWindow::downArrow()
 {
-	texteditor()->moveCursorDown();
+	target_widget()->moveCursorDown();
 }
 
 void MainWindow::leftArrow()
 {
-	texteditor()->moveCursorLeft();
+	target_widget()->moveCursorLeft();
 }
 
 void MainWindow::rightArrow()
 {
-	texteditor()->moveCursorRight();
+	target_widget()->moveCursorRight();
 }
 
 void MainWindow::on_verticalScrollBar_valueChanged(int /*value*/)
 {
-	texteditor()->reflectScrollBar();
+	target_widget()->reflectScrollBar();
 }
 
 void MainWindow::on_horizontalScrollBar_valueChanged(int /*value*/)
 {
-	texteditor()->reflectScrollBar();
+	target_widget()->reflectScrollBar();
 }
 
 void MainWindow::on_action_file_open_triggered()
@@ -181,7 +186,7 @@ void MainWindow::on_action_file_open_triggered()
 	path = QFileDialog::getOpenFileName(this, tr("Open"), path);
 	if (!path.isEmpty()) {
 		QString error_message;
-		if (texteditor()->openFile(path, &error_message)) {
+		if (target_widget()->openFile(path, &error_message)) {
 			MySettings s;
 			s.beginGroup("File");
 			s.setValue("LastUsedFile", path);
@@ -212,7 +217,7 @@ void MainWindow::moveEvent(QMoveEvent *)
 bool MainWindow::saveFile(QString const &path)
 {
 	QString error_message;
-	if (!texteditor()->saveFile(path, &error_message)) {
+	if (!target_widget()->saveFile(path, &error_message)) {
 		QMessageBox::warning(this, tr("Save"), tr("Failed to save file:\n%1\n\n%2").arg(path, error_message));
 		return false;
 	}
@@ -221,7 +226,7 @@ bool MainWindow::saveFile(QString const &path)
 
 void MainWindow::on_action_file_save_as_triggered()
 {
-	QString path = texteditor()->recentlyUsedPath();
+	QString path = target_widget()->recentlyUsedPath();
 	path = QFileDialog::getSaveFileName(this, tr("Save as"), path);
 	if (!path.isEmpty() && saveFile(path)) {
 		{
@@ -229,34 +234,38 @@ void MainWindow::on_action_file_save_as_triggered()
 			s.beginGroup("File");
 			s.setValue("LastUsedFile", path);
 		}
-		texteditor()->setRecentlyUsedPath(path);
+		target_widget()->setRecentlyUsedPath(path);
 	}
 }
 void MainWindow::on_action_edit_cut_triggered()
 {
 	qDebug() << Q_FUNC_INFO;
-	texteditor()->edit_cut();
+	target_widget()->edit_cut();
 }
 
 
 void MainWindow::on_action_edit_copy_triggered()
 {
 	qDebug() << Q_FUNC_INFO;
-	texteditor()->edit_copy();
+	target_widget()->edit_copy();
 }
 
 
 void MainWindow::on_action_edit_paste_triggered()
 {
 	qDebug() << Q_FUNC_INFO;
-	texteditor()->edit_paste();
+	target_widget()->edit_paste();
 }
 
 void MainWindow::writeToTerminal(const std::string_view &str)
 {
+	bool const was_viewing_bottom = terminal()->isViewingBottom();
 	terminal()->appendBulk(str);
 	terminal()->setChanged(false);
-	terminal()->moveToBottom();
+	if (was_viewing_bottom && terminal()->terminalOutputScrolled()
+		&& !terminal()->terminalAlternateScreenActive()) {
+		terminal()->moveToBottom();
+	}
 }
 
 
@@ -264,37 +273,32 @@ void MainWindow::writeToTerminal(const std::string_view &str)
 
 void MainWindow::on_action_debug_triggered()
 {
-	// Change the program and arguments here to run another command.
+	// A deterministic, configuration-free interactive shell for terminal testing.
 #ifdef Q_OS_WIN
-	QString const program = "C:\\Program Files\\Git\\cmd\\git.exe";
-	QStringList const arguments = {"log", "-n", "3"};
+	QString const program = "C:\\Program Files\\Git\\bin\\bash.exe";
+	QStringList const arguments = {"--noprofile", "--norc", "-i"};
 #else
-	QString const program = "neofetch";
-	QStringList const arguments;
+	QString const program = "/usr/bin/bash";
+	QStringList const arguments = {"--noprofile", "--norc", "-i"};
 #endif
 
-	auto write_message = [this](QString const &text){
-		QByteArray const bytes = text.toUtf8();
-		writeToTerminal(std::string_view(bytes.constData(), static_cast<size_t>(bytes.size())));
-	};
-
 	if (m->process_controller.isRunning()) {
-		writeToTerminal("[コマンドはすでに実行中です]\r\n");
+		statusBar()->showMessage(tr("端末プロセスはすでに実行中です"), 3000);
 		return;
 	}
 
 	QString const executable = QStandardPaths::findExecutable(program);
 	if (executable.isEmpty()) {
-		write_message(tr("[実行ファイルが見つかりません: %1]\r\n").arg(program));
+		statusBar()->showMessage(tr("実行ファイルが見つかりません: %1").arg(program), 10000);
 		return;
 	}
 
 	QSize const terminal_size = terminal()->terminalSizeInCells();
+	// Each run owns a fresh terminal screen and parser.  Host status is kept out
+	// of the terminal document so it cannot be mistaken for child output.
+	terminal()->clear();
 	terminal()->setTerminalScreenSize(terminal_size.width(), terminal_size.height());
-	QStringList command_line = {program};
-	command_line.append(arguments);
-	write_message("$ " + command_line.join(' ') + "\r\n");
 	if (!m->process_controller.start(executable, arguments, terminal_size)) {
-		write_message(tr("[コマンドを起動できませんでした: %1]\r\n").arg(program));
+		statusBar()->showMessage(tr("端末プロセスを起動できませんでした: %1").arg(program), 10000);
 	}
 }

@@ -32,6 +32,18 @@ std::string shell_command(std::string const &script)
 	return "\"/bin/sh\" \"-c\" \"" + script + "\"";
 }
 
+std::string wait_for_output(ProcessPosixPty *process, std::string const &needle)
+{
+	std::string output;
+	auto const deadline = std::chrono::steady_clock::now() + std::chrono::seconds(5);
+	while (output.find(needle) == std::string::npos
+		&& std::chrono::steady_clock::now() < deadline) {
+		output += read_available(process);
+		std::this_thread::sleep_for(std::chrono::milliseconds(10));
+	}
+	return output;
+}
+
 }
 
 TEST(PtyProcess, ProvidesTerminalSizeAnsiAndFinalOutput)
@@ -86,6 +98,32 @@ TEST(PtyProcess, ResizeNotifiesForegroundProcessGroup)
 	EXPECT_FALSE(result.running());
 	EXPECT_EQ(result.exit_code(), 0U);
 	EXPECT_NE(output.find("43 132\r\nRESIZED"), std::string::npos);
+}
+
+TEST(PtyProcess, QueuesEarlyInputAndDeliversItOnceToThePtyChild)
+{
+	ProcessPosixPty process;
+	process.set_capture_output_vector(false);
+	process.resize_terminal(73, 29);
+	process.start(shell_command(
+		"stty -echo; IFS= read -r line; printf 'RX=<%s>\\n' $line; stty size"),
+		"TERM=xterm-256color", true);
+
+	// This intentionally races the process setup.  Before the input queue was
+	// added, a write before pty_master was constructed was silently lost.
+	process.write_input("launch-input\n", 13);
+	std::string output = wait_for_output(&process, "RX=<launch-input>");
+	ProcessResult result = process.wait(5000);
+	if (result.running()) {
+		process.stop();
+		result = process.wait(1000);
+	}
+	output += read_available(&process);
+
+	EXPECT_FALSE(result.running());
+	EXPECT_EQ(result.exit_code(), 0U);
+	EXPECT_NE(output.find("RX=<launch-input>\r\n"), std::string::npos);
+	EXPECT_NE(output.find("29 73\r\n"), std::string::npos);
 }
 
 TEST(PtyProcess, NormalNeofetchOutputCanBeAppliedToTerminalScreen)
