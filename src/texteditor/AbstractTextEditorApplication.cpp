@@ -1567,10 +1567,10 @@ std::optional<CharBuffer> AbstractTextEditorApplication::edit_selection(EditOper
 		updateVisibility(opt);
 	};
 
-	bool cut = false;
-	if (op == EditOperation::Cut) {
+	bool cut_or_delete = false;
+	if (op == EditOperation::Cut || op == EditOperation::Delete) {
 		invalidate_visual_row_info(lrow_to_vrow(a.lrow));
-		cut = true;
+		cut_or_delete = true;
 	}
 	
 	CharBuffer out;
@@ -1587,7 +1587,7 @@ std::optional<CharBuffer> AbstractTextEditorApplication::edit_selection(EditOper
 		if (a.lcol < b.lcol) {
 			CharBuffer chars = parse_logical_line(cx(), a.lrow);
 			AppendClipText(chars, a.lcol, b.lcol);
-			if (cut) { // 切り取りの場合は、選択範囲の文字を削除して行を更新
+			if (cut_or_delete) { // 切り取りの場合は、選択範囲の文字を削除して行を更新
 				chars.erase(chars.begin() + a.lcol, chars.begin() + b.lcol);
 				commit_line(a.lrow, chars);
 			}
@@ -1609,7 +1609,7 @@ std::optional<CharBuffer> AbstractTextEditorApplication::edit_selection(EditOper
 				entire = true;
 			}
 			AppendClipText(chars, begin, end);
-			if (cut) { // 切り取りの場合は、選択範囲の文字を削除して行を更新
+			if (cut_or_delete) { // 切り取りの場合は、選択範囲の文字を削除して行を更新
 				if (entire) { // 論理行全体が選択されている場合は、行を削除する
 					delete_list.push_back(curr.lrow); // 後ろから削除するため削除リストに登録
 				} else { // 論理行の一部が選択されている場合は、選択範囲の文字を削除して行を更新する
@@ -1619,28 +1619,29 @@ std::optional<CharBuffer> AbstractTextEditorApplication::edit_selection(EditOper
 			}
 			curr.lrow++;
 		}
-		if (cut) { // 切り取りの場合
+		if (cut_or_delete) { // 切り取りの場合
 			// 削除リストにある論理行を削除する
 			for (auto it = delete_list.rbegin(); it != delete_list.rend(); it++) {
 				delete_line(*it);
 			}
 			CharBuffer chars = parse_logical_line(cx(), a.lrow);
+			char32_t c = 0;
 			if (!chars.empty()) {
-				char32_t c = chars.back().unicode;
-				if (c != '\n' && c != '\r') { // 最後の文字が改行でない場合は、次の行を結合する
-					CharBuffer next = parse_logical_line(cx(), a.lrow + 1);
-					if (!next.empty()) {
-						// 次の行の文字を現在の行の末尾に追加して、現在の行を更新
-						chars.insert(chars.end(), next.begin(), next.end());
-						commit_line(a.lrow, chars);
-						// 次の行を削除する
-						delete_line(a.lrow + 1);
-					}
+				c = chars.back().unicode;
+			}
+			if (c != '\n' && c != '\r') { // 最後の文字が改行でない場合は、次の行を結合する
+				CharBuffer next = parse_logical_line(cx(), a.lrow + 1);
+				if (!next.empty()) {
+					// 次の行の文字を現在の行の末尾に追加して、現在の行を更新
+					chars.insert(chars.end(), next.begin(), next.end());
+					commit_line(a.lrow, chars);
+					// 次の行を削除する
+					delete_line(a.lrow + 1);
 				}
 			}
 		}
 	}
-	if (cut) { // 切り取りの場合
+	if (cut_or_delete) { // 切り取りの場合
 		clear_selection(); // 選択範囲をクリア
 		setCursorPos(visual_position(a)); // カーソルを選択範囲の開始位置に移動
 	}
@@ -1679,7 +1680,7 @@ bool AbstractTextEditorApplication::deleteIfSelected()
 {
 	if (selection_end() && selection_start()) {
 		if (selection_end() != selection_start()) {
-			auto opt = edit_selection(EditOperation::Cut);
+			auto opt = edit_selection(EditOperation::Delete);
 			(void)opt;
 			return true;
 		}
@@ -1782,7 +1783,7 @@ void AbstractTextEditorApplication::doBackspace()
 	if (isTerminalMode()) return;
 
 	if (deleteIfSelected()) {
-		return ;
+		return;
 	}
 
 	if (current_visual_row() > 0 || current_visual_col() > 0) {

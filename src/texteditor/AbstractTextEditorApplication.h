@@ -948,6 +948,7 @@ private:
 	enum class EditOperation {
 		Cut,
 		Copy,
+		Delete,
 	};
 	std::optional<CharBuffer> edit_selection(EditOperation op);
 	int calcColumnToIndex(int column);
