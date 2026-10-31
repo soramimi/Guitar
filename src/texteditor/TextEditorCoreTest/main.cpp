@@ -59,6 +59,42 @@ public:
 		return visual_nlines();
 	}
 
+	std::vector<Character> logical_characters(row_index_t row) const
+	{
+		CharBuffer chars = parse_logical_line(cx(), row);
+		return *chars.vec;
+	}
+
+	void feed_terminal(std::string_view bytes)
+	{
+		appendBulk(bytes);
+	}
+
+	void resize_terminal(int columns, int rows)
+	{
+		setTerminalScreenSize(columns, rows);
+	}
+
+	texteditor::RowCol terminal_cursor() const
+	{
+		return terminalCursorPosition();
+	}
+
+	void move_editor_cursor(texteditor::RowCol position)
+	{
+		setCursorPos(position);
+	}
+
+	bool line_index_map_valid() const
+	{
+		return cx()->line_index_map.validate();
+	}
+
+	size_t logical_line_count() const
+	{
+		return document()->logical_lines.size();
+	}
+
 	bool visual_fragment_positions_match_text_width() const
 	{
 		for (row_index_t vrow = 0; vrow < visual_nlines(); vrow++) {
@@ -419,31 +455,67 @@ TEST(Layout, SingleAndEightThreadsProduceIdenticalResults)
 	EXPECT_TRUE(single == parallel);
 }
 
-TEST(TerminalLayout, PreservesColorsAcrossWrappedFragments)
+TEST(TerminalLayout, ProjectsCursorMovementAndColorsToDocument)
 {
 	LayoutTestApplication app(1);
 	app.setTerminalMode(true);
+	app.resize_terminal(20, 4);
+	app.feed_terminal("abc\x1b[2D\x1b[31;44mXY\x1b[0m");
 
-	std::string const red = "red red red red red red red ";
-	std::string const plain = "plain plain";
-	std::string const input = std::string("\x1b[?25l\x1b[1;31;44m")
-		+ red + "\x1b[m" + plain + "\x1b[?25h";
-	app.load({Document::Line(input)});
-
-	EXPECT_GT(app.visual_line_count(), 1);
-	EXPECT_TRUE(app.visual_fragment_positions_match_text_width());
-	std::vector<Character> const chars = app.flattened_visual_characters();
-	ASSERT_EQ(chars.size(), red.size() + plain.size());
-	for (size_t i = 0; i < red.size(); i++) {
+	EXPECT_EQ(app.wrappingMode(), AbstractTextEditorApplication::WrappingMode::NoWrap);
+	EXPECT_EQ(app.visual_line_count(), 4);
+	EXPECT_TRUE(app.line_index_map_valid());
+	std::vector<Character> const chars = app.logical_characters(0);
+	ASSERT_GE(chars.size(), 3u);
+	EXPECT_EQ(chars[0].unicode, U'a');
+	EXPECT_EQ(chars[1].unicode, U'X');
+	EXPECT_EQ(chars[2].unicode, U'Y');
+	for (size_t i = 1; i <= 2; i++) {
 		EXPECT_TRUE(chars[i].attr.has_foreground_color());
 		EXPECT_EQ(chars[i].attr.color, 0x800000u);
 		EXPECT_TRUE(chars[i].attr.has_background_color());
 		EXPECT_EQ(chars[i].attr.background_color, 0x000080u);
 	}
-	for (size_t i = red.size(); i < chars.size(); i++) {
-		EXPECT_FALSE(chars[i].attr.has_foreground_color());
-		EXPECT_FALSE(chars[i].attr.has_background_color());
-	}
+}
+
+TEST(TerminalLayout, EditorCursorDoesNotChangeTerminalOutputPosition)
+{
+	LayoutTestApplication app(1);
+	app.setTerminalMode(true);
+	app.resize_terminal(20, 4);
+	app.feed_terminal("abc");
+	EXPECT_EQ(app.terminal_cursor().row, 0);
+	EXPECT_EQ(app.terminal_cursor().col, 3);
+
+	app.move_editor_cursor({3, 10});
+	app.feed_terminal("\x1b[2DX");
+	std::vector<Character> const chars = app.logical_characters(0);
+	ASSERT_GE(chars.size(), 3u);
+	EXPECT_EQ(chars[0].unicode, U'a');
+	EXPECT_EQ(chars[1].unicode, U'X');
+	EXPECT_EQ(chars[2].unicode, U'c');
+	EXPECT_EQ(app.terminal_cursor().row, 0);
+	EXPECT_EQ(app.terminal_cursor().col, 2);
+	EXPECT_TRUE(app.line_index_map_valid());
+}
+
+TEST(TerminalLayout, ProjectsScrollbackWithoutBreakingLineIndexMap)
+{
+	LayoutTestApplication app(1);
+	app.setTerminalMode(true);
+	app.resize_terminal(10, 2);
+	app.feed_terminal("one\r\ntwo\r\nthree");
+	ASSERT_EQ(app.logical_line_count(), 3u);
+	EXPECT_TRUE(app.line_index_map_valid());
+	auto first = app.logical_characters(0);
+	auto second = app.logical_characters(1);
+	auto third = app.logical_characters(2);
+	ASSERT_GE(first.size(), 3u);
+	ASSERT_GE(second.size(), 3u);
+	ASSERT_GE(third.size(), 5u);
+	EXPECT_EQ(std::u32string({first[0], first[1], first[2]}), U"one");
+	EXPECT_EQ(std::u32string({second[0], second[1], second[2]}), U"two");
+	EXPECT_EQ(std::u32string({third[0], third[1], third[2], third[3], third[4]}), U"three");
 }
 
 int main(int argc, char **argv)

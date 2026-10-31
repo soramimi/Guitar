@@ -76,8 +76,8 @@ MainWindow::MainWindow(QWidget *parent)
 		[this](int exit_code, QString const &error_message){
 			if (exit_code == 0 && error_message.isEmpty()) return;
 			QString text = error_message.isEmpty()
-				? tr("[neofetchが異常終了しました: exit code %1]\n").arg(exit_code)
-				: tr("[neofetchを起動できませんでした: %1]\n").arg(error_message);
+				? tr("[neofetchが異常終了しました: exit code %1]\r\n").arg(exit_code)
+				: tr("[neofetchを起動できませんでした: %1]\r\n").arg(error_message);
 			QByteArray const message = text.toUtf8();
 			writeToTerminal(std::string_view(
 				message.constData(), static_cast<size_t>(message.size())));
@@ -265,20 +265,21 @@ void MainWindow::writeToTerminal(const std::string_view &str)
 void MainWindow::on_action_debug_triggered()
 {
 	if (m->neofetch.isRunning()) {
-		writeToTerminal("[neofetchはすでに実行中です]\n");
+		writeToTerminal("[neofetchはすでに実行中です]\r\n");
 		return;
 	}
 
 	QString const executable = QStandardPaths::findExecutable("neofetch");
 	if (executable.isEmpty()) {
-		writeToTerminal("[neofetchが見つかりません]\n");
+		writeToTerminal("[neofetchが見つかりません]\r\n");
 		return;
 	}
 
-	writeToTerminal("$ neofetch --off --color_blocks off\n");
-	if (!m->neofetch.start(executable,
-		{"--off", "--color_blocks", "off"}, terminal()->terminalSizeInCells())) {
-		writeToTerminal("[neofetchを起動できませんでした]\n");
+	QSize const terminal_size = terminal()->terminalSizeInCells();
+	terminal()->setTerminalScreenSize(terminal_size.width(), terminal_size.height());
+	writeToTerminal("$ neofetch\r\n");
+	if (!m->neofetch.start(executable, {}, terminal_size)) {
+		writeToTerminal("[neofetchを起動できませんでした]\r\n");
 	}
 }
 

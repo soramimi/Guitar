@@ -33,6 +33,7 @@ SOURCES += \
 	../../common/wstring.cpp \
 	../EscapeSequence.cpp \
 	../PatternState.cpp \
+	../TerminalScreen.cpp \
 	../TextEditorTheme.cpp \
 	../TextEditorView.cpp \
 	../TextEditorWidget.cpp \
@@ -57,6 +58,7 @@ HEADERS  += \
 	../EscapeSequence.h \
 	../LineIndexMap/LineIndexMap.h \
 	../PatternState.h \
+	../TerminalScreen.h \
 	../TextEditorTheme.h \
 	../TextEditorView.h \
 	../TextEditorWidget.h \

@@ -958,6 +958,7 @@ private:
 	bool deleteIfSelected();
 	void _set_cursor_col(col_index_t col, bool auto_scroll = true, bool by_mouse = false);
 	std::vector<Document::Line> *documentLinesForWrite(bool check_readonly = true);
+	void projectTerminalScreen();
 public:
 	row_index_t lrow_to_vrow(row_index_t lrow) const;
 	row_index_t vrow_to_lrow(row_index_t vrow) const;
@@ -1063,8 +1064,10 @@ public:
 	void setChanged(bool f);
 	void logicalMoveToBottom();
 	void appendBulk(std::string_view const &str);
+	void setTerminalScreenSize(int columns, int rows);
 	void clear();
 protected:
+	texteditor::RowCol terminalCursorPosition() const;
 	virtual texteditor::PositionX currentPixelX() const = 0;
 private:
 	// 1論理行を現在の幅とWrappingModeで表示行へ分割する。

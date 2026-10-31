@@ -69,7 +69,8 @@ TextEditorView::TextEditorView(QWidget *parent)
 		setFont(font);
 	}
 	{
-		QFont font = QFontDatabase::systemFont(QFontDatabase::GeneralFont);
+		QFont font = QFontDatabase::systemFont(QFontDatabase::FixedFont);
+		// QFont font = QFontDatabase::systemFont(QFontDatabase::GeneralFont);
 		font.setPointSize(16);
 		set_text_font(font);
 	}
@@ -96,6 +97,9 @@ TextEditorView::TextEditorView(QWidget *parent)
 	connect(&m->resize_timer, &QTimer::timeout, this, [this](){
 		layoutEditor();
 		QSize const size = terminalSizeInCells();
+		if (isTerminalMode()) {
+			setTerminalScreenSize(size.width(), size.height());
+		}
 		if (size != m->terminal_size) {
 			m->terminal_size = size;
 			emit terminalSizeChanged(size);
@@ -528,7 +532,19 @@ void TextEditorView::drawCursor(int row, int col, QPainter *pr)
  */
 void TextEditorView::drawCursor(QPainter *pr)
 {
-	drawCursor(current_visual_row(), current_visual_col(), pr);
+	if (isTerminalMode()) {
+		texteditor::RowCol const position = terminalCursorPosition();
+		QColor const color = cursorColor();
+		int const x = linenum_area_width_px() - scroll_horz_pos_px()
+			+ position.col * basic_character_width_px();
+		int const y = view_y_from_vrow(position.row);
+		int const height = line_height_px();
+		pr->fillRect(x - 1, y, 2, height, color);
+		pr->fillRect(x - 2, y, 4, 2, color);
+		pr->fillRect(x - 2, y + height - 2, 4, 2, color);
+	} else {
+		drawCursor(current_visual_row(), current_visual_col(), pr);
+	}
 }
 
 void TextEditorView::paintEvent(QPaintEvent *)
@@ -635,7 +651,8 @@ void TextEditorView::paintEvent(QPaintEvent *)
 					const QRect rect_line(vsplit_x, view_y_from_vrow(vrow), text_area_w, line_height_px()); // 行全体の矩形
 					const QRect rect_text(0, view_y_from_vrow(vrow), width(), line_height_px()); // テキスト領域矩形
 					
-					const bool iscurrentline = has_focus && vrow == editor_cx->current_visual_row; // 現在の行？
+					const bool iscurrentline = !isTerminalMode()
+						&& has_focus && vrow == editor_cx->current_visual_row; // 現在の行？
 					const int text_origin_y = view_row * line_height; // テキスト原点座標Y（ピクセル単位）
 					
 					CharBuffer const &chars = formatted_line->chars;
@@ -832,7 +849,7 @@ void TextEditorView::paintEvent(QPaintEvent *)
 					switch (pass) {
 					case 0:
 						DrawBackground();
-						if (vrow_to_lrow(vrow) == current_logical_row()) {
+						if (!isTerminalMode() && vrow_to_lrow(vrow) == current_logical_row()) {
 							DrawCurrentLineBackground();
 						}
 						DrawCharacterBackgrounds();
@@ -882,7 +899,7 @@ void TextEditorView::paintEvent(QPaintEvent *)
 	}
 
 	// カーソル描画
-	if (has_focus) {
+	if (has_focus && isCursorVisible()) {
 		pr.save();
 		auto x = linenum_width_px - 2;
 		pr.setClipRect(x, 0, width() - x, bottom_y);
@@ -1051,6 +1068,10 @@ void TextEditorView::layoutEditor()
 		updateVisibility();
 	}
 	AbstractTextEditorApplication::layoutEditor();
+	if (isTerminalMode()) {
+		QSize const size = terminalSizeInCells();
+		setTerminalScreenSize(size.width(), size.height());
+	}
 }
 
 void TextEditorView::resizeEvent(QResizeEvent * /*event*/)

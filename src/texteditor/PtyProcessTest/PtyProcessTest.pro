@@ -8,6 +8,14 @@ LIBS += -lgtest -lgtest_main -lpthread
 PROCESS_SRC = $$PWD/../../process/src
 PROCESS_PRI = $$PWD/../../process/ptyprocess.pri
 INCLUDEPATH += $$PROCESS_SRC
+INCLUDEPATH += ..
 include($$PROCESS_PRI)
 
-SOURCES += main.cpp
+SOURCES += \
+	../TerminalScreen.cpp \
+	../UnicodeWidth.cpp \
+	main.cpp
+
+HEADERS += \
+	../TerminalScreen.h \
+	../UnicodeWidth.h

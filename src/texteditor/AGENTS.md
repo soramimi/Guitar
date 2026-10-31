@@ -35,13 +35,17 @@ MainWindow (QMainWindow, TextEditorApp/src)
 - **WrapAlgorithm.h/.cpp** — コードポイント列と幅計測コールバックから折り返し終端を求める
   Qt 非依存アルゴリズム。`WrapAlgorithm/` に GoogleTest を持つ
 - **EscapeSequence.h/.cpp** — ターミナルモード用ANSIエスケープシーケンス解析(実験機能)
+- **TerminalScreen.h/.cpp** — Qt非依存の端末ストリーム解析・固定セル画面モデル。UTF-8/C0/CSI/SGRを
+  チャンク継続状態で解析し、スクロールバック、端末カーソル、全角・結合文字、前景・背景色を保持する
 - **TextEditorApp/src/PtyProcessController.h/.cpp** — `process/`のPTY実装をQtイベントループへ接続し、
   プラットフォーム別生成、10msごとの逐次出力、終了通知、端末セルサイズ変更を担当する
 - **PatternState.h/.cpp** — キーワード一致検出(実験機能、既定では無効)
 - **TextEditorCoreTest/** — 幅LRU、タブ幅による失効、前景・背景の文字色属性、ANSI色状態を確認する
   Qt依存のGoogleTest
 - **PtyProcessTest/** — POSIX PTYのTTY接続、初期サイズ、ANSI保持、終了時drain、resize/SIGWINCHを
-  確認するQt非依存のGoogleTest
+  確認し、通常neofetch出力をTerminalScreenへ適用するQt非依存のGoogleTest
+- **TerminalScreenTest/** — カーソル移動、C0制御、チャンク分割、Unicodeセル、SGR、スクロール、
+  リサイズを確認するQt非依存のGoogleTest
 - **LineIndexMap/** — 折り返し行の論理行⇔表示行マッピング用 B+-tree(独立ライブラリ、
   GoogleTest によるテスト完備)。詳細は [LineIndexMap/AGENTS.md](LineIndexMap/AGENTS.md) を参照
 - **TextEditorApp/** — 上記部品を組み込んだ実行可能アプリ(サンプル/動作確認用)
@@ -57,6 +61,10 @@ MainWindow (QMainWindow, TextEditorApp/src)
 3. `commit_line()` → `_update_line()` → `wrap_line()` → `LineIndexMap` を更新
 4. `TextEditorView::paintEvent()` → `property_of_visual_line()` → `parse_line()` で解析済み文字列を取得
    → `QPainter` で描画(テキスト・選択範囲・カーソル・行番号)
+
+端末モードではPTY出力を`TerminalParser`→`TerminalScreen`へ渡し、変更後の固定セル画面を
+自己完結したANSI論理行としてDocumentへ投影する。端末カーソルはエディタの選択カーソルとは独立し、
+`TextEditorView`がセル座標から直接描画する。端末モードは常に`NoWrap`を使用する。
 
 ## 折り返しアルゴリズム
 
@@ -107,7 +115,7 @@ MainWindow (QMainWindow, TextEditorApp/src)
 ## ビルド
 
 qmake プロジェクト。アプリ本体とQt依存の`TextEditorCoreTest`はC++20、
-Qt非依存の`LineIndexMap`・`WrapAlgorithm`・`PtyProcessTest`はC++17。
+Qt非依存の`LineIndexMap`・`WrapAlgorithm`・`PtyProcessTest`・`TerminalScreenTest`はC++17。
 
 - `TextEditorApp/TextEditorApp.pro` — アプリ本体。`QT += core gui widgets`
   (Qt6 系は `core5compat` も追加)。ビルド成果物は `TextEditorApp/_bin/`
@@ -115,6 +123,7 @@ Qt非依存の`LineIndexMap`・`WrapAlgorithm`・`PtyProcessTest`はC++17。
 - `WrapAlgorithm/WrapAlgorithm.pro` — Qt 非依存の折り返しアルゴリズム + GoogleTest
 - `TextEditorCoreTest/TextEditorCoreTest.pro` — Qt依存のキャッシュ・属性テスト + GoogleTest
 - `PtyProcessTest/PtyProcessTest.pro` — `process/ptyprocess.pri`を使うPTY統合テスト + GoogleTest
+- `TerminalScreenTest/TerminalScreenTest.pro` — Qt非依存の端末画面モデルテスト + GoogleTest
 
 ```
 (cd TextEditorApp/build/Qt_6_9_0_Debug && qmake6 ../../TextEditorApp.pro && make)
@@ -123,10 +132,13 @@ Qt非依存の`LineIndexMap`・`WrapAlgorithm`・`PtyProcessTest`はC++17。
 # 期待出力: [  PASSED  ] 7 tests.
 
 (cd TextEditorCoreTest && qmake6 TextEditorCoreTest.pro && make && ./TextEditorCoreTest)
-# 期待出力: [  PASSED  ] 13 tests.
+# 期待出力: [  PASSED  ] 15 tests.
 
 (cd PtyProcessTest && qmake6 PtyProcessTest.pro && make && ./PtyProcessTest)
-# Linuxでの期待出力: [  PASSED  ] 2 tests.
+# Linuxでneofetchがある場合の期待出力: [  PASSED  ] 3 tests.
+
+(cd TerminalScreenTest && qmake6 TerminalScreenTest.pro && make && ./TerminalScreenTest)
+# 期待出力: [  PASSED  ] 11 tests.
 
 # 並列折り返しのThreadSanitizer検証
 (cd TextEditorCoreTest && make distclean && \
@@ -139,8 +151,7 @@ Qt非依存の`LineIndexMap`・`WrapAlgorithm`・`PtyProcessTest`はC++17。
 - Undo/Redo、検索・置換、シンタックスハイライト、複数ドキュメント(タブ)は未実装
 - diff 表示用の `CharFlags`/`TextEditorTheme` の配色は定義済みだが、diff 解析処理自体は未実装
 - `MainWindow::on_action_file_save_triggered()` は保存先が `/tmp/test.txt` に固定(暫定実装)
-- ターミナル出力はPTY化済みだが、ANSIカーソル移動と画面モデルは未実装。このためDebugアクションは
-  `neofetch --off --color_blocks off`を維持し、カーソル移動が必要な通常レイアウトをまだ使わない
+- ターミナル画面のリサイズは既存セルの切り詰め・空白拡張であり、既存内容のリフローは行わない
 - 折り返し断片は現在、元論理行の範囲参照ではなく独立した UTF-8 文字列として生成するため、
   全幅変更時には断片文字列の再生成コストが残る
 - 行ごとの `LineProperty` キャッシュには全体のメモリ上限がない。非常に大きなファイルで

@@ -1,6 +1,7 @@
 #include "AbstractTextEditorApplication.h"
 #include "EscapeSequence.h"
 #include "PatternState.h"
+#include "TerminalScreen.h"
 #include "UnicodeWidth.h"
 #include "WrapAlgorithm.h"
 #include "unicode.h"
@@ -80,11 +81,13 @@ struct AbstractTextEditorApplication::Private {
 	// 幅・フォント・折り返しモード・文書全体が変化し、全行の再折り返しが必要な状態。
 	bool full_wrap_update_needed = true;
 	size_t layout_thread_count = 8; // 全行再折り返しの並列数
+	std::unique_ptr<texteditor::terminal::TerminalScreen> terminal_screen;
 };
 
 AbstractTextEditorApplication::AbstractTextEditorApplication()
 	: m(new Private)
 {
+	m->terminal_screen = std::make_unique<texteditor::terminal::TerminalScreen>();
 }
 
 AbstractTextEditorApplication::~AbstractTextEditorApplication()
@@ -1139,6 +1142,9 @@ void AbstractTextEditorApplication::setTextEditorEngine(TextEditorEngine_sp cons
 
 void AbstractTextEditorApplication::clear()
 {
+	if (isTerminalMode() && m->terminal_screen) {
+		m->terminal_screen->reset();
+	}
 	setDocument(nullptr);
 }
 
@@ -2230,6 +2236,7 @@ void AbstractTextEditorApplication::setTerminalMode(bool f)
 {
 	m->is_terminal_mode = f;
 	if (isTerminalMode()) {
+		setWrappingMode(WrappingMode::NoWrap);
 		showLineNumber(false, 0);
 		set_line_margin(1);
 		setWriteMode(WriteMode::Overwrite);
@@ -2241,6 +2248,17 @@ void AbstractTextEditorApplication::setTerminalMode(bool f)
 bool AbstractTextEditorApplication::isTerminalMode() const
 {
 	return m->is_terminal_mode;
+}
+
+texteditor::RowCol AbstractTextEditorApplication::terminalCursorPosition() const
+{
+	if (!m->terminal_screen) return {};
+	return {
+		static_cast<row_index_t>(std::min<size_t>(m->terminal_screen->cursor_document_row(),
+			static_cast<size_t>(std::numeric_limits<row_index_t>::max()))),
+		static_cast<col_index_t>(std::min<size_t>(m->terminal_screen->cursor_column(),
+			static_cast<size_t>(std::numeric_limits<col_index_t>::max())))
+	};
 }
 
 void AbstractTextEditorApplication::moveToTop()
@@ -2484,13 +2502,61 @@ static std::vector<std::string_view> split_lines_keep_nl(char const *begin, size
 	return ret;
 }
 
+void AbstractTextEditorApplication::projectTerminalScreen()
+{
+	if (!m->terminal_screen) return;
+	std::vector<std::string> rendered = m->terminal_screen->rendered_lines();
+	if (rendered.size() > static_cast<size_t>(std::numeric_limits<row_index_t>::max())) return;
+	for (size_t i = 0; i + 1 < rendered.size(); i++) rendered[i].push_back('\n');
+
+	std::vector<Document::Line> *lines = &document()->logical_lines;
+	size_t const common = std::min(lines->size(), rendered.size());
+	for (size_t i = 0; i < common; i++) {
+		if ((*lines)[i].text() == rendered[i]) continue;
+		std::vector<char> text(rendered[i].begin(), rendered[i].end());
+		_update_line(static_cast<row_index_t>(i), std::move(text), false);
+	}
+	while (lines->size() > rendered.size()) {
+		delete_line(static_cast<row_index_t>(lines->size() - 1));
+	}
+	while (lines->size() < rendered.size()) {
+		size_t const i = lines->size();
+		Document::Line line(std::vector<char>(rendered[i].begin(), rendered[i].end()));
+		row_index_t const lrow = static_cast<row_index_t>(i);
+		lines->push_back(std::move(line));
+		cx()->line_index_map.insert(lrow, {});
+		update_visual_line(lrow, false);
+	}
+	invalidate_nlines_cache();
+	setCursorVisible(m->terminal_screen->cursor_visible());
+	Q_ASSERT(cx()->line_index_map.validate());
+	need_to_update_scroll_bar();
+}
+
+void AbstractTextEditorApplication::setTerminalScreenSize(int columns, int rows)
+{
+	if (!m->terminal_screen) return;
+	columns = std::max(1, columns);
+	rows = std::max(1, rows);
+	if (m->terminal_screen->columns() == static_cast<size_t>(columns)
+		&& m->terminal_screen->row_count() == static_cast<size_t>(rows)) return;
+	m->terminal_screen->resize(static_cast<size_t>(columns), static_cast<size_t>(rows));
+	if (isTerminalMode()) projectTerminalScreen();
+}
+
 /**
- * @brief 文字列を複数行に分割して、ドキュメントの末尾に追加する
+ * @brief 文字列を複数行に分割して、ドキュメントの末尾に追加する。
+ * 端末モードではストリーム解析後の画面モデルをDocumentへ投影する。
  * @param str 追加する文字列
  */
 void AbstractTextEditorApplication::appendBulk(std::string_view const &str)
 {
 	if (str.empty()) return;
+	if (isTerminalMode()) {
+		m->terminal_screen->feed(str);
+		projectTerminalScreen();
+		return;
+	}
 	std::vector<std::string_view> lines = split_lines_keep_nl(str.data(), str.size());
 
 	// 末尾の行が空で、かつその前の行が改行で終わっている場合は、末尾の行を削除する

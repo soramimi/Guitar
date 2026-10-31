@@ -13,6 +13,7 @@ SOURCES += \
 	../AbstractTextEditorApplication.cpp \
 	../EscapeSequence.cpp \
 	../PatternState.cpp \
+	../TerminalScreen.cpp \
 	../UnicodeWidth.cpp \
 	../WrapAlgorithm.cpp \
 	../unicode.cpp \
@@ -23,6 +24,7 @@ HEADERS += \
 	../EscapeSequence.h \
 	../LineIndexMap/LineIndexMap.h \
 	../PatternState.h \
+	../TerminalScreen.h \
 	../UnicodeWidth.h \
 	../WrapAlgorithm.h \
 	../unicode.h

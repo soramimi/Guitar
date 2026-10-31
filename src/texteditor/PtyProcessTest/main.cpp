@@ -1,10 +1,15 @@
 #include <BasicProcessPosix.h>
+#include "../TerminalScreen.h"
 
 #include <gtest/gtest.h>
 
 #include <chrono>
 #include <string>
 #include <thread>
+
+#ifndef _WIN32
+#include <unistd.h>
+#endif
 
 #ifndef _WIN32
 
@@ -81,6 +86,52 @@ TEST(PtyProcess, ResizeNotifiesForegroundProcessGroup)
 	EXPECT_FALSE(result.running());
 	EXPECT_EQ(result.exit_code(), 0U);
 	EXPECT_NE(output.find("43 132\r\nRESIZED"), std::string::npos);
+}
+
+TEST(PtyProcess, NormalNeofetchOutputCanBeAppliedToTerminalScreen)
+{
+	if (access("/usr/bin/neofetch", X_OK) != 0) GTEST_SKIP();
+	ProcessPosixPty process;
+	process.set_capture_output_vector(false);
+	process.resize_terminal(120, 40);
+	std::string environment = "TERM=xterm-256color";
+	environment.push_back('\0');
+	environment += "COLORTERM=truecolor";
+	process.start("\"/usr/bin/neofetch\"", environment, true);
+	ProcessResult const result = process.wait(10000);
+	ASSERT_FALSE(result.running());
+	ASSERT_EQ(result.exit_code(), 0U);
+	std::string const output = read_available(&process);
+	ASSERT_NE(output.find("\x1b["), std::string::npos);
+
+	texteditor::terminal::TerminalScreen screen(120, 40);
+	screen.feed(output);
+	std::vector<std::string> const lines = screen.rendered_lines();
+	bool has_content = false;
+	for (std::string const &line : lines) {
+		if (!line.empty()) has_content = true;
+	}
+	EXPECT_TRUE(has_content);
+	bool has_side_by_side_layout = false;
+	for (size_t row = 0; row < screen.row_count(); row++) {
+		for (size_t column = 1; column + 2 < screen.columns(); column++) {
+			if (screen.cell(row, column).character != U'O'
+				|| screen.cell(row, column + 1).character != U'S'
+				|| screen.cell(row, column + 2).character != U':') continue;
+			for (size_t left = 0; left < column; left++) {
+				if (!screen.cell(row, left).continuation
+					&& screen.cell(row, left).character != U' ') {
+					has_side_by_side_layout = true;
+					break;
+				}
+			}
+			if (has_side_by_side_layout) break;
+		}
+		if (has_side_by_side_layout) break;
+	}
+	EXPECT_TRUE(has_side_by_side_layout);
+	EXPECT_LT(screen.cursor_row(), screen.row_count());
+	EXPECT_LT(screen.cursor_column(), screen.columns());
 }
 
 #endif
