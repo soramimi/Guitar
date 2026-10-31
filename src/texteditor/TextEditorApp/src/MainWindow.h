@@ -30,6 +30,7 @@ private:
 	TextEditorEngine_sp engine();
 	Document *document();
 	TextEditorView *texteditor();
+	TextEditorView *terminal();
 
 	bool saveFile(const QString &path);
 protected:
@@ -38,6 +39,7 @@ protected:
 public:
 	bool event(QEvent *);
 
+	void writeToTerminal(const std::string_view &str);
 private slots:
 	void on_verticalScrollBar_valueChanged(int value);
 	void on_horizontalScrollBar_valueChanged(int value);
@@ -45,7 +47,13 @@ private slots:
 	void on_action_file_save_triggered();
 	void updateIm();
 	void on_action_file_save_as_triggered();
-	void test();
+	void debug();
+	
+	void on_action_edit_cut_triggered();
+	
+	void on_action_edit_copy_triggered();
+	
+	void on_action_edit_paste_triggered();
 	
 protected:
 	void moveEvent(QMoveEvent *);

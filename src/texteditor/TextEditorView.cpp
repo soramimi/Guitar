@@ -841,7 +841,7 @@ void TextEditorView::paintEvent(QPaintEvent *)
 	}
 
 	// 行番号描画
-	{
+	if (isLineNumberVisible()) {
 		const int bottom = -1;
 
 		paintLineNumbers([&](int y, QString const &text, Document::Line const *vline){
@@ -1088,9 +1088,6 @@ void TextEditorView::contextMenuEvent(QContextMenuEvent *event)
 
 void TextEditorView::debug()
 {
-}
-
-void debug()
-{
+	write("Hello, world");
 }
 

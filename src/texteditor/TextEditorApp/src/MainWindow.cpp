@@ -18,6 +18,7 @@ struct MainWindow::Private {
 	bool need_to_layout;
 	QRect cursor_rect;
 	TextEditorEngine_sp engine;
+	TextEditorEngine_sp engine2;
 	QString last_used_file;
 	QTimer tm;
 };
@@ -30,8 +31,12 @@ MainWindow::MainWindow(QWidget *parent)
 	ui->setupUi(this);
 	m->need_to_layout = true;
 
-	connect(new QShortcut(QKeySequence("Ctrl+T"), this), &QShortcut::activated, this, &MainWindow::test);
+	ui->splitter->setSizes({500, 500});
+	
+	connect(new QShortcut(QKeySequence("Ctrl+T"), this), &QShortcut::activated, this, &MainWindow::debug);
 
+	// setup text editor
+	
 	texteditor()->setTheme(TextEditorTheme::Light());
 
 	m->engine = std::make_shared<TextEditorEngine>();
@@ -49,8 +54,15 @@ MainWindow::MainWindow(QWidget *parent)
 	texteditor()->setWrappingMode(TextEditorView::WrappingMode::WordWrap);
 	// texteditor()->setWrappingMode(TextEditorView::WrappingMode::CharWrap);
 
-	// texteditor()->loadExampleFile();
-
+	// setup terminal
+	
+	terminal()->setTheme(TextEditorTheme::Light());
+	m->engine2 = std::make_shared<TextEditorEngine>();
+	terminal()->setTextEditorEngine(m->engine2);
+	terminal()->set_auto_layout(true);
+	terminal()->showLineNumber(false);
+	terminal()->setTerminalMode(true);
+	
 	connect(&m->tm, SIGNAL(timeout()), this, SLOT(updateIm()));
 }
 
@@ -60,11 +72,14 @@ MainWindow::~MainWindow()
 	delete ui;
 }
 
-
-
 TextEditorView *MainWindow::texteditor()
 {
-	return ui->widget->view();
+	return ui->widget_editor->view();
+}
+
+TextEditorView *MainWindow::terminal()
+{
+	return ui->widget_terminal->view();
 }
 
 void MainWindow::keyPressEvent(QKeyEvent *e)
@@ -195,11 +210,39 @@ void MainWindow::on_action_file_save_as_triggered()
 		texteditor()->setRecentlyUsedPath(path);
 	}
 }
-
-void debug();
-
-void MainWindow::test()
+void MainWindow::on_action_edit_cut_triggered()
 {
-	debug();
-
+	qDebug() << Q_FUNC_INFO;
+	texteditor()->edit_cut();
 }
+
+
+void MainWindow::on_action_edit_copy_triggered()
+{
+	qDebug() << Q_FUNC_INFO;
+	texteditor()->edit_copy();
+}
+
+
+void MainWindow::on_action_edit_paste_triggered()
+{
+	qDebug() << Q_FUNC_INFO;
+	texteditor()->edit_paste();
+}
+
+void MainWindow::writeToTerminal(const std::string_view &str)
+{
+	terminal()->appendBulk(str);
+	terminal()->setChanged(false);
+	terminal()->moveToBottom();
+}
+
+void MainWindow::debug()
+{
+	std::string str = "\x1b[31mHello,\x1b[32m world\x1b[0m\n";
+	writeToTerminal(str);
+}
+
+
+
+

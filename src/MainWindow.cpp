@@ -7589,7 +7589,7 @@ void debug();
 
 void MainWindow::test()
 {
-#if 0
+#if 1
 	global->writeLog(std::string_view("\x1b[31mHello,\x1b[32m world\x1b[0m\n"));
 #else
 	debug();
