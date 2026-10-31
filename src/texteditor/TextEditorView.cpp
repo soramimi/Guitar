@@ -1,6 +1,7 @@
 
 #include "TextEditorView.h"
 #include "InputMethodPopup.h"
+#include "TerminalScreen.h"
 #include <common/qmisc.h>
 #include "unicode.h"
 #include <QApplication>
@@ -39,6 +40,18 @@ QByteArray terminal_input_for_key_event(QKeyEvent const *event)
 	case Qt::Key_Return:
 	case Qt::Key_Enter:
 		return "\r";
+	case Qt::Key_Tab:
+		return "\t";
+	case Qt::Key_Backtab:
+		return "\x1b[Z";
+	case Qt::Key_Up:
+		return "\x1b[A";
+	case Qt::Key_Down:
+		return "\x1b[B";
+	case Qt::Key_Right:
+		return "\x1b[C";
+	case Qt::Key_Left:
+		return "\x1b[D";
 	case Qt::Key_Backspace:
 		return QByteArray(1, '\x7f');
 	case Qt::Key_Escape:
@@ -56,9 +69,49 @@ QByteArray terminal_input_for_key_event(QKeyEvent const *event)
 	return {};
 }
 
-bool is_terminal_focus_navigation_key(QKeyEvent const *event)
+int terminal_x_for_text_column(CharBuffer const &chars, int text_column, int cell_width)
 {
-	return event->key() == Qt::Key_Tab || event->key() == Qt::Key_Backtab;
+	int cell_column = 0;
+	int const end = std::clamp(text_column, 0, static_cast<int>(chars.size()));
+	for (int i = 0; i < end; i++) {
+		char32_t const codepoint = chars[static_cast<size_t>(i)].unicode;
+		if (codepoint == U'\r' || codepoint == U'\n') continue;
+		cell_column += texteditor::terminal::TerminalScreen::cell_width(codepoint);
+	}
+	return cell_column * cell_width;
+}
+
+int terminal_text_column_from_x(CharBuffer const &chars, int x, int cell_width)
+{
+	if (x <= 0) return 0;
+	int cell_column = 0;
+	for (size_t i = 0; i < chars.size();) {
+		char32_t const codepoint = chars[i].unicode;
+		if (codepoint == U'\r' || codepoint == U'\n') return static_cast<int>(i);
+		int const span = texteditor::terminal::TerminalScreen::cell_width(codepoint);
+		if (span == 0) {
+			i++;
+			continue;
+		}
+
+		size_t cluster_end = i + 1;
+		while (cluster_end < chars.size()) {
+			char32_t const next = chars[cluster_end].unicode;
+			if (next == U'\r' || next == U'\n'
+				|| texteditor::terminal::TerminalScreen::cell_width(next) != 0) break;
+			cluster_end++;
+		}
+
+		int const left = cell_column * cell_width;
+		int const right = (cell_column + span) * cell_width;
+		if (x < right) {
+			return x - left < right - x
+				? static_cast<int>(i) : static_cast<int>(cluster_end);
+		}
+		cell_column += span;
+		i = cluster_end;
+	}
+	return static_cast<int>(chars.size());
 }
 
 }
@@ -210,14 +263,21 @@ bool TextEditorView::event(QEvent *event)
 	if (event->type() == QEvent::Polish) {
 		updateVisibility();
 	}
-	if (event->type() == QEvent::ShortcutOverride && isTerminalMode()) {
-		auto const *key_event = static_cast<QKeyEvent const *>(event);
-		// Terminal shortcuts, including Ctrl+C, belong to the foreground PTY.
-		// Tab and Shift+Tab remain explicit focus traversal in P0.
-		if (!is_terminal_focus_navigation_key(key_event)) {
-			event->accept();
+	if (event->type() == QEvent::KeyPress) {
+		auto *key_event = static_cast<QKeyEvent *>(event);
+		if (key_event->key() == Qt::Key_Tab || key_event->key() == Qt::Key_Backtab) {
+			// QWidget::event() normally consumes these keys for focus traversal.
+			// The editor and terminal both use them as input, so dispatch them before
+			// the base implementation gets a chance to move focus.
+			keyPressEvent(key_event);
 			return true;
 		}
+	}
+	if (event->type() == QEvent::ShortcutOverride && isTerminalMode()) {
+		// Terminal shortcuts, including Ctrl+C, Tab and Shift+Tab, belong to the
+		// foreground PTY.
+		event->accept();
+		return true;
 	}
 	return QWidget::event(event);
 }
@@ -312,6 +372,10 @@ texteditor::RowCol TextEditorView::vpos_from_px(QPoint const &pt)
 	if (line) {
 		chars = &line->chars;
 		if (chars) {
+			if (isTerminalMode()) {
+				return RowCol(vrow, terminal_text_column_from_x(
+					*chars, x, basic_character_width_px()));
+			}
 			size_t end = chars->size();
 			int left = 0;
 			for (size_t col = 0; col < end; col++) {
@@ -757,6 +821,25 @@ void TextEditorView::paintEvent(QPaintEvent *)
 
 					// ANSI SGRで指定された文字背景。空白とタブも文字幅の矩形を塗る。
 					auto DrawCharacterBackgrounds = [&](){
+						if (isTerminalMode()) {
+							int cell_column = 0;
+							int const cell_width = basic_character_width_px();
+							pr.save();
+							pr.setClipRect(TextAreaRectForClip());
+							for (Character const &ch : chars) {
+								if (ch.unicode == U'\r' || ch.unicode == U'\n') continue;
+								int const span = texteditor::terminal::TerminalScreen::cell_width(ch.unicode);
+								if (span == 0) continue;
+								if (ch.attr.has_background_color()) {
+									pr.fillRect(text_origin_x_px + cell_column * cell_width,
+										text_origin_y, span * cell_width, line_height,
+										colorForIndex(ch.attr, false));
+								}
+								cell_column += span;
+							}
+							pr.restore();
+							return;
+						}
 						std::size_t begin = 0;
 						pr.save();
 						pr.setClipRect(TextAreaRectForClip());
@@ -792,8 +875,10 @@ void TextEditorView::paintEvent(QPaintEvent *)
 						int left_x = 0;
 						int right_x = 0;
 						if (!chars.empty()) {
-							// right_x = chars.back().right_x;
-							right_x = chars.right_x(chars.size() - 1, text_font());
+							right_x = isTerminalMode()
+								? terminal_x_for_text_column(chars, static_cast<int>(chars.size()),
+									basic_character_width_px())
+								: chars.right_x(chars.size() - 1, text_font());
 						}
 						// NoWrapではLineIndexMapが空なので、モードを考慮する共通変換を使う。
 						RowCol vlower = visual_position(selection_lower);
@@ -805,7 +890,10 @@ void TextEditorView::paintEvent(QPaintEvent *)
 						} else {
 							auto Do = [&](int xpos, RowCol vpos, row_index_t vrow){
 								if (vpos.row == vrow) {
-									if (vpos.col > 0 && vpos.col - 1 < (col_index_t)chars.size()) {
+										if (isTerminalMode()) {
+											xpos = terminal_x_for_text_column(chars, vpos.col,
+												basic_character_width_px());
+										} else if (vpos.col > 0 && vpos.col - 1 < (col_index_t)chars.size()) {
 										xpos = chars.right_x(vpos.col - 1, text_font());
 									} else {
 										xpos = 0;
@@ -831,6 +919,51 @@ void TextEditorView::paintEvent(QPaintEvent *)
 	
 					// テキスト描画
 					auto DrawText = [&](){
+						if (isTerminalMode()) {
+							int cell_column = 0;
+							int const cell_width = basic_character_width_px();
+							std::size_t j = 0;
+							pr.save();
+							pr.setFont(fixedFont());
+							pr.setClipRect(TextAreaRectForClip());
+							while (j < chars.size()) {
+								Character const &base = chars[j];
+								if (base.unicode == U'\r' || base.unicode == U'\n') {
+									j++;
+									continue;
+								}
+								int const span = texteditor::terminal::TerminalScreen::cell_width(base.unicode);
+								if (span == 0) {
+									j++;
+									continue;
+								}
+
+								QString text = appendUnicode({}, base.unicode);
+								std::size_t next = j + 1;
+								while (next < chars.size()
+									&& texteditor::terminal::TerminalScreen::cell_width(chars[next].unicode) == 0) {
+									text = appendUnicode(text, chars[next].unicode);
+									next++;
+								}
+
+								int const x = text_origin_x_px + cell_column * cell_width;
+								int const width = span * cell_width;
+								pr.setPen(textColor(base.attr));
+								if (flags[j].diff_marker == CharFlags::Del) {
+									pr.fillRect(x, text_origin_y + line_height - 6, width, 6,
+										theme()->bg_diff_char_del);
+								} else if (flags[j].diff_marker == CharFlags::Add) {
+									pr.fillRect(x, text_origin_y + line_height - 6, width, 6,
+										theme()->bg_diff_char_add);
+								}
+								drawText(&pr, x, text_origin_y, text);
+								cell_column += span;
+								j = next;
+							}
+							max_text_width_px = std::max(max_text_width_px, cell_column * cell_width);
+							pr.restore();
+							return;
+						}
 						int left_x = 0;
 						int right_x = 0;
 						std::size_t j = 0;
@@ -1000,10 +1133,9 @@ void TextEditorView::paintEvent(QPaintEvent *)
 	}
 }
 
-void TextEditorView::moveCursorByMouse()
+void TextEditorView::moveCursorByMouse(QPoint const &position)
 {
-	QPoint mousepos = mapFromGlobal(QCursor::pos()); // マウス座標をグローバルからローカルへ変換
-	RowCol pos = vpos_from_px(mousepos); // ローカルマウス座標からカーソル座標へ変換
+	RowCol pos = vpos_from_px(position); // ローカルマウス座標からカーソル座標へ変換
 
 	// row
 	if (pos.row < 0) {
@@ -1013,7 +1145,7 @@ void TextEditorView::moveCursorByMouse()
 		max_vrow = max_vrow > 0 ? (max_vrow - 1) : 0;
 		pos.row = std::min(pos.row, max_vrow);
 	}
-	setCursorPosByMouse(pos, mousepos);
+	setCursorPosByMouse(pos, position);
 	
 	update_visibility_option_t opt;
 	opt.ensure_current_line_visible = false;
@@ -1036,7 +1168,7 @@ void TextEditorView::mousePressEvent(QMouseEvent *event)
 		}
 	}
 
-	moveCursorByMouse();
+	moveCursorByMouse(event->pos());
 
 	if (shift) {
 		setSelectionAnchor(true, false, false);
@@ -1060,11 +1192,11 @@ void TextEditorView::mouseReleaseEvent(QMouseEvent * /*event*/)
 	}
 }
 
-void TextEditorView::mouseMoveEvent(QMouseEvent * /*event*/)
+void TextEditorView::mouseMoveEvent(QMouseEvent *event)
 {
 	auto saved_pos = savePos();
 
-	moveCursorByMouse();
+	moveCursorByMouse(event->pos());
 
 	setSelectionAnchor(true, true, false);
 
@@ -1090,14 +1222,6 @@ void TextEditorView::keyPressEvent(QKeyEvent *event)
 		if (state() == State::Exit) {
 			if (QWidget *top_level = window()) top_level->close();
 		}
-		event->accept();
-		return;
-	}
-
-	if (is_terminal_focus_navigation_key(event)) {
-		bool const next = event->key() == Qt::Key_Tab
-			&& !(event->modifiers() & Qt::ShiftModifier);
-		focusNextPrevChild(next);
 		event->accept();
 		return;
 	}

@@ -69,6 +69,9 @@ private:
 class TerminalScreen {
 public:
 	TerminalScreen(size_t columns = 80, size_t rows = 25);
+	// Width used by the terminal cell model. Combining characters occupy no new
+	// cell; other code points occupy one or two cells.
+	static int cell_width(char32_t codepoint);
 
 	void reset();
 	void resize(size_t columns, size_t rows);
@@ -109,6 +112,8 @@ private:
 	size_t saved_cursor_row_ = 0;
 	size_t saved_cursor_column_ = 0;
 	TerminalStyle style_;
+	TerminalStyle style_before_alternate_screen_;
+	bool alternate_screen_style_saved_ = false;
 	bool cursor_visible_ = true;
 	bool auto_wrap_ = true;
 	bool pending_wrap_ = false;

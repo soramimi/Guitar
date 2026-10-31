@@ -47,7 +47,7 @@ private:
 public:
 	void updateScrollBarRange() override;
 private:
-	void moveCursorByMouse();
+	void moveCursorByMouse(QPoint const &position);
 	
 	int view_y_from_vrow(row_index_t vrow) const;
 	

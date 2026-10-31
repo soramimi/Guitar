@@ -76,6 +76,10 @@ TEST(TerminalScreen, HandlesCarriageReturnBackspaceTabAndLineFeedSeparately)
 
 TEST(TerminalScreen, MaintainsWideAndCombiningCellInvariants)
 {
+	EXPECT_EQ(TerminalScreen::cell_width(U'A'), 1);
+	EXPECT_EQ(TerminalScreen::cell_width(U'日'), 2);
+	EXPECT_EQ(TerminalScreen::cell_width(U'\u0301'), 0);
+
 	TerminalScreen screen(10, 3);
 	screen.feed("e\xcc\x81\xe7\x95\x8c");
 	EXPECT_EQ(screen.cell(0, 0).character, U'e');
@@ -174,6 +178,27 @@ TEST(TerminalScreen, RecordsActiveScreenScrollAndAlternateScreenMode)
 	screen.feed("\x1b[?1049l");
 	EXPECT_FALSE(screen.last_feed_scrolled());
 	EXPECT_FALSE(screen.alternate_screen_active());
+}
+
+TEST(TerminalScreen, RestoresTextStyleAfterLeavingAlternateScreen)
+{
+	TerminalScreen screen(10, 2);
+	screen.feed("\x1b[32mM\x1b[?1049h\x1b[31;44mA\x1b[?1049h\x1b[?1049lN");
+
+	EXPECT_FALSE(screen.alternate_screen_active());
+	EXPECT_TRUE(screen.current_style().foreground_specified);
+	EXPECT_EQ(screen.current_style().foreground, 0x008000u);
+	EXPECT_FALSE(screen.current_style().background_specified);
+	EXPECT_TRUE(screen.cell(0, 2).style.foreground_specified);
+	EXPECT_EQ(screen.cell(0, 2).style.foreground, 0x008000u);
+	EXPECT_FALSE(screen.cell(0, 2).style.background_specified);
+
+	TerminalScreen default_style_screen(10, 2);
+	default_style_screen.feed("\x1b[?1049h\x1b[35;46mA\x1b[?1049lN");
+	EXPECT_FALSE(default_style_screen.current_style().foreground_specified);
+	EXPECT_FALSE(default_style_screen.current_style().background_specified);
+	EXPECT_FALSE(default_style_screen.cell(0, 1).style.foreground_specified);
+	EXPECT_FALSE(default_style_screen.cell(0, 1).style.background_specified);
 }
 
 TEST(TerminalScreen, ScrollsAtBottomAndResizesWithoutReflow)

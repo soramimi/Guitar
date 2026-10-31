@@ -216,6 +216,15 @@ protected:
 
 class InputTestView : public TextEditorView {
 public:
+	int terminal_cell_width() const
+	{
+		return fixed_font().basis_char_width();
+	}
+	int text_origin_x() const
+	{
+		return linenum_area_width_px() - scroll_horz_pos_px();
+	}
+
 	bool document_empty()
 	{
 		return document()->logical_lines.empty();
@@ -230,6 +239,18 @@ public:
 	{
 		if (document()->logical_lines.empty()) return {};
 		return std::string(document()->logical_lines.front().text());
+	}
+};
+
+class RepaintTrackingInputTestView : public InputTestView {
+public:
+	int paint_count = 0;
+
+protected:
+	void paintEvent(QPaintEvent *event) override
+	{
+		paint_count++;
+		TextEditorView::paintEvent(event);
 	}
 };
 
@@ -725,13 +746,29 @@ TEST(TextEditorViewInput, TerminalKeysAreRequestedWithoutEditingTheDocument)
 	QCoreApplication::sendEvent(&view, &enter_event);
 	QKeyEvent control_c_event(QEvent::KeyPress, Qt::Key_C, Qt::ControlModifier);
 	QCoreApplication::sendEvent(&view, &control_c_event);
+	QKeyEvent tab_event(QEvent::KeyPress, Qt::Key_Tab, Qt::NoModifier);
+	QCoreApplication::sendEvent(&view, &tab_event);
+	QKeyEvent backtab_event(QEvent::KeyPress, Qt::Key_Backtab, Qt::ShiftModifier);
+	QCoreApplication::sendEvent(&view, &backtab_event);
+	QKeyEvent up_event(QEvent::KeyPress, Qt::Key_Up, Qt::NoModifier);
+	QCoreApplication::sendEvent(&view, &up_event);
+	QKeyEvent down_event(QEvent::KeyPress, Qt::Key_Down, Qt::NoModifier);
+	QCoreApplication::sendEvent(&view, &down_event);
+	QKeyEvent right_event(QEvent::KeyPress, Qt::Key_Right, Qt::NoModifier);
+	QCoreApplication::sendEvent(&view, &right_event);
+	QKeyEvent left_event(QEvent::KeyPress, Qt::Key_Left, Qt::NoModifier);
+	QCoreApplication::sendEvent(&view, &left_event);
 	QKeyEvent shortcut_override(QEvent::ShortcutOverride, Qt::Key_C, Qt::ControlModifier);
 	shortcut_override.ignore();
 	QCoreApplication::sendEvent(&view, &shortcut_override);
+	QKeyEvent tab_shortcut_override(QEvent::ShortcutOverride, Qt::Key_Tab, Qt::NoModifier);
+	tab_shortcut_override.ignore();
+	QCoreApplication::sendEvent(&view, &tab_shortcut_override);
 
-	EXPECT_EQ(requested, "a\r\x03");
+	EXPECT_EQ(requested, "a\r\x03\t\x1b[Z\x1b[A\x1b[B\x1b[C\x1b[D");
 	EXPECT_EQ(view.logical_line_count(), line_count_before);
 	EXPECT_TRUE(shortcut_override.isAccepted());
+	EXPECT_TRUE(tab_shortcut_override.isAccepted());
 }
 
 TEST(TextEditorViewInput, TerminalResponsesAreForwardedWithoutBecomingText)
@@ -749,6 +786,52 @@ TEST(TextEditorViewInput, TerminalResponsesAreForwardedWithoutBecomingText)
 	QByteArray const expected("\x1b[0n\x1b[3;4R\x1b[?1;0c");
 	EXPECT_EQ(requested, expected);
 	EXPECT_EQ(view.first_line_text(), "\n");
+}
+
+TEST(TextEditorViewInput, TerminalOutputRequestsImmediateRepaintWithoutScrollingHistory)
+{
+	RepaintTrackingInputTestView view;
+	view.setTextEditorEngine(std::make_shared<TextEditorEngine>());
+	view.setTerminalMode(true);
+	view.set_client_size(800, 800, true);
+	view.setTerminalScreenSize(10, 2);
+	view.resize(400, 200);
+	view.show();
+	QCoreApplication::processEvents();
+
+	for (int i = 0; i < 40; i++) view.appendBulk("x\r\n");
+	view.moveToBottom();
+	view.scrollUp();
+	view.scrollUp();
+	int const scroll_top_before = view.scrollTopRow();
+	view.paint_count = 0;
+
+	view.appendBulk("updated");
+	QCoreApplication::processEvents();
+
+	EXPECT_GT(view.paint_count, 0);
+	EXPECT_EQ(view.scrollTopRow(), scroll_top_before);
+}
+
+TEST(TextEditorViewInput, TerminalMouseHitTestingUsesFixedCells)
+{
+	InputTestView view;
+	view.set_client_size(400, 200, true);
+	view.setTextEditorEngine(std::make_shared<TextEditorEngine>());
+	view.setTerminalMode(true);
+	view.setTerminalScreenSize(10, 2);
+	view.appendBulk("A\xe7\x95\x8c" "e\xcc\x81");
+	int const cell = view.terminal_cell_width();
+	ASSERT_GT(cell, 0);
+	ASSERT_EQ(view.first_line_text(), "A\xe7\x95\x8c" "e\xcc\x81\n");
+	ASSERT_EQ(view.text_origin_x(), 0);
+	ASSERT_NE(view.property_of_visual_line(0), nullptr);
+	ASSERT_EQ(view.property_of_visual_line(0)->chars.size(), 5u);
+
+	EXPECT_EQ(view.vpos_from_px(QPoint(cell / 4, 1)).col, 0);
+	EXPECT_EQ(view.vpos_from_px(QPoint(cell + cell / 4, 1)).col, 1);
+	EXPECT_EQ(view.vpos_from_px(QPoint(2 * cell + 3 * cell / 4, 1)).col, 2);
+	EXPECT_EQ(view.vpos_from_px(QPoint(3 * cell + 3 * cell / 4, 1)).col, 4);
 }
 
 TEST(TextEditorViewInput, FollowsNormalTerminalScrollbackButNotAlternateScreen)
@@ -794,9 +877,39 @@ TEST(TextEditorViewInput, NormalEditorKeysStillEditTheDocument)
 	view.setNormalTextEditorMode(true);
 	QKeyEvent text_event(QEvent::KeyPress, Qt::Key_A, Qt::NoModifier, "a");
 	QCoreApplication::sendEvent(&view, &text_event);
+	QKeyEvent tab_event(QEvent::KeyPress, Qt::Key_Tab, Qt::NoModifier);
+	QCoreApplication::sendEvent(&view, &tab_event);
+	QKeyEvent backtab_event(QEvent::KeyPress, Qt::Key_Backtab, Qt::ShiftModifier);
+	QCoreApplication::sendEvent(&view, &backtab_event);
 
 	ASSERT_FALSE(view.document_empty());
-	EXPECT_EQ(view.first_line_text(), "a");
+	EXPECT_EQ(view.first_line_text(), "a\t\t");
+}
+
+TEST(TextEditorViewInput, TabDoesNotMoveFocusToAnotherWidget)
+{
+	QWidget window;
+	InputTestView view;
+	QWidget focus_target;
+	view.setParent(&window);
+	focus_target.setParent(&window);
+	view.setFocusPolicy(Qt::StrongFocus);
+	focus_target.setFocusPolicy(Qt::StrongFocus);
+	view.setGeometry(0, 0, 100, 100);
+	focus_target.setGeometry(100, 0, 100, 100);
+	view.setTextEditorEngine(std::make_shared<TextEditorEngine>());
+	view.setNormalTextEditorMode(true);
+	window.show();
+	view.setFocus();
+	QCoreApplication::processEvents();
+	ASSERT_TRUE(view.hasFocus());
+
+	QKeyEvent tab_event(QEvent::KeyPress, Qt::Key_Tab, Qt::NoModifier);
+	QCoreApplication::sendEvent(&view, &tab_event);
+
+	EXPECT_TRUE(view.hasFocus());
+	EXPECT_FALSE(focus_target.hasFocus());
+	EXPECT_EQ(view.first_line_text(), "\t");
 }
 
 int main(int argc, char **argv)

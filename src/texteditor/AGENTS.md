@@ -39,7 +39,8 @@ MainWindow (QMainWindow, TextEditorApp/src)
   チャンク継続状態で解析し、`CSI J/K`による画面・行消去、標準DA/DSR/カーソル位置照会への
   返信、スクロールバック、端末カーソル、全角・結合文字、前景・背景色を保持する。返信は
   `take_pending_responses()`で取り出し、画面テキストとして投影しない。`?47`/`?1047`/`?1049`
-  は追従抑止用のモードとしてだけ追跡し、独立した代替画面バッファはP3で実装する
+  は追従抑止用のモードとして追跡し、入退場時に通常画面の文字属性を保存・復元する。
+  独立した代替画面バッファはP3で実装する
 - **TextEditorApp/src/PtyProcessController.h/.cpp** — `process/`のPTY実装をQtイベントループへ接続し、
   プラットフォーム別生成、入力キュー、セッションID/状態、10msごとの逐次出力、終了通知、端末セルサイズ変更を担当する。
   PTY書込み・停止・resizeはGUIスレッドから実行しない。入力待ちキューは1 MiBで上限を設ける
@@ -51,11 +52,12 @@ MainWindow (QMainWindow, TextEditorApp/src)
 - **PatternState.h/.cpp** — キーワード一致検出(実験機能、既定では無効)
 - **TextEditorCoreTest/** — 幅LRU、タブ幅による失効、前景・背景の文字色属性、ANSI色状態に加え、
   Qt 6.3以前向けタブ幅計測、PTY Controllerの起動時入力・入力未読時のGUI応答・argv境界・端末返信の往復、
-  およびViewの端末/通常入力分離を確認するQt依存のGoogleTest
+  Viewの端末/通常入力分離、Tabのフォーカス抑止、端末固定セルのマウス座標、出力後の即時再描画を
+  確認するQt依存のGoogleTest
 - **PtyProcessTest/** — POSIX PTYのTTY接続、初期サイズ、ANSI保持、終了時drain、resize/SIGWINCH、
   起動直後にキューした入力の到達を確認し、通常neofetch出力をTerminalScreenへ適用するQt非依存のGoogleTest
 - **TerminalScreenTest/** — カーソル移動、C0制御、チャンク分割、Unicodeセル、SGR、スクロール、
-  リサイズ、標準端末照会への返信を確認するQt非依存のGoogleTest
+  リサイズ、標準端末照会への返信、代替画面退出時の文字属性復元を確認するQt非依存のGoogleTest
 - **LineIndexMap/** — 折り返し行の論理行⇔表示行マッピング用 B+-tree(独立ライブラリ、
   GoogleTest によるテスト完備)。詳細は [LineIndexMap/AGENTS.md](LineIndexMap/AGENTS.md) を参照
 - **TextEditorApp/** — 上記部品を組み込んだ実行可能アプリ(サンプル/動作確認用)
@@ -78,9 +80,14 @@ MainWindow (QMainWindow, TextEditorApp/src)
 端末モードではPTY出力を`TerminalParser`→`TerminalScreen`へ渡し、変更後の固定セル画面を
 自己完結したANSI論理行としてDocumentへ投影する。`TextEditorView`は端末フォーカス時に
 `terminalInputRequested(QByteArray)`だけを発行し、`MainWindow`が`PtyProcessController::writeInput()`へ
-接続する。端末入力でDocumentを直接編集・ローカルエコーしない。P0では通常文字、IME確定、Enter、
-Backspace、Escape、Ctrl+A〜Zを送信し、Tab/Shift+Tabはフォーカス移動に使う。特殊キーのVT入力符号化はP1で拡張する。
-端末カーソルはエディタの選択カーソルとは独立し、`TextEditorView`がセル座標から直接描画する。端末モードは常に`NoWrap`を使用する。
+接続する。投影後は履歴閲覧位置と選択を変えずに再描画し、スクロールが発生しないキーエコーも
+即時反映する。端末入力でDocumentを直接編集・ローカルエコーしない。現行実装では通常文字、IME確定、Enter、
+Backspace、Escape、Ctrl+A〜Z、Tab、上下左右キーを送信し、Shift+Tabは`CSI Z`として送信する。Tab/Shift+Tabは
+フォーカス移動に使わない。特殊キーのVT入力符号化はP1で拡張する。通常エディタではTab/Shift+Tabを
+タブ文字として挿入する。端末の文字・ANSI背景・カーソルは通常エディタの実測文字幅を使わず、
+同じ固定フォントとセル幅で描画する。マウスのヒットテストと選択背景も同じセル座標を使う。
+全角文字は2セル、結合文字は直前セルへ重ねる。端末カーソルは
+エディタの選択カーソルとは独立し、`TextEditorView`がセル座標から直接描画する。端末モードは常に`NoWrap`を使用する。
 
 ## 折り返しアルゴリズム
 
@@ -150,13 +157,13 @@ Qt非依存の`LineIndexMap`・`WrapAlgorithm`・`PtyProcessTest`・`TerminalScr
 # 期待出力: [  PASSED  ] 7 tests.
 
 (cd TextEditorCoreTest && qmake6 TextEditorCoreTest.pro && make && ./TextEditorCoreTest)
-# 期待出力: [  PASSED  ] 24 tests.
+# 期待出力: [  PASSED  ] 27 tests.
 
 (cd PtyProcessTest && qmake6 PtyProcessTest.pro && make && ./PtyProcessTest)
 # Linuxでneofetchがある場合の期待出力: [  PASSED  ] 4 tests.
 
 (cd TerminalScreenTest && qmake6 TerminalScreenTest.pro && make && ./TerminalScreenTest)
-# 期待出力: [  PASSED  ] 16 tests.
+# 期待出力: [  PASSED  ] 17 tests.
 
 # 並列折り返しのThreadSanitizer検証
 (cd TextEditorCoreTest && make distclean && \

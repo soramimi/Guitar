@@ -47,12 +47,6 @@ bool is_combining(char32_t c)
 		|| c == 0x200d;
 }
 
-int character_width(char32_t c)
-{
-	if (is_combining(c)) return 0;
-	return std::clamp(UnicodeWidth::width(UnicodeWidth::type(c)), 1, 2);
-}
-
 int parse_parameter(std::string_view value)
 {
 	if (value.empty()) return 0;
@@ -275,6 +269,12 @@ TerminalScreen::TerminalScreen(size_t columns, size_t rows)
 	active_rows_.assign(rows_, blank_row());
 }
 
+int TerminalScreen::cell_width(char32_t codepoint)
+{
+	if (is_combining(codepoint)) return 0;
+	return std::clamp(UnicodeWidth::width(UnicodeWidth::type(codepoint)), 1, 2);
+}
+
 TerminalScreen::Row TerminalScreen::blank_row() const
 {
 	return Row(columns_);
@@ -289,6 +289,8 @@ void TerminalScreen::reset()
 	saved_cursor_row_ = 0;
 	saved_cursor_column_ = 0;
 	style_ = {};
+	style_before_alternate_screen_ = {};
+	alternate_screen_style_saved_ = false;
 	cursor_visible_ = true;
 	auto_wrap_ = true;
 	pending_wrap_ = false;
@@ -305,10 +307,10 @@ void TerminalScreen::normalize_row(Row *row) const
 		TerminalCell &cell = (*row)[column];
 		if (cell.continuation) {
 			if (column == 0 || (*row)[column - 1].continuation
-				|| character_width((*row)[column - 1].character) != 2) {
+				|| cell_width((*row)[column - 1].character) != 2) {
 				cell = {};
 			}
-		} else if (character_width(cell.character) == 2
+		} else if (cell_width(cell.character) == 2
 			&& (column + 1 >= row->size() || !(*row)[column + 1].continuation)) {
 			cell = {};
 		}
@@ -396,7 +398,7 @@ void TerminalScreen::clear_cell(size_t row, size_t column)
 
 void TerminalScreen::put_codepoint(char32_t codepoint)
 {
-	int const width = character_width(codepoint);
+	int const width = cell_width(codepoint);
 	if (width == 0) {
 		size_t row = cursor_row_;
 		size_t column = cursor_column_;
@@ -626,7 +628,16 @@ void TerminalScreen::dispatch_csi(std::string_view parameters, char command)
 			else if (value == 7) auto_wrap_ = enabled;
 			else if (value == 47 || value == 1047 || value == 1049) {
 				// P3 will give this mode its own cell buffer.  Tracking the request
-				// now is enough to keep full-screen TUIs from forcing log follow.
+				// now is enough to keep full-screen TUIs from forcing log follow. Keep
+				// the normal screen's rendition state separate as well: applications
+				// such as msedit rely on leaving the alternate screen to restore it.
+				if (enabled && !alternate_screen_active_) {
+					style_before_alternate_screen_ = style_;
+					alternate_screen_style_saved_ = true;
+				} else if (!enabled && alternate_screen_active_) {
+					if (alternate_screen_style_saved_) style_ = style_before_alternate_screen_;
+					alternate_screen_style_saved_ = false;
+				}
 				alternate_screen_active_ = enabled;
 			}
 		}

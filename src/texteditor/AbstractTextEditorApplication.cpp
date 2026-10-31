@@ -2574,6 +2574,14 @@ void AbstractTextEditorApplication::appendBulk(std::string_view const &str)
 		std::string const responses = m->terminal_screen->take_pending_responses();
 		if (!responses.empty()) terminalResponseReady(responses);
 		projectTerminalScreen();
+		// PTY output often only rewrites the current row and does not scroll.  In
+		// that case MainWindow will not call moveToBottom(), so explicitly request
+		// a repaint while preserving the user's scroll position and selection.
+		update_visibility_option_t opt;
+		opt.ensure_current_line_visible = false;
+		opt.auto_scroll = false;
+		opt.emit_event = false;
+		updateVisibility(opt);
 		return;
 	}
 	std::vector<std::string_view> lines = split_lines_keep_nl(str.data(), str.size());
@@ -2775,6 +2783,8 @@ void AbstractTextEditorApplication::write(QKeyEvent *e)
 		}
 	} else if (c == Qt::Key_Return || c == Qt::Key_Enter) {
 		write('\n', true);
+	} else if (c == Qt::Key_Tab || c == Qt::Key_Backtab) {
+		write('\t', true);
 	} else if (c == Qt::Key_Escape) {
 		write(0x1b, true);
 	} else if (isControlModifierPressed()) {
