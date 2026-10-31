@@ -1039,25 +1039,27 @@ AiResult AiApiBridge::request(GenerativeAI::EndPoint::Type eptype, std::string c
 			} else {
 				assert(0);
 			}
+
+			std::string_view httpstat = http_status_text(ret);
 			if (m->save_log) {
 				logprintf(LOG_DEFAULT, "%d\n", ret);
+				logprintf(LOG_DEFAULT, "%s\n", std::string(httpstat).c_str());
+				logprintf(LOG_RAW, "%d\n%s\n", ret, response_json.c_str());
 			}
-			
-			std::string_view httpstat = http_status_text(ret);
 			
 			if (ret >= 200 && ret < 300) {
 				char const *data = http->content_data();
 				size_t size = http->content_length();
 				response_json.assign(data, size);
 				if (m->save_log) {
-					// logprintf(LOG_RAW, "%s\n", response_json.c_str());
+#if 0
 					FILE *fp = fopen("/tmp/ai_response.json", "wb");
 					if (fp) {
 						fwrite(response_json.data(), 1, response_json.size(), fp);
 						fclose(fp);
 					}
+#endif
 				}
-				// fprintf(stderr, "%s\n", response_json.c_str());
 			} else {
 				std::string msg = std::to_string(ret);
 				msg += '\n';

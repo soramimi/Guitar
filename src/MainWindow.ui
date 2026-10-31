@@ -1235,7 +1235,7 @@
    </widget>
    <widget class="QMenu" name="menu_Window">
     <property name="title">
-     <string>Wi&amp;ndow</string>
+     <string>&amp;Window</string>
     </property>
     <addaction name="action_window_log"/>
     <addaction name="separator"/>
