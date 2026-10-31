@@ -1,32 +1,21 @@
-TARGET = conpty-worker
-DESTDIR = $$PWD/_bin
 TEMPLATE = app
+TARGET = conpty-worker
 CONFIG -= qt
-CONFIG += console
-CONFIG += c++17
-
-win32:INCLUDEPATH += $$PWD/winpty/include
-win32:LIBS += -L$$PWD/../../misc/winpty/x64/lib -lwinpty
-
-win32:DEFINES += NOMINMAX
-
-DEFINES += CONPTY_WORKER
-
-HEADERS += \
-	sampleapp/base64.h \
-	sampleapp/misc.h \
-	sampleapp/unicode_conversion.h
-	
-SOURCES += \
-	sampleapp/main.cpp \
-	sampleapp/misc.cpp \
-	sampleapp/unicode_conversion.cpp
-
-INCLUDEPATH += $$PWD/sampleapp
-
-PROCESS_SRC += $$PWD/src
-PROCESS_PRI = $$PROCESS_SRC/../process.pri
-INCLUDEPATH += $$PROCESS_SRC
-DISTFILES += $$PROCESS_PRI
-include($$PROCESS_PRI)
-
+CONFIG += console c++17
+DESTDIR = $$PWD/_bin
+!win32:error(conpty-worker requires Windows)
+DEFINES += NOMINMAX
+INCLUDEPATH += $$PWD/src
+SOURCES += src/ConPtyWorkerMain.cpp \
+	src/ProcessWinConPtyWithWorker.cpp \
+	src/BasicProcessWinConPty.cpp \
+	src/BasicProcessWin.cpp \
+	src/AbstractProcess.cpp \
+	src/ProcessHelper.cpp
+HEADERS += src/ProcessWinConPtyWithWorker.h \
+	src/ConPtyWorkerProtocol.h \
+	src/BasicProcessWinConPty.h \
+	src/BasicProcessWin.h \
+	src/AbstractProcess.h \
+	src/ProcessHelper.h \
+	src/ProcessWinHelper.h

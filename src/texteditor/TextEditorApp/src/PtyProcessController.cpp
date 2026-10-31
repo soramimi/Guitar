@@ -1,11 +1,6 @@
 #include "PtyProcessController.h"
 
 #include <AbstractProcess.h>
-#ifdef Q_OS_WIN
-#include <ProcessWinConPty.h>
-#else
-#include <BasicProcessPosix.h>
-#endif
 
 #include <QMetaObject>
 #include <QPointer>
@@ -21,25 +16,14 @@ struct PtyProcessController::Private {
 	QTimer output_timer;
 	QSize terminal_size = QSize(80, 25);
 	std::atomic<bool> active { false };
+	PtyProcessBackend backend = PtyProcessBackend::Direct;
 };
 
 namespace {
 
-std::shared_ptr<AbstractPtyProcess> new_pty_process()
+std::shared_ptr<AbstractPtyProcess> new_pty_process(PtyProcessBackend backend)
 {
-#ifdef Q_OS_WIN
-	auto process = std::make_shared<ProcessWinConPty>();
-	BasicProcessWinConPty::Options options;
-	options.no_window = true;
-	options.output_queue = true;
-	options.output_vector = false;
-	options.vt_stripped = false;
-	options.forward_parent_stdin = false;
-	process->set_options(options);
-	return process;
-#else
-	return std::make_shared<ProcessPosixPty>();
-#endif
+	return createPtyProcess(backend);
 }
 
 QString quote_command_argument(QString argument)
@@ -73,7 +57,7 @@ bool PtyProcessController::start(
 {
 	if (program.isEmpty() || m->active) return false;
 
-	m->process = new_pty_process();
+	m->process = new_pty_process(m->backend);
 	m->process->set_capture_output_vector(false);
 	m->terminal_size = QSize(
 		std::max(1, terminal_size.width()),
@@ -120,6 +104,11 @@ void PtyProcessController::stop()
 bool PtyProcessController::isRunning() const
 {
 	return m->active;
+}
+
+void PtyProcessController::setBackend(PtyProcessBackend backend)
+{
+	m->backend = backend;
 }
 
 void PtyProcessController::resizeTerminal(QSize size)

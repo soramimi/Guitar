@@ -80,3 +80,4 @@ docker/home/run.sh
 .kilo/
 debug/
 *.bak
+src/texteditor/.diagnostics/

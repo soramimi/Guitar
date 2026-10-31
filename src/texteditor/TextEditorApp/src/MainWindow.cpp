@@ -23,7 +23,7 @@ struct MainWindow::Private {
 	TextEditorEngine_sp engine2;
 	QString last_used_file;
 	QTimer tm;
-	PtyProcessController neofetch;
+	PtyProcessController process_controller;
 };
 
 MainWindow::MainWindow(QWidget *parent)
@@ -67,23 +67,23 @@ MainWindow::MainWindow(QWidget *parent)
 	terminal()->showLineNumber(false);
 	terminal()->setTerminalMode(true);
 
-	connect(&m->neofetch, &PtyProcessController::outputReady, this,
+	connect(&m->process_controller, &PtyProcessController::outputReady, this,
 		[this](QByteArray const &output){
 			writeToTerminal(std::string_view(
 				output.constData(), static_cast<size_t>(output.size())));
 		});
-	connect(&m->neofetch, &PtyProcessController::completed, this,
+	connect(&m->process_controller, &PtyProcessController::completed, this,
 		[this](int exit_code, QString const &error_message){
 			if (exit_code == 0 && error_message.isEmpty()) return;
 			QString text = error_message.isEmpty()
-				? tr("[neofetchが異常終了しました: exit code %1]\r\n").arg(exit_code)
-				: tr("[neofetchを起動できませんでした: %1]\r\n").arg(error_message);
+				? tr("[コマンドが異常終了しました: exit code %1]\r\n").arg(exit_code)
+				: tr("[コマンドの実行に失敗しました: %1]\r\n").arg(error_message);
 			QByteArray const message = text.toUtf8();
 			writeToTerminal(std::string_view(
 				message.constData(), static_cast<size_t>(message.size())));
 		});
 	connect(terminal(), &TextEditorView::terminalSizeChanged,
-		&m->neofetch, &PtyProcessController::resizeTerminal);
+		&m->process_controller, &PtyProcessController::resizeTerminal);
 	
 	connect(&m->tm, SIGNAL(timeout()), this, SLOT(updateIm()));
 }
@@ -264,22 +264,37 @@ void MainWindow::writeToTerminal(const std::string_view &str)
 
 void MainWindow::on_action_debug_triggered()
 {
-	if (m->neofetch.isRunning()) {
-		writeToTerminal("[neofetchはすでに実行中です]\r\n");
+	// Change the program and arguments here to run another command.
+#ifdef Q_OS_WIN
+	QString const program = "C:\\Program Files\\Git\\cmd\\git.exe";
+	QStringList const arguments = {"log", "-n", "3"};
+#else
+	QString const program = "neofetch";
+	QStringList const arguments;
+#endif
+
+	auto write_message = [this](QString const &text){
+		QByteArray const bytes = text.toUtf8();
+		writeToTerminal(std::string_view(bytes.constData(), static_cast<size_t>(bytes.size())));
+	};
+
+	if (m->process_controller.isRunning()) {
+		writeToTerminal("[コマンドはすでに実行中です]\r\n");
 		return;
 	}
 
-	QString const executable = QStandardPaths::findExecutable("neofetch");
+	QString const executable = QStandardPaths::findExecutable(program);
 	if (executable.isEmpty()) {
-		writeToTerminal("[neofetchが見つかりません]\r\n");
+		write_message(tr("[実行ファイルが見つかりません: %1]\r\n").arg(program));
 		return;
 	}
 
 	QSize const terminal_size = terminal()->terminalSizeInCells();
 	terminal()->setTerminalScreenSize(terminal_size.width(), terminal_size.height());
-	writeToTerminal("$ neofetch\r\n");
-	if (!m->neofetch.start(executable, {}, terminal_size)) {
-		writeToTerminal("[neofetchを起動できませんでした]\r\n");
+	QStringList command_line = {program};
+	command_line.append(arguments);
+	write_message("$ " + command_line.join(' ') + "\r\n");
+	if (!m->process_controller.start(executable, arguments, terminal_size)) {
+		write_message(tr("[コマンドを起動できませんでした: %1]\r\n").arg(program));
 	}
 }
-

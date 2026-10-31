@@ -301,6 +301,7 @@ MainWindow::MainWindow(QWidget *parent)
 
 	ui->widget_log->view()->setFont(global->textFont());
 	ui->widget_log->view()->setup_for_log_widget(themeForTextEditor());
+	ui->widget_log->setWrappingMode(TextEditorView::WrappingMode::NoWrap);
 	onLogVisibilityChanged();
 
 	platform::initNetworking();
@@ -991,7 +992,9 @@ void MainWindow::internalWriteLog(LogData const &logdata, LogChannel channel)
 
 	if (ba.size() > 0) {
 		int i = ba.size() - 1;
-		if (ba[i] == '\n') {
+		if (i > 0 && ba[i - 1] == '\n') i--;
+		if (i > 0 && ba[i - 1] == '\r') i--;
+		if (i < ba.size()) {
 			ba = ba.mid(0, i);
 		}
 	}
@@ -1012,7 +1015,7 @@ void MainWindow::internalWriteLog(LogData const &logdata, LogChannel channel)
 				}
 			}
 			str += line;
-			str += '\n';
+			str += "\r\n";
 		}
 	}
 	
@@ -7590,7 +7593,7 @@ void debug();
 void MainWindow::test()
 {
 #if 1
-	global->writeLog(std::string_view("\x1b[31mHello,\x1b[32m world\x1b[0m\n"));
+	global->writeLog(std::string_view("Hello, world\r"));
 #else
 	debug();
 	// FILE *fp = fopen("c:\\a\\longtext.txt", "wb");

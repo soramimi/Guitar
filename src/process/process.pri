@@ -24,6 +24,7 @@ win32 {
 		$$PROCESS_SRC/BasicProcessWin.h \
 		$$PROCESS_SRC/BasicProcessWinConPty.h \
 		$$PROCESS_SRC/ProcessWinConPtyWithWorker.h \
+		$$PROCESS_SRC/ConPtyWorkerProtocol.h \
 		$$PROCESS_SRC/ProcessWin.h \
 		$$PROCESS_SRC/ProcessWinConPty.h \
 		$$PROCESS_SRC/ProcessWinHelper.h \

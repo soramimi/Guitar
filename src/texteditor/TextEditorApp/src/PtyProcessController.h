@@ -1,6 +1,8 @@
 #ifndef PTYPROCESSCONTROLLER_H
 #define PTYPROCESSCONTROLLER_H
 
+#include "PtyProcessFactory.h"
+
 #include <QByteArray>
 #include <QObject>
 #include <QSize>
@@ -21,6 +23,8 @@ public:
 	bool start(QString const &program, QStringList const &arguments, QSize terminal_size);
 	void stop();
 	bool isRunning() const;
+	// Selects the backend for the next start; an active process keeps its backend.
+	void setBackend(PtyProcessBackend backend);
 	void resizeTerminal(QSize size);
 
 signals:

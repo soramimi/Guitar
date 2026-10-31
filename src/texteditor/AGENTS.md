@@ -39,6 +39,11 @@ MainWindow (QMainWindow, TextEditorApp/src)
   チャンク継続状態で解析し、スクロールバック、端末カーソル、全角・結合文字、前景・背景色を保持する
 - **TextEditorApp/src/PtyProcessController.h/.cpp** — `process/`のPTY実装をQtイベントループへ接続し、
   プラットフォーム別生成、10msごとの逐次出力、終了通知、端末セルサイズ変更を担当する
+- **TextEditorApp/src/PtyProcessFactory.h/.cpp** — `createPtyProcess(PtyProcessBackend)`でPTYを生成する。
+  Windowsは`Direct`で`ProcessWinConPty`、`Worker`で`ProcessWinConPtyWithWorker`を選択する。
+  Controllerは既定で`Worker`を使用し、`setBackend()`で次回起動時の方式を変更できる。
+  POSIXではどちらも`ProcessPosixPty`を使用する。Windowsのアプリビルドは対応する
+  `conpty-worker.exe`もアプリと同じ出力先へ生成する
 - **PatternState.h/.cpp** — キーワード一致検出(実験機能、既定では無効)
 - **TextEditorCoreTest/** — 幅LRU、タブ幅による失効、前景・背景の文字色属性、ANSI色状態を確認する
   Qt依存のGoogleTest
@@ -50,7 +55,9 @@ MainWindow (QMainWindow, TextEditorApp/src)
   GoogleTest によるテスト完備)。詳細は [LineIndexMap/AGENTS.md](LineIndexMap/AGENTS.md) を参照
 - **TextEditorApp/** — 上記部品を組み込んだ実行可能アプリ(サンプル/動作確認用)
   - `src/MainWindow.*` — メインウィンドウ、メニュー(File→Open/Save/Test)
-  - Debugアクションは`PtyProcessController`経由で`neofetch`をPTY上に起動し、出力を端末Viewへ渡す
+  - Debugアクションは`on_action_debug_triggered()`先頭の`program`と`arguments`で定義した
+    コマンドを`process_controller`経由でPTY上に起動し、出力を端末Viewへ渡す。
+    既定はWindowsで`git log -n 3`、それ以外で`neofetch`
   - `src/MySettings.*` — `QSettings` ラッパーによる設定の永続化(INI)
   - `src/main.cpp` — エントリポイント
 

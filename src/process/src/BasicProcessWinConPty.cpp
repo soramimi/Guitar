@@ -140,17 +140,17 @@ bool BasicProcessWinConPty::start(std::string const &cmd)
 		for (size_t offset = 0; offset < m->environment.size();) {
 			size_t const end = m->environment.find('\0', offset);
 			size_t const length = end == std::string::npos
-				? m->environment.size() - offset : end - offset;
+								  ? m->environment.size() - offset : end - offset;
 			std::wstring value = convert_str_to_wstr(
-				std::string_view(m->environment.data() + offset, length));
+									 std::string_view(m->environment.data() + offset, length));
 			size_t const separator = value.find(L'=');
 			if (separator != std::wstring::npos && separator > 0) {
 				std::wstring const name = value.substr(0, separator);
 				auto it = std::find_if(entries.begin(), entries.end(), [&name](std::wstring const &entry){
-					return entry.size() > name.size()
-						&& entry[name.size()] == L'='
-						&& _wcsnicmp(entry.c_str(), name.c_str(), name.size()) == 0;
-				});
+						  return entry.size() > name.size()
+						  && entry[name.size()] == L'='
+						  && _wcsnicmp(entry.c_str(), name.c_str(), name.size()) == 0;
+						  });
 				if (it == entries.end()) entries.push_back(std::move(value));
 				else *it = std::move(value);
 			}
@@ -173,15 +173,15 @@ bool BasicProcessWinConPty::start(std::string const &cmd)
 	}
 
 	bool ok = CreateProcessW(nullptr,
-		wcmd.data(),
-		environment_block.empty() ? nullptr : environment_block.data(),
-		nullptr,
-		FALSE,
-		creation_flags,
-		nullptr,
-		m->change_dir.empty() ? nullptr : m->change_dir.c_str(),
-		&siEx.StartupInfo,
-		&m->d.pi);
+							 wcmd.data(),
+							 nullptr,
+							 nullptr,
+							 FALSE,
+							 creation_flags,
+							 environment_block.empty() ? nullptr : environment_block.data(),
+							 m->change_dir.empty() ? nullptr : m->change_dir.c_str(),
+							 &siEx.StartupInfo,
+							 &m->d.pi);
 
 	if (!ok) {
 		DWORD error_code = GetLastError();
@@ -358,6 +358,7 @@ ProcessResult BasicProcessWinConPty::wait()
 		}
 	}
 
+	std::lock_guard<std::mutex> output_lock(m->output_mutex);
 	m->output_bytes = std::move(m->d.output_vector);
 
 	ProcessResult ret = std::move(m->d.result);

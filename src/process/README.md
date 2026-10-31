@@ -27,11 +27,22 @@ The sample program exercises the available backends and prints the captured outp
 
 Plain pipes only capture stdout/stderr. Some programs (including Git in certain configurations) detect that their output is not a terminal and change their behavior — e.g., disabling color or progress output. Using a pseudo-terminal (PTY) makes the child process behave as if it is writing to a real terminal.
 
-VT/ANSI escape sequences emitted on a PTY are removed by the stateful `VtStripper` class (`src/ProcessWinHelper.h`) on the ConPTY backend. It keeps its parsing state across `ReadFile` calls, so sequences split over chunk boundaries are handled correctly.
+The abstract ConPTY backends preserve VT/ANSI sequences for terminal rendering. The low-level `BasicProcessWinConPty` optionally strips them with a stateful `VtStripper`.
 
 ### ConPTY worker separation
 
-`ProcessWinConPtyWithWorker` launches `conpty-worker.exe` (built from the same `sampleapp/main.cpp` with `CONPTY_WORKER` defined) through ordinary pipes, and the worker owns the ConPTY. This avoids interference between an outer pseudo-terminal (e.g. an IDE-embedded terminal) and the inner ConPTY. The command line is passed to the worker as a Base64-encoded argument and validated with strict Base64 decoding on the worker side.
+`ProcessWinConPtyWithWorker` launches a standalone `conpty-worker.exe` built from `src/ConPtyWorkerMain.cpp`. The worker owns the ConPTY. Its stdout carries raw UTF-8/VT bytes; stdin carries versioned requests (initial command/environment, terminal input, resize, input close, stop); stderr carries a framed final result. Protocol bytes never reach the terminal renderer. Each frame has a 16-byte little-endian magic/version/type/length header and a maximum 16 MiB payload. The host and worker must be deployed together; the old Base64 command-line protocol is no longer supported.
+
+The parent creates a suspended worker, assigns it to a kill-on-close Job Object, then resumes it. All descendant clients are cleaned up on host termination or session completion. Failure to assign the job is reported rather than silently weakening cleanup. The worker process itself uses `CREATE_NO_WINDOW`; the inner ConPTY client does not.
+
+- Call `resize_terminal()` before start for the initial dimensions and while running for later changes.
+- `start(command, env, use_input)` accepts NUL-separated environment overrides and uses `set_change_dir()` without changing the host's current directory. `use_input=false` rejects user input while keeping ConPTY's input pipe alive for output-only commands.
+- Output is retained after `wait()`/`stop()` until consumed or the next `start()`. The abstract queue limit and optional result-vector capture apply. `wait_for_output()` requires result-vector capture and does not consume the output queue.
+- `wait(timeout)` returns a snapshot; a timeout leaves the session running. A final result distinguishes worker/protocol failures from the client's exit code. `started` during startup describes the launched worker; the final result describes the client.
+- Completion fires once per start attempt, after final output is drained, including launch failures. Queue UI updates. The callback must not restart, stop, or destroy the object; it may call `wait(0)` or consume output.
+- Serialize lifecycle calls (`start`, `stop`, destruction) and configure environment/directory/worker path before start. Input, resize, output reads and timed waits may run concurrently. Stop requests cooperative termination and kills the job after two seconds if needed.
+- Default worker lookup is beside the host executable; `set_worker_path()` can override it for packaging/tests.
+
 
 ## Building
 
@@ -45,6 +56,11 @@ make            # or nmake / jom with MSVC on Windows
 # Windows only: ConPTY worker executable
 qmake conpty-worker.pro
 make
+
+# Windows integration tests (also builds the worker)
+qmake WorkerProcessTest/WorkerProcessTest.pro
+nmake
+_bin/WorkerProcessTest.exe
 ```
 
 Outputs go to `_bin/`. On Windows, `ProcessWinConPtyWithWorker` requires `conpty-worker.exe` to be placed next to the main executable.
