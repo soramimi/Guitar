@@ -1763,13 +1763,19 @@ void AbstractTextEditorApplication::doDelete()
 		std::vector<Document::Line> const *llines = &doc->logical_lines;
 		Document::Line const &line = (*llines)[lrow];
 		for (size_t i = 0; i < line.sp->meta.visual_lines.size(); i++) { // 折り返し行ループ
-			CharBuffer chars = _parse_line(&line.sp->meta.visual_lines[i]);
+			CharBuffer chars;
+			if (wrappingMode() == WrappingMode::NoWrap) { // 折り返しなしの場合は、論理行の文字列をそのまま解析する
+				chars = _parse_line(&line);
+			} else { // 折り返しありの場合は、折り返し後の物理行を解析する
+				chars = _parse_line(&line.sp->meta.visual_lines[i]);
+			}
 			if (vcol < 0 || static_cast<size_t>(vcol) <= chars.size()) break; // カーソル位置が折り返し行の範囲内なら終了
 			vcol -= static_cast<col_index_t>(chars.size()); // 現在の桁数を引いて、次の折り返し行へ進む
 			vrow++;
 		}
-		if (visual_nlines() > 0 && vrow >= visual_nlines()) { // カーソル行が折り返し後の物理行数を超えた場合は、最終行に移動する
-			vrow = visual_nlines() - 1;
+		const int n = visual_nlines();
+		if (n > 0 && vrow >= n) { // カーソル行が折り返し後の物理行数を超えた場合は、最終行に移動する
+			vrow = n - 1;
 		}
 	}
 	setCursorPos({vrow, vcol}); // カーソル位置を更新

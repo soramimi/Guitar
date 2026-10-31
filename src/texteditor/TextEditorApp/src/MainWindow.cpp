@@ -18,7 +18,7 @@
 #include <QShortcut>
 
 struct MainWindow::Private {
-	MainWindow::Mode mode = MainWindow::Mode::Terminal;
+	MainWindow::Mode mode = MainWindow::Mode::TextEditor;
 	bool need_to_layout;
 	QRect cursor_rect;
 	TextEditorEngine_sp engine;
@@ -36,7 +36,7 @@ MainWindow::MainWindow(QWidget *parent)
 	ui->setupUi(this);
 	m->need_to_layout = true;
 
-	ui->splitter->setSizes({500, 500});
+	ui->splitter->setSizes({600, 400});
 	
 	// connect(new QShortcut(QKeySequence("Ctrl+T"), this), &QShortcut::activated, this, &MainWindow::debug);
 

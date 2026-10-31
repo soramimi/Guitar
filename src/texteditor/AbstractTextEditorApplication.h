@@ -185,13 +185,39 @@ public:
 		int h = basic_character_size_.height();
 		return h > 0 ? h : 1;
 	}
+	// QFontMetrics::horizontalAdvance(text, QTextOption) was added in Qt 6.3.
+	// Keep the measurement usable with older Qt by measuring each tab-separated
+	// run with the long-standing overload and advancing to pixel tab stops here.
+	int myHorizontalAdvance(QString const &text, int tab_stop_distance) const
+	{
+		if (!fm_) return 0;
+		if (tab_stop_distance <= 0 || !text.contains(QLatin1Char('\t'))) {
+			return fm_->horizontalAdvance(text);
+		}
+
+		int width = 0;
+		qsizetype begin = 0;
+		while (begin <= text.size()) {
+			qsizetype const tab = text.indexOf(QLatin1Char('\t'), begin);
+			qsizetype const end = tab < 0 ? text.size() : tab;
+			int const run_width = fm_->horizontalAdvance(text.mid(begin, end - begin));
+			long long const width_after_run = static_cast<long long>(width) + run_width;
+			width = static_cast<int>(std::min<long long>(width_after_run, std::numeric_limits<int>::max()));
+			if (tab < 0) break;
+
+			// A tab at an exact stop advances to the following stop, just as a
+			// QTextLayout tab does.  Use 64-bit arithmetic for a long line.
+			long long const next_tab = (static_cast<long long>(width) / tab_stop_distance + 1) * tab_stop_distance;
+			width = static_cast<int>(std::min<long long>(next_tab, std::numeric_limits<int>::max()));
+			begin = tab + 1;
+		}
+		return width;
+	}
 	int text_width(QString const &text) const
 	{
 		int ret = 0;
 		if (!text_width_cache_.lookup(text, &ret)) {
-			QTextOption opt;
-			opt.setTabStopDistance(tab_stop_distance_);
-			ret = fm_->horizontalAdvance(text, opt);
+			ret = myHorizontalAdvance(text, tab_stop_distance_);
 			text_width_cache_.insert(text, ret);
 		}
 		return ret;

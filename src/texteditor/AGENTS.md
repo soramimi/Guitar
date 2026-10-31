@@ -50,7 +50,8 @@ MainWindow (QMainWindow, TextEditorApp/src)
   `conpty-worker.exe`もアプリと同じ出力先へ生成する
 - **PatternState.h/.cpp** — キーワード一致検出(実験機能、既定では無効)
 - **TextEditorCoreTest/** — 幅LRU、タブ幅による失効、前景・背景の文字色属性、ANSI色状態に加え、
-  PTY Controllerの起動時入力・入力未読時のGUI応答・argv境界・端末返信の往復、およびViewの端末/通常入力分離を確認するQt依存のGoogleTest
+  Qt 6.3以前向けタブ幅計測、PTY Controllerの起動時入力・入力未読時のGUI応答・argv境界・端末返信の往復、
+  およびViewの端末/通常入力分離を確認するQt依存のGoogleTest
 - **PtyProcessTest/** — POSIX PTYのTTY接続、初期サイズ、ANSI保持、終了時drain、resize/SIGWINCH、
   起動直後にキューした入力の到達を確認し、通常neofetch出力をTerminalScreenへ適用するQt非依存のGoogleTest
 - **TerminalScreenTest/** — カーソル移動、C0制御、チャンク分割、Unicodeセル、SGR、スクロール、
@@ -115,7 +116,9 @@ Backspace、Escape、Ctrl+A〜Zを送信し、Tab/Shift+Tabはフォーカス移
   再利用する。同じ幅での再レイアウト要求は `full_wrap_update_needed` によりスキップする
 - `Font::text_width()` の文字列幅キャッシュは最大4,096件のLRU。64 UTF-16コード単位を超える
   キーは登録せず、フォントまたはタブ幅が変わったときに全消去する。並列折り返しでは
-  スレッドごとに独立した `Font` とLRUを使用する
+  スレッドごとに独立した `Font` とLRUを使用する。幅計測はQt 6.3以降の
+  `QFontMetrics::horizontalAdvance(QString, QTextOption)`を使わず、`myHorizontalAdvance()`が
+  タブ区切りの各runを従来版`horizontalAdvance(QString)`で測り、指定ピクセル幅の次のタブ停止位置へ進める
 - `CharAttr::ForegroundColorSpecified` が立っていない文字はテーマの既定前景色で描画する。
   色値0は明示的な黒にもなるため、色値そのものを「指定なし」の番兵として使わない
 - `CharAttr::BackgroundColorSpecified` が立っている文字は、行背景より上、選択背景より下に
@@ -147,7 +150,7 @@ Qt非依存の`LineIndexMap`・`WrapAlgorithm`・`PtyProcessTest`・`TerminalScr
 # 期待出力: [  PASSED  ] 7 tests.
 
 (cd TextEditorCoreTest && qmake6 TextEditorCoreTest.pro && make && ./TextEditorCoreTest)
-# 期待出力: [  PASSED  ] 23 tests.
+# 期待出力: [  PASSED  ] 24 tests.
 
 (cd PtyProcessTest && qmake6 PtyProcessTest.pro && make && ./PtyProcessTest)
 # Linuxでneofetchがある場合の期待出力: [  PASSED  ] 4 tests.

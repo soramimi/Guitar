@@ -276,6 +276,33 @@ TEST(Font, TabStopChangeClearsWidthCache)
 	EXPECT_EQ(font.text_width_cache_.size(), 0u);
 }
 
+TEST(Font, MyHorizontalAdvanceUsesPixelTabStopsWithoutQTextOption)
+{
+	texteditor::Font font;
+	QFont qfont("DejaVu Sans");
+	qfont.setPixelSize(14);
+	font.set_font(qfont);
+	QFontMetrics const metrics(font.font());
+
+	int const tab_stop = 37;
+	QString const text = "AV\tB\tC";
+	int expected = metrics.horizontalAdvance("AV");
+	expected = (expected / tab_stop + 1) * tab_stop;
+	expected += metrics.horizontalAdvance("B");
+	expected = (expected / tab_stop + 1) * tab_stop;
+	expected += metrics.horizontalAdvance("C");
+
+	EXPECT_EQ(font.myHorizontalAdvance(text, tab_stop), expected);
+	font.set_tab_stop_distance(tab_stop);
+	EXPECT_EQ(font.text_width(text), expected);
+
+	int const exact_stop = metrics.horizontalAdvance("0");
+	EXPECT_EQ(font.myHorizontalAdvance("0\tA", exact_stop),
+		exact_stop * 2 + metrics.horizontalAdvance("A"));
+	EXPECT_EQ(font.myHorizontalAdvance("AV日本語", tab_stop),
+		metrics.horizontalAdvance("AV日本語"));
+}
+
 TEST(Font, CanBeConfiguredBeforeEditorInitialization)
 {
 	FontInitializationTestApplication app;
