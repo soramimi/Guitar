@@ -122,6 +122,9 @@ ApplicationSettings ApplicationSettings::loadSettings()
 	GetValue<QColor>(s, "LabelColorLocalBranch")             >> as.branch_label_color.local;
 	GetValue<QColor>(s, "LabelColorRemoteBranch")            >> as.branch_label_color.remote;
 	GetValue<QColor>(s, "LabelColorTag")                     >> as.branch_label_color.tag;
+	GetValue<bool>(s, "CustomFixedFont")                     >> as.fixed_font.custom;
+	GetValue<QString>(s, "FixedFontName")                    >> as.fixed_font.font_name;
+	GetValue<int>(s, "FixedFontSize")                        >> as.fixed_font.size;
 	s.endGroup();
 
 	s.beginGroup("AI");
@@ -199,6 +202,9 @@ void ApplicationSettings::saveSettings() const
 	SetValue<QColor>(s, "LabelColorLocalBranch")             << this->branch_label_color.local;
 	SetValue<QColor>(s, "LabelColorRemoteBranch")            << this->branch_label_color.remote;
 	SetValue<QColor>(s, "LabelColorTag")                     << this->branch_label_color.tag;
+	SetValue<bool>(s, "CustomFixedFont")                     << this->fixed_font.custom;
+	SetValue<QString>(s, "FixedFontName")                    << this->fixed_font.font_name;
+	SetValue<int>(s, "FixedFontSize")                        << this->fixed_font.size;
 	s.endGroup();
 
 	s.beginGroup("AI");

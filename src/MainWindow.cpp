@@ -6362,6 +6362,13 @@ void MainWindow::on_action_edit_settings_triggered()
 		setAppSettings(newsettings);
 		setupExternalPrograms();
 		updateAvatar(currentGitUser(), true);
+		if (newsettings.fixed_font.custom) {
+			ui->widget_log->setFont(QFont(newsettings.fixed_font.font_name, newsettings.fixed_font.size));
+		} else {
+			QFont font = QFontDatabase::systemFont(QFontDatabase::FixedFont);
+			font.setPointSize(16);
+			ui->widget_log->setFont(font);
+		}
 	}
 }
 

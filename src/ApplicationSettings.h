@@ -131,6 +131,12 @@ public:
 	} branch_label_color;
 
 	struct {
+		bool custom = false;
+		QString font_name = "Monospace";
+		int size = 12;
+	} fixed_font;
+	
+	struct {
 		QColor filtered_bg;
 		QColor highlight_bg;
 	} incremental_search_color;

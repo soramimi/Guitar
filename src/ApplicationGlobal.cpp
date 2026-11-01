@@ -71,7 +71,13 @@ QFont ApplicationGlobal::textFont()
 	// WindowsのFixedFontは漢字と英数字が別フォントの合字なので使えない
 	QFont font("Noto Sans Mono CJK JP", 9);
 #else
-	QFont font = QFontDatabase::systemFont(QFontDatabase::FixedFont);
+	QFont font;
+	if (appsettings.fixed_font.custom) {
+		font = QFont(appsettings.fixed_font.font_name, appsettings.fixed_font.size);
+	} else {
+		font = QFontDatabase::systemFont(QFontDatabase::FixedFont);
+		font.setPointSize(appsettings.fixed_font.size);
+	}
 #endif
 	return font;
 }
