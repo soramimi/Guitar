@@ -75,7 +75,7 @@ CommitMessageGenerator::CommitMessageGenerator::Result CommitMessageGenerator::p
  * @param max 生成するコミットメッセージ候補の最大数
  * @return AIに送るプロンプト文字列
  */
-std::string CommitMessageGenerator::generatePrompt() const
+std::pair<std::string, std::string> CommitMessageGenerator::generatePrompt() const
 {
 	// main prompt
 	std::string prompt = fmt(R"---(You are an experienced engineer.
@@ -113,10 +113,20 @@ Do NOT wrap the output in code fences (e.g., ``` or ```json).
 	prompt += '\n';
 	prompt += "# git diff\n";
 	prompt += request_.diff;
-
-	return prompt;
+	
+	std::string prefill = R"-("{"messages":[")-";
+	
+	return { prompt, prefill };
 }
 
+AiResult CommitMessageGenerator::request()
+{
+	auto [prompt, prefill] = generatePrompt();
+	
+	prefill = {}; // 対応していないモデルがあるのでprefillは使わない
+	
+	return api_.request(prompt, prefill);
+}
 
 /**
  * @brief ファイルのdiffをAIに送るべきか判定する。
@@ -254,3 +264,4 @@ std::string CommitMessageGenerator::make_diff(GitRunner g, const CommitPair &com
 	return diff;
 }
 #endif
+

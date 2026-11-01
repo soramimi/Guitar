@@ -536,12 +536,18 @@ struct _PromptJsonGenerator : public GenerativeAI::AbstractVisitor<std::string> 
 	std::string system_role;
 	GenerativeAI::Model const &model;
 	std::string prompt;
+	std::string prefill_;// = R"-("{"messages":[")-";
 	bool add_stream_false = false;
 	_PromptJsonGenerator(GenerativeAI::Model const &model, std::string const &prompt)
 		: model(model)
 		, prompt(prompt)
 	{}
-
+	
+	void set_prefill(std::string const &prefill)
+	{
+		prefill_ = prefill;
+	}
+	
 	std::string modelname() const
 	{
 		return model.model_name();
@@ -596,6 +602,12 @@ struct _PromptJsonGenerator : public GenerativeAI::AbstractVisitor<std::string> 
 						w.string("role", "user");
 						w.string("content", prompt);
 					});
+					if (!prefill_.empty()) {
+						w.object({}, [&](){
+							w.string("role", "assistant");
+							w.string("content", R"-("{"messages":[")-");
+						});
+					}
 				});
 				break;
 			}
@@ -628,6 +640,12 @@ struct _PromptJsonGenerator : public GenerativeAI::AbstractVisitor<std::string> 
 					w.string("role", "user");
 					w.string("content", prompt);
 				});
+				if (!prefill_.empty()) {
+					w.object({}, [&](){
+						w.string("role", "assistant");
+						w.string("content", R"-("{"messages":[")-");
+					});
+				}
 			});
 			if (add_stream_false) {
 				w.boolean("stream", false);
@@ -653,6 +671,14 @@ struct _PromptJsonGenerator : public GenerativeAI::AbstractVisitor<std::string> 
 					w.string("role", "user");
 					w.string("content", prompt);
 				});
+				if (0) { // Claude Opus 4.6 以降で 400 Bad Request になるためコメントアウト
+					if (!prefill_.empty()) {
+						w.object({}, [&](){
+							w.string("role", "assistant");
+							w.string("content", R"-("{"messages":[")-");
+						});
+					}
+				}
 			});
 			w.number("max_tokens", 1000);
 			if (0) {
@@ -831,10 +857,11 @@ struct _PromptJsonGenerator : public GenerativeAI::AbstractVisitor<std::string> 
  * @param prompt 送信するプロンプト文字列
  * @return APIリクエスト用JSON文字列
  */
-std::string AiApiBridge::generate_prompt_json(GenerativeAI::Model const &model, std::string const &prompt, std::string const &system_role)
+std::string AiApiBridge::generate_prompt_json(GenerativeAI::Model const &model, std::string const &prompt, std::string const &system_role, std::string const &prefill)
 {
 	_PromptJsonGenerator generator(model, prompt);
 	generator.system_role = system_role;
+	generator.set_prefill(prefill);
 	return generator.visit(model.api_compatibility());
 }
 
@@ -954,7 +981,7 @@ AiResult AiApiBridge::x_request(const Query2Request &req)
  * @param req 追加のリクエスト情報（将来的な拡張用）
  * @return AIからの応答を含むAiResultオブジェクト
  */
-AiResult AiApiBridge::request(GenerativeAI::EndPoint::Type eptype, std::string const &prompt, Query2Request const &req)
+AiResult AiApiBridge::request(GenerativeAI::EndPoint::Type eptype, std::string const &prompt, Query2Request const &req, std::string const &prefill)
 {
 	// if (model().provider_id() == GenerativeAI::ProviderID::Unknown) {
 	// 	return Error("error", "AI model is not defined.");
@@ -964,7 +991,7 @@ AiResult AiApiBridge::request(GenerativeAI::EndPoint::Type eptype, std::string c
 	{
 		std::string request_json;
 		if (eptype == GenerativeAI::EndPoint::Type::Chat) {
-			request_json = generate_prompt_json(model(), prompt, m->system_role);
+			request_json = generate_prompt_json(model(), prompt, m->system_role, prefill);
 			if (m->save_log) {
 				logprintf(LOG_RAW, "%s\n", request_json.c_str());
 			}
@@ -1039,18 +1066,21 @@ AiResult AiApiBridge::request(GenerativeAI::EndPoint::Type eptype, std::string c
 			} else {
 				assert(0);
 			}
-
+			
+			{
+				char const *data = http->content_data();
+				size_t size = http->content_length();
+				response_json.assign(data, size);
+			}
+			
 			std::string_view httpstat = http_status_text(ret);
 			if (m->save_log) {
 				logprintf(LOG_DEFAULT, "%d\n", ret);
 				logprintf(LOG_DEFAULT, "%s\n", std::string(httpstat).c_str());
-				logprintf(LOG_RAW, "%d\n%s\n", ret, response_json.c_str());
+				logprintf(LOG_RAW, "%s\n", response_json.c_str());
 			}
 			
 			if (ret >= 200 && ret < 300) {
-				char const *data = http->content_data();
-				size_t size = http->content_length();
-				response_json.assign(data, size);
 				if (m->save_log) {
 #if 0
 					FILE *fp = fopen("/tmp/ai_response.json", "wb");
@@ -1064,7 +1094,23 @@ AiResult AiApiBridge::request(GenerativeAI::EndPoint::Type eptype, std::string c
 				std::string msg = std::to_string(ret);
 				msg += '\n';
 				msg += httpstat;
+				
+				std::string error_message;
+				{
+					jstream::Reader reader(response_json);
+					while (reader.next()) {
+						if (reader.match("{error{message")) {
+							error_message = reader.string();
+						}
+					}
+				}
+				if (!error_message.empty()) {
+					msg += '\n';
+					msg += error_message;
+				}
+				
 				AiResult r = AiResult::Error("Error", msg);
+				r.d.content = response_json;
 				return r;
 			}
 		}
@@ -1085,10 +1131,10 @@ AiResult AiApiBridge::request(GenerativeAI::EndPoint::Type eptype, std::string c
 	return {model().api_compatibility()};
 }
 
-AiResult AiApiBridge::request(std::string const &prompt)
+AiResult AiApiBridge::request(std::string const &prompt, std::string const &prefill)
 {
 	AiApiBridge::Query2Request req;
-	return request(GenerativeAI::EndPoint::Type::Chat, prompt, req);
+	return request(GenerativeAI::EndPoint::Type::Chat, prompt, req, prefill);
 }
 
 std::optional<AiResult::Models> AiApiBridge::queryModels()
@@ -1099,7 +1145,7 @@ std::optional<AiResult::Models> AiApiBridge::queryModels()
 	do {
 		AiApiBridge::Query2Request req{GenerativeAI::EndPoint::Type::Models};
 		req.cursor = next_cursor;
-		AiResult result = request(GenerativeAI::EndPoint::Type::Models, {}, req);
+		AiResult result = request(GenerativeAI::EndPoint::Type::Models, {}, req, {});
 		if (!result) return std::nullopt;
 
 		has_more = false;

@@ -200,7 +200,7 @@ private:
 	struct Private;
 	Private *m;
 	AbstractInetClient *http();
-	std::string generate_prompt_json(const GenerativeAI::Model &model, const std::string &prompt, std::string const &system_role = {});
+	std::string generate_prompt_json(const GenerativeAI::Model &model, const std::string &prompt, std::string const &system_role = {}, const std::string &prefill = {});
 	AiResult open();
 	AiResult x_request(Query2Request const &req);
 	void close();
@@ -219,8 +219,8 @@ public:
 	GenerativeAI::Model model() const;
 	void set_ai_model(GenerativeAI::Model model, GenerativeAI::Credential cred);
 	void set_system_role(std::string const &role);
-	AiResult request(GenerativeAI::EndPoint::Type eptype, std::string const &prompt, const Query2Request &req);
-	AiResult request(const std::string &prompt);
+	AiResult request(GenerativeAI::EndPoint::Type eptype, std::string const &prompt, const Query2Request &req, const std::string &prefill);
+	AiResult request(const std::string &prompt, const std::string &prefill);
 	std::optional<AiResult::Models> queryModels();
 
 	static GenerativeAI::Credential default_credential(GenerativeAI::Model model);

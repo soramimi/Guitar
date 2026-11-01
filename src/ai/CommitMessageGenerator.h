@@ -62,22 +62,14 @@ public:
 	}
 	
 	static Result parse_response(GenerativeAI::Model model, const AiResult &result);
-	std::string generatePrompt() const;
+	std::pair<std::string, std::string> generatePrompt() const;
 	static bool accept_file_diff(const std::string &filename, const std::string &mimetype);
 	static std::string make_diff(const std::string &gitcommand, const std::string &dir, CommitPair const &commits);
 #ifdef APP_GUITAR
 	static std::string make_diff(GitRunner g, CommitPair const &commits);
 #endif
 
-	AiResult request()
-	{
-		std::string prompt = generatePrompt();
-		if (0) {
-			fprintf(stderr, "%s\n", prompt.c_str());
-			fflush(stderr);
-		}
-		return api_.request(prompt);
-	}
+	AiResult request();
 };
 
 #endif // COMMITMESSAGEGENERATOR_H

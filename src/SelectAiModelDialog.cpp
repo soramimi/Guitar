@@ -477,7 +477,7 @@ void SelectAiModelDialog::on_pushButton_test_hello_clicked()
 			model.set_endpoint_url(conf->model.endpoint_url());
 		}
 		api.set_ai_model(model, credential());
-		result = api.request(prompt.toStdString());
+		result = api.request(prompt.toStdString(), {});
 	}
 	if (result.is_error()) {
 		QMessageBox::warning(this, tr("Test AI Model"), tr("Error: %1").arg(QString::fromStdString(result.d.error_message)));
