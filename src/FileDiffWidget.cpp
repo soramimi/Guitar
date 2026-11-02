@@ -100,6 +100,8 @@ FileDiffWidget::FileDiffWidget(QWidget *parent)
 	m->engine_inline = std::make_shared<TextEditorEngine>();
 	ui->widget_diff_inline->setDiffMode(m->engine_inline, ui->verticalScrollBar_inline, ui->horizontalScrollBar_inline);
 
+	setTextFont(global->textFont());
+
 	setViewType(FileViewType::None);
 	setViewStyle(ViewStyle::SideBySideTextDiff);
 }

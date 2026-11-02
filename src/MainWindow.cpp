@@ -6359,16 +6359,7 @@ void MainWindow::keyPressEvent(QKeyEvent *event)
 
 void MainWindow::updateFonts()
 {
-	ApplicationSettings const &s = global->appsettings;
-
-	QFont font;
-	
-	if (s.fixed_font.custom) {
-		font = QFont(s.fixed_font.font_name, s.fixed_font.size);
-	} else {
-		font = QFontDatabase::systemFont(QFontDatabase::FixedFont);
-	}
-
+	QFont font = global->textFont();
 	ui->widget_log->view()->setTextFont(font);
 	ui->widget_diff_view->setTextFont(font);
 }
