@@ -170,6 +170,8 @@ public:
 	void setFocusAcceptable(Qt::FocusPolicy focuspolicy);
 	QPixmap makeDiffPixmap(DiffPane pane, int width, int height);
 	void setViewType(FileViewType type);
+	
+	void setTextFont(QFont font);
 private slots:
 	void onVerticalScrollValueChanged(int value);
 	void onHorizontalScrollValueChanged(int value);

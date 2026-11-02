@@ -15,6 +15,11 @@ SettingVisualForm::~SettingVisualForm()
 	delete ui;
 }
 
+void SettingVisualForm::updateUseCustomFont(bool use)
+{
+	ui->frame_fixed_font->setEnabled(use);
+}
+
 void SettingVisualForm::exchange(bool save)
 {
 	if (save) {
@@ -35,7 +40,7 @@ void SettingVisualForm::exchange(bool save)
 		ui->checkBox_fixed_font->setChecked(settings()->fixed_font.custom);
 		ui->fontComboBox_fixed_font->setCurrentFont(QFont(settings()->fixed_font.font_name));
 		ui->spinBox_fixed_font_size->setValue(settings()->fixed_font.size);
-		ui->frame_fixed_font->setEnabled(settings()->fixed_font.custom);
+		updateUseCustomFont(settings()->fixed_font.custom);
 	}
 }
 
@@ -50,6 +55,6 @@ void SettingVisualForm::on_pushButton_reset_clicked()
 
 void SettingVisualForm::on_checkBox_fixed_font_checkStateChanged(const Qt::CheckState &arg1)
 {
-	ui->fontComboBox_fixed_font->setEnabled(arg1 == Qt::Checked);
+	updateUseCustomFont(arg1 == Qt::Checked);
 }
 

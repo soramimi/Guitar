@@ -162,7 +162,7 @@ TextEditorView::TextEditorView(QWidget *parent)
 	{
 		QFont font = QFontDatabase::systemFont(QFontDatabase::FixedFont);
 		font.setPointSize(16);
-		setFont(font);
+		setTextFont(font);
 	}
 	{
 		QFont font = QFontDatabase::systemFont(QFontDatabase::FixedFont);

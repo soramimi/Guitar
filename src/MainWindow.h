@@ -719,6 +719,7 @@ public:
 	
 	static constexpr char const *opt_submodule_commit_id = "--submodule-commit-id";
 	static void openNewGuitar(QString const &path, QString const &commit_id);
+	void updateFonts();
 public slots:
 	void internalWriteLog(const LogData &logdata, LogChannel channel);
 };

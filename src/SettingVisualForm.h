@@ -21,6 +21,7 @@ private slots:
 	
 private:
 	Ui::SettingVisualForm *ui;
+	void updateUseCustomFont(bool use);
 };
 
 #endif // SETTINGVISUALFORM_H

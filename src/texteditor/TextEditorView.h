@@ -105,7 +105,7 @@ public:
 	void layoutEditor() override;
 	void setFocusFrameVisible(bool f);
 	
-	void setFont(const QFont &font)
+	void setTextFont(const QFont &font)
 	{
 		set_fixed_font(font);
 		set_text_font(font);

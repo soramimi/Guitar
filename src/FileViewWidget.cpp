@@ -112,6 +112,11 @@ void FileViewWidget::clear()
 #endif
 }
 
+void FileViewWidget::setTextFont(QFont font)
+{
+	ui_page_text->setTextFont(font);
+}
+
 void FileViewWidget::setImage(std::string const &mimetype, QByteArray const &ba, std::string const &object_id, QString const &path)
 {
 	setViewType(FileViewType::Image);

@@ -10,7 +10,7 @@
 MyTextEditorWidget::MyTextEditorWidget(QWidget *parent)
 	: TextEditorView(parent)
 {
-	view()->setFont(global->textFont());
+	view()->setTextFont(global->textFont());
 }
 
 TextEditorView *MyTextEditorWidget::view()

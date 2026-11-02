@@ -168,6 +168,13 @@ void FileDiffWidget::setViewType(FileViewType type)
 	ui->widget_diff_inline->setViewType(type);
 }
 
+void FileDiffWidget::setTextFont(QFont font)
+{
+	ui->widget_diff_left->setTextFont(font);
+	ui->widget_diff_right->setTextFont(font);
+	ui->widget_diff_inline->setTextFont(font);
+}
+
 void FileDiffWidget::setMaximizeButtonEnabled(bool f)
 {
 	ui->toolButton_fullscreen->setVisible(f);

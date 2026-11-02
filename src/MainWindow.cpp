@@ -299,9 +299,12 @@ MainWindow::MainWindow(QWidget *parent)
 	setShowGraph(appsettings()->show_graph, false);
 	setShowAvatars(appsettings()->show_avatars, false);
 
-	ui->widget_log->view()->setFont(global->textFont());
+	ui->widget_log->view()->setTextFont(global->textFont());
 	ui->widget_log->view()->setup_for_log_widget(themeForTextEditor());
 	ui->widget_log->setWrappingMode(TextEditorView::WrappingMode::NoWrap);
+
+	updateFonts();
+
 	onLogVisibilityChanged();
 
 	platform::initNetworking();
@@ -6354,6 +6357,22 @@ void MainWindow::keyPressEvent(QKeyEvent *event)
 	}
 }
 
+void MainWindow::updateFonts()
+{
+	ApplicationSettings const &s = global->appsettings;
+
+	QFont font;
+	
+	if (s.fixed_font.custom) {
+		font = QFont(s.fixed_font.font_name, s.fixed_font.size);
+	} else {
+		font = QFontDatabase::systemFont(QFontDatabase::FixedFont);
+	}
+
+	ui->widget_log->view()->setTextFont(font);
+	ui->widget_diff_view->setTextFont(font);
+}
+
 void MainWindow::on_action_edit_settings_triggered()
 {
 	SettingsDialog dlg(this);
@@ -6362,13 +6381,8 @@ void MainWindow::on_action_edit_settings_triggered()
 		setAppSettings(newsettings);
 		setupExternalPrograms();
 		updateAvatar(currentGitUser(), true);
-		if (newsettings.fixed_font.custom) {
-			ui->widget_log->setFont(QFont(newsettings.fixed_font.font_name, newsettings.fixed_font.size));
-		} else {
-			QFont font = QFontDatabase::systemFont(QFontDatabase::FixedFont);
-			font.setPointSize(16);
-			ui->widget_log->setFont(font);
-		}
+
+		updateFonts();
 	}
 }
 

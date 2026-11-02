@@ -77,6 +77,8 @@ public:
 	{
 		return ui_page_text->view();
 	}
+
+	void setTextFont(QFont font);
 };
 
 #endif // FILEVIEWWIDGET_H
