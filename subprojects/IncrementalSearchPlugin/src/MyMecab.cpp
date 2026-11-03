@@ -322,6 +322,10 @@ std::vector<incrementalsearch::Part> MyMecab::parse(const std::string_view &line
 			Part part;
 			if (features.size() == 1 && features[0] == "unknown") {
 				part.text = line.substr(node->surface - line.data(), node->length);
+			} else if (features.size() == 1) {
+				// 読みだけを保存した辞書では、素性全体が読みになる。
+				// `mecab-dict-index -s -F '%f[7]'` で生成した削減版辞書を使うケース
+				part.text = std::string(features[0]);
 			} else if (features.size() > 7) {
 				part.text = features[7];
 			}

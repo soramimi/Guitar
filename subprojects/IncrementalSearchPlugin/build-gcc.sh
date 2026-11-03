@@ -16,8 +16,14 @@ function reset_utf8_dic () {
 	# 元の ipadic CSV ファイルを EUC-JP から UTF-8 に変換する。
 	for file in mecab/mecab-ipadic/*.csv; do
 		name=`basename $file`
-	echo $name
-	iconv -f EUC-jp -t UTF-8 $file -o ${DICDIR}/$name
+		echo $name
+		iconv -f EUC-jp -t UTF-8 $file -o ${DICDIR}/$name
+	done
+	#
+	for file in mecab/mecab-ipadic/*.def; do
+		name=`basename $file`
+		echo $name
+		iconv -f EUC-jp -t UTF-8 $file -o ${DICDIR}/$name
 	done
 }
 
@@ -31,7 +37,7 @@ cp userdic/* utf8dic/
 
 # MeCab の辞書ファイルを作業用ディレクトリにコピーする。
 cp mecab/mecab-ipadic/dicrc ${DICDIR}/
-cp mecab/mecab-ipadic/*.def ${DICDIR}/
+#cp mecab/mecab-ipadic/*.def ${DICDIR}/
 cp mecab/mecab-jumandic/model.def ${DICDIR}/
 cp userdic/* ${DICDIR}/
 
@@ -40,13 +46,19 @@ pushd ${DICDIR}
 /usr/lib/mecab/mecab-dict-index -c UTF-8 -f UTF-8
 popd
 
+
+mkdir -p ${DICDIR}/reading
+cp utf8dic/unk.dic utf8dic/char.bin utf8dic/matrix.bin ${DICDIR}/reading/
+cp dicrc-reading ${DICDIR}/reading/dicrc
+/usr/lib/mecab/mecab-dict-index -d utf8dic -o ${DICDIR}/reading -s -c UTF-8 -f UTF-8 -F '%f[7]'
+
 # 生成した辞書データを圧縮し、埋め込み用の C 配列へ変換する。
 
 function my_xxd () {
-        gzip -k ${DICDIR}/$2 -c >/tmp/$1.gz
-	zstd -19 ${DICDIR}/$2 -f -o /tmp/$1.zst
-#        perl my_xxd.pl -n xxd_$1_gz /tmp/$1.gz >gen/xxd_$1_gz.c
-        perl my_xxd.pl -n xxd_$1_zst /tmp/$1.zst >gen/xxd_$1_zst.c
+	gzip -k ${DICDIR}/reading/$2 -c >/tmp/$1.gz
+	zstd -19 ${DICDIR}/reading/$2 -f -o /tmp/$1.zst
+#	perl my_xxd.pl -n xxd_$1_gz /tmp/$1.gz >gen/xxd_$1_gz.c
+	perl my_xxd.pl -n xxd_$1_zst /tmp/$1.zst >gen/xxd_$1_zst.c
 }
 
 my_xxd dicrc dicrc
@@ -58,7 +70,7 @@ my_xxd matrixbin matrix.bin
 # 同梱している MeCab ライブラリをソースからビルドする。
 
 pushd mecab/mecab
-./configure
+./configure --enable-utf8-only
 make -j8
 popd
 

@@ -11,7 +11,7 @@
   <a id="btn-back" href="/">← 辞書選択</a>
   <h1 id="title">MeCab辞書エディタ</h1>
   <div class="sp"></div>
-  <button class="btn-add" onclick="addRow()">+ 行追加</button>
+  <button id="btn-add" class="btn-add" onclick="addRow()" disabled>+ 行追加</button>
   <button class="btn-save" onclick="saveFile()">保存</button>
   <span id="status"></span>
 </div>
@@ -33,6 +33,20 @@
   <button class="btn-nav" id="btn-next" onclick="goNext()">›</button>
   <button class="btn-nav" id="btn-last" onclick="goLast()">»</button>
 </div>
+<dialog id="record-dialog" aria-labelledby="editor-title" aria-describedby="editor-hint">
+  <form id="record-form">
+    <div class="editor-header">
+      <h2 id="editor-title">エントリを編集</h2>
+      <p id="editor-hint">確定した内容を一覧に適用します。CSVへの書き込みは、画面上部の「保存」で行います。</p>
+    </div>
+    <fieldset id="editor-fields"></fieldset>
+    <p id="editor-error" role="alert"></p>
+    <div class="editor-actions">
+      <button id="editor-cancel" type="button" class="btn-cancel" onclick="closeEditor()">キャンセル</button>
+      <button id="editor-submit" type="submit" class="btn-save">適用</button>
+    </div>
+  </form>
+</dialog>
 <script src="/static/js/app.js"></script>
 </body>
 </html>

@@ -1,0 +1,8 @@
+; 読み専用辞書の実行時設定。通常の IPADIC CSV から -F '%f[7]' で生成する。
+cost-factor = 800
+bos-feature = BOS/EOS
+
+; 素性全体が読みなので、従来の %f[7] ではなく %H を使う。
+node-format-yomi = %pS%H
+unk-format-yomi = %M
+eos-format-yomi = \n

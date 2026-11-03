@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"bytes"
 	_ "embed"
 	"encoding/csv"
@@ -24,7 +25,73 @@ var indexHTML string
 //go:embed templates/edit.html
 var editHTML string
 
-const dicsDir = "utf8dic"
+//go:embed dicdef/parts-id.def
+var partsDefinition string
+
+const dicsDir = "../userdic"
+
+// PartDefinition は文脈 ID と、品詞・細分類・活用・原形区分の対応を表す。
+type PartDefinition struct {
+	ID     int      `json:"id"`
+	Fields []string `json:"fields"`
+}
+
+var (
+	partsOnce sync.Once
+	parts     []PartDefinition
+	partsErr  error
+)
+
+func parsePartsDefinition(text string) ([]PartDefinition, error) {
+	var result []PartDefinition
+	seen := make(map[int]bool)
+	scanner := bufio.NewScanner(strings.NewReader(text))
+	for lineNumber := 1; scanner.Scan(); lineNumber++ {
+		line := strings.TrimSpace(scanner.Text())
+		if line == "" || strings.HasPrefix(line, "#") {
+			continue
+		}
+		separator := strings.IndexAny(line, " \t")
+		if separator < 0 {
+			return nil, fmt.Errorf("parts-id.def:%d: ID と品詞定義が必要です", lineNumber)
+		}
+		id, err := strconv.Atoi(line[:separator])
+		if err != nil || id < 0 || id > 65535 || seen[id] {
+			return nil, fmt.Errorf("parts-id.def:%d: 文脈 ID が不正または重複しています", lineNumber)
+		}
+		reader := csv.NewReader(strings.NewReader(strings.TrimSpace(line[separator:])))
+		reader.FieldsPerRecord = 7
+		fields, err := reader.Read()
+		if err != nil {
+			return nil, fmt.Errorf("parts-id.def:%d: 品詞定義は7項目です: %w", lineNumber, err)
+		}
+		seen[id] = true
+		result = append(result, PartDefinition{ID: id, Fields: fields})
+	}
+	if err := scanner.Err(); err != nil {
+		return nil, err
+	}
+	if len(result) == 0 {
+		return nil, fmt.Errorf("parts-id.def: 品詞定義がありません")
+	}
+	return result, nil
+}
+
+func apiParts(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	partsOnce.Do(func() {
+		parts, partsErr = parsePartsDefinition(partsDefinition)
+	})
+	if partsErr != nil {
+		http.Error(w, partsErr.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(parts)
+}
 
 // Record は MeCab 辞書の1エントリを表す
 type Record struct {
@@ -49,6 +116,48 @@ var columnNames = []string{
 	"表層形", "左文脈ID", "右文脈ID", "コスト",
 	"品詞", "品詞細分類1", "品詞細分類2", "品詞細分類3",
 	"活用型", "活用形", "原形", "読み", "発音",
+}
+
+// normalizeKana はひらがなをカタカナへ変換し、読み・発音で使える文字だけを通す。
+// 濁点・半濁点は仮名の直後だけ許可し、分解された濁音や半角カナも扱う。
+func normalizeKana(value string) (string, error) {
+	var normalized strings.Builder
+	canAddMark := false
+	for _, r := range value {
+		if (r >= 'ぁ' && r <= 'ゖ') || r == 'ゝ' || r == 'ゞ' {
+			r += 0x60
+		}
+		switch {
+		case (r >= 'ァ' && r <= 'ヺ') || r == 'ヽ' || r == 'ヾ' || r == 'ヿ' ||
+			(r >= 'ㇰ' && r <= 'ㇿ') || (r >= 'ｦ' && r <= 'ｯ') || (r >= 'ｱ' && r <= 'ﾝ'):
+			canAddMark = true
+		case r == 'ー' || r == 'ｰ':
+			canAddMark = false
+		case r == '\u3099' || r == '\u309a' || r == 'ﾞ' || r == 'ﾟ':
+			if !canAddMark {
+				return "", fmt.Errorf("濁点・半濁点は仮名の直後に入力してください")
+			}
+			canAddMark = false
+		default:
+			return "", fmt.Errorf("仮名以外の文字 %q は使用できません", r)
+		}
+		normalized.WriteRune(r)
+	}
+	return normalized.String(), nil
+}
+
+func normalizeReadingFields(fields []string) error {
+	for _, column := range []int{11, 12} {
+		if column >= len(fields) {
+			continue
+		}
+		value, err := normalizeKana(fields[column])
+		if err != nil {
+			return fmt.Errorf("%s: %w", columnNames[column], err)
+		}
+		fields[column] = value
+	}
+	return nil
 }
 
 // validateFile はファイル名がパストラバーサルを含まないか検証する
@@ -197,6 +306,10 @@ func apiRecords(w http.ResponseWriter, r *http.Request) {
 			if req.Fields == nil {
 				req.Fields = []string{}
 			}
+			if err := normalizeReadingFields(req.Fields); err != nil {
+				http.Error(w, err.Error(), http.StatusBadRequest)
+				return
+			}
 			fd.mu.Lock()
 			defer fd.mu.Unlock()
 			for i := range fd.records {
@@ -286,6 +399,10 @@ func apiRecords(w http.ResponseWriter, r *http.Request) {
 		if req.Fields == nil {
 			req.Fields = []string{}
 		}
+		if err := normalizeReadingFields(req.Fields); err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
 		fd.mu.Lock()
 		rec := Record{ID: fd.nextID, Fields: req.Fields}
 		fd.nextID++
@@ -322,6 +439,7 @@ func apiSave(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
+	http.HandleFunc("/api/parts", apiParts)
 	http.HandleFunc("/api/dics", apiDics)
 	http.HandleFunc("/api/records/", apiRecords)
 	http.HandleFunc("/api/records", apiRecords)
@@ -336,7 +454,7 @@ func main() {
 		fmt.Fprint(w, indexHTML)
 	})
 
-	addr := ":1080"
+	addr := ":8080"
 	log.Printf("Starting server at http://localhost%s", addr)
 	log.Fatal(http.ListenAndServe(addr, nil))
 }

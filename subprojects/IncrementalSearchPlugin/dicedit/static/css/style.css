@@ -15,8 +15,11 @@ body { font-family: "Meiryo", "Yu Gothic", sans-serif; font-size: 13px; }
 button { border: none; border-radius: 4px; cursor: pointer; font-family: inherit; }
 .btn-add { background: #2980b9; color: #fff; padding: 5px 12px; font-size: 12px; }
 .btn-save { background: #27ae60; color: #fff; padding: 5px 12px; font-size: 12px; }
+.btn-edit { background: #2980b9; color: #fff; padding: 2px 7px; font-size: 11px; }
 .btn-del { background: #e67e22; color: #fff; padding: 2px 7px; font-size: 11px; }
 button:hover { filter: brightness(1.15); }
+button:disabled { opacity: 0.5; cursor: default; filter: none; }
+button:focus-visible { outline: 2px solid #2980b9; outline-offset: 2px; }
 #status { font-size: 12px; min-width: 100px; }
 .ok { color: #2ecc71; }
 .err { color: #e74c3c; }
@@ -39,14 +42,10 @@ thead th {
 tbody tr { background: #fff; }
 tbody tr:nth-child(even) { background: #f8f9fb; }
 tbody tr:hover { background: #ebf5fb; }
-td { padding: 1px 2px; border-bottom: 1px solid #e8e8e8; border-right: 1px solid #ececec; }
-td input {
-  width: 100%; min-width: 36px; border: none; background: transparent;
-  padding: 3px 4px; font-size: 13px; font-family: inherit;
-}
-td input:focus { outline: 2px solid #2980b9; background: #fff; border-radius: 2px; }
-.num input { text-align: right; min-width: 50px; }
-.act { text-align: center; width: 42px; }
+td { padding: 6px 8px; white-space: nowrap; border-bottom: 1px solid #e8e8e8; border-right: 1px solid #ececec; }
+.num { text-align: right; }
+.edit-act { position: sticky; left: 0; background: inherit; }
+.act { position: sticky; right: 0; background: inherit; }
 #pager {
   position: fixed; bottom: 0; left: 0; right: 0; z-index: 200;
   background: #ecf0f1; border-top: 1px solid #bdc3c7;
@@ -89,55 +88,42 @@ td input:focus { outline: 2px solid #2980b9; background: #fff; border-radius: 2p
   color: #2980b9;
 }
 
-  position: fixed; top: 0; left: 0; right: 0; z-index: 200;
-  background: #2c3e50; color: #fff;
-  display: flex; align-items: center; gap: 10px;
-  padding: 7px 14px;
+/* エントリ編集モーダル */
+#record-dialog {
+  margin: auto; padding: 0; border: none; border-radius: 10px;
+  width: min(720px, calc(100% - 32px)); max-height: calc(100dvh - 32px);
+  color: #2c3e50; background: #fff;
+  box-shadow: 0 16px 60px #0005;
 }
-#header h1 { font-size: 14px; }
-.sp { flex: 1; }
-button { border: none; border-radius: 4px; cursor: pointer; font-family: inherit; }
-.btn-add { background: #2980b9; color: #fff; padding: 5px 12px; font-size: 12px; }
-.btn-save { background: #27ae60; color: #fff; padding: 5px 12px; font-size: 12px; }
-.btn-del { background: #e67e22; color: #fff; padding: 2px 7px; font-size: 11px; }
-button:hover { filter: brightness(1.15); }
-#status { font-size: 12px; min-width: 100px; }
-.ok { color: #2ecc71; }
-.err { color: #e74c3c; }
-#toolbar {
-  position: fixed; top: 38px; left: 0; right: 0; z-index: 199;
-  background: #ecf0f1; border-bottom: 1px solid #bdc3c7;
-  display: flex; align-items: center; gap: 8px;
-  padding: 5px 14px;
+#record-dialog::backdrop { background: #17253699; }
+#record-form { display: flex; flex-direction: column; max-height: calc(100dvh - 32px); }
+.editor-header { padding: 20px 24px 14px; border-bottom: 1px solid #e8e8e8; }
+.editor-header h2 { font-size: 18px; margin-bottom: 8px; }
+#editor-hint { font-size: 12px; line-height: 1.6; color: #666; }
+#editor-fields {
+  border: none; padding: 20px 24px; min-height: 0; overflow-y: auto;
+  display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px 20px;
 }
-#search { padding: 4px 8px; border: 1px solid #bdc3c7; border-radius: 3px; font-size: 13px; width: 240px; }
-#info { font-size: 12px; color: #555; }
-#wrap { margin-top: 72px; margin-bottom: 40px; overflow: auto; height: calc(100vh - 112px); }
-table { border-collapse: collapse; }
-thead th {
-  background: #34495e; color: #fff; font-size: 11px; font-weight: normal;
-  padding: 5px 6px; white-space: nowrap;
-  position: sticky; top: 0; z-index: 10;
-  border-right: 1px solid #566e87;
+.editor-field { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+.editor-field span, .editor-field > label { font-size: 12px; font-weight: bold; }
+.editor-field input, .editor-field select {
+  width: 100%; min-width: 0; padding: 8px 10px; border: 1px solid #bdc3c7;
+  border-radius: 4px; font: inherit; color: #222; background: #fff;
 }
-tbody tr { background: #fff; }
-tbody tr:nth-child(even) { background: #f8f9fb; }
-tbody tr:hover { background: #ebf5fb; }
-td { padding: 1px 2px; border-bottom: 1px solid #e8e8e8; border-right: 1px solid #ececec; }
-td input {
-  width: 100%; min-width: 36px; border: none; background: transparent;
-  padding: 3px 4px; font-size: 13px; font-family: inherit;
+.editor-field input:focus, .editor-field select:focus { outline: 2px solid #2980b9; outline-offset: 1px; }
+.editor-field input[readonly] { background: #f1f4f6; color: #555; }
+.editor-field input[aria-invalid="true"] { border-color: #b52d20; }
+.editor-part { grid-column: 1 / -1; }
+.editor-field-hint { font-size: 12px; line-height: 1.5; color: #666; }
+#editor-error { padding: 0 24px 14px; color: #b52d20; font-size: 12px; white-space: pre-wrap; }
+#editor-error:empty { display: none; }
+.editor-actions {
+  display: flex; justify-content: flex-end; gap: 10px; padding: 14px 24px;
+  border-top: 1px solid #e8e8e8; background: #f8f9fb;
 }
-td input:focus { outline: 2px solid #2980b9; background: #fff; border-radius: 2px; }
-.num input { text-align: right; min-width: 50px; }
-.act { text-align: center; width: 42px; }
-#pager {
-  position: fixed; bottom: 0; left: 0; right: 0; z-index: 200;
-  background: #ecf0f1; border-top: 1px solid #bdc3c7;
-  display: flex; align-items: center; justify-content: center; gap: 6px;
-  padding: 5px 14px; height: 40px;
+.editor-actions button { padding: 8px 18px; font-size: 13px; }
+.btn-cancel { background: #e5e9ec; color: #34495e; }
+@media (max-width: 540px) {
+  #editor-fields { grid-template-columns: 1fr; }
+  .editor-header, #editor-fields, .editor-actions { padding-left: 16px; padding-right: 16px; }
 }
-.btn-nav { background: #7f8c8d; color: #fff; padding: 3px 10px; font-size: 13px; }
-.btn-nav:disabled { opacity: 0.35; cursor: default; filter: none; }
-#page-input { width: 60px; padding: 3px 6px; border: 1px solid #bdc3c7; border-radius: 3px; font-size: 13px; text-align: center; }
-#page-of { font-size: 12px; color: #555; white-space: nowrap; }
