@@ -198,20 +198,25 @@ GenerativeAI::Credential SelectAiModelDialog::credential() const
 	return cred;
 }
 
-ProviderInfo const *SelectAiModelDialog::current_provider_info() const
+ProviderInfo const *SelectAiModelDialog::provider_info(GenerativeAI::ProviderID provider_id) const
 {
 	ProviderInfo const *provider = nullptr;
+	ProviderInfo const *custom_provider = nullptr;
 	
-	ModelConf const *confp = current_modelconf();
-	if (confp) {
-		for (GenerativeAI::ProviderInfo const &info : GenerativeAI::complete_provider_table()) {
-			if (info.id == confp->model.provider_id()) {
-				provider = &info;
-				break;
-			}
+	for (GenerativeAI::ProviderInfo const &info : GenerativeAI::complete_provider_table()) {
+		if (info.id == provider_id) {
+			provider = &info;
+			break;
+		}
+		if (info.id == ProviderID::Custom) {
+			custom_provider = &info;
 		}
 	}
 	
+	if (!provider) {
+		provider = custom_provider;
+	}
+	Q_ASSERT(provider);
 	return provider;
 }
 
@@ -260,7 +265,7 @@ void SelectAiModelDialog::on_pushButton_load_preset_clicked()
 		
 		// API キー表示欄を更新
 		// setTextAndDeselect(ui->lineEdit_cred_symbol, conf.api_key_symbol);
-		ProviderInfo const *provider = current_provider_info();
+		ProviderInfo const *provider = provider_info(conf.model.provider_id());
 		if (provider) {
 			conf.api_key_symbol = provider->env_name;
 		}
@@ -302,8 +307,8 @@ void SelectAiModelDialog::on_comboBox_provider_currentIndexChanged(int index)
 	if (index >= 0 && index < ui->comboBox_provider->count()) {
 		GenerativeAI::ProviderID provider_id = (GenerativeAI::ProviderID)ui->comboBox_provider->itemData(index).toInt();
 		
-		ProviderInfo const *provider = current_provider_info();
-		if (!provider) return;
+		ProviderInfo const *provider = provider_info(provider_id);
+		Q_ASSERT(provider);
 		
 		ModelConf *conf = current_modelconf();
 		if (!conf) return;
@@ -552,6 +557,7 @@ void SelectAiModelDialog::on_pushButton_query_models_clicked()
 			ui->comboBox_model->setCurrentIndex(index);
 			// *p = conf;
 		}
+		on_comboBox_model_currentTextChanged(selected_model_name);
 	}
 }
 
@@ -597,6 +603,10 @@ void SelectAiModelDialog::selectItem(int row)
 	}
 	
 	ui->comboBox_provider->setCurrentText(QString::fromStdString(conf.model.provider_description()));
+	{
+		int index = ui->comboBox_provider->currentIndex();
+		on_comboBox_provider_currentIndexChanged(index);
+	}
 	
 	ui->comboBox_api_type->setCurrentText(QString::fromStdString(conf.api_type));
 	

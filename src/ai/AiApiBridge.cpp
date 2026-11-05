@@ -291,7 +291,11 @@ struct AiChatResponseParser : public GenerativeAI::AbstractVisitor<AiResult> {
 		}
 		if (ret.d.ex.api_id == GenerativeAI::ProviderID::Anthropic) {
 			if (!ret.d.ex.anthropic.content.empty()) {
-				ret.d.content = ret.d.ex.anthropic.content.front().text;
+				for (AiResponseEx::AnthropicContentItem const &item : ret.d.ex.anthropic.content) {
+					if (item.type == "text") {
+						ret.d.content += item.text;
+					}
+				}
 			}
 		} else if (ret.d.ex.api_id == GenerativeAI::ProviderID::OpenAI_responses) {
 			if (!ret.d.ex.openai.output.empty()) {

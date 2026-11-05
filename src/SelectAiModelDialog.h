@@ -50,7 +50,7 @@ private:
 	
 	void save_api_keys();
 	std::string default_model_guid() const;
-	const GenerativeAI::ProviderInfo *current_provider_info() const;
+	const GenerativeAI::ProviderInfo *provider_info(GenerativeAI::ProviderID provider_id) const;
 public:
 	explicit SelectAiModelDialog(QWidget *parent);
 	~SelectAiModelDialog();
