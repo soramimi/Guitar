@@ -72,7 +72,7 @@ std::string GitDiffManager::diffObjects(GitRunner g, std::string const &a_id, st
 {
 	std::string path_prefix = PATH_PREFIX;
 	GitDiffOption opt;
-	opt.ignore_space_change = true;
+	// opt.ignore_space_change = true;
 	if (misc::starts_with(b_id, path_prefix)) {
 		std::string path = b_id.substr(path_prefix.size());
 		return g.diff_to_file(a_id, path, opt);
@@ -84,7 +84,7 @@ std::string GitDiffManager::diffObjects(GitRunner g, std::string const &a_id, st
 std::string GitDiffManager::diffFiles(GitRunner g, std::string const &a_path, std::string const &b_path)
 {
 	GitDiffOption opt;
-	opt.ignore_space_change = true;
+	// opt.ignore_space_change = true;
 	return g.diff_file(a_path, b_path, opt);
 }
 
