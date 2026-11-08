@@ -21,7 +21,7 @@ DEFINES += USE_CUSTOM_DICTIONARY_LOADER
 unix:LIBS += -ldl
 win32:LIBS += -lole32 -loleaut32
 
-LIBS += -lz
+# LIBS += -lz
 LIBS += -lzstd
 
 # CONFIG += use_cudachi
@@ -112,7 +112,6 @@ SOURCES += \
 	mecab/mecab/src/viterbi.cpp \
 	mecab/mecab/src/writer.cpp \
 	src/AbstractSimpleIO.cpp \
-	src/gzip.cpp \
 	src/libmain.cpp
 	
 # SOURCES += \

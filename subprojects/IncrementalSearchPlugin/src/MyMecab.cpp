@@ -6,8 +6,9 @@
 #include <mecab.h>
 #include <string>
 #include <vector>
-#include "gzip.h"
+// #include "gzip.h"
 #include "zs.h"
+#include "AbstractSimpleIO.h"
 
 using namespace incrementalsearch;
 
