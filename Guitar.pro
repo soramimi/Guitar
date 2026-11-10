@@ -683,3 +683,5 @@ include($$PROCESS_PRI)
 
 LOCALVAULT_SRC = $$SRC/localvault/src
 include($$SRC/localvault/qmake/localvault.pri)
+
+HEADERS += $$SRC/ai/AiHttp.h

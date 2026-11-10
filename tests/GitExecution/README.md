@@ -8,6 +8,7 @@ cd _build-git-execution
 qmake6 ../tests/GitExecution/GitExecution.pro CONFIG+=release CONFIG+=reuse_app_objects
 make -j2
 QT_QPA_PLATFORM=offscreen ./GitExecutionTest
+python3 ../tests/GitExecution/tls_test.py ./GitExecutionTest
 ```
 
 Qt 6 and GoogleTest are required. `reuse_app_objects` links the already-built
@@ -25,3 +26,12 @@ one file without changing others, stage/unstage, Git's quoted output, rename
 arrows, file history and AI diff assembly. Windows serialization is checked by
 portable unit cases; execution through CreateProcessW still needs native Windows
 validation.
+
+AI regressions use an in-process HTTP stub and a Python loopback TLS server.
+They verify index-only diffs (including initial/root/amend commits), strict JSON
+validation, size limits, cancellation/deadlines, response limits, redirect policy,
+untrusted-certificate rejection, and omission of dummy credentials/diffs from
+logs. No external AI service or real API key is used. The AI transport has a
+120-second total deadline, a 4 MiB response limit and 25 ms cancellation polling;
+commit diffs are limited to 200000 bytes and include text patches/binary summaries
+from the index, without running external diff or textconv programs.

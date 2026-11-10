@@ -121,7 +121,7 @@ struct WebContext::Private {
 	WebProxy http_proxy;
 	WebProxy https_proxy;
 	bool broken_pipe = false;
-	bool strict_certificate_verification = false; // 既存動作との互換性のためデフォルト無効
+	bool strict_certificate_verification = true;
 };
 
 struct WebClient::Private {

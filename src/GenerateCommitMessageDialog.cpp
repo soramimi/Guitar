@@ -23,12 +23,11 @@ QListWidgetItem *new_QListWidgetItem(QString const &text)
 }
 
 struct GenerateCommitMessageDialog::Private {
-	std::vector<GenerativeAI::Model> ai_models;
+	std::vector<GenerativeAI::ModelConf> ai_models;
+	bool busy = false;
 	CommitMessageGenerator::CommitPair commits;
 	GenerateCommitMessageThread generator;
 	QStringList checked_items;
-	std::string diff;
-	std::string status_s_u;
 };
 
 GenerateCommitMessageDialog::GenerateCommitMessageDialog(QWidget *parent)
@@ -38,7 +37,7 @@ GenerateCommitMessageDialog::GenerateCommitMessageDialog(QWidget *parent)
 {
 	ui->setupUi(this);
 
-	int default_index;
+	int default_index = -1;
 	std::vector<GenerativeAI::ModelConf> models;
 	QString path = global->aimodels_json_path();
 	auto opt = GenerativeAI::ModelConf::load(this, path.toStdString().c_str());
@@ -63,7 +62,7 @@ GenerateCommitMessageDialog::GenerateCommitMessageDialog(QWidget *parent)
 
 	m->generator.start();
 	
-	connect(&m->generator, &GenerateCommitMessageThread::ready, this, &GenerateCommitMessageDialog::onReady);
+	connect(&m->generator, &GenerateCommitMessageThread::ready, this, &GenerateCommitMessageDialog::onReady, Qt::QueuedConnection);
 
 	ui->checkBox_hint->setCheckState(Qt::Unchecked);
 	ui->lineEdit_hint->setEnabled(false);
@@ -75,6 +74,7 @@ GenerateCommitMessageDialog::GenerateCommitMessageDialog(QWidget *parent)
 GenerateCommitMessageDialog::~GenerateCommitMessageDialog()
 {
 	m->generator.stop();
+	if (m->busy) GlobalRestoreOverrideCursor();
 	delete ui;
 	delete m;
 }
@@ -91,10 +91,10 @@ void GenerateCommitMessageDialog::updateModels(std::vector<GenerativeAI::ModelCo
 	ui->comboBox_ai_models->clear();
 	for (size_t i = 0; i < models.size(); i++) {
 		GenerativeAI::ModelConf const &conf = models[i];
-		m->ai_models.push_back(conf.model);
+		m->ai_models.push_back(conf);
 		ui->comboBox_ai_models->addItem((QS)conf.name);
 	}
-	ui->comboBox_ai_models->setCurrentIndex(default_index);
+	ui->comboBox_ai_models->setCurrentIndex(default_index >= 0 ? default_index : (models.empty() ? -1 : 0));
 }
 
 std::tuple<GenerativeAI::Model, GenerativeAI::Credential> GenerateCommitMessageDialog::ai_model()
@@ -122,86 +122,41 @@ std::tuple<GenerativeAI::Model, GenerativeAI::Credential> GenerateCommitMessageD
 		return std::string();
 	};
 	
-	{
-		QString guid;
-		{
-			MySettings s;
-			s.beginGroup("AI");
-			guid = s.value("DefaultModelGUID").toString();
-			s.endGroup();
+	if (index >= 0 && static_cast<size_t>(index) < m->ai_models.size()) {
+		auto const &conf = m->ai_models[index];
+		GenerativeAI::Credential cred;
+		if (!conf.api_key_symbol.empty()) {
+			auto key = QueryApiKey(conf.api_key_symbol, conf.api_key_method == GenerativeAI::key_store_environment);
+			if (!key) return {};
+			cred.api_key = *key;
 		}
-		
-		QString path = global->aimodels_json_path();
-		std::optional<std::vector<GenerativeAI::ModelConf>> opt = GenerativeAI::ModelConf::load(this, path.toStdString().c_str());
-		if (opt) {
-			if (index >= 0 && (size_t)index < opt->size()) {
-				GenerativeAI::ModelConf const &conf = (*opt)[index];
-				GenerativeAI::Credential cred;
-				if (!conf.api_key_symbol.empty()) {
-					auto opt = QueryApiKey(conf.api_key_symbol, conf.api_key_method == GenerativeAI::key_store_environment);
-					if (!opt) return {};
-					cred.api_key = *opt;
-				}
-				return {conf.model, cred};
-			}
-		}
+		return {conf.model, cred};
 	}
-
-	return {*global->appsettings.ai_model, {}};
-}
-
-bool GenerateCommitMessageDialog::_generate(std::string const &diff, std::string const &status_s_u)
-{
-	m->diff = diff;
-	m->status_s_u = status_s_u;
-
-	// experimental: additional hint for AI generation
-	std::string hint;
-	if (ui->checkBox_hint->isChecked()) {
-		hint = ui->lineEdit_hint->text().toStdString();
-	}
-	
-	m->checked_items = message();
-
-	ui->listWidget->clear();
-
-	for (QString const &s : m->checked_items) {
-		auto *item = new_QListWidgetItem(s);
-		item->setCheckState(Qt::Checked);
-		ui->listWidget->addItem(item);
-	}
-
-	ui->pushButton_regenerate->setEnabled(false);
-	
-	auto [model, cred] = ai_model();
-	if (!model) return false; // canceled
-	
-	GlobalSetOverrideWaitCursor();
-	m->generator.request(model, cred, diff, status_s_u, hint);
-	return true;
+	return {};
 }
 
 bool GenerateCommitMessageDialog::generate()
 {
-	try {
-		GitRunner g = global->mainwindow->git();
-		std::string diff = CommitMessageGenerator::make_diff(g, m->commits);
-		std::string status_s_u;
-		g.status_s_u(&status_s_u);
-		return _generate(diff, status_s_u);
-	} catch (std::exception const &e) {
-		QMessageBox::critical(this, tr("Failed to prepare commit diff"), QString::fromUtf8(e.what()));
-	} catch (QString const &e) {
-		QMessageBox::critical(this, tr("Failed to prepare commit diff"), e);
-	} catch (...) {
-		QMessageBox::critical(this, tr("Failed to prepare commit diff"), tr("Unknown error while preparing the commit diff."));
+	auto [model, cred] = ai_model();
+	if (!model) return false; // No state changes on model/Vault cancellation.
+	std::string hint;
+	if (ui->checkBox_hint->isChecked()) hint = ui->lineEdit_hint->text().toStdString();
+	auto runner = global->mainwindow->git();
+	std::string command = global->appsettings.git_command.toStdString();
+	std::string dir = runner.workingDir();
+	auto commits = m->commits;
+	m->checked_items = message();
+	ui->listWidget->clear();
+	for (auto const &text : m->checked_items) {
+		auto *item = new_QListWidgetItem(text); item->setCheckState(Qt::Checked); ui->listWidget->addItem(item);
 	}
-	return false;
-}
-
-std::string GenerateCommitMessageDialog::diffText() const
-{
-	return m->diff;
+	ui->pushButton_regenerate->setEnabled(false);
+	ui->comboBox_ai_models->setEnabled(false);
+	if (!m->busy) { GlobalSetOverrideWaitCursor(); m->busy = true; }
+	m->generator.request(model, cred, [command, dir, commits](auto cancelled) {
+		return CommitMessageGenerator::make_diff(command, dir, commits, cancelled);
+	}, hint);
+	return true;
 }
 
 QStringList GenerateCommitMessageDialog::message() const
@@ -224,7 +179,8 @@ void GenerateCommitMessageDialog::on_pushButton_regenerate_clicked()
 
 void GenerateCommitMessageDialog::onReady(const GeneratedCommitMessage &result)
 {
-	GlobalRestoreOverrideCursor();
+	if (m->busy) { GlobalRestoreOverrideCursor(); m->busy = false; }
+	ui->comboBox_ai_models->setEnabled(true);
 
 	if (result) {
 		for (std::string const &s : result.messages()) {
@@ -249,6 +205,8 @@ void GenerateCommitMessageDialog::on_listWidget_itemDoubleClicked(QListWidgetIte
 
 void GenerateCommitMessageDialog::done(int stat)
 {
+	m->generator.stop();
+	if (m->busy) { GlobalRestoreOverrideCursor(); m->busy = false; }
 	if (stat == QDialog::Accepted) {
 		QStringList list = message();
 		if (list.empty()) {

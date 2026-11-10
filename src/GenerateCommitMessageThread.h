@@ -1,35 +1,36 @@
 #ifndef GENERATECOMMITMESSAGETHREAD_H
 #define GENERATECOMMITMESSAGETHREAD_H
-
 #include "GeneratedCommitMessage.h"
 #include <QObject>
-#include <ai/CommitMessageGenerator.h>
 #include <condition_variable>
 #include <mutex>
 #include <thread>
+#include <optional>
+#include <functional>
 
 class GenerateCommitMessageThread : public QObject {
 	Q_OBJECT
-public:
+	struct Job {
+		GenerativeAI::Model model;
+		GenerativeAI::Credential credential;
+		std::function<std::string(std::shared_ptr<std::atomic_bool>)> prepare;
+		std::string hint;
+		std::shared_ptr<std::atomic_bool> cancelled;
+	};
 	std::mutex mutex_;
-	std::thread thread_;
 	std::condition_variable cv_;
-	bool requested_ = false;
+	std::thread thread_;
 	bool interrupted_ = false;
-	GenerativeAI::Model ai_model_;
-	GenerativeAI::Credential ai_cred_;
-	std::string diff_;
-	std::string status_s_u_;
-	std::string hint_;
-	
-	GenerateCommitMessageThread();
+	std::optional<Job> pending_;
+	std::shared_ptr<std::atomic_bool> active_;
+public:
+	GenerateCommitMessageThread() = default;
 	~GenerateCommitMessageThread();
 	void start();
 	void stop();
-	void request(GenerativeAI::Model ai_model, GenerativeAI::Credential ai_cred, std::string const &diff, const std::string &status_s_u, const std::string &hint);
+	void request(GenerativeAI::Model model, GenerativeAI::Credential credential,
+	             std::function<std::string(std::shared_ptr<std::atomic_bool>)> prepare, std::string hint);
 signals:
 	void ready(GeneratedCommitMessage const &message);
-	
 };
-
-#endif // GENERATECOMMITMESSAGETHREAD_H
+#endif

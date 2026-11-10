@@ -15,7 +15,7 @@ CommitDialog::CommitDialog(MainWindow *parent, QString const &reponame, GitUser 
 	flags &= ~Qt::WindowContextHelpButtonHint;
 	setWindowFlags(flags);
 
-	connect(&generator_, &GenerateCommitMessageThread::ready, this, &CommitDialog::onReady);
+
 	generator_.start();
 	
 	updateUI(true);
@@ -158,8 +158,6 @@ void CommitDialog::setCommitIDs(CommitMessageGenerator::CommitPair const &commit
 
 void CommitDialog::on_pushButton_generate_with_ai_clicked()
 {
-	diff_ = CommitMessageGenerator::make_diff(global->mainwindow->git(), commits_);
-	
 	GenerateCommitMessageDialog dlg(this);
 	dlg.setCommitIDs(commits_);
 	dlg.show();

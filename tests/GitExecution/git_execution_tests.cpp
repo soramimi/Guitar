@@ -7,6 +7,16 @@
 #include <QProcess>
 #include <QTemporaryDir>
 #include <QStandardPaths>
+#include <QTcpServer>
+#include <QTcpSocket>
+#include <QTimer>
+#include <QComboBox>
+#include <QPushButton>
+#include <QSettings>
+#include "../../src/GenerateCommitMessageDialog.h"
+#include <QElapsedTimer>
+#include "../../src/ai/AiHttp.h"
+#include "../../src/GenerateCommitMessageThread.h"
 #include <CommandLine.h>
 #include <BasicProcessPosix.h>
 #include "../../src/ai/CommitMessageGenerator.h"
@@ -114,11 +124,11 @@ TEST_F(GitExecution, EmptyConfigValueIsNotAQuery)
 TEST_F(GitExecution, HistoryAndAiDiffHandleSpaces)
 {
     EXPECT_EQ(git->log_file("a b.txt", 10).size(), 1u);
-    write("a b.txt");
+    write("a b.txt"); git->stage("a b.txt");
     auto diff = CommitMessageGenerator::make_diff(gitProgram.toStdString(), root.toStdString(), {});
     EXPECT_NE(diff.find("+changed"), std::string::npos);
     write(" leading\nname.txt", "base\n"); direct({"add", "--", " leading\nname.txt"});
-    direct({"commit", "-qm", "special path"}); write(" leading\nname.txt", "special-change\n");
+    direct({"commit", "-qm", "special path"}); write(" leading\nname.txt", "special-change\n"); git->stage(" leading\nname.txt");
     diff = CommitMessageGenerator::make_diff(gitProgram.toStdString(), root.toStdString(), {});
     EXPECT_NE(diff.find("+special-change"), std::string::npos);
     EXPECT_THROW(CommitMessageGenerator::make_diff(gitProgram.toStdString(), root.toStdString(), {"invalid-revision", ""}), std::runtime_error);
@@ -149,6 +159,128 @@ TEST_F(GitExecution, SshKeyIsShellDataNotCode)
     EXPECT_TRUE(QFile::exists(root + "/ssh-args"));
     EXPECT_TRUE(read("ssh-args").contains(key.toUtf8() + '\0'));
 }
+TEST_F(GitExecution, AiDiffUsesIndexAndInitialCommit)
+{
+    write("a b.txt", "STAGED_ONLY\n"); git->stage("a b.txt"); write("a b.txt", "UNSTAGED_PRIVATE\n");
+    auto diff = CommitMessageGenerator::make_diff(gitProgram.toStdString(), root.toStdString(), {});
+    EXPECT_NE(diff.find("+STAGED_ONLY"), std::string::npos);
+    EXPECT_EQ(diff.find("UNSTAGED_PRIVATE"), std::string::npos);
+    auto amended = CommitMessageGenerator::make_diff(gitProgram.toStdString(), root.toStdString(), {"", "HEAD"});
+    EXPECT_NE(amended.find("+STAGED_ONLY"), std::string::npos);
+    EXPECT_NE(amended.find("+base"), std::string::npos);
+    QDir fresh(root + "/fresh"); ASSERT_TRUE(QDir().mkpath(fresh.path()));
+    QProcess init; init.start(gitProgram, {"-C", fresh.path(), "init", "-q"}); ASSERT_TRUE(init.waitForFinished());
+    QFile file(fresh.filePath("new.txt")); ASSERT_TRUE(file.open(QIODevice::WriteOnly)); file.write("FIRST_COMMIT\n"); file.close();
+    QProcess add; add.start(gitProgram, {"-C", fresh.path(), "add", "new.txt"}); ASSERT_TRUE(add.waitForFinished());
+    diff = CommitMessageGenerator::make_diff(gitProgram.toStdString(), fresh.path().toStdString(), {});
+    EXPECT_NE(diff.find("FIRST_COMMIT"), std::string::npos);
+}
+TEST_F(GitExecution, AiDiffRejectsOversizeAndCancellation)
+{
+    write("large.txt", QByteArray(CommitMessageGenerator::max_diff_size + 1, 'a'));
+    git->stage("large.txt");
+    EXPECT_THROW(CommitMessageGenerator::make_diff(gitProgram.toStdString(), root.toStdString(), {}), std::runtime_error);
+    auto cancel = std::make_shared<std::atomic_bool>(true);
+    EXPECT_THROW(CommitMessageGenerator::make_diff(gitProgram.toStdString(), root.toStdString(), {}, cancel), std::runtime_error);
+}
+TEST(AiResponse, RequiresCompleteNonemptyMessageSchema)
+{
+    for (auto text : {"not json", "{}", "{\"messages\":[]}", "{\"unrelated\":[\"wrong\"]}", "{\"messages\":[42]}", "{\"messages\":[\" \"]}", "{\"messages\":[\"partial\"]"}) {
+        AiResult ai; ai.d.completed = true; ai.d.content = text;
+        EXPECT_TRUE(CommitMessageGenerator::parse_response({}, ai).error) << text;
+    }
+    AiResult ai; ai.d.completed = true; ai.d.content = R"({"messages":["Good message"]})";
+    auto result = CommitMessageGenerator::parse_response({}, ai);
+    EXPECT_FALSE(result.error); ASSERT_EQ(result.messages.size(), 1u); EXPECT_EQ(result.messages[0], "Good message");
+}
+TEST(AiWorker, ImmediateRequestAndExceptionsProduceResult)
+{
+    GenerateCommitMessageThread worker; QEventLoop loop; bool received = false;
+    QObject::connect(&worker, &GenerateCommitMessageThread::ready, &loop, [&](auto const &result) { received = true; EXPECT_FALSE(static_cast<bool>(result)); loop.quit(); }, Qt::QueuedConnection);
+    worker.start();
+    worker.request({}, {}, [](auto) -> std::string { throw std::runtime_error("test preparation failed"); }, "");
+    QTimer::singleShot(2000, &loop, &QEventLoop::quit); loop.exec();
+    EXPECT_TRUE(received); worker.stop();
+    for (int i = 0; i < 20; ++i) { worker.start(); worker.stop(); }
+}
+TEST(AiWorker, StopCancelsPreparation)
+{
+    GenerateCommitMessageThread worker; std::atomic_bool started{false}; worker.start();
+    worker.request({}, {}, [&](auto token) { started.store(true); while (!token->load()) std::this_thread::sleep_for(std::chrono::milliseconds(1)); return ""; }, "");
+    QElapsedTimer timer; timer.start();
+    while (!started.load() && timer.elapsed() < 1000) std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    ASSERT_TRUE(started.load()); timer.restart(); worker.stop(); EXPECT_LT(timer.elapsed(), 500);
+}
+TEST(AiTransport, CancellationAndDeadlineBoundSilentServer)
+{
+    QTcpServer server; ASSERT_TRUE(server.listen(QHostAddress::LocalHost));
+    QObject::connect(&server, &QTcpServer::newConnection, &server, [&] { auto socket = server.nextPendingConnection(); QObject::connect(socket, &QTcpSocket::readyRead, socket, [socket] { socket->readAll(); }); });
+    InetClient::Request request("http://127.0.0.1:" + std::to_string(server.serverPort()) + "/");
+    auto token = std::make_shared<std::atomic_bool>(false);
+    QTimer::singleShot(100, &server, [token] { token->store(true); });
+    QElapsedTimer timer; timer.start(); AiHttp http(token);
+    EXPECT_EQ(http.get(request), -1); EXPECT_LT(timer.elapsed(), 1000);
+    AiHttp deadline({}, 100); timer.restart(); EXPECT_EQ(deadline.get(request), -1); EXPECT_LT(timer.elapsed(), 1000);
+}
+TEST(AiTransport, LimitsResponseAndDoesNotFollowRedirect)
+{
+    QTcpServer server; ASSERT_TRUE(server.listen(QHostAddress::LocalHost)); int requests = 0;
+    QObject::connect(&server, &QTcpServer::newConnection, &server, [&] {
+        auto socket = server.nextPendingConnection();
+        QObject::connect(socket, &QTcpSocket::readyRead, socket, [socket, &requests] {
+            auto input = socket->readAll(); if (!input.contains("HTTP/")) return; ++requests;
+            if (input.startsWith("GET /redirect")) socket->write("HTTP/1.1 302 Found\r\nLocation: /destination\r\nContent-Length: 0\r\nConnection: close\r\n\r\n");
+            else socket->write("HTTP/1.1 200 OK\r\nContent-Length: 4194305\r\nConnection: close\r\n\r\n" + QByteArray(4194305, 'x'));
+            socket->disconnectFromHost();
+        });
+    });
+    auto base = "http://127.0.0.1:" + std::to_string(server.serverPort()); AiHttp http;
+    EXPECT_EQ(http.get(InetClient::Request(base + "/redirect")), 302); EXPECT_EQ(requests, 1);
+    EXPECT_EQ(http.get(InetClient::Request(base + "/large")), -1); EXPECT_EQ(http.content_length(), 0u);
+}
+TEST(AiDialog, MissingModelAndDeletedDefaultAreDeterministic)
+{
+    QTemporaryDir directory; ASSERT_TRUE(directory.isValid());
+    auto oldSecret = global->app_secret_config_dir; auto oldConfig = global->config_file_path;
+    struct Restore { QString secret, config; ~Restore() { global->app_secret_config_dir = secret; global->config_file_path = config; } } restore{oldSecret, oldConfig};
+    global->app_secret_config_dir = directory.path(); global->config_file_path = directory.filePath("settings.ini");
+    {
+        GenerateCommitMessageDialog dialog(nullptr);
+        auto combo = dialog.findChild<QComboBox *>("comboBox_ai_models"); ASSERT_NE(combo, nullptr); EXPECT_EQ(combo->currentIndex(), -1);
+        auto button = dialog.findChild<QPushButton *>("pushButton_regenerate"); ASSERT_NE(button, nullptr);
+        EXPECT_FALSE(dialog.generate()); EXPECT_TRUE(button->isEnabled()); EXPECT_EQ(QApplication::overrideCursor(), nullptr);
+    }
+    GenerativeAI::ModelConf conf; conf.guid = "present-model"; conf.name = "Test model";
+    conf.model = GenerativeAI::Model(GenerativeAI::ProviderID::OpenAI_chat_completions, "test-model");
+    GenerativeAI::ModelConf::save(nullptr, global->aimodels_json_path().toStdString().c_str(), {conf});
+    { QSettings settings(global->config_file_path, QSettings::IniFormat); settings.setValue("AI/DefaultModelGUID", "deleted-model"); }
+    GenerateCommitMessageDialog dialog(nullptr); auto combo = dialog.findChild<QComboBox *>("comboBox_ai_models");
+    ASSERT_NE(combo, nullptr); EXPECT_EQ(combo->currentIndex(), 0); EXPECT_EQ(combo->currentText(), "Test model");
+}
+TEST(AiTransport, SuccessfulLocalCompletionDoesNotLogSecretsOrDiff)
+{
+    QTcpServer server; ASSERT_TRUE(server.listen(QHostAddress::LocalHost)); QByteArray received;
+    QObject::connect(&server, &QTcpServer::newConnection, &server, [&] {
+        auto socket = server.nextPendingConnection();
+        QObject::connect(socket, &QTcpSocket::readyRead, socket, [&, socket] {
+            received += socket->readAll();
+            if (!received.contains("DUMMY_DIFF_SENTINEL")) return;
+            QByteArray body = R"({"object":"chat.completion","choices":[{"message":{"role":"assistant","content":"{\"messages\":[\"Local summary\"]}"},"finish_reason":"stop"}]})";
+            socket->write("HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: " + QByteArray::number(body.size()) + "\r\nConnection: close\r\n\r\n" + body);
+            socket->disconnectFromHost();
+        });
+    });
+    QTemporaryDir logs; QString path = logs.filePath("ai.log"); Logger::start(); Logger::open(path.toStdString());
+    GenerativeAI::Model model(GenerativeAI::ProviderID::OpenAI_chat_completions, "test-model");
+    model.endpoint_url_ = "http://127.0.0.1:" + std::to_string(server.serverPort()) + "/v1/chat/completions";
+    AiApiBridge bridge(model, {"DUMMY_KEY_SENTINEL"});
+    auto result = CommitMessageGenerator::parse_response(model, bridge.request("DUMMY_DIFF_SENTINEL", ""));
+    Logger::stop();
+    EXPECT_FALSE(result.error); ASSERT_EQ(result.messages.size(), 1u); EXPECT_EQ(result.messages[0], "Local summary");
+    EXPECT_TRUE(received.contains("DUMMY_KEY_SENTINEL"));
+    QFile file(path); ASSERT_TRUE(file.open(QIODevice::ReadOnly)); auto contents = file.readAll();
+    EXPECT_FALSE(contents.contains("DUMMY_KEY_SENTINEL")); EXPECT_FALSE(contents.contains("DUMMY_DIFF_SENTINEL"));
+}
 int main(int argc, char **argv)
 {
     if (argc >= 2 && std::string(argv[1]) == "--echo-argv") {
@@ -157,6 +289,12 @@ int main(int argc, char **argv)
     }
     QApplication app(argc, argv); executable = QCoreApplication::applicationFilePath();
     WebClient::initialize(); ApplicationGlobal state; global = &state;
+    if (argc == 3 && std::string(argv[1]) == "--tls-check") {
+        WebClient legacy(state.webcx()); InetClient::Request request(argv[2]);
+        int oldStatus = legacy.get(request); AiHttp secure; int status = secure.get(request);
+        printf("strict=%d legacy=%d ai=%d\n", state.webcx()->is_strict_certificate_verification(), oldStatus, status);
+        return !state.webcx()->is_strict_certificate_verification() || oldStatus >= 0 || status >= 0;
+    }
     state.file_type_detector = loadPlugin<FileType, FileTypeInterface>("filetypeplugin");
     if (!state.file_type_detector) return 2;
     ::testing::InitGoogleTest(&argc, argv); int result = RUN_ALL_TESTS();

@@ -5,6 +5,7 @@
 #include <common/jstream.h>
 #include <common/misc.h>
 #include <inet/httpstatus.h>
+#include "AiHttp.h"
 #include <inet/inetclient.h>
 #include <subprojects/FileTypePlugin/src/FileTypeInterface.h>
 #include <subprojects/IncrementalSearchPlugin/src/IncrementalSearch.h>
@@ -23,12 +24,8 @@ struct AiApiBridge::Private {
 	std::string system_role;
 	std::shared_ptr<AbstractInetClient> http_;
 
-#ifdef QT_NO_DEBUG
-	bool save_log = false; // リクエスト/レスポンスをログに記録するか
-#else
-	bool save_log = true;
-#endif
-	// bool save_log = true;
+	std::shared_ptr<std::atomic_bool> cancelled;
+
 };
 
 /**
@@ -321,7 +318,7 @@ struct AiChatResponseParser : public GenerativeAI::AbstractVisitor<AiResult> {
 		}
 		return ret;
 	}
-	
+
 	AiResult case_Anthropic()
 	{
 		AiResult ret = parse_responses(GenerativeAI::ProviderID::Anthropic);
@@ -381,13 +378,13 @@ struct AiChatResponseParser : public GenerativeAI::AbstractVisitor<AiResult> {
 	{
 		return parse_openai_chat_completions_format();
 	}
-	
+
 	/// PFN：OpenAI Chat Completions 互換形式
 	AiResult case_PFN()
 	{
 		return parse_openai_chat_completions_format();
 	}
-	
+
 	AiResult case_MoonshotAI()
 	{
 		switch (model.api_compatibility()) {
@@ -397,13 +394,13 @@ struct AiChatResponseParser : public GenerativeAI::AbstractVisitor<AiResult> {
 			return parse_openai_chat_completions_format();
 		}
 	}
-	
+
 	/// Sakura：OpenAI Chat Completions 互換形式
 	AiResult case_Sakura()
 	{
 		return parse_openai_chat_completions_format();
 	}
-	
+
 	AiResult case_Cloudflare()
 	{
 		AiResult ret(model.api_compatibility());
@@ -460,7 +457,7 @@ struct AiChatResponseParser : public GenerativeAI::AbstractVisitor<AiResult> {
 		}
 		return ret;
 	}
-	
+
 	AiResult case_DeepSeek()
 	{
 		return case_Custom();
@@ -470,7 +467,7 @@ struct AiChatResponseParser : public GenerativeAI::AbstractVisitor<AiResult> {
 	{
 		return case_Custom();
 	}
-	
+
 	AiResult case_OrcaRouter()
 	{
 		return case_Custom();
@@ -480,17 +477,17 @@ struct AiChatResponseParser : public GenerativeAI::AbstractVisitor<AiResult> {
 	{
 		return case_Custom();
 	}
-	
+
 	AiResult case_Merge()
 	{
 		return case_Custom();
 	}
-	
+
 	AiResult case_Kilo()
 	{
 		return case_Custom();
 	}
-	
+
 	/**
 	 * @brief Ollama のレスポンスを解析する。
 	 *
@@ -546,12 +543,12 @@ struct _PromptJsonGenerator : public GenerativeAI::AbstractVisitor<std::string> 
 		: model(model)
 		, prompt(prompt)
 	{}
-	
+
 	void set_prefill(std::string const &prefill)
 	{
 		prefill_ = prefill;
 	}
-	
+
 	std::string modelname() const
 	{
 		return model.model_name();
@@ -570,7 +567,7 @@ struct _PromptJsonGenerator : public GenerativeAI::AbstractVisitor<std::string> 
 			return case_OpenAI_chat_completions();
 		}
 	}
-	
+
 	/// 未知プロバイダー：空文字列を返す
 	std::string case_Custom()
 	{
@@ -724,13 +721,13 @@ struct _PromptJsonGenerator : public GenerativeAI::AbstractVisitor<std::string> 
 	{
 		return case_OpenAI_chat_completions();
 	}
-	
+
 	/// PFN：OpenAI Chat Completions 互換形式
 	std::string case_PFN()
 	{
 		return case_OpenAI_chat_completions();
 	}
-	
+
 	/// Kimi
 	std::string case_MoonshotAI()
 	{
@@ -743,7 +740,7 @@ struct _PromptJsonGenerator : public GenerativeAI::AbstractVisitor<std::string> 
 			return case_OpenAI_chat_completions();
 		}
 	}
-	
+
 	/// Sakura：OpenAI Chat Completions 互換形式
 	std::string case_Sakura()
 	{
@@ -778,7 +775,7 @@ struct _PromptJsonGenerator : public GenerativeAI::AbstractVisitor<std::string> 
 		});
 		return w;
 	}
-	
+
 	std::string case_Cloudflare()
 	{
 		jstream::Writer w;
@@ -798,12 +795,12 @@ struct _PromptJsonGenerator : public GenerativeAI::AbstractVisitor<std::string> 
 		});
 		return w;
 	}
-	
+
 	std::string case_OpenRouter()
 	{
 		return case_OpenAI_chat_completions();
 	}
-	
+
 	std::string case_OrcaRouter()
 	{
 		return case_OpenAI_chat_completions();
@@ -813,7 +810,7 @@ struct _PromptJsonGenerator : public GenerativeAI::AbstractVisitor<std::string> 
 	{
 		return case_OpenAI_chat_completions();
 	}
-	
+
 	std::string case_Merge()
 	{
 		// return case_OpenAI_responses();
@@ -827,16 +824,16 @@ struct _PromptJsonGenerator : public GenerativeAI::AbstractVisitor<std::string> 
 				});
 			});
 			w.boolean("stream", false);
-			
+
 		});
 		return w;
 	}
-	
+
 	std::string case_Kilo()
 	{
 		return case_OpenAI_chat_completions();
 	}
-	
+
 	/// LM Studio：Ollama 互換形式
 	std::string case_LMStudio()
 	{
@@ -888,6 +885,11 @@ void AiApiBridge::set_ai_model(GenerativeAI::Model model, GenerativeAI::Credenti
 	m->ai_credential = cred;
 }
 
+void AiApiBridge::set_cancellation_token(std::shared_ptr<std::atomic_bool> token)
+{
+	m->cancelled = std::move(token);
+}
+
 void AiApiBridge::set_system_role(const std::string &role)
 {
 	m->system_role = role;
@@ -896,13 +898,13 @@ void AiApiBridge::set_system_role(const std::string &role)
 AiResult AiApiBridge::open()
 {
 	// constexpr GenerativeAI::EndPoint::Type eptype = GenerativeAI::EndPoint::Type::Chat;
-	
+
 	// if (model().provider_id() == GenerativeAI::ProviderID::Unknown) {
 	// 	return Error("error", "AI model is not defined.");
 	// }
-	
+
 	m->http_ = global_inet_client();
-	
+
 	return {model().api_compatibility()};
 }
 
@@ -922,7 +924,7 @@ AbstractInetClient *AiApiBridge::http()
 AiResult AiApiBridge::x_request(const Query2Request &req)
 {
 	if (!req) return {model().api_compatibility()};
-	
+
 	std::string request_json;
 	if (req.type == Query2Request::TEXT) {
 		request_json = generate_prompt_json(model(), req.prompt_text, m->system_role);
@@ -931,20 +933,19 @@ AiResult AiApiBridge::x_request(const Query2Request &req)
 	} else {
 		return {model().api_compatibility()};
 	}
-	
-	if (m->save_log) {
-		logprintf(LOG_RAW, "%s\n", request_json.c_str());
-	}
-	
+
+
+
 	int ret = -1;
+	AiHttp transport(m->cancelled);
 	{
 		InetClient::Request web_req;
 		{
 			// APIキーなどの認証情報を取得してリクエストヘッダーを組み立てる
-			
+
 			auto cred = global_get_ai_credential(model());
 			auto aireq = GenerativeAI::make_request(model().provider_id(), model(), cred);
-			
+
 			web_req.set_location(aireq.endpoint.url(GenerativeAI::EndPoint::Type::Chat, model(), cred, {}));
 			for (std::string const &h : aireq.header) {
 				web_req.add_header(h);
@@ -954,25 +955,23 @@ AiResult AiApiBridge::x_request(const Query2Request &req)
 			InetClient::Post post;
 			post.content_type = "application/json";
 			post.data.insert(post.data.end(), request_json.begin(), request_json.end());
-			ret = http()->post(web_req, &post);
+			ret = transport.post(web_req, &post);
 		}
 	}
-	
+
 	std::string response_json;
 	if (ret >= 0) {
-		char const *data = http()->content_data();
-		size_t size = http()->content_length();
+		char const *data = transport.content_data();
+		size_t size = transport.content_length();
 		response_json.assign(data, size);
-		if (m->save_log) {
-			logprintf(LOG_RAW, "%s\n", response_json.c_str());
-		}
+
 		// fprintf(stderr, "%s\n", response_json.c_str());
 	}
 	if (response_json.empty()) {
 		logprintf(LOG_DEFAULT, "No response received from AI API.\n");
 		return {model().api_compatibility()};
 	}
-	
+
 	AiResult result = AiChatResponseParser(model(), response_json).visit(model().api_compatibility());
 	return result;
 }
@@ -990,23 +989,21 @@ AiResult AiApiBridge::request(GenerativeAI::EndPoint::Type eptype, std::string c
 	// if (model().provider_id() == GenerativeAI::ProviderID::Unknown) {
 	// 	return Error("error", "AI model is not defined.");
 	// }
-	
+
 	std::string response_json;
 	{
 		std::string request_json;
 		if (eptype == GenerativeAI::EndPoint::Type::Chat) {
 			request_json = generate_prompt_json(model(), prompt, m->system_role, prefill);
-			if (m->save_log) {
-				logprintf(LOG_RAW, "%s\n", request_json.c_str());
-			}
+
 		}
-		
+
 		InetClient::Request web_req;
 		{
 			// APIキーなどの認証情報を取得してリクエストヘッダーを組み立てる
 			// GenerativeAI::Credential cred = global_get_ai_credential(model());
 			GenerativeAI::Credential cred = m->ai_credential;
-			
+
 #ifdef APP_GUITAR
 			{ // experimental: 1Password support
 				if (misc::starts_with(cred.api_key, "op://")) {
@@ -1040,65 +1037,47 @@ AiResult AiApiBridge::request(GenerativeAI::EndPoint::Type eptype, std::string c
 				}
 			}
 #endif
-			
+
 			GenerativeAI::Request ai_req = GenerativeAI::make_request(model().provider_id(), model(), cred);
-			
+
 			web_req.set_location(ai_req.endpoint.url(eptype, model(), cred, req.cursor));
 			for (std::string const &h : ai_req.header) {
 				web_req.add_header(h);
-				if (m->save_log) {
-					logprintf(LOG_DEFAULT, "%s\n", h.c_str());
-				}
+
 			}
 		}
-		
-		if (m->save_log) {
-			logprintf(LOG_DEFAULT, "%s\n", web_req.url().full_request().c_str());
-		}
-		
+
+
+
 		{
-			std::shared_ptr<AbstractInetClient> http = global_inet_client();
-			
+			AiHttp http(m->cancelled);
+
 			int ret = -1;
 			if (eptype == GenerativeAI::EndPoint::Type::Chat) {
 				InetClient::Post post;
 				post.content_type = "application/json";
 				post.data.insert(post.data.end(), request_json.begin(), request_json.end());
-				ret = http->post(web_req, &post);
+				ret = http.post(web_req, &post);
 			} else if (eptype == GenerativeAI::EndPoint::Type::Models) {
-				ret = http->get(web_req);
+				ret = http.get(web_req);
 			} else {
 				assert(0);
 			}
-			
+
 			{
-				char const *data = http->content_data();
-				size_t size = http->content_length();
+				char const *data = http.content_data();
+				size_t size = http.content_length();
 				response_json.assign(data, size);
 			}
-			
+
 			std::string_view httpstat = http_status_text(ret);
-			if (m->save_log) {
-				logprintf(LOG_DEFAULT, "%d\n", ret);
-				logprintf(LOG_DEFAULT, "%s\n", std::string(httpstat).c_str());
-				logprintf(LOG_RAW, "%s\n", response_json.c_str());
-			}
-			
-			if (ret >= 200 && ret < 300) {
-				if (m->save_log) {
-#if 0
-					FILE *fp = fopen("/tmp/ai_response.json", "wb");
-					if (fp) {
-						fwrite(response_json.data(), 1, response_json.size(), fp);
-						fclose(fp);
-					}
-#endif
-				}
-			} else {
+
+
+			if (ret < 200 || ret >= 300) {
 				std::string msg = std::to_string(ret);
 				msg += '\n';
 				msg += httpstat;
-				
+
 				std::string error_message;
 				{
 					jstream::Reader reader(response_json);
@@ -1112,26 +1091,26 @@ AiResult AiApiBridge::request(GenerativeAI::EndPoint::Type eptype, std::string c
 					msg += '\n';
 					msg += error_message;
 				}
-				
+
 				AiResult r = AiResult::Error("Error", msg);
 				r.d.content = response_json;
 				return r;
 			}
 		}
 	}
-	
-	
+
+
 	if (eptype == GenerativeAI::EndPoint::Type::Chat) {
 		return AiChatResponseParser(model(), response_json).visit(model().provider_id());
 	}
-	
+
 	if (eptype == GenerativeAI::EndPoint::Type::Models) {
 		AiResult ret{model().api_compatibility()};
 		ret.d.completed = true;
 		ret.d.content = response_json;
 		return ret;
 	}
-	
+
 	return {model().api_compatibility()};
 }
 
@@ -1154,7 +1133,7 @@ std::optional<AiResult::Models> AiApiBridge::queryModels()
 
 		has_more = false;
 		next_cursor = {};
-		
+
 		{
 			jstream::Reader reader(result.content());
 			if (model().api_compatibility() == GenerativeAI::ProviderID::Google) {

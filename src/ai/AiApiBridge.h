@@ -7,6 +7,8 @@
 #include <vector>
 #include <optional>
 #include <functional>
+#include <atomic>
+#include <memory>
 
 class AbstractInetClient;
 
@@ -218,6 +220,7 @@ public:
 	}
 	GenerativeAI::Model model() const;
 	void set_ai_model(GenerativeAI::Model model, GenerativeAI::Credential cred);
+	void set_cancellation_token(std::shared_ptr<std::atomic_bool> token);
 	void set_system_role(std::string const &role);
 	AiResult request(GenerativeAI::EndPoint::Type eptype, std::string const &prompt, const Query2Request &req, const std::string &prefill);
 	AiResult request(const std::string &prompt, const std::string &prefill);

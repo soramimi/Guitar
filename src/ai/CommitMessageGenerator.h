@@ -61,12 +61,13 @@ public:
 		api_.set_ai_model(model, cred);
 	}
 	
+	void set_cancellation_token(std::shared_ptr<std::atomic_bool> token) { api_.set_cancellation_token(std::move(token)); }
 	static Result parse_response(GenerativeAI::Model model, const AiResult &result);
 	std::pair<std::string, std::string> generatePrompt() const;
 	static bool accept_file_diff(const std::string &filename, const std::string &mimetype);
-	static std::string make_diff(const std::string &gitcommand, const std::string &dir, CommitPair const &commits);
+	static std::string make_diff(const std::string &gitcommand, const std::string &dir, CommitPair const &commits, std::shared_ptr<std::atomic_bool> cancelled = {});
 #ifdef APP_GUITAR
-	static std::string make_diff(GitRunner g, CommitPair const &commits);
+	static std::string make_diff(GitRunner g, CommitPair const &commits, std::shared_ptr<std::atomic_bool> cancelled = {});
 #endif
 
 	AiResult request();
