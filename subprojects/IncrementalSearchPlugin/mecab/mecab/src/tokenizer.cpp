@@ -12,6 +12,7 @@
 #include "tokenizer.h"
 #include "utils.h"
 #include "viterbi.h"
+#include <memory>
 
 namespace MeCab {
 namespace {
@@ -104,7 +105,9 @@ bool Tokenizer<N, P>::open(const Param &param) {
 			<< unkdic_.what();
 	CHECK_FALSE(property_.open(param)) << property_.what();
 
-	Dictionary *sysdic = new Dictionary;
+	// CHECK_FALSE returns early: retain ownership until registration succeeds.
+	std::unique_ptr<Dictionary> pending_sysdic(new Dictionary);
+	Dictionary *sysdic = pending_sysdic.get();
 
 	CHECK_FALSE(sysdic->open(create_filename(prefix, SYS_DIC_FILE).c_str()))
 			<< sysdic->what();
@@ -114,6 +117,7 @@ bool Tokenizer<N, P>::open(const Param &param) {
 
 	property_.set_charset(sysdic->charset());
 	dic_.push_back(sysdic);
+	pending_sysdic.release();
 
 	const std::string userdic = param.template get<std::string>("userdic");
 	if (!userdic.empty()) {
@@ -122,13 +126,14 @@ bool Tokenizer<N, P>::open(const Param &param) {
 		std::strncpy(buf.get(), userdic.c_str(), buf.size());
 		const size_t n = tokenizeCSV(buf.get(), dicfile.get(), dicfile.size());
 		for (size_t i = 0; i < n; ++i) {
-			Dictionary *d = new Dictionary;
+			std::unique_ptr<Dictionary> d(new Dictionary);
 			CHECK_FALSE(d->open(dicfile[i])) << d->what();
 			CHECK_FALSE(d->type() == 1)
 					<< "not a user dictionary: " << dicfile[i];
 			CHECK_FALSE(sysdic->isCompatible(*d))
 					<< "incompatible dictionary: " << dicfile[i];
-			dic_.push_back(d);
+			dic_.push_back(d.get());
+			d.release();
 		}
 	}
 

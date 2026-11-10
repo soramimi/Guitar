@@ -14,6 +14,7 @@
 #include "../../subprojects/FileTypePlugin/src/FileTypeInterface.h"
 #include "../../subprojects/IncrementalSearchPlugin/src/IncrementalSearchInterface.h"
 #include "../../subprojects/IncrementalSearchPlugin/src/romaji.h"
+#include "../../subprojects/IncrementalSearchPlugin/mecab/mecab/src/mecab.h"
 
 bool x_get_resource_i8(char const *, std::vector<char> *);
 bool x_get_resource_i16(char const *, std::vector<short int> *);
@@ -176,9 +177,30 @@ TEST(IncrementalSearchPlugin, RejectsCorruptDictionary)
     EXPECT_FALSE(x_get_resource_i8("sys.dic", &previous));
     EXPECT_EQ(previous, (std::vector<char>{'o', 'k'}));
     std::unique_ptr<IncrementalSearch> search(iface->create());
-    EXPECT_FALSE(search->open());
-    *data = restore.value;
-    EXPECT_TRUE(search->open());
+    // Repeat failure and recovery on the same engine; LSan checks ownership
+    // of dictionaries whose open() failed before Tokenizer registered them.
+    for (int i = 0; i < 8; ++i) {
+        *data = 0;
+        EXPECT_FALSE(search->open());
+        *data = restore.value;
+        ASSERT_TRUE(search->open());
+        EXPECT_TRUE(static_cast<bool>(search->match("吾輩は猫である", search->makeFilter("neko"))));
+        search.reset(iface->create());
+    }
+}
+TEST(IncrementalSearchPlugin, RejectsUnregisteredUserDictionariesWithoutLeaking)
+{
+    for (int i = 0; i < 8; ++i) {
+        // Missing resource fails open(); a system dictionary fails the user
+        // type check even though it opened successfully. Both precede dic_.
+        for (auto args : {"-d /dummy/ -u /dummy/missing.dic", "-d /dummy/ -u /dummy/sys.dic"}) {
+            std::unique_ptr<MeCab::Tagger> tagger(MeCab::createTagger(args));
+            EXPECT_EQ(tagger, nullptr) << args;
+        }
+        std::unique_ptr<MeCab::Tagger> valid(MeCab::createTagger("-d /dummy/"));
+        ASSERT_NE(valid, nullptr);
+        ASSERT_NE(valid->parseToNode("吾輩は猫である"), nullptr);
+    }
 }
 TEST(IncrementalSearchPlugin, RejectsOddSizedMatrix)
 {
