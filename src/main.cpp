@@ -188,11 +188,20 @@ int main(int argc, char *argv[])
 	
 	// load plugins
 	{
-		global->file_type_detector = loadPlugin<FileType, FileTypeInterface>("filetypeplugin"); // file type detector plugin
-		global->incremental_search = loadPlugin<IncrementalSearch, IncrementalSearchInterface>("incrementalsearchplugin"); // incremental search plugin
-		global->onepassword = loadPlugin<OnePassword, OnePasswordInterface>("onepasswordplugin"); // 1password plugin
-		if (!global->file_type_detector) exit(1);
-		if (!global->incremental_search) exit(1);
+		QString fileTypeError, searchError;
+		global->file_type_detector = loadPlugin<FileType, FileTypeInterface>("filetypeplugin", &fileTypeError);
+		global->incremental_search = loadPlugin<IncrementalSearch, IncrementalSearchInterface>("incrementalsearchplugin", &searchError);
+		if (!global->file_type_detector || !global->incremental_search) {
+			QStringList errors;
+			if (!fileTypeError.isEmpty()) errors.append(fileTypeError);
+			if (!searchError.isEmpty()) errors.append(searchError);
+			QMessageBox::critical(nullptr, "Guitar", "Required plugins could not be initialized.\n\n" + errors.join("\n"));
+			WebClient::cleanup();
+			Logger::stop();
+			return 1;
+		}
+		global->onepassword = loadPlugin<OnePassword, OnePasswordInterface>("onepasswordplugin");
+
 		if (!global->onepassword) {
 			logprintf(LOG_DEFAULT, "OnePasswordPlugin is not loaded. This may cause some features to not work properly.");
 			// exit(1); // これは必須ではないので、ロードできなくても続行する

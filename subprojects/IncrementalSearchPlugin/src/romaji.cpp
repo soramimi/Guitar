@@ -221,6 +221,7 @@ static std::vector<KanaRoma> kana_roma_table = {
 std::string convert_romaji_to_katakana(std::string_view const &romaji)
 {
 	std::string result;
+	if (romaji.empty()) return result;
 	auto Write = [&](char const *p){
 		// fwrite(p, 1, strlen(p), stdout);
 		result.append(p);
@@ -236,7 +237,7 @@ std::string convert_romaji_to_katakana(std::string_view const &romaji)
 			} else {
 				Write("ン");
 				ptr++;
-				if (ptr < end && *ptr == 'n') {
+				if (ptr < end && *ptr == 'n' && (end - ptr == 1 || !strchr("aiueoy", ptr[1]))) {
 					ptr++;
 				}
 				continue;
@@ -245,6 +246,7 @@ std::string convert_romaji_to_katakana(std::string_view const &romaji)
 		bool match = false;
 		for (KanaRoma const &item : kana_roma_table) {
 			char const *roma = item.roma;
+			if (strlen(roma) > static_cast<size_t>(end - ptr)) continue;
 			size_t i = 0;
 			while (1) {
 				if (roma[i] == 0) {
@@ -260,6 +262,7 @@ std::string convert_romaji_to_katakana(std::string_view const &romaji)
 				}
 				i++;
 			}
+			if (match) break;
 		}
 		if (!match) {
 			if (ptr + 1 < end) {

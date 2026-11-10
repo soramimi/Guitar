@@ -3,12 +3,14 @@
 
 #include <Logger.h>
 #include <QCoreApplication>
+#include <QDebug>
 #include <QPluginLoader>
 #include <QString>
 #include <joinpath.h>
 #include <memory>
+#include <exception>
 
-template <typename ImplType, typename Interface> std::shared_ptr<ImplType> loadPlugin(std::string name)
+template <typename ImplType, typename Interface> std::shared_ptr<ImplType> loadPlugin(std::string name, QString *error = nullptr)
 {
 	std::shared_ptr<ImplType> ret;
 
@@ -25,21 +27,31 @@ template <typename ImplType, typename Interface> std::shared_ptr<ImplType> loadP
 	char const *const c_name = name.c_str();
 	
 	logprintf(LOG_DEFAULT, "loading the plugin %s", path.toStdString().c_str());
-	QPluginLoader loader(path);
-	Interface *plugin = dynamic_cast<Interface *>(loader.instance());
-	if (plugin) {
-		ret = std::shared_ptr<ImplType>(plugin->create());
-		if (ret->open()) {
-			qDebug() << QString::asprintf("%s is loaded successfully.", c_name);
-		} else {
-			qDebug() << QString::asprintf("Failed to load the plugin %s", c_name);
-			return {};
-		}
-	} else {
-		qDebug() << loader.errorString();
+	auto fail = [&](QString const &reason) -> std::shared_ptr<ImplType> {
+		QString message = QString::fromStdString(name) + " (" + path + "): " + reason;
+		if (error) *error = message;
+		logprint(LOG_BOTH, message.toStdString());
 		return {};
+	};
+	if (error) error->clear();
+	try {
+		QPluginLoader loader(path);
+		QObject *instance = loader.instance();
+		if (!instance) return fail(loader.errorString());
+		Interface *plugin = dynamic_cast<Interface *>(instance);
+		if (!plugin) return fail("Incompatible plugin interface.");
+		ret.reset(plugin->create());
+		if (!ret) return fail("Plugin factory returned null.");
+		if (!ret->open()) return fail("Plugin initialization failed.");
+		qDebug() << QString::asprintf("%s is loaded successfully.", c_name);
+	} catch (std::exception const &e) {
+		return fail(QString::fromUtf8(e.what()));
+	} catch (QString const &e) {
+		return fail(e);
+	} catch (...) {
+		return fail("Unknown plugin initialization error.");
 	}
-	
+
 	return ret;
 }
 

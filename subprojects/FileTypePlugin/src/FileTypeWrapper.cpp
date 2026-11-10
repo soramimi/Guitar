@@ -1,6 +1,7 @@
 #include "FileTypeWrapper.h"
 #include "lib/magic.h"
 #include <algorithm>
+#include <cerrno>
 #include <cstring>
 #include <fcntl.h>
 #include <memory>
@@ -360,14 +361,23 @@ bool FileTypeWrapper::open()
 	MagicReader reader((char const *)magic_mgc_zst, magic_mgc_zst_len);
 	MagicWriter writer(&mgcdata_);
 	ZS zs;
-	zs.decompress([&reader](char *ptr, int len) { return reader.read(ptr, len); },
-				  [&writer](char const *ptr, int len) { return writer.write(ptr, len); });
+	if (!zs.decompress([&reader](char *ptr, int len) { return reader.read(ptr, len); },
+				  [&writer](char const *ptr, int len) { return writer.write(ptr, len); })) {
+		fprintf(stderr, "Failed to decompress magic database: %s\n", zs.error.c_str());
+		close();
+		return false;
+	}
 
 	void *bufs[1];
 	size_t sizes[1];
 	bufs[0] = mgcdata_.data();
 	sizes[0] = mgcdata_.size();
-	return 0 == magic_load_buffers((magic_set *)magic_set_, bufs, sizes, 1);
+	if (magic_load_buffers((magic_set *)magic_set_, bufs, sizes, 1) != 0) {
+		fprintf(stderr, "Failed to load magic database: %s\n", magic_error((magic_set *)magic_set_));
+		close();
+		return false;
+	}
+	return true;
 }
 
 
@@ -380,6 +390,7 @@ void FileTypeWrapper::close()
 		magic_close((magic_set *)magic_set_);
 		magic_set_ = nullptr;
 	}
+	mgcdata_.clear();
 }
 
 /**
@@ -405,9 +416,17 @@ InternalFileTypeResult FileTypeWrapper::detect(int fd) const
 				// r.mimetype = "x-filesystem/x-directory";
 				return r;
 			}
-			ssize_t nbytes = std::min(4096, (int)st.st_size);
+			if (st.st_size < 0) return {};
+			size_t nbytes = static_cast<size_t>(std::min<decltype(st.st_size)>(4096, st.st_size));
 			std::vector<unsigned char> buf(nbytes);
-			if (read(fd, buf.data(), buf.size()) == nbytes) {
+			size_t bytes_read = 0;
+			while (bytes_read < nbytes) {
+				auto count = read(fd, buf.data() + bytes_read, nbytes - bytes_read);
+				if (count < 0 && errno == EINTR) continue;
+				if (count <= 0) break;
+				bytes_read += static_cast<size_t>(count);
+			}
+			if (bytes_read == nbytes) {
 				lseek(fd, 0, SEEK_SET);
 				{
 					std::lock_guard<std::mutex> lock(mutex_);
@@ -441,8 +460,11 @@ InternalFileTypeResult FileTypeWrapper::detect(const char *filepath) const
 
 	int fd = ::open(filepath, O_RDONLY | O_BINARY | O_NONBLOCK | O_CLOEXEC);
 	if (fd != -1) {
+		struct CloseFd {
+			int fd;
+			~CloseFd() { ::close(fd); }
+		} guard{fd};
 		ret = detect(fd);
-		::close(fd);
 	}
 
 	return ret;

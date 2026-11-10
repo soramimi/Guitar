@@ -9,6 +9,7 @@ private:
 public:
 	using filesize_t = size_t;
 	std::string error;
+	// maxlen is a strict output limit; truncated frames and short writes fail.
 	bool decompress(std::function<int (char *, int)> const &in_fn, std::function<int (char const *, int)> const &out_fn, filesize_t maxlen = -1);
 	bool compress(std::function<int (char *, int)> const &in_fn, std::function<int (char const *, int)> const &out_fn);
 };

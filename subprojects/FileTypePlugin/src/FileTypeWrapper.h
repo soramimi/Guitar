@@ -18,7 +18,6 @@ private:
 	mutable std::mutex mutex_; // libfileはマルチスレッドに脆弱なようだ。
 	void *magic_set_ = nullptr;
 	std::vector<char> mgcdata_;
-	bool open();
 	void close();
 public:
 	FileTypeWrapper()
@@ -29,6 +28,7 @@ public:
 	{
 		close();
 	}
+	bool open();
 	static size_t slop_size();
 	InternalFileTypeResult detect(int fd) const;
 	InternalFileTypeResult detect(char const *filepath) const;

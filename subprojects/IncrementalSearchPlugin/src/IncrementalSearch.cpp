@@ -89,7 +89,7 @@ bool IncrementalSearch::open()
 			}
 			auto parts = mecab()->parse("吾輩は猫である");
 			if (parts.size() != 5) {
-				throw QString("Failed to parse sentence with IncrementalSearchPlugin. Expected 5 parts, got " + parts.size());
+				throw QString("Failed to parse sentence with IncrementalSearchPlugin. Expected 5 parts, got " + QString::number(parts.size()));
 			} else {
 				std::vector<std::string> expected = {"ワガハイ", "ハ", "ネコ", "デ", "アル"};
 				for (size_t i = 0; i < parts.size(); i++) {

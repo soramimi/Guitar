@@ -33,12 +33,24 @@ jobs:
           qt6-svg-dev \
           libcurl4-openssl-dev \
           libsecret-1-dev \
+          libgtest-dev \
           mecab-utils
           
     - name: Build Guitar
       run: |
         ruby scripts/make_all.rb
         
+    - name: Test plugin runtime and error handling
+      run: |
+        mkdir -p _build-loaderfixture _build-plugin-runtime
+        cd _build-loaderfixture
+        qmake6 ../tests/PluginRuntime/fixtures/loaderfixture.pro CONFIG+=release
+        make -j2
+        cd ../_build-plugin-runtime
+        qmake6 ../tests/PluginRuntime/PluginRuntime.pro CONFIG+=release CONFIG+=sanitize
+        make -j2
+        ASAN_OPTIONS=detect_leaks=0 ./PluginRuntimeTest
+
     - name: Test build
       run: |
         ls -la _bin/

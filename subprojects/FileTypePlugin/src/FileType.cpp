@@ -17,7 +17,7 @@ FileType::~FileType()
 
 bool FileType::open()
 {
-	return true;
+	return m->detector.open();
 }
 
 FileType::Result::Result(InternalFileTypeResult const &result)

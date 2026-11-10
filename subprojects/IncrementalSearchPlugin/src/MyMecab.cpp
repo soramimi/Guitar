@@ -188,11 +188,13 @@ bool x_get_resource_i8(char const *path, std::vector<char> *buf)
 	}
 	if (res) {
 		ResourceReader reader((char const *)res->data, res->size);
-		ResourceWriter writer(buf);
+		std::vector<char> decoded;
+		ResourceWriter writer(&decoded);
 #ifdef USE_GZIP
 		{
 			gzip gz;
 			if (gz.decompress(&reader, &writer)) {
+				*buf = std::move(decoded);
 				return true;
 			}
 		}
@@ -200,11 +202,12 @@ bool x_get_resource_i8(char const *path, std::vector<char> *buf)
 #ifdef USE_ZSTD
 		{
 			ZS zs;
-			zs.decompress([&](char *ptr, int len) -> int {
+			if (!zs.decompress([&](char *ptr, int len) -> int {
 				return reader.read(ptr, len);
 			}, [&](char const *ptr, int len) -> int {
 				return writer.write(ptr, len);
-			});
+			})) return false;
+			*buf = std::move(decoded);
 			return true;
 		}
 #endif
@@ -239,16 +242,15 @@ bool x_get_resource_i16(char const *path, std::vector<short int> *buf)
 #ifdef USE_ZSTD
 		{
 			ZS zs;
-			zs.decompress([&](char *ptr, int len) -> int {
+			if (!zs.decompress([&](char *ptr, int len) -> int {
 				return reader.read(ptr, len);
 			}, [&](char const *ptr, int len) -> int {
 				return writer.write(ptr, len);
-			});
-			size_t n = tmp.size() / 2;
-			if (n > 0) {
-				buf->resize(n);
-				memcpy(buf->data(), tmp.data(), n * 2);
-			}
+			})) return false;
+			if (tmp.size() % sizeof(short int) != 0) return false;
+			size_t n = tmp.size() / sizeof(short int);
+			buf->resize(n);
+			if (n > 0) memcpy(buf->data(), tmp.data(), n * sizeof(short int));
 			return true;
 		}
 #endif

@@ -6,6 +6,7 @@
 #include <common/str.h>
 #include <ai/CommitMessageGenerator.h>
 #include "MyProcess.h"
+#include <exception>
 
 #ifdef APP_GUITAR
 #include "Profile.h"
@@ -204,35 +205,44 @@ std::string CommitMessageGenerator::make_diff(std::string const &gitcommand, std
 	std::vector<std::string> diffs(names.size());
 	const int NUM_THREADS = 1;
 	std::vector<std::thread> threads(NUM_THREADS);
+	std::vector<std::exception_ptr> failures(NUM_THREADS);
 	std::atomic_size_t index(0);
 	for (size_t t = 0; t < threads.size(); t++) {
-		threads[t] = std::thread([&](){
-			while (1) {
-				size_t i = index++;
-				if (i >= names.size()) break;
-				std::string path = names[i];
-				if (path.empty()) continue;
-				std::string filename = misc::filename(path);
-				std::string fullpath = dir / path;
-				std::string mimetype = global_mimetype_by_file(fullpath);
-				if (filename == "libtool") continue; // libtoolはdiffしても大きい上に役に立たない
-				if (!CommitMessageGenerator::accept_file_diff(path, mimetype)) continue;
-				// std::string diff = g.diff_full_index_head_file(fullpath);
-				std::string diff;
-				if (amend) {
-					diff = git(gitcommand, dir, fmt("diff --full-index %s %s")(commits.a)(commits.b));
-				} else {
-					diff = git(gitcommand, dir, fmt("diff --full-index %s -- %s")(commits.a)(fullpath));
+		threads[t] = std::thread([&, t](){
+			try {
+				while (1) {
+					size_t i = index++;
+					if (i >= names.size()) break;
+					std::string path = names[i];
+					if (path.empty()) continue;
+					std::string filename = misc::filename(path);
+					std::string fullpath = dir / path;
+					std::string mimetype = global_mimetype_by_file(fullpath);
+					if (filename == "libtool") continue; // libtoolはdiffしても大きい上に役に立たない
+					if (!CommitMessageGenerator::accept_file_diff(path, mimetype)) continue;
+					// std::string diff = g.diff_full_index_head_file(fullpath);
+					std::string diff;
+					if (amend) {
+						diff = git(gitcommand, dir, fmt("diff --full-index %s %s")(commits.a)(commits.b));
+					} else {
+						diff = git(gitcommand, dir, fmt("diff --full-index %s -- %s")(commits.a)(fullpath));
+					}
+					logprintf(LOG_DEFAULT, "diff %s (mimetype: %s) size: %d\n", path.c_str(), mimetype.c_str(), (int)diff.size());
+					if (diff.empty()) continue;
+					diffs[i] = diff;
 				}
-				logprintf(LOG_DEFAULT, "diff %s (mimetype: %s) size: %d\n", path.c_str(), mimetype.c_str(), (int)diff.size());
-				if (diff.empty()) continue;
-				diffs[i] = diff;
+			} catch (...) {
+				failures[t] = std::current_exception();
 			}
 		});
 	}
 
 	for (size_t t = 0; t < threads.size(); t++) {
 		threads[t].join();
+	}
+
+	for (auto const &failure : failures) {
+		if (failure) std::rethrow_exception(failure);
 	}
 
 	// スレッドごとの結果を元のファイル順に連結する

@@ -11,6 +11,7 @@
 #include "vault/Vault.h"
 #include <SecureStoreGUI.h>
 #include <memory>
+#include <exception>
 
 namespace {
 QListWidgetItem *new_QListWidgetItem(QString const &text)
@@ -182,11 +183,20 @@ bool GenerateCommitMessageDialog::_generate(std::string const &diff, std::string
 
 bool GenerateCommitMessageDialog::generate()
 {
-	GitRunner g = global->mainwindow->git();
-	std::string diff = CommitMessageGenerator::make_diff(g, m->commits);
-	std::string status_s_u;
-	g.status_s_u(&status_s_u);
-	return _generate(diff, status_s_u);
+	try {
+		GitRunner g = global->mainwindow->git();
+		std::string diff = CommitMessageGenerator::make_diff(g, m->commits);
+		std::string status_s_u;
+		g.status_s_u(&status_s_u);
+		return _generate(diff, status_s_u);
+	} catch (std::exception const &e) {
+		QMessageBox::critical(this, tr("Failed to prepare commit diff"), QString::fromUtf8(e.what()));
+	} catch (QString const &e) {
+		QMessageBox::critical(this, tr("Failed to prepare commit diff"), e);
+	} catch (...) {
+		QMessageBox::critical(this, tr("Failed to prepare commit diff"), tr("Unknown error while preparing the commit diff."));
+	}
+	return false;
 }
 
 std::string GenerateCommitMessageDialog::diffText() const
