@@ -6,6 +6,12 @@
 #include <sys/stat.h>
 #include <common/jstream.h>
 #include <QDebug>
+#include <QFile>
+#include <QSaveFile>
+#include <QJsonDocument>
+#include <QJsonObject>
+#include <QJsonArray>
+#include <set>
 #include <regex>
 #include <localvault/src/vault/SecureBuffer.h>
 #include <localvault/src/gui/SecureStoreGUI.h>
@@ -748,91 +754,133 @@ std::string EndPoint::url_models(Credential const &cred, std::string const &curs
 	return url;
 }
 
-std::optional<std::vector<ModelConf>> ModelConf::load(QWidget *parent, char const *path)
-{
-	std::vector<ModelConf> items;
 
-	FILE *fp = fopen(path, "r");
-	if (fp) {
-		struct stat st;
-		if (fstat(fileno(fp), &st) == 0) {
-			std::vector<char> buf(st.st_size);
-			fread(buf.data(), 1, buf.size(), fp);
-			jstream::Reader r((char const *)buf.data(), buf.size());
-			// jstream::Reader r(
-			std::string provider;
-			std::string model;
-			std::string ep_url;
-			while (r.next()) {
-				if (r.match_start_object("{items{item{**")) {
-					ModelConf mc;
-					r.nest([&](){
-						if (r.match("@guid")) {
-							mc.guid = r.string();
-						} else if (r.match("@name")) {
-							mc.name = r.string();
-						} else if (r.match("@provider")) {
-							provider = r.string();
-						} else if (r.match("@api_type")) {
-							mc.api_type = r.string();
-						} else if (r.match("@model")) {
-							model = r.string();
-						} else if (r.match("@api_type")) {
-							mc.api_type = r.string();
-						} else if (r.match("@endpoint_url")) {
-							ep_url = r.string();
-						} else if (r.match("@credential{symbol")) {
-							mc.api_key_symbol = r.string();
-						} else if (r.match("@credential{method")) {
-							mc.api_key_method = r.string();
-						}
-					});
-					{
-						mc.model = Model(provider_id(provider), model);
-						mc.model.set_endpoint_url(ep_url);
-						ProviderID at = parse_api_type(mc.api_type);
-						if (at != ProviderID::Custom) {
-							mc.model.api_compatibility_override = at;
-						}
-					}
-					items.push_back(mc);
-				}
-			}
-		}
-		fclose(fp);
-		return items;
+std::string api_type_name(ProviderID id)
+{
+	switch (id) {
+	case ProviderID::OpenAI: case ProviderID::OpenAI_responses: return std::string(api_openai_responses_v1);
+	case ProviderID::OpenAI_chat_completions: return std::string(api_openai_chat_completions_v1);
+	case ProviderID::Anthropic: return std::string(api_anthropic_messages_v1);
+	case ProviderID::Google: return std::string(api_google_gemini_v1);
+	case ProviderID::Cloudflare: return std::string(api_cloudflare_gateway_v4);
+	default: return {};
 	}
-	
-	return std::nullopt;
 }
 
-void ModelConf::save(QWidget *parent, char const *path, const std::vector<ModelConf> &items)
+std::optional<std::vector<ModelConf>> ModelConf::load(QWidget *, char const *path)
 {
-	jstream::Writer w;
-	w.object({}, [&](){
-		w.object("items", [&](){
-			for (ModelConf const &conf : items) {
-				w.object("item", [&](){
-					w.string("guid", conf.guid);
-					w.string("name", conf.name);
-					w.string("provider", conf.model.provider_info_->tag);
-					w.string("api_type", conf.api_type);
-					w.string("endpoint_url", conf.model.endpoint_url());
-					w.string("model", conf.model.model_name());
-					w.object("credential", [&](){
-						w.string("symbol", conf.api_key_symbol);
-						w.string("method", conf.api_key_method);
+	QFile file(QString::fromUtf8(path));
+	if (!file.open(QIODevice::ReadOnly) || file.size() > 4 * 1024 * 1024) return std::nullopt;
+	auto bytes = file.readAll();
+	if (file.error() != QFile::NoError) return std::nullopt;
+	QJsonParseError error;
+	auto doc = QJsonDocument::fromJson(bytes, &error);
+	if (error.error != QJsonParseError::NoError || !doc.isObject()) return std::nullopt;
+	auto stored = doc.object().value("items");
+	QJsonArray records;
+	if (stored.isArray()) records = stored.toArray();
+	else if (stored.isObject()) {
+		// Older files used repeated "item" keys. Keep all records rather than
+		// letting QJsonObject discard every record except the last one.
+		jstream::Reader reader(bytes.constData(), bytes.size());
+		bool valid = true;
+		while (reader.next()) {
+			if (reader.match_start_object("{items{item{**")) {
+				QJsonObject record, credential;
+				reader.nest([&] {
+					for (auto key : {"guid", "name", "provider", "model", "endpoint_url", "api_type"}) {
+						if (reader.match(std::string("@") + key)) {
+							if (!reader.isstring()) valid = false;
+							record.insert(key, QString::fromStdString(reader.string()));
+						}
+					}
+					for (auto key : {"symbol", "method"}) {
+						if (reader.match(std::string("@credential{") + key)) {
+							if (!reader.isstring()) valid = false;
+							credential.insert(key, QString::fromStdString(reader.string()));
+						}
+					}
+				});
+				record.insert("credential", credential); records.append(record);
+			}
+		}
+		if (!valid || (!stored.toObject().isEmpty() && records.isEmpty())) return std::nullopt;
+	} else return std::nullopt;
+	std::vector<ModelConf> items;
+	std::set<std::string> guids;
+	for (auto value : records) {
+		if (!value.isObject()) return std::nullopt;
+		auto record = value.toObject();
+		for (auto key : {"guid", "name", "provider", "model", "endpoint_url", "api_type"})
+			if (record.contains(key) && !record.value(key).isString()) return std::nullopt;
+		ModelConf conf;
+		conf.guid = record.value("guid").toString().toStdString();
+		if (conf.guid.empty() || !guids.insert(conf.guid).second) return std::nullopt;
+		conf.name = record.value("name").toString().toStdString();
+		auto provider = record.value("provider").toString().toStdString();
+		auto id = provider.empty() ? ProviderID::Custom : provider_id(provider);
+		if (id == ProviderID::Invalid) return std::nullopt;
+		auto modelName = record.value("model").toString().toStdString();
+		conf.model = Model(id, modelName);
+		conf.model.model_name_ = modelName; // The stored field is a model ID, not a URI.
+		conf.model.set_endpoint_url(record.value("endpoint_url").toString().toStdString());
+		conf.api_type = record.value("api_type").toString().toStdString();
+		if (conf.api_type.empty()) conf.api_type = api_type_name(id == ProviderID::Cloudflare ? id : conf.model.api_compatibility());
+		auto api = parse_api_type(conf.api_type);
+		if (api == ProviderID::Custom) return std::nullopt;
+		conf.model.api_compatibility_override = api;
+		if (record.contains("credential") && !record.value("credential").isObject()) return std::nullopt;
+		auto credential = record.value("credential").toObject();
+		for (auto key : {"symbol", "method"})
+			if (credential.contains(key) && !credential.value(key).isString()) return std::nullopt;
+		conf.api_key_symbol = credential.value("symbol").toString().toStdString();
+		conf.api_key_method = credential.value("method").toString().toStdString();
+		if (conf.api_key_method.empty()) conf.api_key_method = std::string(key_store_encryption);
+		if (conf.api_key_method != key_store_environment && conf.api_key_method != key_store_encryption) return std::nullopt;
+		items.push_back(std::move(conf));
+	}
+	return items;
+}
+
+std::optional<std::string> ModelConf::to_json(std::vector<ModelConf> const &items)
+{
+	QJsonArray records; std::set<std::string> guids;
+	for (auto const &conf : items) {
+		if (conf.guid.empty() || !guids.insert(conf.guid).second || !conf.model.provider_info_ || conf.model.provider_id() == ProviderID::Invalid) return std::nullopt;
+		auto api = api_type_name(conf.model.api_compatibility());
+		if (api.empty()) return std::nullopt;
+		QJsonObject credential{{"symbol", QString::fromStdString(conf.api_key_symbol)}, {"method", QString::fromStdString(conf.api_key_method)}};
+		records.append(QJsonObject{{"guid", QString::fromStdString(conf.guid)}, {"name", QString::fromStdString(conf.name)},
+			{"provider", QString::fromStdString(conf.model.provider_info_->tag)}, {"api_type", QString::fromStdString(api)},
+			{"model", QString::fromStdString(conf.model.model_name())}, {"endpoint_url", QString::fromStdString(conf.model.endpoint_url())}, {"credential", credential}});
+	}
+	// Preserve the established repeated-item format for older Guitar versions.
+	jstream::Writer writer;
+	writer.object({}, [&] {
+		writer.object("items", [&] {
+			for (auto value : records) {
+				auto record = value.toObject();
+				writer.object("item", [&] {
+					for (auto key : {"guid", "name", "provider", "api_type", "endpoint_url", "model"}) writer.string(key, record.value(key).toString().toStdString());
+					writer.object("credential", [&] {
+						auto credential = record.value("credential").toObject();
+						writer.string("symbol", credential.value("symbol").toString().toStdString());
+						writer.string("method", credential.value("method").toString().toStdString());
 					});
 				});
 			}
 		});
 	});
-	std::string json = w;
-	FILE *fp = fopen(path, "w");
-	if (fp) {
-		fwrite(json.c_str(), 1, json.size(), fp);
-		fclose(fp);
-	}
+	std::string json = writer;
+	if (json.size() > 4 * 1024 * 1024) return std::nullopt;
+	return json;
+}
+
+bool ModelConf::save(QWidget *, char const *path, std::vector<ModelConf> const &items)
+{
+	auto json = to_json(items); if (!json) return false;
+	QSaveFile file(QString::fromUtf8(path));
+	return file.open(QIODevice::WriteOnly) && file.write(json->data(), json->size()) == static_cast<qint64>(json->size()) && file.commit();
 }
 
 } // namespace GenerativeAI

@@ -120,6 +120,7 @@ struct ProviderInfo {
 
 ProviderID api_compatibility(ProviderID pid);
 bool is_endpoint_customizable(ProviderID pid);
+std::string api_type_name(ProviderID id);
 std::vector<ProviderInfo> const &complete_provider_table();
 const ProviderInfo *provider_info(ProviderID id);
 
@@ -251,7 +252,8 @@ struct ModelConf {
 	GenerativeAI::Model model;
 	
 	static std::optional<std::vector<ModelConf>> load(QWidget *parent, char const *path);
-	static void save(QWidget *parent, const char *path, std::vector<ModelConf> const &items);
+	static bool save(QWidget *parent, const char *path, std::vector<ModelConf> const &items);
+	static std::optional<std::string> to_json(std::vector<ModelConf> const &items);
 };
 
 struct EndPoint {

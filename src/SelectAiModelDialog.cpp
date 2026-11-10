@@ -19,6 +19,10 @@
 #include <common/jstream.h>
 #include <sys/stat.h>
 #include <QClipboard>
+#include <QScopedValueRollback>
+#include <QSignalBlocker>
+#include <QSaveFile>
+#include <QFile>
 
 using namespace GenerativeAI;
 
@@ -42,6 +46,23 @@ void setTextAndDeselect(QLineEdit *le, std::string const &text)
 	le->setText(QString::fromStdString(text));
 	deselectLineEdit(le);
 	le->blockSignals(b1);
+}
+
+std::vector<ProviderID> api_choices(ProviderID provider)
+{
+	switch (provider) {
+	case ProviderID::OpenAI: return {ProviderID::OpenAI_responses, ProviderID::OpenAI_chat_completions};
+	case ProviderID::OpenAI_responses: case ProviderID::OpenAI_chat_completions:
+	case ProviderID::Anthropic: case ProviderID::Google: case ProviderID::Cloudflare: return {provider};
+	case ProviderID::Custom: return {ProviderID::OpenAI_responses, ProviderID::OpenAI_chat_completions, ProviderID::Anthropic, ProviderID::Google, ProviderID::Cloudflare};
+	default: return {ProviderID::OpenAI_responses, ProviderID::OpenAI_chat_completions, ProviderID::Anthropic};
+	}
+}
+void set_api_type(ModelConf &conf, ProviderID type)
+{
+	if (type == ProviderID::OpenAI) type = ProviderID::OpenAI_responses;
+	conf.api_type = api_type_name(type);
+	conf.model.api_compatibility_override = type;
 }
 
 constexpr char const *NEW_MODEL_NAME = "(New Model)";
@@ -89,6 +110,11 @@ struct SelectAiModelDialog::Private {
 	std::map<QString, QString> api_key_map;
 	SelectAiModelDelegate *item_delegate = nullptr;
 	std::string default_model_guid;
+	bool rendering = false;
+	bool load_ok = false;
+	bool keys_loaded = false;
+	AiApiKeys keys;
+	std::map<std::string, std::map<ProviderID, ModelConf>> provider_drafts;
 };
 
 SelectAiModelDialog::SelectAiModelDialog(QWidget *parent)
@@ -223,57 +249,18 @@ ProviderInfo const *SelectAiModelDialog::provider_info(GenerativeAI::ProviderID 
 // 「プリセット読み込み」ボタン押下時: プリセットダイアログからモデルを選択し、各入力欄に反映する
 void SelectAiModelDialog::on_pushButton_load_preset_clicked()
 {
-	SelectAiModelPresetDialog dlg(this);
-	if (dlg.exec() == QDialog::Accepted) {
-		ModelConf conf;
-		ModelConf *confp = current_modelconf();
-		if (confp) {
-			conf = *confp;
-		} else {
-			conf.guid = generate_uuidv7_string();
-		}
-		conf.name = QString::fromStdString(dlg.selectedModel().model_name()).toStdString();
-		conf.model = dlg.selectedModel();
-		
-		// エンドポイントURLを生成
-		Request req = make_request(conf.model.provider_id(), conf.model, {});
-		Credential cred = credential();
-		conf.model.set_endpoint_url(req.endpoint.url_chat(conf.model, cred, false));
-		
-		// 現在のモデルを設定
-		set_current_modelconf(conf);
-		
-		// 選択したモデル情報を各 UI に反映
-		ui->lineEdit_name->setText(QString::fromStdString(conf.name));
-		
-		// プロバイダ設定		
-		{
-			bool b1 = ui->comboBox_provider->blockSignals(true);
-			ui->comboBox_provider->setCurrentIndex(ui->comboBox_provider->findData((int)conf.model.provider_id()));
-			ui->comboBox_provider->blockSignals(b1);
-		}
-		
-		// API タイプ設定
-		{
-			bool b1 = ui->comboBox_api_type->blockSignals(true);
-			ui->comboBox_api_type->setCurrentIndex(ui->comboBox_api_type->findData((int)conf.model.api_compatibility()));
-			ui->comboBox_api_type->blockSignals(b1);
-		}
-		
-		// エンドポイントURLを表示
-		setLineEditEndpointUrl(conf.model.endpoint_url());
-		
-		// API キー表示欄を更新
-		// setTextAndDeselect(ui->lineEdit_cred_symbol, conf.api_key_symbol);
-		ProviderInfo const *provider = provider_info(conf.model.provider_id());
-		if (provider) {
-			conf.api_key_symbol = provider->env_name;
-		}
-		ui->lineEdit_cred_symbol->setText(QString::fromStdString(conf.api_key_symbol));
-		
-		// モデル名を comboBox_model に設定
-		ui->comboBox_model->setCurrentText(QString::fromStdString(conf.model.model_name()));
-	}
+	SelectAiModelPresetDialog dialog(this);
+	if (dialog.exec() != QDialog::Accepted || !dialog.selectedModel()) return;
+	auto *conf = current_modelconf();
+	if (!conf) return;
+	m->provider_drafts[conf->guid][conf->model.provider_id()] = *conf;
+	conf->model = dialog.selectedModel();
+	conf->name = conf->model.model_name();
+	set_api_type(*conf, conf->model.api_compatibility());
+	conf->api_key_symbol = provider_info(conf->model.provider_id())->env_name;
+	update_api_endpoint_url();
+	ui->listWidget_items->currentItem()->setText(QString::fromStdString(conf->name));
+	selectItem(ui->listWidget_items->currentRow());
 }
 
 void SelectAiModelDialog::update_api_endpoint_url()
@@ -294,7 +281,7 @@ void SelectAiModelDialog::update_api_endpoint_url()
 		if (conf->model.provider_id() == ProviderID::Google) {
 			conf->model.set_endpoint_url(req.endpoint.url_);
 		} else {
-			Credential cred = global->get_ai_credential(conf->model);
+			Credential cred;
 			conf->model.set_endpoint_url(req.endpoint.url_chat(conf->model, cred, false, hostport));
 		}
 	}
@@ -304,86 +291,38 @@ void SelectAiModelDialog::update_api_endpoint_url()
 // プロバイダーコンボボックス変更時: API タイプ、エンドポイント URL、API キーを切り替える
 void SelectAiModelDialog::on_comboBox_provider_currentIndexChanged(int index)
 {
-	if (index >= 0 && index < ui->comboBox_provider->count()) {
-		GenerativeAI::ProviderID provider_id = (GenerativeAI::ProviderID)ui->comboBox_provider->itemData(index).toInt();
-		
-		ProviderInfo const *provider = provider_info(provider_id);
-		Q_ASSERT(provider);
-		
-		ModelConf *conf = current_modelconf();
-		if (!conf) return;
-		
-		ProviderID apitype = GenerativeAI::parse_api_type(conf->api_type);
-		
-		std::string save_ep_url = conf->model.endpoint_url();
-		
-		conf->model.provider_info_ = provider;
-		conf->model.api_compatibility_override = std::nullopt;
-		conf->model.set_endpoint_url({});
-		
-		{
-			// 選択したプロバイダーに応じて利用可能な API タイプを再構築
-			int index = -1;
-			{
-				bool b1 = ui->comboBox_api_type->blockSignals(true);
-				ui->comboBox_api_type->clear();
-				ui->comboBox_api_type->setCurrentIndex(-1);
-				auto Add = [&](std::string_view api, ProviderID api_id) {
-					ui->comboBox_api_type->addItem(QString::fromStdString(std::string(api)), QVariant((int)api_id));
-				};
-				switch (provider->id) {
-				case ProviderID::OpenAI:
-					Add(api_openai_responses_v1, ProviderID::OpenAI_responses);
-					Add(api_openai_chat_completions_v1, ProviderID::OpenAI_chat_completions);
-					break;
-				case ProviderID::OpenAI_responses:
-					Add(api_openai_responses_v1, ProviderID::OpenAI_responses);
-					break;
-				case ProviderID::OpenAI_chat_completions:
-					Add(api_openai_chat_completions_v1, ProviderID::OpenAI_chat_completions);
-					break;
-				case ProviderID::Anthropic:
-					Add(api_anthropic_messages_v1, ProviderID::Anthropic);
-					break;
-				case ProviderID::Google:
-					Add(api_google_gemini_v1, ProviderID::Google);
-					break;
-				case ProviderID::Cloudflare:
-					Add(api_cloudflare_gateway_v4, ProviderID::Cloudflare);
-					break;
-				default:
-					Add(api_openai_responses_v1, ProviderID::OpenAI_responses);
-					Add(api_openai_chat_completions_v1, ProviderID::OpenAI_chat_completions);
-					Add(api_anthropic_messages_v1, ProviderID::Anthropic);
-					break;
-				}
-				index = ui->comboBox_api_type->findData((int)apitype);
-				ui->comboBox_api_type->setCurrentIndex(index);
-				ui->comboBox_api_type->blockSignals(b1);
-			}
+	if (m->rendering || index < 0) return;
+	auto *conf = current_modelconf(); if (!conf) return;
+	auto provider = static_cast<ProviderID>(ui->comboBox_provider->itemData(index).toInt());
+	if (provider == conf->model.provider_id()) return;
+	auto &drafts = m->provider_drafts[conf->guid];
+	drafts[conf->model.provider_id()] = *conf;
+	std::string name = conf->name, guid = conf->guid;
+	auto found = drafts.find(provider);
+	if (found != drafts.end()) {
+		*conf = found->second; conf->name = name; conf->guid = guid;
+	} else {
+		auto old = *conf;
+		conf->model = Model(provider, old.model.model_name());
+		conf->model.model_name_ = old.model.model_name();
+		auto choices = api_choices(provider);
+		auto type = old.model.api_compatibility();
+		if (provider != ProviderID::Custom) {
+			type = conf->model.api_compatibility();
+			if (std::find(choices.begin(), choices.end(), type) == choices.end()) type = choices.front();
+			conf->api_key_symbol = provider_info(provider)->env_name;
 		}
-		
-		if (GenerativeAI::is_endpoint_customizable(provider_id)) {
-			conf->model.set_endpoint_url(save_ep_url);
-			ui->lineEdit_endpoint_url->setEnabled(true);
-		} else {
-			update_api_endpoint_url();
-			ui->lineEdit_endpoint_url->setEnabled(false);
-		}
-		
-		// 認証情報のシンボル（環境変数名など）を表示
-		ui->lineEdit_cred_symbol->setText(QString::fromStdString(provider->env_name));
-
-		Credential cred = global->get_ai_credential(conf->model);
-		bool use_env = conf->api_key_method == key_store_environment;
-		cred.api_key = query_api_key(provider->env_name, use_env);
-		setLineEditApiKey(cred.api_key, conf);
+		set_api_type(*conf, type);
+		if (provider == ProviderID::Custom) conf->model.set_endpoint_url(old.model.endpoint_url());
+		else update_api_endpoint_url();
 	}
+	selectItem(ui->listWidget_items->currentRow());
 }
 
 // API タイプコンボボックス変更時: モデルの互換性設定とエンドポイント URL を更新する
 void SelectAiModelDialog::on_comboBox_api_type_currentIndexChanged(int index)
 {
+	if (m->rendering) return;
 	if (index >= 0 && index < ui->comboBox_api_type->count()) {
 		QString api_type = ui->comboBox_api_type->itemText(index);
 		GenerativeAI::ProviderID api_compatibility_id = (GenerativeAI::ProviderID)ui->comboBox_api_type->itemData(index).toInt();
@@ -400,6 +339,7 @@ void SelectAiModelDialog::on_comboBox_api_type_currentIndexChanged(int index)
 
 void SelectAiModelDialog::on_lineEdit_endpoint_url_textChanged(const QString &arg1)
 {
+	if (m->rendering) return;
 	ModelConf *conf = current_modelconf();
 	if (!conf) return;
 	
@@ -410,6 +350,7 @@ void SelectAiModelDialog::on_lineEdit_endpoint_url_textChanged(const QString &ar
 // 認証情報の取得元（環境変数 / カスタム）が変わったときに API キー入力欄を更新する
 void SelectAiModelDialog::on_cred_key_method_changed()
 {
+	if (m->rendering) return;
 	ModelConf *conf = current_modelconf();
 	if (!conf) return;
 	
@@ -421,8 +362,7 @@ void SelectAiModelDialog::on_cred_key_method_changed()
 		conf->api_key_method = key_store_encryption;
 	}
 	
-	Credential cred = global->get_ai_credential(conf->model);
-	
+	Credential cred;
 	bool use_env = conf->api_key_method == key_store_environment;
 	
 	ui->lineEdit_cred_api_key->setEnabled(!use_env);
@@ -497,6 +437,7 @@ void SelectAiModelDialog::on_pushButton_test_hello_clicked()
 
 void SelectAiModelDialog::on_comboBox_model_currentTextChanged(const QString &arg1)
 {
+	if (m->rendering) return;
 	ModelConf *conf = current_modelconf();
 	if (!conf) return;
 	
@@ -507,8 +448,6 @@ void SelectAiModelDialog::on_comboBox_model_currentTextChanged(const QString &ar
 void SelectAiModelDialog::on_pushButton_query_models_clicked()
 {
 	QString current_model_name = ui->comboBox_model->currentText();
-	ui->comboBox_model->clear();
-	
 	// 現在のプロバイダー情報とエンドポイント上書きをモデルに反映
 	ModelConf *confp = current_modelconf();
 	if (!confp) return;
@@ -542,22 +481,15 @@ void SelectAiModelDialog::on_pushButton_query_models_clicked()
 	// モデル選択ダイアログを表示
 	QueryAiModelDialog dlg(this, *models, current_model_name);
 	if (dlg.exec() == QDialog::Accepted) {
-		// 取得したモデル一覧を comboBox_model に追加
-		bool b1 = ui->comboBox_model->blockSignals(true);
-		for (size_t i = 0; i < models->list.size(); i++) {
-			AiResult::Model const &model = models->list[i];
-			ui->comboBox_model->addItem(QString::fromStdString(model.id), (int)i);
+		QString selected = dlg.selectedModel();
+		if (selected.isEmpty()) return;
+		{
+			QSignalBlocker blocker(ui->comboBox_model);
+			ui->comboBox_model->clear();
+			for (auto const &model : models->list) ui->comboBox_model->addItem(QString::fromStdString(model.id));
+			ui->comboBox_model->setCurrentText(selected);
 		}
-		ui->comboBox_model->blockSignals(b1);
-	
-		// 選択されたモデルがあればそれを選択状態にする
-		QString selected_model_name = dlg.selectedModel();
-		int index = ui->comboBox_model->findText(selected_model_name);
-		if (index >= 0) {
-			ui->comboBox_model->setCurrentIndex(index);
-			// *p = conf;
-		}
-		on_comboBox_model_currentTextChanged(selected_model_name);
+		on_comboBox_model_currentTextChanged(selected);
 	}
 }
 
@@ -576,56 +508,33 @@ void SelectAiModelDialog::on_toolButton_clicked()
 
 void SelectAiModelDialog::selectItem(int row)
 {
-	Q_ASSERT(m->items.size() == ui->listWidget_items->count());
-	
-	if (row != ui->listWidget_items->currentRow()) {
-		ui->listWidget_items->setCurrentRow(row);
-	}
-	
-	ModelConf conf;
-	{
-		QString name;
-		QString guid;
-		
-		ModelConf const *confp = modelconf(row);
-		if (confp) {
-			conf = *confp; // この時点での設定を取得（下のsetTextなどのイベントで、ポインタの先が書き換えられるので）
-			
-			enableSettingsFrame(true);
-			name = QString::fromStdString(conf.name);
-			guid = QString::fromStdString(conf.guid);
-		} else {
-			enableSettingsFrame(false);
-		}
-		
-		ui->label_id->setText(guid);
-		ui->lineEdit_name->setText(name);
-	}
-	
-	ui->comboBox_provider->setCurrentText(QString::fromStdString(conf.model.provider_description()));
-	{
-		int index = ui->comboBox_provider->currentIndex();
-		on_comboBox_provider_currentIndexChanged(index);
-	}
-	
-	ui->comboBox_api_type->setCurrentText(QString::fromStdString(conf.api_type));
-	
-	ui->lineEdit_endpoint_url->setText(QString::fromStdString(conf.model.endpoint_url()));
-	
-	setTextAndDeselect(ui->lineEdit_cred_symbol, conf.api_key_symbol);
-	ui->lineEdit_cred_symbol->setText(QString::fromStdString(conf.api_key_symbol));
-	
-	if (conf.api_key_method == key_store_environment) {
-		ui->radioButton_cred_environ->setChecked(true);
-	} else {
-		ui->radioButton_cred_custom->setChecked(true);
-	}
-	
-	ui->lineEdit_account->setEnabled(conf.model.provider_id() == ProviderID::Cloudflare);
-	
-	ui->comboBox_model->setCurrentText(QString::fromStdString(conf.model.model_name()));
-	
-	on_cred_key_method_changed();
+	QScopedValueRollback<bool> rendering(m->rendering, true);
+	QSignalBlocker selection(ui->listWidget_items);
+	if (ui->listWidget_items->currentRow() != row) ui->listWidget_items->setCurrentRow(row);
+	auto const *conf = modelconf(row);
+	enableSettingsFrame(conf != nullptr);
+	if (!conf) return;
+	ui->label_id->setText(QString::fromStdString(conf->guid));
+	ui->lineEdit_name->setText(QString::fromStdString(conf->name));
+	ui->comboBox_provider->setCurrentIndex(ui->comboBox_provider->findData(static_cast<int>(conf->model.provider_id())));
+	ui->comboBox_api_type->clear();
+	auto choices = api_choices(conf->model.provider_id());
+	auto type = conf->model.api_compatibility();
+	if (type == ProviderID::OpenAI) type = ProviderID::OpenAI_responses;
+	if (std::find(choices.begin(), choices.end(), type) == choices.end()) choices.push_back(type);
+	for (auto api : choices) ui->comboBox_api_type->addItem(QString::fromStdString(api_type_name(api)), static_cast<int>(api));
+	ui->comboBox_api_type->setCurrentIndex(ui->comboBox_api_type->findData(static_cast<int>(type)));
+	setLineEditEndpointUrl(conf->model.endpoint_url());
+	ui->lineEdit_endpoint_url->setEnabled(is_endpoint_customizable(conf->model.provider_id()));
+	setTextAndDeselect(ui->lineEdit_cred_symbol, conf->api_key_symbol);
+	bool environment = conf->api_key_method == key_store_environment;
+	ui->radioButton_cred_environ->setChecked(environment);
+	ui->radioButton_cred_custom->setChecked(!environment);
+	ui->lineEdit_cred_api_key->setEnabled(!environment);
+	ui->lineEdit_account->setEnabled(conf->model.provider_id() == ProviderID::Cloudflare);
+	setLineEditApiKey(query_api_key(conf->api_key_symbol, environment), conf);
+	ui->comboBox_model->clear();
+	ui->comboBox_model->setCurrentText(QString::fromStdString(conf->model.model_name()));
 }
 
 namespace {
@@ -641,6 +550,9 @@ void SelectAiModelDialog::on_pushButton_new_clicked()
 {
 	int row = ui->listWidget_items->count();
 	ModelConf item;
+	item.model = Model(ProviderID::Custom, "");
+	set_api_type(item, ProviderID::OpenAI_chat_completions);
+	item.api_key_method = std::string(key_store_environment);
 	item.guid = generate_uuidv7_string();
 	item.name = NEW_MODEL_NAME;
 	m->items.push_back(item);
@@ -661,7 +573,10 @@ void SelectAiModelDialog::on_pushButton_delete_clicked()
 {
 	int row = ui->listWidget_items->currentRow();
 	if (row >= 0 && row < (int)m->items.size()) {
+		auto removed = m->items[row].guid;
 		m->items.erase(m->items.begin() + row);
+		m->provider_drafts.erase(removed);
+		if (m->default_model_guid == removed) m->default_model_guid = m->items.empty() ? "" : m->items[std::min<size_t>(row, m->items.size() - 1)].guid;
 
 		bool b1 = ui->listWidget_items->blockSignals(true);
 		delete ui->listWidget_items->takeItem(row);
@@ -709,6 +624,7 @@ void SelectAiModelDialog::on_pushButton_down_clicked()
 
 void SelectAiModelDialog::on_lineEdit_name_textChanged(const QString &arg1)
 {
+	if (m->rendering) return;
 	Q_ASSERT(m->items.size() == ui->listWidget_items->count());
 	
 	int row = ui->listWidget_items->currentRow();
@@ -725,64 +641,51 @@ void SelectAiModelDialog::on_listWidget_items_currentRowChanged(int currentRow)
 	selectItem(currentRow);
 }
 
-void SelectAiModelDialog::on_lineEdit_cred_symbol_textEdited(const QString &arg1)
+void SelectAiModelDialog::on_lineEdit_account_textChanged(const QString &)
 {
-	ModelConf *conf = current_modelconf();
-	if (conf) {
-		conf->api_key_symbol = arg1.toStdString();
-		on_cred_key_method_changed();
-	}
+	if (!m->rendering) on_lineEdit_cred_api_key_textChanged(ui->lineEdit_cred_api_key->text());
 }
 
 void SelectAiModelDialog::on_lineEdit_cred_api_key_textChanged(const QString &arg1)
 {
+	if (m->rendering) return;
 	ModelConf *conf = current_modelconf();
 	if (conf) {
 		if (conf->api_key_method != key_store_environment) {
 			QString symbol = QString::fromStdString(conf->api_key_symbol);
-			m->api_key_map[symbol] = arg1;
+			if (!symbol.isEmpty()) m->api_key_map[symbol] = QString::fromStdString(credential().api_key);
 		}
 	}
+}
+
+bool SelectAiModelDialog::load_keys()
+{
+	if (m->keys_loaded) return true;
+	if (QFile::exists(global->app_secret_config_dir + "/apikeys.bin") && !global->load_api_keys(this, &m->keys)) return false;
+	m->keys_loaded = true; return true;
 }
 
 std::string SelectAiModelDialog::query_api_key(std::string const &symbol, bool env)
 {
-	if (env) {
-		char const *e = std::getenv(symbol.c_str());
-		if (e) return e;
-	} else {
-		AiApiKeys ai_api_keys;
-		global->load_api_keys(this, &ai_api_keys);
-		auto opt = ai_api_keys.get_api_key(symbol);
-		if (opt) return opt->api_key;
-	}
-	return {};
+	if (env) { auto value = std::getenv(symbol.c_str()); return value ? value : ""; }
+	auto draft = m->api_key_map.find(QString::fromStdString(symbol));
+	if (draft != m->api_key_map.end()) return draft->second.toStdString();
+	if (!load_keys()) return {};
+	auto stored = m->keys.get_api_key(symbol); return stored ? stored->api_key : "";
 }
 
-void SelectAiModelDialog::save_api_keys()
+AiApiKeys SelectAiModelDialog::draft_keys() const
 {
-	std::vector<ModelConf> const &items = m->items;
-	std::map<QString, QString> const &api_key_map = m->api_key_map;
-	
-	AiApiKeys ai_api_keys;
-	global->load_api_keys(this, &ai_api_keys);
-	
-	for (SelectAiModelDialog::ModelConf const &conf : items) {
-		if (conf.api_key_method == key_store_environment) {
-			// nop: 環境変数から取得する場合は保存しない
-		} else {
-			QString symbol = QString::fromStdString(conf.api_key_symbol);
-			auto it = api_key_map.find(symbol);
-			if (it != api_key_map.end()) {
-				AiApiKeys::Item item;
-				item.from = AiApiKeys::KeyFrom::LocalSecret;
-				item.api_key = it->second.toStdString();
-				ai_api_keys.emplace(symbol.toStdString(), item);
-			}
-		}
-	}
-	
-	global->save_api_keys(this, ai_api_keys);
+	auto keys = m->keys;
+	for (auto const &[symbol, value] : m->api_key_map)
+		keys.emplace(symbol.toStdString(), {AiApiKeys::KeyFrom::LocalSecret, value.toStdString()});
+	return keys;
+}
+
+bool SelectAiModelDialog::save_api_keys()
+{
+	if (!load_keys()) return false;
+	return global->save_api_keys(this, draft_keys());
 }
 
 QString SelectAiModelDialog::aimodels_json_path() const
@@ -790,18 +693,54 @@ QString SelectAiModelDialog::aimodels_json_path() const
 	return global->aimodels_json_path();
 }
 
-void SelectAiModelDialog::save(QWidget *parent)
+bool SelectAiModelDialog::save(QWidget *)
 {
-	GenerativeAI::ModelConf::save(parent, aimodels_json_path().toStdString().c_str(), m->items);
-	save_api_keys();
+	if (!m->load_ok) return false;
+	auto json = ModelConf::to_json(m->items); if (!json) return false;
+	QSaveFile models(aimodels_json_path());
+	if (!models.open(QIODevice::WriteOnly) || models.write(json->data(), json->size()) != static_cast<qint64>(json->size())) return false;
+	// Stage metadata before touching credentials, and never overwrite keys after
+	// a failed read/decryption. Both files use atomic replacement.
+	QString keyPath = global->app_secret_config_dir + "/apikeys.bin";
+	bool hadKeys = QFile::exists(keyPath);
+	QByteArray previousKeys;
+	if (hadKeys) {
+		QFile previous(keyPath);
+		if (!previous.open(QIODevice::ReadOnly)) return false;
+		previousKeys = previous.readAll();
+		if (previous.error() != QFile::NoError) return false;
+	}
+	if (!save_api_keys()) return false;
+	if (!models.commit()) {
+		// Roll back credential changes if the second file cannot be committed.
+		// Keep an encrypted recovery copy if the filesystem also rejects rollback.
+		if (hadKeys) {
+			QSaveFile rollback(keyPath);
+			bool restored = rollback.open(QIODevice::WriteOnly) && rollback.setPermissions(QFile::ReadOwner | QFile::WriteOwner)
+				&& rollback.write(previousKeys) == previousKeys.size() && rollback.commit();
+			if (!restored) {
+				QSaveFile recovery(keyPath + ".recovery");
+				if (recovery.open(QIODevice::WriteOnly) && recovery.setPermissions(QFile::ReadOwner | QFile::WriteOwner)
+					&& recovery.write(previousKeys) == previousKeys.size()) recovery.commit();
+			}
+		} else QFile::remove(keyPath);
+		return false;
+	}
+	m->keys = draft_keys(); m->api_key_map.clear();
+	return true;
 }
 
-void SelectAiModelDialog::load(QWidget *parent)
+bool SelectAiModelDialog::load(QWidget *parent)
 {
-	auto opt = GenerativeAI::ModelConf::load(parent, aimodels_json_path().toStdString().c_str());
-	if (opt) {
-		m->items = *opt;
-	}
+	m->load_ok = false;
+	auto path = aimodels_json_path();
+	auto loaded = ModelConf::load(parent, path.toStdString().c_str());
+	if (!loaded && QFile::exists(path)) return false;
+	m->keys_loaded = false; m->keys = {};
+	if (!load_keys()) return false;
+	m->items = loaded ? *loaded : std::vector<ModelConf>{};
+	m->provider_drafts.clear(); m->api_key_map.clear(); m->load_ok = true;
+	return true;
 }
 
 void SelectAiModelDialog::updateListWidget(std::string const &def)
@@ -812,6 +751,7 @@ void SelectAiModelDialog::updateListWidget(std::string const &def)
 	
 	int current = 0;
 	
+	QSignalBlocker selection(ui->listWidget_items);
 	ui->listWidget_items->clear();
 	for (size_t i = 0; i < m->items.size(); i++) {
 		ModelConf const &item = m->items[i];
@@ -827,7 +767,7 @@ void SelectAiModelDialog::updateListWidget(std::string const &def)
 	}
 	
 	if (set_current) {
-		ui->listWidget_items->setCurrentRow(current);
+		selectItem(ui->listWidget_items->count() ? current : -1);
 	}
 }
 
@@ -846,7 +786,10 @@ int SelectAiModelDialog::exec(QWidget *parent)
 		s.endGroup();
 	}
 	
-	load(parent);
+	if (!load(parent)) {
+		QMessageBox::warning(parent, tr("AI Model Settings"), tr("Could not read model settings or API keys. Existing files have been preserved."));
+		return QDialog::Rejected;
+	}
 
 	updateListWidget(fav);
 	
@@ -854,30 +797,30 @@ int SelectAiModelDialog::exec(QWidget *parent)
 	
 	auto ret = QDialog::exec();
 	
-	if (ret == QDialog::Accepted) {
-		save(parent);
 
-		MySettings s;
-		s.beginGroup("AI");
-		s.setValue(kDefaultModelGUID, QString::fromStdString(m->default_model_guid));
-		s.endGroup();
-	}
-	
 	return ret;
+}
+
+void SelectAiModelDialog::done(int result)
+{
+	if (result == QDialog::Accepted) {
+		if (!save(this)) {
+			QMessageBox::warning(this, tr("AI Model Settings"), tr("Could not save model settings or API keys. Please retry; the dialog remains open."));
+			return;
+		}
+		MySettings settings; settings.beginGroup("AI");
+		settings.setValue("DefaultModelGUID", QString::fromStdString(m->default_model_guid));
+	}
+	QDialog::done(result);
 }
 
 void SelectAiModelDialog::on_pushButton_manage_api_keys_clicked()
 {
-	save_api_keys(); // 現在までの変更を確定
-	
-	AiApiKeys ai_api_keys;
-	global->load_api_keys(this, &ai_api_keys);
-	
-	ManageApiKeysDialog dlg(this, ai_api_keys);
-	if (dlg.exec() == QDialog::Accepted) {
-		ai_api_keys = dlg.api_keys();
-		global->save_api_keys(this, ai_api_keys);
-		on_cred_key_method_changed();
+	if (!load_keys()) return;
+	ManageApiKeysDialog dialog(this, draft_keys());
+	if (dialog.exec() == QDialog::Accepted) {
+		m->keys = dialog.api_keys(); m->api_key_map.clear();
+		selectItem(ui->listWidget_items->currentRow());
 	}
 }
 

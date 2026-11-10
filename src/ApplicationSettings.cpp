@@ -1,4 +1,5 @@
 #include "ApplicationSettings.h"
+#include <QSaveFile>
 #include "ApplicationGlobal.h"
 #include "Logger.h"
 #include "MySettings.h"
@@ -286,6 +287,7 @@ bool AiApiKeys::load(localvault::Vault *vault)
 					std::string envname = line.left(eq).trimmed().toStdString();
 					std::string api_key = line.mid(eq + 1).trimmed().toStdString();
 					map[envname].api_key = api_key;
+					map[envname].from = AiApiKeys::KeyFrom::LocalSecret;
 				}
 			}
 			return true;
@@ -296,43 +298,19 @@ bool AiApiKeys::load(localvault::Vault *vault)
 
 bool AiApiKeys::save(localvault::Vault *vault)
 {
-	auto MKPATH = [&](const QString &path) {
-		if (!QFileInfo(path).isDir()) {
-			if (!QDir().mkpath(path)) {
-				qDebug() << "Failed to create directory:" << path;
-			}
-		}
-		return QFileInfo(path).isDir();
-	};
-
-	bool ret = false;
-	
-	QByteArray ba;
-	{
-		QBuffer buffer;
-		buffer.open(QIODevice::WriteOnly);
-		for (auto const &pair : map) {
-			std::string line = fmt("%s=%s\n")(pair.first)(misc::trimmed(pair.second.api_key));
-			buffer.write(line.c_str(), line.size());
-		}
-		ba = buffer.buffer();
+	if (!vault) return false;
+	QByteArray bytes;
+	for (auto const &[symbol, item] : map) {
+		if (symbol.empty() || symbol.find('\0') != std::string::npos || item.api_key.find('\0') != std::string::npos || symbol.find_first_of("=\r\n") != std::string::npos || item.api_key.find_first_of("\r\n") != std::string::npos) return false;
+		bytes += QByteArray::fromStdString(symbol + "=" + std::string(misc::trimmed(item.api_key)) + "\n");
 	}
-	
-	QString secret_dir = global->app_secret_config_dir;
-	
-	localvault::SecureBuffer secret((void const *)ba.constData(), ba.size());
-	QFile file(secret_dir / api_keys_bin_filename);
-	if (file.open(QIODevice::WriteOnly | QIODevice::Truncate)) {
-		localvault::Blob encrypted;
-		localvault::VaultError err = vault->encrypt(secret, &encrypted);
-		if (err == localvault::VaultError::None) {
-			file.write(encrypted.data(), encrypted.size());
-			ret = true;
-		}
-		file.close();
-	}
-	
-	return ret;
+	localvault::SecureBuffer secret(bytes.constData(), bytes.size());
+	localvault::Blob encrypted;
+	if (vault->encrypt(secret, &encrypted) != localvault::VaultError::None) return false;
+	QSaveFile file(global->app_secret_config_dir / api_keys_bin_filename);
+	if (!file.open(QIODevice::WriteOnly)) return false;
+	if (!file.setPermissions(QFile::ReadOwner | QFile::WriteOwner)) return false;
+	return file.write(encrypted.data(), encrypted.size()) == static_cast<qint64>(encrypted.size()) && file.commit();
 }
 
 

@@ -6,6 +6,8 @@
 
 #include <ai/GenerativeAI.h>
 
+class AiApiKeys;
+
 namespace GenerativeAI {
 class ProviderInfo;
 }
@@ -48,15 +50,17 @@ private:
 	
 	QString aimodels_json_path() const;
 	
-	void save_api_keys();
+	bool save_api_keys();
+	bool load_keys();
+	AiApiKeys draft_keys() const;
 	std::string default_model_guid() const;
 	const GenerativeAI::ProviderInfo *provider_info(GenerativeAI::ProviderID provider_id) const;
 public:
 	explicit SelectAiModelDialog(QWidget *parent);
 	~SelectAiModelDialog();
 	
-	void load(QWidget *parent);
-	void save(QWidget *parent);
+	bool load(QWidget *parent);
+	bool save(QWidget *parent);
 private slots:
 	void on_checkBox_show_api_key_clicked();
 	void on_comboBox_api_type_currentIndexChanged(int index);
@@ -64,7 +68,7 @@ private slots:
 	void on_comboBox_provider_currentIndexChanged(int index);
 	void on_lineEdit_cred_api_key_textChanged(const QString &arg1);
 	void on_lineEdit_cred_symbol_textChanged(const QString &arg1);
-	void on_lineEdit_cred_symbol_textEdited(const QString &arg1);
+	void on_lineEdit_account_textChanged(const QString &arg1);
 	void on_lineEdit_endpoint_url_textChanged(const QString &arg1);
 	void on_lineEdit_name_textChanged(const QString &arg1);
 	void on_listWidget_items_currentRowChanged(int currentRow);
@@ -85,6 +89,7 @@ private slots:
 	
 public slots:
 	int exec(QWidget *parent);
+	void done(int result) override;
 };
 
 #endif // SELECTAIMODELDIALOG_H

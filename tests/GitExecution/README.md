@@ -35,3 +35,13 @@ logs. No external AI service or real API key is used. The AI transport has a
 120-second total deadline, a 4 MiB response limit and 25 ms cancellation polling;
 commit diffs are limited to 200000 bytes and include text patches/binary summaries
 from the index, without running external diff or textconv programs.
+
+Model-settings regressions use the real modal dialogs with a disposable encrypted
+Vault. They cover Custom/provider round trips, rendering and row ordering,
+protocol preservation, pending key edits, nested/parent cancellation, failed and
+cancelled model queries, presets, legacy-file loading, malformed inputs, and
+failed encryption/metadata writes. Model files retain their legacy on-disk shape
+for compatibility; the reader also accepts array records. Model and encrypted-key
+files use atomic replacement. If committing metadata fails after key replacement,
+the old encrypted keys are restored; a failed rollback attempts to retain an
+`apikeys.bin.recovery` copy and reports failure instead of accepting the dialog.

@@ -24,3 +24,4 @@ reuse_app_objects {
         HEADERS += $$SRC/texteditor/$${unit}.h
     }
 }
+SOURCES += $$PWD/model_settings_tests.cpp
