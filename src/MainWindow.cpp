@@ -149,6 +149,9 @@ struct MainWindow::Private {
 	RepositoryInfo current_repository;
 
 	RepositoryData current_repository_data;
+	std::optional<std::string> loaded_history_state;
+	std::string loaded_history_repository;
+	int loaded_history_limit = 0;
 	void clearCurrentRepositoryData()
 	{
 		current_repository_data = { };
@@ -1558,55 +1561,13 @@ std::optional<GitCommitItem> MainWindow::getCommitItem(GitRunner g, GitHash cons
 GitCommitItemList MainWindow::log_all2(GitRunner g, GitHash const &id, int maxcount) const
 {
 	TraceLogger trace("log_all2", { });
-#if 0
-	auto list = g.log_all(id, maxcount);
-#else
-
-	std::vector<GitHash> revlist = g.rev_list_all(id, maxcount);
-
+	auto revlist = g.rev_list_all(id, maxcount);
+	if (auto batch = g.readCommits(revlist)) return std::move(*batch);
+	// Preserve the independent reader/external fallback if batch is unavailable.
 	std::vector<GitCommitItem> list;
-	if (0) { // シングルスレッド版
-		for (GitHash const &hash : revlist) {
-			auto item = getCommitItem(g, hash);
-			if (item) {
-				list.push_back(*item);
-			}
-		}
-	} else { // マルチスレッド版
-		std::vector<std::pair<size_t, GitCommitItem>> vec(revlist.size());
-		std::atomic_size_t in = 0;
-		std::atomic_size_t to = 0;
-		std::vector<std::thread> threads(8);
-		for (size_t i = 0; i < threads.size(); i++) {
-			threads[i] = std::thread([&]() {
-				while (1) {
-					size_t j = in++;
-					if (j >= revlist.size()) break;
-					GitHash const &hash = revlist[j];
-					auto item = getCommitItem(g, hash);
-					if (item) {
-						vec.at(to++) = { j, *item };
-					}
-				}
-			});
-		}
-		for (size_t i = 0; i < threads.size(); i++) {
-			threads[i].join();
-		}
-		const size_t N = to;
-		std::vector<std::pair<size_t, GitCommitItem> const *> ptrs(N);
-		for (size_t i = 0; i < N; i++) {
-			ptrs[i] = &vec[i];
-		}
-		std::sort(ptrs.begin(), ptrs.end(), [](auto const &a, auto const &b) {
-			return a->first < b->first;
-		});
-		list.reserve(N);
-		for (auto const *pair : ptrs) {
-			list.push_back(pair->second);
-		}
+	for (auto const &hash : revlist) {
+		if (auto item = getCommitItem(g, hash)) list.push_back(std::move(*item));
 	}
-#endif
 	return GitCommitItemList(std::move(list));
 }
 
@@ -1834,6 +1795,9 @@ void MainWindow::openRepositoryMain(OpenRepositoryOption const &opt)
 		ui->label_branch_name->setText(QString());
 	}
 
+	// Snapshot alongside retrieval; a changed/failed snapshot forces refresh later.
+	auto async_history_state = std::async(std::launch::async, [g]() mutable { return g.historyState(); });
+
 	// HEAD を取得
 	auto async_head = std::async(std::launch::async, [&]() {
 		return g.rev_parse("HEAD");
@@ -1851,13 +1815,18 @@ void MainWindow::openRepositoryMain(OpenRepositoryOption const &opt)
 	{
 		int scroll_pos = -1;
 		int select_row = -1;
+		GitHash selected_id;
 		if (opt.keep_selection) {
 			scroll_pos = ui->tableWidget_log->verticalScrollBar()->value();
 			select_row = ui->tableWidget_log->currentRow();
+			if (auto item = getLog(select_row)) selected_id = item->commit_id;
 		}
 
 		auto head = async_head.get();
 		auto exdata = async_exdata.get();
+		if (selected_id) {
+			select_row = exdata.p->commit_log->find_index(selected_id);
+		}
 		makeCommitLog(head, exdata, scroll_pos, select_row);
 	}
 
@@ -1882,6 +1851,10 @@ void MainWindow::openRepositoryMain(OpenRepositoryOption const &opt)
 
 		setRepositoryInfo(repo_name, info);
 	}
+
+	m->loaded_history_state = async_history_state.get();
+	m->loaded_history_repository = g.workingDir();
+	m->loaded_history_limit = limitLogCount();
 
 	bool do_fetch = opt.do_fetch;
 	if (do_fetch) {
@@ -2565,7 +2538,19 @@ void MainWindow::internalAfterFetch()
 	ASSERT_MAIN_THREAD();
 
 	clearGitCommandCache();
-
+	clearGitObjectCache(); // Pack storage may have changed even when refs did not.
+	GitRunner g = git();
+	auto state = g.historyState();
+	bool was_dirty = isThereUncommittedChanges();
+	updateUncommittedChanges(g);
+	if (state && m->loaded_history_state == state && m->loaded_history_repository == g.workingDir() &&
+		m->loaded_history_limit == limitLogCount() && was_dirty == isThereUncommittedChanges()) {
+		updateRemoteInfo();
+		updateUI();
+		updateCurrentFileList();
+		updateStatusBarText();
+		return;
+	}
 	updateRemoteInfo();
 
 	OpenRepositoryOption opt;
@@ -2624,6 +2609,8 @@ void MainWindow::onPtyProcessCompleted(bool ok, PtyProcessCompleted const &data)
 	clearStatusInfo();
 
 	if (ok) {
+		// Reap the completed PTY worker even when the callback skips reopening.
+		getPtyProcess()->wait(5000);
 		if (data.callback) {
 			data.callback(data.status.get(), data.userdata);
 		}
@@ -2951,8 +2938,9 @@ void MainWindow::commitAmend()
  */
 void MainWindow::fetch(GitRunner g, bool prune)
 {
-	runPtyGit(tr("Fetching..."), g, Git_fetch { prune }, RUN_PTY_CALLBACK {
-		internalAfterFetch();
+	runPtyGit(tr("Fetching..."), g, Git_fetch { prune }, [this, directory = g.workingDir()](ProcessStatus *, QVariant const &) {
+		// A completed fetch must not refresh a different repository selected meanwhile.
+		if (git() && git().workingDir() == directory) internalAfterFetch();
 	}, { });
 }
 
@@ -4834,7 +4822,17 @@ void MainWindow::on_action_commit_triggered()
 
 void MainWindow::on_action_fetch_triggered()
 {
-	reopenRepository(false, { });
+	if (!git()) return;
+	if (isOnlineMode()) {
+		fetch(git(), false);
+	} else {
+		// In offline mode the same action is labelled "Update".
+		OpenRepositoryOption opt;
+		opt.do_fetch = false;
+		opt.clear_log = false;
+		opt.keep_selection = true;
+		reopenRepository(false, opt);
+	}
 }
 
 void MainWindow::on_action_fetch_prune_triggered()

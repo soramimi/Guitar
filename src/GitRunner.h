@@ -104,6 +104,8 @@ public:
 	bool rebase_abort();
 
 	GitCommitItemList log_all(GitHash const &id, int maxcount);
+	std::optional<GitCommitItemList> readCommits(std::vector<GitHash> const &ids);
+	std::optional<std::string> historyState();
 	GitCommitItemList log_file(const std::string &path, int maxcount);
 	std::vector<GitHash> rev_list_all(GitHash const &id, int maxcount);
 

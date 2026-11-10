@@ -125,6 +125,8 @@ public:
 
 	GitCommitItemList log_file(const std::string &path, int maxcount);
 	GitCommitItemList log_all(GitHash const &id, int maxcount);
+	std::optional<GitCommitItemList> readCommits(std::vector<GitHash> const &ids);
+	std::optional<std::string> historyState();
 	std::vector<GitHash> rev_list_all(GitHash const &id, int maxcount);
 
 	std::optional<GitCommitItem> log_signature(GitHash const &id);

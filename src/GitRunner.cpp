@@ -549,3 +549,13 @@ std::optional<std::vector<char>> GitRunner::readfile(std::string const &path)
 {
 	return gitptr()->readfile(path);
 }
+
+std::optional<GitCommitItemList> GitRunner::readCommits(std::vector<GitHash> const &ids)
+{
+	return gitptr()->readCommits(ids);
+}
+
+std::optional<std::string> GitRunner::historyState()
+{
+	return gitptr()->historyState();
+}

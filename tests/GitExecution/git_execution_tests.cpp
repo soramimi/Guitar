@@ -281,6 +281,110 @@ TEST(AiTransport, SuccessfulLocalCompletionDoesNotLogSecretsOrDiff)
     QFile file(path); ASSERT_TRUE(file.open(QIODevice::ReadOnly)); auto contents = file.readAll();
     EXPECT_FALSE(contents.contains("DUMMY_KEY_SENTINEL")); EXPECT_FALSE(contents.contains("DUMMY_DIFF_SENTINEL"));
 }
+
+TEST_F(GitExecution, BatchCommitsPreserveRawParserSemanticsAndOrder)
+{
+    write("commit-message", "Subject #parent:literal\n\nBody with tabs\tand UTF-8 日本語\n\nAnother paragraph\n");
+    direct({"commit", "--allow-empty", "-F", root + "/commit-message"});
+    auto ids = git->rev_list_all({}, 100);
+    auto result = git->readCommits(ids); ASSERT_TRUE(result); ASSERT_EQ(result->size(), ids.size());
+    for (size_t i = 0; i < ids.size(); ++i) {
+        auto raw = direct({"cat-file", "-p", QString::fromStdString(ids[i].toString())});
+        auto expected = Git::parseCommit(std::vector<char>(raw.begin(), raw.end())); ASSERT_TRUE(expected);
+        auto const &actual = (*result)[i];
+        EXPECT_EQ(actual.commit_id, ids[i]); EXPECT_EQ(actual.tree, expected->tree);
+        EXPECT_EQ(actual.parent_ids, expected->parent_ids); EXPECT_EQ(actual.message, expected->message);
+        EXPECT_EQ(actual.author, expected->author); EXPECT_EQ(actual.email, expected->email);
+        EXPECT_EQ(actual.commit_date.toSecsSinceEpoch(), expected->commit_date.toSecsSinceEpoch()); EXPECT_EQ(actual.gpgsig, expected->gpgsig);
+    }
+    std::reverse(ids.begin(), ids.end()); result = git->readCommits(ids); ASSERT_TRUE(result);
+    for (size_t i = 0; i < ids.size(); ++i) EXPECT_EQ((*result)[i].commit_id, ids[i]);
+}
+TEST_F(GitExecution, BatchCommitsPreserveMergeParentsAndSignaturePayload)
+{
+    auto head = direct({"rev-parse", "HEAD"}).trimmed();
+    auto tree = direct({"rev-parse", "HEAD^{tree}"}).trimmed();
+    QByteArray raw = "tree " + tree + "\nparent " + head + "\nparent " + head +
+        "\nauthor Test <test@example.invalid> 1700000000 +0900\ncommitter Test <test@example.invalid> 1700000001 +0900\n"
+        "gpgsig -----BEGIN PGP SIGNATURE-----\n synthetic test payload\n -----END PGP SIGNATURE-----\n"
+        "\nMerge subject #literal\n\nMultiline body\n";
+    write("raw-commit", raw);
+    auto id = direct({"hash-object", "-w", "-t", "commit", root + "/raw-commit"}).trimmed();
+    auto result = git->readCommits({GitHash(id.toStdString())}); ASSERT_TRUE(result); ASSERT_EQ(result->size(), 1u);
+    auto expected = Git::parseCommit(std::vector<char>(raw.begin(), raw.end())); ASSERT_TRUE(expected);
+    EXPECT_EQ((*result)[0].parent_ids, expected->parent_ids); EXPECT_EQ((*result)[0].parent_ids.size(), 2u);
+    EXPECT_TRUE((*result)[0].has_gpgsig); EXPECT_EQ((*result)[0].gpgsig, expected->gpgsig);
+    EXPECT_EQ((*result)[0].message, expected->message);
+}
+TEST_F(GitExecution, BatchCommitsDrainLargeOutputAcrossRequestWindows)
+{
+    write("message", QByteArray(128 * 1024, 'x') + "\n");
+    direct({"commit", "--allow-empty", "-F", root + "/message"});
+    auto id = git->rev_parse("HEAD"); std::vector<GitHash> ids(150, id);
+    auto result = git->readCommits(ids); ASSERT_TRUE(result); ASSERT_EQ(result->size(), ids.size());
+    EXPECT_EQ((*result)[0].message.size(), (*result)[149].message.size());
+    EXPECT_GE((*result)[149].message.size(), 128 * 1024u);
+}
+TEST_F(GitExecution, BatchCommitsRejectMissingObjectsAndNoncommits)
+{
+    auto empty = git->readCommits({}); ASSERT_TRUE(empty); EXPECT_TRUE(empty->empty());
+    EXPECT_FALSE(git->readCommits({GitHash("1111111111111111111111111111111111111111")}));
+    auto tree = direct({"rev-parse", "HEAD^{tree}"}).trimmed();
+    EXPECT_FALSE(git->readCommits({GitHash(tree.toStdString())}));
+    EXPECT_FALSE(git->readCommits({GitHash()}));
+}
+TEST_F(GitExecution, BatchCommitsRejectMalformedFramingAndNonzeroExit)
+{
+    auto head = git->rev_parse("HEAD"); auto id = QByteArray::fromStdString(head.toString());
+    auto raw = direct({"cat-file", "-p", QString::fromLatin1(id)});
+    std::vector<QByteArray> responses = {
+        id + " commit -1\n", id + " commit 9999999999999999999999\n",
+        id + " commit 16777217\n", id + " commit 9\nshort", id + " missing\n",
+        QByteArray(200, 'x') + '\n', QByteArray(40, '1') + " commit 0\n\n",
+        id + " commit " + QByteArray::number(raw.size()) + '\n' + raw + "!"
+    };
+    for (auto const &response : responses) {
+        write("response", response);
+        write("fake-git", "#!/bin/sh\ncat response\n");
+        ASSERT_TRUE(QFile::setPermissions(root + "/fake-git", QFile::ReadOwner | QFile::WriteOwner | QFile::ExeOwner));
+        GitContext context; context.git_command = (root + "/fake-git").toStdString();
+        Git fake(context, root.toStdString(), "", ""); EXPECT_FALSE(fake.readCommits({head}));
+    }
+    write("response", id + " commit " + QByteArray::number(raw.size()) + '\n' + raw + '\n');
+    write("fake-git", "#!/bin/sh\ncat response\nexit 1\n");
+    GitContext context; context.git_command = (root + "/fake-git").toStdString();
+    Git fake(context, root.toStdString(), "", ""); EXPECT_FALSE(fake.readCommits({head}));
+}
+TEST_F(GitExecution, HistoryStateTracksAllRefsAndSymbolicHead)
+{
+    auto original = git->historyState(); ASSERT_TRUE(original); EXPECT_EQ(original, git->historyState());
+    auto head = direct({"rev-parse", "HEAD"}).trimmed();
+    direct({"tag", "new-tag"}); EXPECT_NE(original, git->historyState());
+    direct({"tag", "-d", "new-tag"}); EXPECT_EQ(original, git->historyState());
+    direct({"update-ref", "refs/remotes/example/topic", QString::fromLatin1(head)}); EXPECT_NE(original, git->historyState());
+    direct({"update-ref", "-d", "refs/remotes/example/topic"}); EXPECT_EQ(original, git->historyState());
+    direct({"switch", "-c", "same-commit"}); EXPECT_NE(original, git->historyState());
+    auto attached = git->historyState(); direct({"checkout", "--detach"}); EXPECT_NE(attached, git->historyState());
+}
+TEST_F(GitExecution, HistoryStateDetectsShallowBoundaryChanges)
+{
+    auto original = git->historyState(); ASSERT_TRUE(original);
+    auto head = direct({"rev-parse", "HEAD"}); write(".git/shallow", head);
+    auto shallow = git->historyState(); ASSERT_TRUE(shallow); EXPECT_NE(original, shallow);
+    ASSERT_TRUE(QFile::remove(root + "/.git/shallow")); EXPECT_EQ(original, git->historyState());
+}
+TEST_F(GitExecution, LocalFetchNoChangeNewRefAndPruneSnapshots)
+{
+    auto remote = root + "/remote.git"; direct({"init", "--bare", "-q", remote});
+    direct({"remote", "add", "origin", remote}); direct({"push", "origin", "HEAD:refs/heads/main"});
+    auto before = git->historyState(); ASSERT_TRUE(before);
+    ASSERT_TRUE(git->fetch(nullptr, false)); EXPECT_EQ(before, git->historyState());
+    auto head = direct({"rev-parse", "HEAD"}).trimmed();
+    direct({"--git-dir=" + remote, "update-ref", "refs/heads/new-topic", QString::fromLatin1(head)});
+    ASSERT_TRUE(git->fetch(nullptr, false)); auto added = git->historyState(); EXPECT_NE(before, added);
+    direct({"--git-dir=" + remote, "update-ref", "-d", "refs/heads/new-topic"});
+    ASSERT_TRUE(git->fetch(nullptr, true)); EXPECT_EQ(before, git->historyState());
+}
 int main(int argc, char **argv)
 {
     if (argc >= 2 && std::string(argv[1]) == "--echo-argv") {

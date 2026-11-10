@@ -14,6 +14,10 @@
 #include <common/qmisc.h>
 #include <common/str.h>
 #include <future>
+#include <QProcess>
+#include <QFile>
+#include <QFileInfo>
+#include <QElapsedTimer>
 
 #ifdef _WIN32
 #include <QDir>
@@ -1857,4 +1861,93 @@ std::shared_ptr<AbstractGitSession> GitContext::connect() const
 	return ret;
 #endif
 #endif
+}
+
+// Read bounded batches through one Git process. Commit bodies are length-framed,
+// so embedded newlines, delimiters and encodings retain parseCommit semantics.
+std::optional<GitCommitItemList> Git::readCommits(std::vector<GitHash> const &ids)
+{
+	if (ids.empty()) return GitCommitItemList();
+	for (auto const &id : ids) if (!id.isValid()) return {};
+	QProcess process;
+	process.setWorkingDirectory(QString::fromStdString(workingDir()));
+	process.setStandardErrorFile(QProcess::nullDevice());
+	process.start(QString::fromStdString(gitinfo().git_command), {"--no-pager", "cat-file", "--batch"});
+	if (!process.waitForStarted(10000)) return {};
+	struct StopProcess {
+		QProcess &process;
+		~StopProcess() {
+			if (process.state() != QProcess::NotRunning) { process.kill(); process.waitForFinished(1000); }
+		}
+	} stop_process{process};
+	QElapsedTimer deadline;
+	deadline.start();
+	QByteArray buffer;
+	auto receive = [&]() {
+		if (deadline.elapsed() >= 120000) return false;
+		if (!process.bytesAvailable() && !process.waitForReadyRead(30000)) return false;
+		buffer += process.readAllStandardOutput();
+		return buffer.size() <= 32 * 1024 * 1024;
+	};
+	std::vector<GitCommitItem> result;
+	result.reserve(ids.size());
+	for (size_t start = 0; start < ids.size(); start += 64) {
+		if (deadline.elapsed() >= 120000) return {};
+		auto end = std::min(ids.size(), start + 64);
+		QByteArray request;
+		for (size_t i = start; i < end; ++i) request += QByteArray::fromStdString(ids[i].toString()) + '\n';
+		if (process.write(request) != request.size()) return {};
+		for (size_t i = start; i < end; ++i) {
+			qsizetype newline;
+			while ((newline = buffer.indexOf('\n')) < 0) {
+				if (buffer.size() > 128 || !receive()) return {};
+			}
+			if (newline > 128) return {};
+			auto header = buffer.left(newline).split(' ');
+			if (header.size() != 3 || header[0] != QByteArray::fromStdString(ids[i].toString()) || header[1] != "commit") return {};
+			bool ok = false;
+			auto size = header[2].toLongLong(&ok);
+			if (!ok || size < 0 || size > 16 * 1024 * 1024) return {};
+			buffer.remove(0, newline + 1);
+			while (buffer.size() < size + 1) if (!receive()) return {};
+			if (buffer.at(size) != '\n') return {};
+			auto content = buffer.left(size);
+			auto item = parseCommit(QBA(content).vc());
+			if (!item) return {};
+			item->commit_id = ids[i];
+			result.push_back(std::move(*item));
+			buffer.remove(0, size + 1);
+		}
+	}
+	process.closeWriteChannel();
+	if (process.state() != QProcess::NotRunning && !process.waitForFinished(10000)) return {};
+	if (process.exitStatus() != QProcess::NormalExit || process.exitCode() != 0 ||
+		!buffer.isEmpty() || !process.readAllStandardOutput().isEmpty()) return {};
+	return GitCommitItemList(std::move(result));
+}
+
+// Include all roots (not just HEAD), symbolic HEAD and shallow/graft boundaries.
+// An unavailable snapshot means "refresh", never "unchanged".
+std::optional<std::string> Git::historyState()
+{
+	std::string state;
+	auto refs = git_nolog("for-each-ref --format=\"%(HEAD) %(refname) %(objectname) %(symref) %(upstream)\"", nullptr);
+	if (!refs || refs->exit_code() != 0) return {};
+	state = resultStdString(refs);
+	// %(HEAD) identifies the attached branch; --verify also covers detached HEAD.
+	auto paths = git_nolog("rev-parse --git-path shallow --git-path info/grafts --verify HEAD", nullptr);
+	if (!paths || paths->exit_code() != 0) return {};
+	auto lines = QString::fromStdString(resultStdString(paths)).split('\n', Qt::SkipEmptyParts);
+	if (lines.size() != 3 || !GitHash::isValidID(lines.last().toStdString())) return {};
+	state += lines.takeLast().toStdString() + "\n";
+	for (auto const &line : lines) {
+		auto path = QFileInfo(line).isAbsolute() ? line : QString::fromStdString(workingDir()) + '/' + line;
+		QFile file(path);
+		if (!file.exists()) { state += "missing:"; continue; }
+		if (!file.open(QIODevice::ReadOnly) || file.size() > 1024 * 1024) return {};
+		auto bytes = file.readAll();
+		if (file.error() != QFile::NoError) return {};
+		state += std::to_string(bytes.size()) + ":" + bytes.toStdString();
+	}
+	return state;
 }
