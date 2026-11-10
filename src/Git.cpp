@@ -1868,7 +1868,9 @@ std::shared_ptr<AbstractGitSession> GitContext::connect() const
 std::optional<GitCommitItemList> Git::readCommits(std::vector<GitHash> const &ids)
 {
 	if (ids.empty()) return GitCommitItemList();
-	for (auto const &id : ids) if (!id.isValid()) return {};
+	for (auto const &id : ids) {
+		if (!id.isValid()) return {};
+	}
 	QProcess process;
 	process.setWorkingDirectory(QString::fromStdString(workingDir()));
 	process.setStandardErrorFile(QProcess::nullDevice());
@@ -1877,13 +1879,15 @@ std::optional<GitCommitItemList> Git::readCommits(std::vector<GitHash> const &id
 	struct StopProcess {
 		QProcess &process;
 		~StopProcess() {
-			if (process.state() != QProcess::NotRunning) { process.kill(); process.waitForFinished(1000); }
+			if (process.state() != QProcess::NotRunning) {
+				process.kill(); process.waitForFinished(1000);
+			}
 		}
 	} stop_process{process};
 	QElapsedTimer deadline;
 	deadline.start();
 	QByteArray buffer;
-	auto receive = [&]() {
+	auto Receive = [&]() {
 		if (deadline.elapsed() >= 120000) return false;
 		if (!process.bytesAvailable() && !process.waitForReadyRead(30000)) return false;
 		buffer += process.readAllStandardOutput();
@@ -1900,7 +1904,7 @@ std::optional<GitCommitItemList> Git::readCommits(std::vector<GitHash> const &id
 		for (size_t i = start; i < end; ++i) {
 			qsizetype newline;
 			while ((newline = buffer.indexOf('\n')) < 0) {
-				if (buffer.size() > 128 || !receive()) return {};
+				if (buffer.size() > 128 || !Receive()) return {};
 			}
 			if (newline > 128) return {};
 			auto header = buffer.left(newline).split(' ');
@@ -1909,7 +1913,9 @@ std::optional<GitCommitItemList> Git::readCommits(std::vector<GitHash> const &id
 			auto size = header[2].toLongLong(&ok);
 			if (!ok || size < 0 || size > 16 * 1024 * 1024) return {};
 			buffer.remove(0, newline + 1);
-			while (buffer.size() < size + 1) if (!receive()) return {};
+			while (buffer.size() < size + 1) {
+				if (!Receive()) return {};
+			}
 			if (buffer.at(size) != '\n') return {};
 			auto content = buffer.left(size);
 			auto item = parseCommit(QBA(content).vc());

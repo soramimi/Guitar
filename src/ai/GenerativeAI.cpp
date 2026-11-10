@@ -773,104 +773,85 @@ std::optional<std::vector<ModelConf>> ModelConf::load(QWidget *, char const *pat
 	if (!file.open(QIODevice::ReadOnly) || file.size() > 4 * 1024 * 1024) return std::nullopt;
 	auto bytes = file.readAll();
 	if (file.error() != QFile::NoError) return std::nullopt;
-	QJsonParseError error;
-	auto doc = QJsonDocument::fromJson(bytes, &error);
-	if (error.error != QJsonParseError::NoError || !doc.isObject()) return std::nullopt;
-	auto stored = doc.object().value("items");
-	QJsonArray records;
-	if (stored.isArray()) records = stored.toArray();
-	else if (stored.isObject()) {
-		// Older files used repeated "item" keys. Keep all records rather than
-		// letting QJsonObject discard every record except the last one.
-		jstream::Reader reader(bytes.constData(), bytes.size());
-		bool valid = true;
-		while (reader.next()) {
-			if (reader.match_start_object("{items{item{**")) {
-				QJsonObject record, credential;
-				reader.nest([&] {
-					for (auto key : {"guid", "name", "provider", "model", "endpoint_url", "api_type"}) {
-						if (reader.match(std::string("@") + key)) {
-							if (!reader.isstring()) valid = false;
-							record.insert(key, QString::fromStdString(reader.string()));
-						}
-					}
-					for (auto key : {"symbol", "method"}) {
-						if (reader.match(std::string("@credential{") + key)) {
-							if (!reader.isstring()) valid = false;
-							credential.insert(key, QString::fromStdString(reader.string()));
-						}
-					}
-				});
-				record.insert("credential", credential); records.append(record);
-			}
-		}
-		if (!valid || (!stored.toObject().isEmpty() && records.isEmpty())) return std::nullopt;
-	} else return std::nullopt;
+	
 	std::vector<ModelConf> items;
-	std::set<std::string> guids;
-	for (auto value : records) {
-		if (!value.isObject()) return std::nullopt;
-		auto record = value.toObject();
-		for (auto key : {"guid", "name", "provider", "model", "endpoint_url", "api_type"})
-			if (record.contains(key) && !record.value(key).isString()) return std::nullopt;
-		ModelConf conf;
-		conf.guid = record.value("guid").toString().toStdString();
-		if (conf.guid.empty() || !guids.insert(conf.guid).second) return std::nullopt;
-		conf.name = record.value("name").toString().toStdString();
-		auto provider = record.value("provider").toString().toStdString();
-		auto id = provider.empty() ? ProviderID::Custom : provider_id(provider);
-		if (id == ProviderID::Invalid) return std::nullopt;
-		auto modelName = record.value("model").toString().toStdString();
-		conf.model = Model(id, modelName);
-		conf.model.model_name_ = modelName; // The stored field is a model ID, not a URI.
-		conf.model.set_endpoint_url(record.value("endpoint_url").toString().toStdString());
-		conf.api_type = record.value("api_type").toString().toStdString();
-		if (conf.api_type.empty()) conf.api_type = api_type_name(id == ProviderID::Cloudflare ? id : conf.model.api_compatibility());
-		auto api = parse_api_type(conf.api_type);
-		if (api == ProviderID::Custom) return std::nullopt;
-		conf.model.api_compatibility_override = api;
-		if (record.contains("credential") && !record.value("credential").isObject()) return std::nullopt;
-		auto credential = record.value("credential").toObject();
-		for (auto key : {"symbol", "method"})
-			if (credential.contains(key) && !credential.value(key).isString()) return std::nullopt;
-		conf.api_key_symbol = credential.value("symbol").toString().toStdString();
-		conf.api_key_method = credential.value("method").toString().toStdString();
-		if (conf.api_key_method.empty()) conf.api_key_method = std::string(key_store_encryption);
-		if (conf.api_key_method != key_store_environment && conf.api_key_method != key_store_encryption) return std::nullopt;
-		items.push_back(std::move(conf));
+	
+	jstream::Reader r((char const *)bytes.constData(), bytes.size());
+	while (r.next()) {
+		if (r.match_start_object("{items{item{**")) {
+			std::string provider;
+			std::string model;
+			std::string ep_url;
+			ModelConf mc;
+			r.nest([&](){
+				if (r.match("@guid")) {
+					mc.guid = r.string();
+				} else if (r.match("@name")) {
+					mc.name = r.string();
+				} else if (r.match("@provider")) {
+					provider = r.string();
+				} else if (r.match("@api_type")) {
+					mc.api_type = r.string();
+				} else if (r.match("@model")) {
+					model = r.string();
+				} else if (r.match("@api_type")) {
+					mc.api_type = r.string();
+				} else if (r.match("@endpoint_url")) {
+					ep_url = r.string();
+				} else if (r.match("@credential{symbol")) {
+					mc.api_key_symbol = r.string();
+				} else if (r.match("@credential{method")) {
+					mc.api_key_method = r.string();
+				}
+			});
+			{
+				mc.model = Model(provider_id(provider), model);
+				mc.model.set_endpoint_url(ep_url);
+				ProviderID at = parse_api_type(mc.api_type);
+				if (at != ProviderID::Custom) {
+					mc.model.api_compatibility_override = at;
+				}
+			}
+			items.push_back(mc);
+		}
 	}
 	return items;
 }
 
 std::optional<std::string> ModelConf::to_json(std::vector<ModelConf> const &items)
 {
-	QJsonArray records; std::set<std::string> guids;
-	for (auto const &conf : items) {
-		if (conf.guid.empty() || !guids.insert(conf.guid).second || !conf.model.provider_info_ || conf.model.provider_id() == ProviderID::Invalid) return std::nullopt;
-		auto api = api_type_name(conf.model.api_compatibility());
-		if (api.empty()) return std::nullopt;
-		QJsonObject credential{{"symbol", QString::fromStdString(conf.api_key_symbol)}, {"method", QString::fromStdString(conf.api_key_method)}};
-		records.append(QJsonObject{{"guid", QString::fromStdString(conf.guid)}, {"name", QString::fromStdString(conf.name)},
-			{"provider", QString::fromStdString(conf.model.provider_info_->tag)}, {"api_type", QString::fromStdString(api)},
-			{"model", QString::fromStdString(conf.model.model_name())}, {"endpoint_url", QString::fromStdString(conf.model.endpoint_url())}, {"credential", credential}});
-	}
-	// Preserve the established repeated-item format for older Guitar versions.
+	bool ok = true;
 	jstream::Writer writer;
-	writer.object({}, [&] {
-		writer.object("items", [&] {
-			for (auto value : records) {
-				auto record = value.toObject();
-				writer.object("item", [&] {
-					for (auto key : {"guid", "name", "provider", "api_type", "endpoint_url", "model"}) writer.string(key, record.value(key).toString().toStdString());
-					writer.object("credential", [&] {
-						auto credential = record.value("credential").toObject();
-						writer.string("symbol", credential.value("symbol").toString().toStdString());
-						writer.string("method", credential.value("method").toString().toStdString());
+	std::set<std::string> guids;
+	writer.object({}, [&](){
+		writer.object("items", [&](){
+			for (ModelConf const &conf : items) {
+				if (conf.guid.empty() || !guids.insert(conf.guid).second || !conf.model.provider_info_ || conf.model.provider_id() == ProviderID::Invalid) {
+					ok = false;
+					break;
+				}
+				auto api = api_type_name(conf.model.api_compatibility());
+				if (api.empty()) {
+					ok = false;
+					break;
+				}
+				writer.object("item", [&](){
+					writer.string("guid", conf.guid);
+					writer.string("name", conf.name);
+					writer.string("provider", conf.model.provider_info_->tag);
+					writer.string("api_type", api);
+					writer.string("endpoint_url", conf.model.endpoint_url());
+					writer.string("model", conf.model.model_name());
+					writer.object("credential", [&](){
+						writer.string("symbol", conf.api_key_symbol);
+						writer.string("method", conf.api_key_method);
 					});
 				});
 			}
 		});
 	});
+	if (!ok) return std::nullopt;
+	
 	std::string json = writer;
 	if (json.size() > 4 * 1024 * 1024) return std::nullopt;
 	return json;
@@ -878,7 +859,8 @@ std::optional<std::string> ModelConf::to_json(std::vector<ModelConf> const &item
 
 bool ModelConf::save(QWidget *, char const *path, std::vector<ModelConf> const &items)
 {
-	auto json = to_json(items); if (!json) return false;
+	auto json = to_json(items);
+	if (!json) return false;
 	QSaveFile file(QString::fromUtf8(path));
 	return file.open(QIODevice::WriteOnly) && file.write(json->data(), json->size()) == static_cast<qint64>(json->size()) && file.commit();
 }
