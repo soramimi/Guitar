@@ -3,6 +3,7 @@
 #include <QCryptographicHash>
 #include <QDebug>
 #include <QFile>
+#include <limits>
 
 std::string GitPackIdxItem::string(const GitPackIdxItem &item)
 {
@@ -60,14 +61,18 @@ const uint8_t *GitPackIdxV2::object(int i) const
 
 bool GitPackIdxV2::parse(QIODevice *in, int ids_only)
 {
+	clear();
 	try {
 		auto Read = [&](void *ptr, size_t len){
 			const auto l = in->read((char *)ptr, len);
-			return 0 < l && static_cast<size_t>(l) == len;
+			return l >= 0 && static_cast<size_t>(l) == len;
 		};
 		static char const magic[] = "\xff\x74\x4f\x63\x00\x00\x00\x02";
 		if (!Read(&d.header, sizeof(d.header)))    throw QString("failed to read the idx header");
 		if (memcmp(d.header.magic, magic, 8) != 0) throw QString("invalid idx header");
+		for (int i = 1; i < 256; ++i) {
+			if (get_fanout(&d.header, i) < get_fanout(&d.header, i - 1)) throw QString("invalid fanout");
+		}
 		uint32_t size = get_fanout(&d.header, 255);
 		if (size > 2000000) throw QString("number of objects in the idx file is too big");
 		size_t size4 = size * sizeof(uint32_t);
@@ -75,6 +80,9 @@ bool GitPackIdxV2::parse(QIODevice *in, int ids_only)
 		d.objects.resize(size);
 		if (!Read(d.objects.data(), size * 20))       throw QString("failed to read the objects");
 
+		for (size_t i = 1; i < size; ++i) {
+			if (memcmp(d.objects[i - 1].id, d.objects[i].id, 20) >= 0) throw QString("invalid object order");
+		}
 		if (ids_only) return true;
 
 		std::vector<uint32_t> checksums(size);
@@ -100,12 +108,14 @@ bool GitPackIdxV2::parse(QIODevice *in, int ids_only)
 		if (!Read(offsets.data(), size4))           throw QString("failed to read the offset_values");
 		sha1AddData((char const *)offsets.data(), size4);
 
-		for (size_t i = 0; i < offsets.size(); i++) {
-			if (offsets[i] & 0x80) { // MSB in network byte order
-				uint64_t t;
-				if (!Read(&t, sizeof(uint64_t))) throw QString("failed to read the offset_entrie");
-				sha1AddData((char const *)&t, sizeof(uint64_t));
-			}
+		size_t large_count = 0;
+		for (auto const &value : offsets) if (read_uint32_be(&value) & 0x80000000u) ++large_count;
+		std::vector<uint64_t> large_offsets(large_count);
+		for (auto &offset : large_offsets) {
+			uint8_t bytes[8];
+			if (!Read(bytes, sizeof(bytes))) throw QString("failed to read large offsets");
+			sha1AddData(bytes, sizeof(bytes));
+			offset = (uint64_t(read_uint32_be(bytes)) << 32) | read_uint32_be(bytes + 4);
 		}
 		if (!Read(&d.trailer, sizeof(d.trailer)))  throw QString("failed to read the trailer");
 		sha1AddData((char const *)&d.trailer.packfile_checksum, sizeof(d.trailer) - 20);
@@ -121,7 +131,14 @@ bool GitPackIdxV2::parse(QIODevice *in, int ids_only)
 		d.item_list_order_by_offset.resize(size);
 
 		auto offset = [&](size_t i) {
-			return read_uint32_be(&offsets[i]);
+			uint64_t value = read_uint32_be(&offsets[i]);
+			if (value & 0x80000000u) {
+				auto index = value & 0x7fffffffu;
+				if (index >= large_offsets.size()) throw QString("invalid large offset index");
+				value = large_offsets[index];
+			}
+			if (value < 12 || value > std::numeric_limits<size_t>::max()) throw QString("invalid object offset");
+			return size_t(value);
 		};
 
 		auto checksum = [&](size_t i) {
@@ -136,11 +153,6 @@ bool GitPackIdxV2::parse(QIODevice *in, int ids_only)
 		}
 
 		for (size_t i = 0; i < size; i++) {
-			GitPackIdxItem *item = &d.item_list[i];
-			if (i + 1 < size) {
-				item->packed_size = d.item_list[i + 1].offset - d.item_list[i].offset;
-			}
-
 			d.item_list_order_by_id[i] = &d.item_list[i];
 			d.item_list_order_by_offset[i] = &d.item_list[i];
 		}
@@ -153,10 +165,17 @@ bool GitPackIdxV2::parse(QIODevice *in, int ids_only)
 			return l->offset < r->offset;
 		});
 
+		for (size_t i = 1; i < size; ++i) {
+			auto previous = d.item_list_order_by_offset[i - 1];
+			auto next = d.item_list_order_by_offset[i];
+			if (next->offset <= previous->offset) throw QString("duplicate object offset");
+			previous->packed_size = next->offset - previous->offset;
+		}
 		return true;
 	} catch (QString const &e) {
 		qDebug() << e;
 	}
+	clear();
 	return false;
 }
 

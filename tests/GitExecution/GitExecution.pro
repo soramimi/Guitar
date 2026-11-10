@@ -25,3 +25,5 @@ reuse_app_objects {
     }
 }
 SOURCES += $$PWD/model_settings_tests.cpp
+
+SOURCES += $$PWD/pack_tests.cpp

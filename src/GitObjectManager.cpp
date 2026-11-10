@@ -95,8 +95,7 @@ void GitObjectManager::loadIndexes(GitRunner g, std::mutex *mutex)
 				it.next();
 				std::shared_ptr<GitPackIdxV2> idx = std::make_shared<GitPackIdxV2>();
 				idx->pack_idx_path = it.filePath();
-				idx->parse(idx->pack_idx_path, true);
-				m->git_idx_list.push_back(idx);
+				if (idx->parse(idx->pack_idx_path, true)) m->git_idx_list.push_back(idx);
 			}
 		}
 	};
@@ -114,97 +113,25 @@ void GitObjectManager::clearIndexes()
 	m->git_idx_list.clear();
 }
 
-QByteArray GitObjectManager::applyDelta(QByteArray const *base_obj, QByteArray const *delta_obj)
+bool GitObjectManager::loadPackedObject(std::shared_ptr<GitPackIdxV2> const &idx, QIODevice *packfile, GitPackIdxItem const *item, GitPackObject *out, std::set<size_t> &visiting)
 {
-	QByteArray ret;
-	if (delta_obj->size() > 0) {
-		uint8_t const *begin = (uint8_t const *)delta_obj->data();
-		uint8_t const *end = begin + delta_obj->size();
-		uint8_t const *ptr = begin;
-		auto ReadNumber = [&](){
-			uint64_t n = 0;
-			int shift = 0;
-			while (ptr < end) {
-				uint64_t c = *ptr;
-				ptr++;
-				n |= (c & 0x7f) << shift;
-				shift += 7;
-				if (!(c & 0x80)) break;
-			}
-			return n;
-		};
-		uint64_t a = ReadNumber(); // older file size
-		uint64_t b = ReadNumber(); // newer file size
-		(void)a;
-		(void)b;
-		// cf. https://github.com/github/git-msysgit/blob/master/patch-delta.c
-		while (ptr < end) {
-			uint8_t op = *ptr;
-			ptr++;
-			if (op & 0x80) { // copy operation
-				uint32_t offset = 0;
-				uint32_t length = 0;
-				if (op & 0x01) offset = *ptr++;
-				if (op & 0x02) offset |= (*ptr++ << 8);
-				if (op & 0x04) offset |= (*ptr++ << 16);
-				if (op & 0x08) offset |= ((unsigned) *ptr++ << 24);
-				if (op & 0x10) length = *ptr++;
-				if (op & 0x20) length |= (*ptr++ << 8);
-				if (op & 0x40) length |= (*ptr++ << 16);
-				if (length == 0) length = 0x10000;
-
-				if (offset + length > (uint32_t)base_obj->size()) {
-					qDebug() << Q_FUNC_INFO << "base-file or delta-file is corrupted";
-					ret.clear();
-					return {};
-				}
-				ret.append(base_obj->data() + offset, length);
-			} else if (op > 0) { // insert operation
-				int length = op & 0x7f;
-				if (ptr + length <= end) {
-					ret.append((char const *)ptr, length);
-					ptr += length;
-				}
-			} else {
-				qDebug() << Q_FUNC_INFO << "unexpected delta opcode 0";
-			}
-		}
+	if (visiting.size() >= 128 || !visiting.insert(item->offset).second) return false;
+	struct Cleanup { std::set<size_t> &seen; size_t offset; ~Cleanup() { seen.erase(offset); } } cleanup{visiting, item->offset};
+	GitPackObject object;
+	if (!GitPack::load(packfile, item, &object)) return false;
+	if (object.type == GitObject::Type::OFS_DELTA || object.type == GitObject::Type::REF_DELTA) {
+		auto source_item = object.type == GitObject::Type::OFS_DELTA
+			? idx->item(item->offset - object.offset) : idx->item(GitHash(object.ref_id));
+		GitPackObject source;
+		if (!source_item || !loadPackedObject(idx, packfile, source_item, &source, visiting)) return false;
+		auto content = GitPack::applyDelta(source.content, object.content);
+		if (!content) return false;
+		object.type = source.type;
+		object.content = std::move(*content);
+		object.expanded_size = object.content.size();
 	}
-	return ret;
-}
-
-bool GitObjectManager::loadPackedObject(std::shared_ptr<GitPackIdxV2> const &idx, QIODevice *packfile, GitPackIdxItem const *item, GitPackObject *out)
-{
-	GitPackInfo info;
-	if (GitPack::seekPackedObject(packfile, item, &info)) {
-		GitPackIdxItem const *source_item = nullptr;
-		if (info.type == GitObject::Type::OFS_DELTA) {
-			source_item = idx->item(item->offset - info.offset);
-		} else if (info.type == GitObject::Type::REF_DELTA) {
-			source_item = idx->item(GitHash(info.ref_id));
-		}
-		if (source_item) {
-			GitPackObject source;
-			if (source_item && loadPackedObject(idx, packfile, source_item, &source)) {
-				GitPackObject delta;
-				if (GitPack::load(packfile, item, &delta)) {
-					if (delta.checksum != item->checksum) {
-						qDebug() << "crc checksum incorrect";
-						return false;
-					}
-					QByteArray ba = applyDelta(&source.content, &delta.content);
-					*out = GitPackObject();
-					out->type = source.type;
-					out->content = std::move(ba);
-					out->expanded_size = out->content.size();
-					return true;
-				}
-			}
-			qDebug() << Q_FUNC_INFO << "failed";
-			return false;
-		}
-	}
-	return GitPack::load(packfile, item, out);
+	*out = std::move(object);
+	return true;
 }
 
 bool GitObjectManager::extractObjectFromPackFile(std::shared_ptr<GitPackIdxV2> const &idx, GitPackIdxItem const *item, GitPackObject *out)
@@ -212,9 +139,10 @@ bool GitObjectManager::extractObjectFromPackFile(std::shared_ptr<GitPackIdxV2> c
 	*out = GitPackObject();
 	QFile packfile(idx->pack_file_path());
 	if (packfile.open(QFile::ReadOnly)) {
-		if (loadPackedObject(idx, &packfile, item, out)) {
+		std::set<size_t> visiting;
+		if (loadPackedObject(idx, &packfile, item, out, visiting)) {
 			if (out->type == GitObject::Type::TREE) {
-				GitPack::decodeTree(&out->content);
+				if (!GitPack::decodeTree(&out->content)) return false;
 			}
 			return true;
 		}
@@ -314,8 +242,9 @@ bool GitObjectManager::loadObject(GitRunner g, GitHash const &id, QByteArray *ou
 			reader.open(MemoryReader::ReadOnly);
 			if (GitPack::decompress(&reader, 1000000000, out)) {
 				*type = GitPack::stripHeader(out);
+				if (*type == GitObject::Type::UNKNOWN) return false;
 				if (*type == GitObject::Type::TREE) {
-					GitPack::decodeTree(out);
+					if (!GitPack::decodeTree(out)) return false;
 				}
 				return true;
 			}
@@ -326,6 +255,7 @@ bool GitObjectManager::loadObject(GitRunner g, GitHash const &id, QByteArray *ou
 
 bool GitObjectManager::catFile(GitRunner g, GitHash const &id, QByteArray *out, GitObject::Type *type)
 {
+	out->clear();
 	*type = GitObject::Type::UNKNOWN;
 	if (loadObject(g, id, out, type)) return true;
 	if (extractObjectFromPackFile(g, id, out, type, m->mutex_)) return true;

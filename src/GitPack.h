@@ -5,6 +5,7 @@
 #include "GitObject.h"
 #include <QIODevice>
 #include <cstdint>
+#include <optional>
 
 struct GitPackIdxItem;
 
@@ -30,11 +31,12 @@ private:
 	}
 
 public:
-	static bool decompress(QIODevice *in, size_t expanded_size, QByteArray *out, size_t *consumed = nullptr, uint32_t *crc = nullptr);
+	static bool decompress(QIODevice *in, size_t expanded_size, QByteArray *out, size_t *consumed = nullptr, uint32_t *crc = nullptr, bool exact_size = false);
 	static bool load(QIODevice *file, GitPackIdxItem const *item, GitPackObject *out);
 	static bool load(QString const &packfile, GitPackIdxItem const *item, GitPackObject *out);
 	static bool seekPackedObject(QIODevice *file, GitPackIdxItem const *item, GitPackInfo *out);
-	static void decodeTree(QByteArray *out);
+	static std::optional<QByteArray> applyDelta(QByteArray const &base, QByteArray const &delta);
+	static bool decodeTree(QByteArray *out);
 	static GitObject::Type stripHeader(QByteArray *out);
 };
 

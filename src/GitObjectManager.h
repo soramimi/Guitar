@@ -3,6 +3,7 @@
 
 #include "GitRunner.h"
 #include <QIODevice>
+#include <set>
 
 namespace std {
 class mutex;
@@ -18,8 +19,7 @@ private:
 	struct Private;
 	Private *m;
 
-	static QByteArray applyDelta(QByteArray const *base, QByteArray const *delta);
-	static bool loadPackedObject(std::shared_ptr<GitPackIdxV2> const &idx, QIODevice *packfile, GitPackIdxItem const *item, GitPackObject *out);
+	static bool loadPackedObject(std::shared_ptr<GitPackIdxV2> const &idx, QIODevice *packfile, GitPackIdxItem const *item, GitPackObject *out, std::set<size_t> &visiting);
 	bool extractObjectFromPackFile(std::shared_ptr<GitPackIdxV2> const &idx, GitPackIdxItem const *item, GitPackObject *out);
 	bool extractObjectFromPackFile(GitRunner g, const GitHash &id, QByteArray *out, GitObject::Type *type, std::mutex *mutex);
 	void loadIndexes(GitRunner g, std::mutex *mutex);
