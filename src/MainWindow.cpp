@@ -2895,6 +2895,8 @@ void MainWindow::commit(bool amend)
 			bool ok;
 
 			AbstractPtyProcess *pty = getPtyProcess();
+			// This operation waits locally; do not reuse a previous fetch callback.
+			setCompletedHandler({}, {});
 			if (amend || dlg.isAmend()) {
 				ok = g.commit_amend_m(text, sign, pty);
 			} else {
@@ -2902,11 +2904,24 @@ void MainWindow::commit(bool amend)
 			}
 			while (pty->wait(1).running()); // wait for the process to finish
 
-			if (ok) {
-				updateStatusBarText();
-				OpenRepositoryOption opt;
-				opt.suppress_uncommit_changes = true;
-				reopenRepository(true, opt);
+			if (ok && pty->get_exit_code() == 0) {
+				updatePtyPocessLog(false);
+				clearStatusInfo();
+				cancelUpdateFileList();
+				clearGitCommandCache();
+				clearGitObjectCache();
+				auto state = g.historyState();
+				auto head = g.rev_parse("HEAD", false);
+				auto exdata = queryCommitLog(g, false);
+				int row = exdata.p->commit_log->find_index(head);
+				makeCommitLog(head, std::move(exdata), 0, row);
+				m->loaded_history_state = std::move(state);
+				m->loaded_history_repository = g.workingDir();
+				m->loaded_history_limit = limitLogCount();
+				updateRemoteInfo();
+				// makeCommitLog installs records with signals blocked. Force the
+				// selection handler even if HEAD still occupies the same row.
+				if (row >= 0) onCommitLogCurrentRowChanged(row);
 			} else {
 				QString err = QString::fromStdString(pty->get_message()).trimmed();
 				err += "\n*** ";

@@ -134,6 +134,42 @@ def main():
             git("remote", "set-url", "origin", str(root / "missing-remote.git"), cwd=work)
             fetch("failed fetch", 0)
             fetch("repeated failed fetch", 0)
+
+            def commit_case(name, leave_dirty):
+                (work / "file").write_text(name + " staged\n")
+                git("add", "file", cwd=work)
+                if leave_dirty:
+                    (work / "file").write_text(name + " unstaged\n")
+                before = git("rev-parse", "HEAD", cwd=work).decode().strip()
+                start = len(records())
+                # Repository > Commit. The editor starts with keyboard focus.
+                command("xdotool", "windowfocus", window, "key", "alt+r")
+                command("xdotool", "key", "c")
+                deadline = time.monotonic() + 15
+                while True:
+                    visible = subprocess.run(["xdotool", "search", "--onlyvisible", "--pid", str(app.pid)], env=env, capture_output=True, text=True).stdout.split()
+                    dialogs = [w for w in visible if command("xdotool", "getwindowname", w) == "Commit"]
+                    if dialogs:
+                        break
+                    if time.monotonic() > deadline:
+                        raise RuntimeError("Commit dialog did not open")
+                    time.sleep(.05)
+                command("xdotool", "windowfocus", dialogs[0], "type", "--clearmodifiers", name)
+                command("xdotool", "key", "ctrl+Return")
+                deadline = time.monotonic() + 20
+                while (head := git("rev-parse", "HEAD", cwd=work).decode().strip()) == before:
+                    if time.monotonic() > deadline:
+                        raise RuntimeError("GUI commit did not complete")
+                    time.sleep(.05)
+                after = settle(start)
+                assert sum("rev-list" in row for row in after) == 1, "Commit history reloaded repeatedly"
+                assert not any("fetch" in row for row in after), "Commit triggered a fetch"
+                assert any("diff" in row and "--raw" in row and row[-1] == head for row in after), "HEAD file list did not refresh"
+                assert bool(git("status", "--porcelain", cwd=work).strip()) == leave_dirty
+                print(name, "HEAD selected and file list refreshed", flush=True)
+
+            commit_case("Commit leaves clean worktree", False)
+            commit_case("Commit retains unstaged changes", True)
         finally:
             for process in (app, server):
                 if process and process.poll() is None:
