@@ -15,6 +15,7 @@ win32 {
 }
 
 HEADERS += $$PROCESS_SRC/AbstractProcess.h
+HEADERS += $$PROCESS_SRC/CommandLine.h
 HEADERS += $$PROCESS_SRC/ProcessHelper.h
 
 !win32:HEADERS += $$PROCESS_SRC/BasicProcessPosix.h

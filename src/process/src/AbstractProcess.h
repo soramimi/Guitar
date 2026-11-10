@@ -2,6 +2,7 @@
 #define ABSTRACTPROCESS_H
 
 #include "ProcessHelper.h"
+#include "CommandLine.h"
 #include <cstdint>
 #include <condition_variable>
 #include <deque>
@@ -56,6 +57,10 @@ public:
 	virtual ~AbstractProcess() { }
 
 	virtual void start(std::string const &command, bool use_input) = 0;
+	virtual void startArguments(std::vector<std::string> const &args, bool use_input)
+	{
+		start(process::command::nativeLine(args), use_input);
+	}
 	virtual ProcessResult wait(int time = INT_MAX) = 0;
 	virtual void stop() = 0;
 	virtual bool is_running() const = 0;
@@ -140,6 +145,10 @@ public:
 	}
 
 	virtual void start(std::string const &cmd, std::string const &env, bool use_input) = 0;
+	virtual void startArguments(std::vector<std::string> const &args, std::string const &env, bool use_input)
+	{
+		start(process::command::nativeLine(args), env, use_input);
+	}
 	virtual ProcessResult wait(int time = INT_MAX) = 0;
 	virtual void stop() = 0;
 	virtual bool is_running() const = 0;

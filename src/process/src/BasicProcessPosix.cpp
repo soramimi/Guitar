@@ -398,57 +398,26 @@ ProcessPosix::~ProcessPosix()
 	delete m;
 }
 
-// コマンドライン文字列を空白で分割する簡易パーサ。
-// - ダブルクォート内は空白を含めて1引数として扱う。
-// - 連続する3つのダブルクォート (""" ) はリテラルの " 1個に展開する (独自仕様)。
-// - 空の引数 ("" 等) は結果に含まれない。
-void ProcessPosix::parse_args(std::string const &cmd, std::vector<std::string> *out)
+void ProcessPosix::start(std::string const &command, bool use_input)
 {
-	out->clear();
-	char const *begin = cmd.c_str();
-	char const *end = begin + cmd.size();
-	std::vector<char> tmp;
-	char const *ptr = begin;
-	int quote = 0;
-	while (1) {
-		int c = 0;
-		if (ptr < end) {
-			c = *ptr & 0xff;
-		}
-		if (c == '\"' && ptr + 2 < end && ptr[1] == '\"' && ptr[2] == '\"') {
-			tmp.push_back(c);
-			ptr += 3;
-		} else {
-			if (quote != 0 && c != 0) {
-				if (c == quote) {
-					quote = 0;
-				} else {
-					tmp.push_back(c);
-				}
-			} else if (c == '\"') {
-				quote = c;
-			} else if (isspace(c) || c == 0) {
-				if (!tmp.empty()) {
-					std::string s(&tmp[0], tmp.size());
-					out->push_back(s);
-				}
-				if (c == 0) break;
-				tmp.clear();
-			} else {
-				tmp.push_back(c);
-			}
-			ptr++;
-		}
+	try {
+		startArguments(process::command::split(command), use_input);
+	} catch (std::invalid_argument const &e) {
+		m->error_code = EINVAL;
+		m->error_message = e.what();
+		m->exit_code = -1;
 	}
 }
 
-void ProcessPosix::start(std::string const &command, bool use_input)
+void ProcessPosix::startArguments(std::vector<std::string> const &args, bool use_input)
 {
 	if (is_running()) return;
 	m->exit_code = -1;
 	m->error_code = 0;
 	m->error_message.clear();
-	parse_args(command, &m->thread.argvec);
+	process::command::validate(args);
+	m->thread.argvec = args;
+	m->thread.args.clear();
 	if (m->thread.argvec.empty()) {
 		m->error_code = EINVAL;
 		m->error_message = "empty command or failed to parse arguments";
@@ -545,44 +514,7 @@ int ProcessPosix::get_exit_code() const
 
 //
 
-namespace {
 
-void make_argv(char *command, std::vector<char *> *out)
-{
-	char *dst = command;
-	char *src = command;
-	char *arg = command;
-	bool quote = false;
-	bool accept = false;
-	while (1) {
-		char c = *src;
-		if (c == '\"') {
-			if (src[1] == '\"' && src[2] == '\"') {
-				*dst++ = c;
-				src += 3;
-			} else {
-				quote = !quote;
-				accept = true;
-				src++;
-			}
-		} else if (quote && c != 0) {
-			*dst++ = *src++;
-		} else if (c == 0 || isspace(c & 0xff)) {
-			*dst++ = 0;
-			if (accept || *arg) {
-				out->push_back(arg);
-			}
-			if (c == 0) break;
-			accept = false;
-			arg = dst;
-			src++;
-		} else {
-			*dst++ = *src++;
-		}
-	}
-}
-
-} // namespace
 
 // ProcessPosixPty
 
@@ -593,7 +525,7 @@ struct ProcessPosixPty::Private {
 	std::condition_variable cv;
 	std::thread thread;
 	bool completed = true;
-	std::string command;
+	std::vector<std::string> arguments;
 	std::string env;
 	int pty_master = -1;
 	std::deque<char> input_queue;
@@ -639,9 +571,21 @@ int ProcessPosixPty::read_output(char *ptr, int len)
 
 void ProcessPosixPty::start(std::string const &cmd, std::string const &env, bool use_input)
 {
+	try {
+		startArguments(process::command::split(cmd), env, use_input);
+	} catch (std::invalid_argument const &e) {
+		m->error_code = EINVAL;
+		m->error_message = e.what();
+		m->exit_code = -1;
+	}
+}
+
+void ProcessPosixPty::startArguments(std::vector<std::string> const &args, std::string const &env, bool use_input)
+{
 	(void)use_input;
 	if (is_running()) return;
-	m->command = cmd;
+	process::command::validate(args);
+	m->arguments = args;
 	m->env = env;
 	m->interrupted = false;
 	m->exit_code = -1;
@@ -653,7 +597,7 @@ void ProcessPosixPty::start(std::string const &cmd, std::string const &env, bool
 		m->completed = false;
 		m->input_queue.clear();
 	}
-	if (cmd.empty()) {
+	if (args.empty()) {
 		m->error_code = EINVAL;
 		m->error_message = "empty command";
 		std::lock_guard<std::mutex> lock(m->mutex);
@@ -720,16 +664,8 @@ void ProcessPosixPty::run()
 
 	// argv は fork 前に構築する。fork 後の子プロセスで std::vector や文字列構築
 	// (malloc) を行うと、親の他スレッドが保持しているロックとデッドロックしうる。
-	std::vector<char> cmdbuf(m->command.begin(), m->command.end());
-	cmdbuf.push_back('\0');
 	std::vector<char *> argv;
-	make_argv(cmdbuf.data(), &argv);
-	if (argv.empty()) {
-		m->error_code = EINVAL;
-		m->error_message = "empty command";
-		m->exit_code = -1;
-		return;
-	}
+	for (auto &arg : m->arguments) argv.push_back(arg.data());
 	argv.push_back(nullptr);
 	// NUL区切りの環境変数上書きをfork前に展開する。従来の単一NAME=VALUEも扱える。
 	std::vector<char> envbuf(m->env.begin(), m->env.end());

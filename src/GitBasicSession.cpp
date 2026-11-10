@@ -67,28 +67,19 @@ std::optional<GitResult> GitBasicSession::exec_git(std::string const &arg, const
 	GitResult result;
 
 	auto DoIt = [&](){
-		std::string cmd = Git::quoted_text(gitCommand());
+		std::vector<std::string> args{gitCommand(), "--literal-pathspecs"};
 		if (!ssh.empty()) {
-			std::string sshkey = gitinfo().ssh_key_override;
-			std::string sshcmd = Git::quoted_text(ssh);
-			if (!sshkey.empty()) {
-				sshcmd += " -i ";
-				sshcmd += Git::quoted_text(sshkey);
+			std::string sshcmd = process::command::shellQuote(ssh);
+			if (!gitinfo().ssh_key_override.empty()) {
+				sshcmd += " -i " + process::command::shellQuote(gitinfo().ssh_key_override);
 			}
-			cmd += " -c core.sshCommand=";
-			cmd += Git::quoted_text(sshcmd);
+			args.insert(args.end(), {"-c", "core.sshCommand=" + sshcmd});
 		}
-
-		if (opt.chdir) {
-			std::string cwd = workingDir();
-			if (!cwd.empty()) {
-				cmd += " -C ";
-				cmd += Git::quoted_text(cwd);
-			}
-		}
-
-		cmd += " --no-pager ";
-		cmd += arg;
+		if (opt.chdir && !workingDir().empty()) args.insert(args.end(), {"-C", workingDir()});
+		args.push_back("--no-pager");
+		auto tail = process::command::split(arg);
+		args.insert(args.end(), tail.begin(), tail.end());
+		std::string cmd = process::command::nativeLine(args);
 
 		if (opt.log) {
 			std::string s = fmt("> git %s\n")(arg);
@@ -96,7 +87,7 @@ std::optional<GitResult> GitBasicSession::exec_git(std::string const &arg, const
 		}
 
 		if (opt.pty) {
-			opt.pty->start(cmd, env.toStdString(), true);
+			opt.pty->startArguments(args, env.toStdString(), true);
 		} else {
 			if (opt.use_cache) {
 				auto const *a = findFromCommandCache(cmd);
@@ -107,7 +98,7 @@ std::optional<GitResult> GitBasicSession::exec_git(std::string const &arg, const
 			}
 
 			Process proc;
-			proc.start(cmd, false);
+			proc.startArguments(args, false);
 			proc.wait();
 			exit_code = proc.get_exit_code();
 
@@ -136,7 +127,12 @@ std::optional<GitResult> GitBasicSession::exec_git(std::string const &arg, const
 		}
 	};
 
-	DoIt();
+	try {
+		DoIt();
+	} catch (std::invalid_argument const &e) {
+		global_write_log(std::string("Invalid Git arguments: ") + e.what() + "\n");
+		return std::nullopt;
+	}
 	if (exit_code == 0) {
 		if (opt.pty) {
 			// nop

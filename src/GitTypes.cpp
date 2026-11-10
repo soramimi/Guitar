@@ -158,39 +158,39 @@ bool GitHash::isValidID(std::string const &id)
 
 std::string gitTrimPath(std::string const &s)
 {
-	char const *begin = s.data();
-	char const *end = begin + s.size();
-	char const *left = begin;
-	char const *right = end;
-	while (left < right && isspace((unsigned char)*left)) left++;
-	while (left < right && isspace((unsigned char)right[-1])) right--;
-	if (left + 1 < right && *left == '\"' && right[-1] == '\"') { // if quoted ?
-		left++;
-		right--;
-		std::string ba;
-		char const *ptr = left;
-		while (ptr < right) {
-			char c = *ptr;
-			ptr++;
-			if (c == '\\') {
-				if (ptr + 2 < right && ptr[0] == '\\' && ptr[1] == '\\') { // triple backslash
-					c = ptr[2];
-					ptr += 3;
-				} else if (ptr < end && isdigit((unsigned char)*ptr)) { // octal number
-					c = 0;
-					for (int i = 0; i < 3 && ptr < right && isdigit((unsigned char)*ptr); i++) { // decode \oct
-						c = c * 8 + (*ptr - '0');
-						ptr++;
-					}
-				}
+	size_t left = 0, right = s.size();
+	while (left < right && std::isspace(static_cast<unsigned char>(s[left]))) ++left;
+	while (right > left && std::isspace(static_cast<unsigned char>(s[right - 1]))) --right;
+	if (right - left < 2 || s[left] != '"' || s[right - 1] != '"') return s.substr(left, right - left);
+	std::string out;
+	for (size_t i = left + 1; i < right - 1; ++i) {
+		char c = s[i];
+		if (c != '\\') { out += c; continue; }
+		if (++i >= right - 1) return s.substr(left, right - left);
+		c = s[i];
+		if (c >= '0' && c <= '7') {
+			unsigned value = c - '0';
+			for (int n = 1; n < 3 && i + 1 < right - 1 && s[i + 1] >= '0' && s[i + 1] <= '7'; ++n)
+				value = value * 8 + (s[++i] - '0');
+			out += static_cast<char>(value);
+		} else {
+			switch (c) {
+			case 'a': out += '\a'; break;
+			case 'b': out += '\b'; break;
+			case 'f': out += '\f'; break;
+			case 'n': out += '\n'; break;
+			case 'r': out += '\r'; break;
+			case 't': out += '\t'; break;
+			case 'v': out += '\v'; break;
+			case '\\': out += '\\'; break;
+			case '"': out += '"'; break;
+			default: out += '\\'; out += c; break;
 			}
-			ba += c;
 		}
-		return ba;
 	}
-	if (left == begin && right == end) return s;
-	return {left, size_t(right - left)};
+	return out;
 }
+
 
 // GitCommitItemList
 

@@ -7,6 +7,7 @@
 #include <ai/CommitMessageGenerator.h>
 #include "MyProcess.h"
 #include <exception>
+#include <stdexcept>
 
 #ifdef APP_GUITAR
 #include "Profile.h"
@@ -163,8 +164,15 @@ static std::string git(std::string const &gitcommand, std::string const &dir, st
 	if (!dir.empty()) {
 		cd = dir.c_str();
 	}
-	proc.start(fmt("\"%s\" -C \"%s\" %s")(gitcommand)(cd)(cmd), false);
+	std::vector<std::string> args{gitcommand, "--literal-pathspecs", "-C", cd};
+	auto tail = process::command::split(cmd);
+	args.insert(args.end(), tail.begin(), tail.end());
+	proc.startArguments(args, false);
 	proc.wait();
+	if (proc.get_exit_code() != 0) {
+		auto const &error = proc.stderr_bytes();
+		throw std::runtime_error("Git diff failed: " + std::string(error.begin(), error.end()));
+	}
 	std::string s = (misc::str)proc.stdout_bytes();
 	return s;
 }
@@ -196,11 +204,16 @@ std::string CommitMessageGenerator::make_diff(std::string const &gitcommand, std
 	{
 		std::string s;
 		if (amend) {
-			s = git(gitcommand, dir, fmt("diff --name-only %s %s")(commits.a)(commits.b));
+			s = git(gitcommand, dir, fmt("diff --name-only -z %s %s")(process::command::quote(commits.a))(process::command::quote(commits.b)));
 		} else {
-			s = git(gitcommand, dir, fmt("diff --name-only %s")(commits.a));
+			s = git(gitcommand, dir, fmt("diff --name-only -z %s")(process::command::quote(commits.a)));
 		}
-		names = (misc::strlist)misc::splitLinesV(s);
+		for (size_t pos = 0; pos < s.size();) {
+			auto end = s.find('\0', pos);
+			if (end == std::string::npos) throw std::runtime_error("Unterminated Git path record");
+			names.push_back(s.substr(pos, end - pos));
+			pos = end + 1;
+		}
 	}
 	std::vector<std::string> diffs(names.size());
 	const int NUM_THREADS = 1;
@@ -223,9 +236,9 @@ std::string CommitMessageGenerator::make_diff(std::string const &gitcommand, std
 					// std::string diff = g.diff_full_index_head_file(fullpath);
 					std::string diff;
 					if (amend) {
-						diff = git(gitcommand, dir, fmt("diff --full-index %s %s")(commits.a)(commits.b));
+						diff = git(gitcommand, dir, fmt("diff --full-index %s %s -- %s")(process::command::quote(commits.a))(process::command::quote(commits.b))(process::command::quote(fullpath)));
 					} else {
-						diff = git(gitcommand, dir, fmt("diff --full-index %s -- %s")(commits.a)(fullpath));
+						diff = git(gitcommand, dir, fmt("diff --full-index %s -- %s")(process::command::quote(commits.a))(process::command::quote(fullpath)));
 					}
 					logprintf(LOG_DEFAULT, "diff %s (mimetype: %s) size: %d\n", path.c_str(), mimetype.c_str(), (int)diff.size());
 					if (diff.empty()) continue;

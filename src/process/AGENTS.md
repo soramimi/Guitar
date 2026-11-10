@@ -90,7 +90,7 @@ README.md                        - プロジェクト概覧 (現行コードに�
 
 旧 `AbstractProcess2.h` を改名・整理したものが現行の `AbstractProcess.h`。`AbstractProcess2.h` はもう存在しない。
 
-- `AbstractProcess`: 通常の stdin/stdout/stderr パイプ型プロセス。純粋仮想のみ (`start(command, use_input)`, `wait`, `stop`, `is_running`, `get_exit_code`, `write_input`, `close_input`, `stdout_bytes`, `stderr_bytes`)。
+- `AbstractProcess`: 通常の stdin/stdout/stderr パイプ型プロセス。文字列互換 API と引数配列 API (`startArguments(argv, use_input)`) を持つ (`start(command, use_input)`, `wait`, `stop`, `is_running`, `get_exit_code`, `write_input`, `close_input`, `stdout_bytes`, `stderr_bytes`)。
 - `AbstractPtyProcess`: 疑似端末型プロセス。共有状態 (`mutex_`, `cond_`, `change_dir_`, `completed_fn_`, `user_data_`, `output_queue_`, `output_vector_`, `stderr_bytes_`) を基底クラスが直接保持し、非 virtual の `write_output()` / `pop_output()` / `set_change_dir()` / `set_completion_callback()` / `notify_completed()` を提供する。
 - 出力バッファ (output_queue_ / output_vector_) のロックは基底の `mutex_` に一元化されている。各実装は `write_output()` で追記し、`read_output()` は `pop_output()` に委譲する。独自 mutex でこれらを触ってはいけない。
 - `set_max_output_queue_size()` で output_queue_ を上限付きにできる (0 = 無制限、超過時は古い方から破棄)。
@@ -170,7 +170,7 @@ POSIX 側の注意:
 - 子プロセスのシグナル終了コードは `128 + signal` に寄せている。
 - `ProcessPosixPty::close_input()` は現状空実装。
 - `ProcessPosixPty` は `env` 文字列を `putenv()` に渡す簡易実装で、環境ブロック全体の一般的な表現にはまだなっていない。
-- コマンドライン分割は `ProcessPosix::parse_args()` (静的) と `ProcessPosixPty` 用の `make_argv()` の 2 系統が残っている。`"""` はリテラル `"` に展開する独自仕様で、空引数は捨てられる (ソース内コメント参照)。
+- 新規呼び出しは `startArguments()` へ引数配列を渡す。POSIX の通常/PTY は配列をそのまま execvp へ渡す。互換文字列の解析は `CommandLine.h` の `process::command::split()` に統一し、空引数を保持する。Windows は CRT 規則で一度だけ直列化する。SSH のシェル用引用と互換文字列の引用を混用しない。
 
 ## sampleapp/main.cpp の現状
 

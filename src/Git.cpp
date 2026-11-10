@@ -182,7 +182,7 @@ bool Git::init()
 
 GitHash Git::rev_parse(const std::string &name)
 {
-	std::string cmd = fmt("rev-parse %s")(name);
+	std::string cmd = fmt("rev-parse --verify --end-of-options %s")(quoted_text(name));
 	GitSessionOption opt;
 	opt.use_cache = true;
 	auto result = exec_git(cmd, opt);
@@ -729,7 +729,7 @@ GitCommitItemList Git::log_file(std::string const &path, int maxcount)
 	std::vector<GitCommitItem> list;
 
 	std::string cmd = "log --pretty=format:\"id:%H#gpg:%G?#parent:%P#author:%an#mail:%ae#date:%ci##%s\"";
-	cmd += fmt(" --all -%d -- %s")(maxcount)(path);
+	cmd += fmt(" --all -%d -- %s")(maxcount)(quoted_text(path));
 	auto result = git_nolog(cmd, nullptr);
 
 	if (result && result->exit_code() == 0) {
@@ -1014,16 +1014,7 @@ bool Git::submodule_update(GitSubmoduleUpdateData const &data, AbstractPtyProces
 
 std::string Git::quoted_text(std::string const &str)
 {
-	std::string out = "\"";
-	for (char c : str) {
-		if (c == '\"') { // triple quotes
-			out += "\"\"\"";
-		} else {
-			out += c;
-		}
-	}
-	out += "\"";
-	return out;
+	return process::command::quote(str);
 }
 
 bool Git::commit_(std::string const &msg, bool amend, bool sign, AbstractPtyProcess *pty)
@@ -1179,7 +1170,7 @@ std::string Git::queryEntireCommitMessage(GitHash const &id)
 
 void Git::resetFile(std::string const &path)
 {
-	git("checkout -- \"" + path + "\"");
+	git("checkout -- " + quoted_text(path));
 }
 
 void Git::resetAllFiles()
@@ -1189,7 +1180,7 @@ void Git::resetAllFiles()
 
 void Git::rm(std::string const &path, bool rm_real_file)
 {
-	git("rm " + path);
+	git("rm -- " + quoted_text(path));
 
 	if (rm_real_file) {
 		session_->remove(path);
@@ -1209,19 +1200,17 @@ void Git::add_A()
 
 void Git::stage(std::string const &path)
 {
-	git("add " + path);
+	git("add -- " + quoted_text(path));
 }
 
 bool Git::stage(const std::vector<std::string> &paths, AbstractPtyProcess *pty)
 {
 	if (paths.empty()) return false;
 
-	std::string cmd = "add";
+	std::string cmd = "add --";
 	for (std::string const &path : paths) {
 		cmd += ' ';
-		cmd += '\"';
-		cmd += path;
-		cmd += '\"';
+		cmd += quoted_text(path);
 	}
 
 	GitSessionOption opt;
@@ -1231,7 +1220,7 @@ bool Git::stage(const std::vector<std::string> &paths, AbstractPtyProcess *pty)
 
 void Git::unstage(std::string const &path)
 {
-	std::string cmd = "reset HEAD %s";
+	std::string cmd = "reset HEAD -- %s";
 	cmd = fmt(cmd)(quoted_text(path));
 	git(cmd);
 }
@@ -1239,11 +1228,9 @@ void Git::unstage(std::string const &path)
 void Git::unstage(const std::vector<std::string> &paths)
 {
 	if (paths.empty()) return;
-	std::string cmd = "reset HEAD";
+	std::string cmd = "reset HEAD --";
 	for (std::string const &path : paths) {
-		cmd += " \"";
-		cmd += path;
-		cmd += '\"';
+		cmd += " " + quoted_text(path);
 	}
 	git(cmd);
 }
@@ -1368,7 +1355,7 @@ bool Git::checkout_detach(std::string const &id)
 
 void Git::rebaseBranch(std::string const &name)
 {
-	git("rebase " + name);
+	git("rebase " + quoted_text(name));
 }
 
 bool Git::rebase_continue()
@@ -1476,7 +1463,7 @@ bool Git::stash_drop()
 
 bool Git::rm_cached(std::string const &file)
 {
-	std::string cmd = fmt("rm --cached %s")(quoted_text(file));
+	std::string cmd = fmt("rm --cached -- %s")(quoted_text(file));
 	return (bool)git(cmd);
 }
 
@@ -1664,7 +1651,15 @@ void GitFileStatus::parse(std::string const &text)
 			data.code_x = p[0];
 			data.code_y = p[1];
 
-			auto i = text.find(" -> ", 3);
+			size_t i = std::string::npos;
+			if (p[0] == 'R' || p[0] == 'C' || p[1] == 'R' || p[1] == 'C') {
+				bool quoted = false;
+				for (size_t pos = 3; pos < text.size(); ++pos) {
+					if (quoted && text[pos] == '\\') { ++pos; continue; }
+					if (text[pos] == '"') quoted = !quoted;
+					if (!quoted && text.compare(pos, 4, " -> ") == 0) { i = pos; break; }
+				}
+			}
 			if ((FOUND)i && i > 3) {
 				data.rawpath1 = text.substr(3, i - 3);
 				data.rawpath2 = text.substr(i + 4);
@@ -1735,7 +1730,7 @@ bool Git::setSigningKey(std::string const &id, bool global)
 	}
 
 	std::string cmd = "config %s %s user.signingkey %s";
-	cmd = fmt(cmd)(global ? "--global" : "--local")(id.empty() ? "--unset" : "")(id);
+	cmd = fmt(cmd)(global ? "--global" : "--local")(id.empty() ? "--unset" : "")(quoted_text(id));
 	GitSessionOption opt;
 	opt.chdir = !global;
 	return (bool)exec_git(cmd, opt);

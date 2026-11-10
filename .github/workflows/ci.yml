@@ -51,6 +51,14 @@ jobs:
         make -j2
         ASAN_OPTIONS=detect_leaks=0 ./PluginRuntimeTest
 
+    - name: Test Git command arguments and literal paths
+      run: |
+        mkdir -p _build-git-execution
+        cd _build-git-execution
+        qmake6 ../tests/GitExecution/GitExecution.pro CONFIG+=release CONFIG+=reuse_app_objects
+        make -j2
+        QT_QPA_PLATFORM=offscreen ./GitExecutionTest
+
     - name: Test build
       run: |
         ls -la _bin/

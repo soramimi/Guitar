@@ -30,44 +30,7 @@ std::string misc::get_error_message(uint32_t error_code)
 // 各引数は必要に応じてダブルクォートで囲み、バックスラッシュ・ダブルクォートを適切にエスケープする。
 std::string misc::build_command_line(std::vector<std::string> const &args)
 {
-	std::string cmd;
-	for (size_t i = 0; i < args.size(); ++i) {
-		if (i > 0) cmd += ' ';
-		std::string const &arg = args[i];
-		// 空白、タブ、ダブルクォート、バックスラッシュを含まない場合はそのまま
-		bool needs_quote = false;
-		for (char c : arg) {
-			if (c == ' ' || c == '\t' || c == '"' || c == '\\') {
-				needs_quote = true;
-				break;
-			}
-		}
-		if (!needs_quote) {
-			cmd += arg;
-			continue;
-		}
-		cmd += '"';
-		size_t backslash_count = 0;
-		for (char c : arg) {
-			if (c == '\\') {
-				backslash_count++;
-			} else if (c == '"') {
-				// 連続するバックスラッシュを2倍にする
-				cmd.append(backslash_count * 2, '\\');
-				backslash_count = 0;
-				cmd += '\\';
-				cmd += '"';
-			} else {
-				cmd.append(backslash_count, '\\');
-				backslash_count = 0;
-				cmd += c;
-			}
-		}
-		// 閉じるダブルクォートの前の連続するバックスラッシュを2倍にする
-		cmd.append(backslash_count * 2, '\\');
-		cmd += '"';
-	}
-	return cmd;
+	return process::command::windowsLine(args);
 }
 
 // BasicProcessWin
