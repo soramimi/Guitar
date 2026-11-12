@@ -1,5 +1,5 @@
 #include "FileTypeWrapper.h"
-#include "lib/magic.h"
+#include "gen/magic.h"
 #include <algorithm>
 #include <cerrno>
 #include <cstring>
