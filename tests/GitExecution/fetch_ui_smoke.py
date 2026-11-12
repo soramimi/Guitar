@@ -116,6 +116,13 @@ def main():
             settle()
             fetch("unchanged", 0)
             fetch("repeated unchanged", 0)  # PTY completion must allow another fetch.
+            start = len(records())
+            click(100, 50)
+            click(100, 50)
+            queued = settle(start, require_fetch=True)
+            assert sum("fetch" in row for row in queued) == 2, "Queued fetch was lost"
+            assert not any("rev-list" in row for row in queued), "Unchanged queued fetch reloaded history"
+            print("two queued fetches completed", flush=True)
             (source / "file").write_text("remote change\n")
             git("add", "file", cwd=source)
             git("commit", "-qm", "New remote commit", cwd=source)

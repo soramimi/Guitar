@@ -7,6 +7,7 @@
 #include <QCryptographicHash>
 #include <QDebug>
 #include <common/misc.h>
+#include <atomic>
 #include <condition_variable>
 #include <mutex>
 #include <optional>
@@ -18,7 +19,7 @@ const int ICON_SIZE = 256;
 }
 
 struct AvatarLoader::Private {
-	volatile bool interrupted = false;
+	std::atomic_bool interrupted = false;
 	std::mutex mutex;
 	std::condition_variable condition;
 	std::thread thread;
@@ -60,7 +61,12 @@ bool AvatarLoader::isInterruptionRequested() const
 
 void AvatarLoader::requestInterruption()
 {
-	m->interrupted = true;
+	{
+		// Publish the request under the mutex so run() cannot miss the
+		// notification between checking the flag and starting to wait.
+		std::lock_guard<std::mutex> lock(m->mutex);
+		m->interrupted = true;
+	}
 	m->condition.notify_all();
 }
 

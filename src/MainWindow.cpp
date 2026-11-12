@@ -2564,16 +2564,17 @@ void MainWindow::internalAfterFetch()
 #define RUN_PTY_CALLBACK [this](ProcessStatus * status, QVariant const &userdata)
 void MainWindow::runPtyGit(QString const &progress_message, GitRunner g, GitCommandRunner::variant_t var, std::function<void(ProcessStatus *status, QVariant const &userdata)> callback, QVariant const &userdata)
 {
-	showProgress(progress_message, -1.0f);
-
 	GitCommandRunner runner;
 	runner.d.process_name = progress_message;
 	runner.d.elapsed.start();
 
 	runner.d.run = [this, var](GitCommandRunner &runner) {
+		showProgress(runner.d.process_name, -1.0f);
+		runner.pty()->clear_message();
 		setCompletedHandler([this](bool ok, std::shared_ptr<void> d) {
 			GitCommandRunner const &req = std::static_pointer_cast<QVariant>(d)->value<GitCommandRunner>();
 			PtyProcessCompleted data;
+			data.request_id = req.d.request_id;
 			data.process_name = req.d.process_name;
 			data.callback = req.callback;
 			data.status->ok = ok;
@@ -2590,7 +2591,9 @@ void MainWindow::runPtyGit(QString const &progress_message, GitRunner g, GitComm
 		if (runner.d.result) {
 			// nop
 		} else {
-			emit sigPtyProcessCompleted(false, { });
+			PtyProcessCompleted data;
+			data.request_id = runner.d.request_id;
+			emit sigPtyProcessCompleted(false, data);
 		}
 	};
 
@@ -2598,7 +2601,7 @@ void MainWindow::runPtyGit(QString const &progress_message, GitRunner g, GitComm
 	runner.callback = callback;
 	runner.d.userdata = userdata;
 	runner.d.pty = getPtyProcess();
-	getPtyProcess()->clear_message();
+	runner.d.wait_for_completion = true;
 	m->git_process_thread.request(std::move(runner));
 }
 
@@ -2616,7 +2619,8 @@ void MainWindow::onPtyProcessCompleted(bool ok, PtyProcessCompleted const &data)
 		}
 	}
 
-	// currentRepositoryData()->git_command_cache = {};
+	// Advance only after the PTY was reaped and its UI callback has finished.
+	if (data.request_id) m->git_process_thread.complete(*data.request_id);
 }
 
 void MainWindow::connectPtyProcessCompleted()
@@ -2838,6 +2842,7 @@ GitCommitItem const &MainWindow::selectedCommitItem() const
 void MainWindow::commit(bool amend)
 {
 	ASSERT_MAIN_THREAD();
+	if (m->git_process_thread.busy() || isPtyProcessRunning()) return;
 
 	GitRunner g = git();
 	if (!isValidWorkingCopy(g)) return;
@@ -2895,6 +2900,7 @@ void MainWindow::commit(bool amend)
 			bool ok;
 
 			AbstractPtyProcess *pty = getPtyProcess();
+			if (m->git_process_thread.busy() || pty->is_running()) return;
 			// This operation waits locally; do not reuse a previous fetch callback.
 			setCompletedHandler({}, {});
 			if (amend || dlg.isAmend()) {

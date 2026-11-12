@@ -10,6 +10,7 @@
 #include <QMetaType>
 #include <QVariant>
 #include <memory>
+#include <optional>
 
 class ProcessStatus;
 struct LogData {
@@ -42,6 +43,7 @@ Q_DECLARE_METATYPE(CloneParams)
 
 class PtyProcessCompleted {
 public:
+	std::optional<unsigned int> request_id;
 	std::function<void(ProcessStatus *, QVariant const &)> callback;
 	std::shared_ptr<ProcessStatus> status;
 	QVariant userdata;

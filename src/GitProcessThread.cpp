@@ -3,6 +3,8 @@
 #include <QEventLoop>
 #include <mutex>
 #include <condition_variable>
+#include <algorithm>
+#include <optional>
 
 struct GitProcessThread::Private {
 	std::mutex mutex_;
@@ -10,6 +12,8 @@ struct GitProcessThread::Private {
 	std::condition_variable cv_done;
 	std::thread thread_;
 	bool interrrupt_ = false;
+	std::optional<request_id_t> active_request;
+	bool completed = false;
 	std::vector<std::shared_ptr<GitCommandRunner>> requests_;
 	GitCommandRunner::request_id_t next_request_id = 0;
 };
@@ -21,47 +25,66 @@ GitProcessThread::GitProcessThread()
 
 GitProcessThread::~GitProcessThread()
 {
+	stop();
 	delete m;
 }
 
 void GitProcessThread::start()
 {
 	stop();
-	m->interrrupt_ = false;
-	m->thread_ = std::thread([&]() {
+	{
+		std::lock_guard lock(m->mutex_);
+		m->interrrupt_ = false;
+	}
+	m->thread_ = std::thread([this]() {
 		while (1) {
 			GitCommandRunner req;
 			{
+				// Wait on the queue state rather than on a bare notification, so
+				// requests queued while another one is running are not lost and a
+				// spurious wakeup never reads from an empty queue.
 				std::unique_lock lock(m->mutex_);
-				if (m->interrrupt_) break;
-				m->cv_request.wait(lock);
+				m->cv_request.wait(lock, [this]{ return m->interrrupt_ || !m->requests_.empty(); });
 				if (m->interrrupt_) break;
 				req = *m->requests_.front();
+				m->active_request = req.d.request_id;
+				m->completed = false;
 			}
 			req.d.run(req);
-			bool ok = false;
 			{
+				// The request may have been canceled while it was running, so
+				// remove it by ID instead of assuming it is still at the front.
 				std::unique_lock lock(m->mutex_);
-				if (m->requests_.front()->d.request_id == req.d.request_id) {
-					m->requests_.erase(m->requests_.begin());
-					ok = true;
+				if (req.d.wait_for_completion) {
+					m->cv_done.wait(lock, [this] { return m->interrrupt_ || m->completed; });
 				}
-				if (m->interrrupt_) break;
+				m->active_request.reset();
+				auto it = std::find_if(m->requests_.begin(), m->requests_.end(), [&](auto const &r){
+					return r->d.request_id == req.d.request_id;
+				});
+				if (it != m->requests_.end()) {
+					m->requests_.erase(it);
+				}
 			}
-			if (ok) {
-				m->cv_done.notify_all();
-			}
+			m->cv_done.notify_all();
 		}
 	});
 }
 
 void GitProcessThread::stop()
 {
-	m->interrrupt_ = true;
+	{
+		std::lock_guard lock(m->mutex_);
+		m->interrrupt_ = true;
+	}
 	m->cv_request.notify_all();
+	m->cv_done.notify_all();
 	if (m->thread_.joinable()) {
 		m->thread_.join();
 	}
+	std::lock_guard lock(m->mutex_);
+	m->requests_.clear();
+	m->active_request.reset();
 }
 
 GitProcessThread::request_id_t GitProcessThread::request(GitCommandRunner &&req)
@@ -92,10 +115,26 @@ bool GitProcessThread::wait()
 		{
 			std::unique_lock lock(m->mutex_);
 			if (m->interrrupt_) return false;
-			if (m->requests_.empty()) return true;
-			if (m->cv_done.wait_for(lock, std::chrono::milliseconds(1)) == std::cv_status::timeout) continue;
+			if (m->requests_.empty() && !m->active_request) return true;
+			m->cv_done.wait_for(lock, std::chrono::milliseconds(1));
 		}
 		QApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
 	}
 }
 
+
+void GitProcessThread::complete(request_id_t reqid)
+{
+	{
+		std::lock_guard lock(m->mutex_);
+		if (m->active_request != reqid) return;
+		m->completed = true;
+	}
+	m->cv_done.notify_all();
+}
+
+bool GitProcessThread::busy() const
+{
+	std::lock_guard lock(m->mutex_);
+	return m->active_request.has_value() || !m->requests_.empty();
+}

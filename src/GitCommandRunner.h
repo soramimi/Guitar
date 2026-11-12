@@ -140,6 +140,7 @@ public:
 		AbstractPtyProcess *pty = nullptr;
 		request_id_t request_id = 0;
 		bool override_wait_cursor = true;
+		bool wait_for_completion = false; // complete(request_id) after async PTY handling
 		std::function<void (GitCommandRunner &req)> run;
 		QVariant userdata;
 		bool update_commit_log = false;

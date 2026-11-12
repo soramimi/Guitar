@@ -17,7 +17,9 @@ public:
 	void stop();
 	request_id_t request(GitCommandRunner &&req);
 	void cancel(request_id_t reqid);
+	void complete(request_id_t reqid);
 	bool wait();
+	bool busy() const;
 };
 
 #endif // GITPROCESSTHREAD_H
