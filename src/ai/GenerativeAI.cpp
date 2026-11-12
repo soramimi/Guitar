@@ -207,14 +207,6 @@ void Model::parse_model(const std::string &model_uri)
 	model_uri_.string = model_uri;
 	model_name_ = model_uri;
 
-	{
-		static constexpr std::string_view prefix = "sakura:";
-		if (misc::starts_with(model_name_, prefix)) {
-			model_name_ = model_name_.substr(prefix.size());
-			return;
-		}
-	}
-
 	auto Parse = [&](std::string const &prefix, int port){
 		if (misc::starts_with(model_name_, prefix)) {
 			hostport_.port = port;
@@ -815,6 +807,7 @@ std::optional<std::vector<ModelConf>> ModelConf::load(QWidget *, char const *pat
 			items.push_back(mc);
 		}
 	}
+	if (r.has_error()) return std::nullopt;
 	return items;
 }
 
