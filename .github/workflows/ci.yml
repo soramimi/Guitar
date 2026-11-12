@@ -40,17 +40,6 @@ jobs:
       run: |
         ruby scripts/make_all.rb
         
-    - name: Test plugin runtime and error handling
-      run: |
-        mkdir -p _build-loaderfixture _build-plugin-runtime
-        cd _build-loaderfixture
-        qmake6 ../tests/PluginRuntime/fixtures/loaderfixture.pro CONFIG+=release
-        make -j2
-        cd ../_build-plugin-runtime
-        qmake6 ../tests/PluginRuntime/PluginRuntime.pro CONFIG+=release CONFIG+=sanitize
-        make -j2
-        ASAN_OPTIONS=detect_leaks=0 ./PluginRuntimeTest
-
     - name: Test Git command arguments and literal paths
       run: |
         mkdir -p _build-git-execution

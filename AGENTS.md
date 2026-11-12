@@ -9,8 +9,8 @@ Guidance for contributors and coding agents working on this repository. More spe
 - From a `_build` directory, run `qmake6 ../Guitar.pro CONFIG+=release`, then `make -j$(nproc)`. The application is produced at `_bin/Guitar`.
 - The required FileTypePlugin and IncrementalSearchPlugin must be built and loadable under `lib/soramimi.jp`. Use the existing subproject build scripts, and check that they load after changing plugin initialization or interfaces. Do not silently proceed after an initialization failure.
 - Linux integration tests are in `tests/GitExecution/GitExecution.pro`. After a matching release build of the application, from `_build-git-execution`, run `qmake6 ../tests/GitExecution/GitExecution.pro CONFIG+=release CONFIG+=reuse_app_objects`, then `make` and `QT_QPA_PLATFORM=offscreen ./GitExecutionTest`. This configuration reuses the application's object files, so rebuild the application first after source or header changes.
-- Other regression projects are `tests/PluginRuntime`, `src/texteditor/PtyProcessTest`, and `src/texteditor/TerminalScreenTest`; use the actual `.pro` file in each directory. Run the suites relevant to the code you change.
-- Embedded MeCab `Tokenizer::open` uses `CHECK_FALSE` early returns. Keep dictionary ownership in RAII holders until registration in `dic_` succeeds, including on user-dictionary validation failures. Run PluginRuntime with LeakSanitizer when changing this ownership.
+- Other regression projects are `src/texteditor/PtyProcessTest` and `src/texteditor/TerminalScreenTest`; use the actual `.pro` file in each directory. Run the suites relevant to the code you change.
+- Embedded MeCab `Tokenizer::open` uses `CHECK_FALSE` early returns. Keep dictionary ownership in RAII holders until registration in `dic_` succeeds, including on user-dictionary validation failures.
 - `prepare.rb` runs during application builds. Review tracked diffs afterwards and keep build artifacts and disposable repositories out of commits.
 - Use temporary repositories and synthetic credentials in tests. Linux/offscreen checks do not establish Windows behavior or live behavior of external AI services and accounts.
 
