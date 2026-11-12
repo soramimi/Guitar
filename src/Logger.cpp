@@ -42,7 +42,7 @@ struct Logger::Private {
 	std::thread thread;
 	std::mutex mutex;
 	std::condition_variable cv;
-	volatile bool interrupted = false;
+	bool interrupted = false; // guarded by mutex
 };
 
 Logger::Logger()
@@ -165,19 +165,23 @@ void Logger::x_close()
 
 void Logger::x_start()
 {
-	m->paused = false;
-	m->interrupted = false;
+	{
+		std::lock_guard lock(m->mutex);
+		m->paused = false;
+		m->interrupted = false;
+	}
 
 	m->thread = std::thread([this](){
 		while (1) {
 			std::vector<LogItem> items;
 			{
+				// Sleep until there is something writable or a stop request.
+				// While paused, queued items stay queued without busy-looping.
 				std::unique_lock lock(m->mutex);
-				if (m->items.empty()) {
-					if (m->interrupted) break;
-					m->cv.wait(lock);
-				}
-				if (m->paused) continue;
+				m->cv.wait(lock, [this]{
+					return m->interrupted || (!m->paused && !m->items.empty());
+				});
+				if (m->paused || m->items.empty()) break; // interrupted
 				std::swap(items, m->items);
 			}
 			if (log_rotate_size() > 0) {
@@ -195,13 +199,19 @@ void Logger::x_start()
 
 void Logger::x_stop()
 {
-	m->paused = false;
-	m->interrupted = true;
+	{
+		// Set the flags under the mutex so the worker cannot miss the wakeup
+		// between checking its condition and starting to wait.
+		std::lock_guard lock(m->mutex);
+		m->paused = false;
+		m->interrupted = true;
+	}
 	m->cv.notify_all();
 	if (m->thread.joinable()) {
 		m->thread.join();
 	}
 	x_close();
+	std::lock_guard lock(m->mutex);
 	m->interrupted = false;
 }
 

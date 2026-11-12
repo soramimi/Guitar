@@ -3,6 +3,7 @@
 #include <QEventLoop>
 #include <mutex>
 #include <condition_variable>
+#include <algorithm>
 
 struct GitProcessThread::Private {
 	std::mutex mutex_;
@@ -27,38 +28,47 @@ GitProcessThread::~GitProcessThread()
 void GitProcessThread::start()
 {
 	stop();
-	m->interrrupt_ = false;
-	m->thread_ = std::thread([&]() {
+	{
+		std::lock_guard lock(m->mutex_);
+		m->interrrupt_ = false;
+	}
+	m->thread_ = std::thread([this]() {
 		while (1) {
 			GitCommandRunner req;
 			{
+				// Wait on the queue state rather than on a bare notification, so
+				// requests queued while another one is running are not lost and a
+				// spurious wakeup never reads from an empty queue.
 				std::unique_lock lock(m->mutex_);
-				if (m->interrrupt_) break;
-				m->cv_request.wait(lock);
+				m->cv_request.wait(lock, [this]{ return m->interrrupt_ || !m->requests_.empty(); });
 				if (m->interrrupt_) break;
 				req = *m->requests_.front();
 			}
 			req.d.run(req);
-			bool ok = false;
 			{
-				std::unique_lock lock(m->mutex_);
-				if (m->requests_.front()->d.request_id == req.d.request_id) {
-					m->requests_.erase(m->requests_.begin());
-					ok = true;
+				// The request may have been canceled while it was running, so
+				// remove it by ID instead of assuming it is still at the front.
+				std::lock_guard lock(m->mutex_);
+				auto it = std::find_if(m->requests_.begin(), m->requests_.end(), [&](auto const &r){
+					return r->d.request_id == req.d.request_id;
+				});
+				if (it != m->requests_.end()) {
+					m->requests_.erase(it);
 				}
-				if (m->interrrupt_) break;
 			}
-			if (ok) {
-				m->cv_done.notify_all();
-			}
+			m->cv_done.notify_all();
 		}
 	});
 }
 
 void GitProcessThread::stop()
 {
-	m->interrrupt_ = true;
+	{
+		std::lock_guard lock(m->mutex_);
+		m->interrrupt_ = true;
+	}
 	m->cv_request.notify_all();
+	m->cv_done.notify_all();
 	if (m->thread_.joinable()) {
 		m->thread_.join();
 	}

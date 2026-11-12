@@ -20,6 +20,12 @@
 #include <CommandLine.h>
 #include <BasicProcessPosix.h>
 #include "../../src/ai/CommitMessageGenerator.h"
+#include "../../src/GitProcessThread.h"
+#include "../../src/AvatarLoader.h"
+#include "../../src/Logger.h"
+#include "../../src/Terminal.h"
+#include <future>
+#include <QThread>
 
 namespace {
 QString executable;
@@ -384,6 +390,127 @@ TEST_F(GitExecution, LocalFetchNoChangeNewRefAndPruneSnapshots)
     ASSERT_TRUE(git->fetch(nullptr, false)); auto added = git->historyState(); EXPECT_NE(before, added);
     direct({"--git-dir=" + remote, "update-ref", "-d", "refs/heads/new-topic"});
     ASSERT_TRUE(git->fetch(nullptr, true)); EXPECT_EQ(before, git->historyState());
+}
+// Runs fn on a helper thread and reports whether it finished within the limit.
+// A hung shutdown is detached deliberately: the test fails instead of blocking.
+static bool finishesWithin(std::function<void()> fn, int ms)
+{
+    auto task = std::make_shared<std::packaged_task<void()>>(std::move(fn));
+    auto done = task->get_future();
+    std::thread([task]{ (*task)(); }).detach();
+    return done.wait_for(std::chrono::milliseconds(ms)) == std::future_status::ready;
+}
+TEST(ThreadShutdown, GitProcessThreadRunsRequestsQueuedWhileBusy)
+{
+    GitProcessThread worker; worker.start();
+    std::mutex mutex; std::condition_variable cv; std::vector<int> ran; bool release = false;
+    auto make = [&](int n, bool block) {
+        GitCommandRunner r;
+        r.d.run = [&, n, block](GitCommandRunner &) {
+            std::unique_lock lock(mutex);
+            if (block) cv.wait(lock, [&]{ return release; });
+            ran.push_back(n); cv.notify_all();
+        };
+        return r;
+    };
+    worker.request(make(1, true));
+    worker.request(make(2, false)); worker.request(make(3, false));
+    auto canceled = worker.request(make(4, false)); worker.cancel(canceled);
+    { std::lock_guard lock(mutex); release = true; } cv.notify_all();
+    {
+        std::unique_lock lock(mutex);
+        EXPECT_TRUE(cv.wait_for(lock, std::chrono::seconds(5), [&]{ return ran.size() >= 3; }))
+            << "requests queued while another request ran were never executed";
+        EXPECT_EQ(ran, (std::vector<int>{1, 2, 3}));
+    }
+    EXPECT_TRUE(finishesWithin([&]{ worker.stop(); }, 5000));
+}
+TEST(ThreadShutdown, GitProcessThreadCancelOfRunningRequestKeepsQueue)
+{
+    GitProcessThread worker; worker.start();
+    std::mutex mutex; std::condition_variable cv; std::vector<int> ran; bool started = false, release = false;
+    GitCommandRunner first;
+    first.d.run = [&](GitCommandRunner &) {
+        std::unique_lock lock(mutex); started = true; cv.notify_all();
+        cv.wait(lock, [&]{ return release; }); ran.push_back(1);
+    };
+    auto id = worker.request(std::move(first));
+    { std::unique_lock lock(mutex); ASSERT_TRUE(cv.wait_for(lock, std::chrono::seconds(5), [&]{ return started; })); }
+    worker.cancel(id);
+    GitCommandRunner second;
+    second.d.run = [&](GitCommandRunner &) { std::lock_guard lock(mutex); ran.push_back(2); cv.notify_all(); };
+    worker.request(std::move(second));
+    { std::lock_guard lock(mutex); release = true; } cv.notify_all();
+    {
+        std::unique_lock lock(mutex);
+        EXPECT_TRUE(cv.wait_for(lock, std::chrono::seconds(5), [&]{ return ran.size() == 2; }));
+        EXPECT_EQ(ran, (std::vector<int>{1, 2}));
+    }
+    EXPECT_TRUE(finishesWithin([&]{ worker.stop(); }, 5000));
+}
+TEST(ThreadShutdown, RepeatedStartStopDoesNotHang)
+{
+    QTemporaryDir dir; ASSERT_TRUE(dir.isValid());
+    std::string log = (dir.path() + "/log.txt").toStdString();
+    EXPECT_TRUE(finishesWithin([&]{
+        for (int i = 0; i < 3000; i++) {
+            Logger::open(log); Logger::start();
+            if (i % 3 == 0) logprint(LOG_DEFAULT, "message");
+            Logger::stop();
+        }
+    }, 30000)) << "Logger::stop() did not return";
+    {
+        // Paused with queued items, the writer must sleep rather than spin.
+        Logger::open(log); Logger::start(); Logger::pause(true);
+        logprint(LOG_DEFAULT, "queued before measuring");
+        QThread::msleep(50);
+        std::clock_t before = std::clock();
+        QThread::msleep(500);
+        double cpu = double(std::clock() - before) / CLOCKS_PER_SEC;
+        EXPECT_LT(cpu, 0.2) << "paused logger consumed CPU while idle";
+        Logger::stop();
+    }
+    EXPECT_TRUE(finishesWithin([&]{
+        Logger::open(log); Logger::start(); Logger::pause(true);
+        for (int i = 0; i < 10; i++) logprint(LOG_DEFAULT, "queued while paused");
+        Logger::stop();
+    }, 5000)) << "Logger::stop() did not return while paused with queued items";
+    QFile f(QString::fromStdString(log)); ASSERT_TRUE(f.open(QIODevice::ReadOnly));
+    EXPECT_TRUE(f.readAll().contains("queued while paused"));
+    EXPECT_TRUE(finishesWithin([&]{
+        AvatarLoader loader;
+        for (int i = 0; i < 3000; i++) { loader.start(nullptr); loader.stop(); }
+    }, 30000)) << "AvatarLoader::stop() did not return";
+}
+TEST(TerminalOpen, DirectoryAndKeyAreNotShellInterpreted)
+{
+    QTemporaryDir base; ASSERT_TRUE(base.isValid());
+    QString dir = base.path() + "/repo $(touch injected-dir) `touch injected-tick` %2";
+    ASSERT_TRUE(QDir().mkpath(dir));
+    QString out = base.path() + "/out.txt";
+    QString key = base.path() + "/key '; touch injected-key; ' $(id)";
+    auto saved = global->appsettings;
+    global->appsettings.ssh_command = "ssh";
+    global->appsettings.terminal_command = QString(
+        "/bin/sh -c 'pwd > \"$0\"; eval \"set -- $GIT_SSH_COMMAND\"; printf \"%s\\n\" \"$@\" >> \"$0\"' '%1'").arg(out);
+    Terminal::open(dir, key);
+    global->appsettings = saved;
+    QElapsedTimer t; t.start();
+    while (!QFileInfo(out).exists() || QFileInfo(out).size() == 0) {
+        ASSERT_LT(t.elapsed(), 10000) << "terminal command did not run";
+        QThread::msleep(20);
+    }
+    QThread::msleep(200);
+    QFile f(out); ASSERT_TRUE(f.open(QIODevice::ReadOnly));
+    QStringList lines = QString::fromUtf8(f.readAll()).split('\n', Qt::SkipEmptyParts);
+    ASSERT_EQ(lines.size(), 4) << lines.join(" | ").toStdString();
+    EXPECT_EQ(QFileInfo(lines[0]).canonicalFilePath(), QFileInfo(dir).canonicalFilePath());
+    EXPECT_EQ(lines[1], "ssh"); EXPECT_EQ(lines[2], "-i"); EXPECT_EQ(lines[3], key);
+    for (QString const &name : {"injected-dir", "injected-tick", "injected-key"}) {
+        EXPECT_FALSE(QFileInfo::exists(base.path() + "/" + name)) << name.toStdString();
+        EXPECT_FALSE(QFileInfo::exists(dir + "/" + name)) << name.toStdString();
+        EXPECT_FALSE(QFileInfo::exists(QDir::currentPath() + "/" + name)) << name.toStdString();
+    }
 }
 int main(int argc, char **argv)
 {
