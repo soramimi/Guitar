@@ -38,7 +38,7 @@ main:
 	@echo "  $ make guitar-appimage   build guitar appimage"
 
 clean: down
-	rm -fr home
+	make run RUN="make clean"
 
 guitar-deb:
 	make run RUN="make deb"

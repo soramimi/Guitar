@@ -41,18 +41,6 @@ jobs:
     - name: Prepare environment
       run: ruby prepare.rb
       
-    - name: Build FileTypePlugin
-      run: |
-        cd subprojects/FileTypePlugin
-        bash build-gcc.sh
-        cd ..
-
-    - name: Build IncrementalSearchPlugin
-      run: |
-        cd subprojects/IncrementalSearchPlugin
-        bash build-gcc.sh
-        cd ..
-
     - name: Build Guitar
       run: |
         ruby scripts/make_all.rb
@@ -67,11 +55,14 @@ jobs:
     - name: Create AppDir structure
       run: |
         mkdir -p AppDir/usr/bin
+        mkdir -p AppDir/usr/lib/soramimi.jp
         mkdir -p AppDir/usr/share/applications
         mkdir -p AppDir/usr/share/icons/hicolor/256x256/apps
         
         # Copy binary
         cp _bin/Guitar AppDir/usr/bin/
+        cp lib/soramimi.jp/libfiletypeplugin.so AppDir/usr/lib/soramimi.jp/
+        cp lib/soramimi.jp/libincrementalsearchplugin.so AppDir/usr/lib/soramimi.jp/
         
         # Create desktop file
         cat > AppDir/usr/share/applications/guitar.desktop << 'EOF'

@@ -107,3 +107,5 @@ moc_predefs.h
 /subprojects/IncrementalSearchPlugin/mecab/mecab/mecabrc
 /subprojects/IncrementalSearchPlugin/mecab/mecab-ipadic/Makefile
 /subprojects/IncrementalSearchPlugin/mecab/mecab-jumandic/Makefile
+packaging/appimage/linuxdeploy-plugin-qt-x86_64.AppImage
+docker/home/.config/soramimi.jp/Guitar/log/Guitar.log

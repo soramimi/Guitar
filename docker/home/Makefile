@@ -32,7 +32,7 @@ incrementalsearchplugin5:
 deb: build
 	cd /Guitar/packaging/deb && ruby mk-deb.rb
 
-appimage: build5
+appimage: build
 	bash make-appimage.sh
 
 doxy:

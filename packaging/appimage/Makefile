@@ -6,14 +6,14 @@ all: build filetypeplugin incrementalsearchplugin appimage
 appimage:
 	rm -f Guitar-*.AppImage
 	mkdir -p _appdir/usr/bin
-	mkdir -p _appdir/usr/lib
+	mkdir -p _appdir/usr/lib/soramimi.jp
 	mkdir -p _appdir/usr/share/applications
 	mkdir -p _appdir/usr/share/icons/hicolor/256x256/apps
 	mkdir -p _appdir/usr/share/icons/hicolor/scalable/apps
 
 	cp ../../_bin/Guitar _appdir/usr/bin/
-	cp ../../lib/libfiletypeplugin.so _appdir/usr/lib/
-	cp ../../lib/libincrementalsearchplugin.so _appdir/usr/lib/
+	cp ../../lib/libfiletypeplugin.so _appdir/usr/lib/soramimi.jp/
+	cp ../../lib/libincrementalsearchplugin.so _appdir/usr/lib/soramimi.jp/
 	strip _appdir/usr/bin/Guitar
 	cp ../../LinuxDesktop/Guitar.svg _appdir/usr/share/icons/hicolor/scalable/apps/Guitar.svg
 	cp ../../src/resources/image/guitar.png _appdir/usr/share/icons/hicolor/256x256/apps/Guitar.png
@@ -53,3 +53,9 @@ ubuntu:
 
 deploy:
 	curl -T Guitar-x86_64.AppImage ftp://192.168.0.5/Public/pub/nightlybuild/
+
+download:
+	wget https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/linuxdeploy-x86_64.AppImage
+	wget https://github.com/linuxdeploy/linuxdeploy-plugin-qt/releases/download/continuous/linuxdeploy-plugin-qt-x86_64.AppImage
+	chmod +x linuxdeploy-plugin-qt-x86_64.AppImage
+	chmod +x linuxdeploy-x86_64.AppImage
