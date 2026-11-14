@@ -1190,7 +1190,7 @@
      <x>0</x>
      <y>0</y>
      <width>1023</width>
-     <height>21</height>
+     <height>18</height>
     </rect>
    </property>
    <widget class="QMenu" name="menu_File">
@@ -1347,9 +1347,6 @@
    <property name="toolTip">
     <string>Refresh</string>
    </property>
-   <property name="shortcut">
-    <string>F5</string>
-   </property>
   </action>
   <action name="action_commit">
    <property name="icon">
@@ -1405,6 +1402,9 @@
    </property>
    <property name="text">
     <string>&amp;Fetch</string>
+   </property>
+   <property name="shortcut">
+    <string>F5</string>
    </property>
   </action>
   <action name="action_edit_global_gitconfig">
