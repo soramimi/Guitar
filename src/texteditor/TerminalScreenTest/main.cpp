@@ -95,6 +95,39 @@ TEST(TerminalScreen, MaintainsWideAndCombiningCellInvariants)
 	EXPECT_FALSE(screen.cell(0, 2).continuation);
 }
 
+TEST(TerminalScreen, AmbiguousSymbolsOccupySingleCells)
+{
+	for (char32_t c : std::u32string(U"\u2500\u2502\u250c\u253c\u2550\u2551\u2588\u2592\u2192\u25a0\u2605\u00b1\u00e9\u03b1")) {
+		EXPECT_EQ(TerminalScreen::cell_width(c), 1) << static_cast<uint32_t>(c);
+	}
+	EXPECT_EQ(TerminalScreen::cell_width(U'\uff21'), 2);
+	EXPECT_EQ(TerminalScreen::cell_width(U'\u754c'), 2);
+	EXPECT_EQ(TerminalScreen::cell_width(U'\u0301'), 0);
+}
+
+TEST(TerminalScreen, BoxDrawingRowsWrapWithoutColumnDrift)
+{
+	// Like Edit's full-screen output: rows are padded to the terminal width,
+	// with no CR/LF between them. Each vertical bar must occupy just one cell.
+	std::string const row = "  \xe2\x94\x82       ";
+	std::string const output = row + row + row + "status";
+	for (size_t chunk_size : {size_t(1), output.size()}) {
+		TerminalScreen screen(10, 4);
+		for (size_t offset = 0; offset < output.size(); offset += chunk_size) {
+			screen.feed(std::string_view(output).substr(offset, chunk_size));
+		}
+		for (size_t r = 0; r < 3; r++) {
+			EXPECT_EQ(active_text(screen, r), U"  \u2502");
+			EXPECT_EQ(screen.cell(r, 2).character, U'\u2502');
+			EXPECT_FALSE(screen.cell(r, 3).continuation);
+		}
+		EXPECT_EQ(active_text(screen, 3), U"status");
+		EXPECT_EQ(screen.cursor_row(), 3u);
+		EXPECT_EQ(screen.cursor_column(), 6u);
+		EXPECT_EQ(screen.scrollback_count(), 0u);
+	}
+}
+
 TEST(TerminalScreen, AppliesForegroundBackgroundAndExtendedColors)
 {
 	TerminalScreen screen(20, 4);

@@ -40,7 +40,8 @@ MainWindow (QMainWindow, TextEditorApp/src)
   返信、スクロールバック、端末カーソル、全角・結合文字、前景・背景色を保持する。返信は
   `take_pending_responses()`で取り出し、画面テキストとして投影しない。`?47`/`?1047`/`?1049`
   は追従抑止用のモードとして追跡し、入退場時に通常画面の文字属性を保存・復元する。
-  独立した代替画面バッファはP3で実装する
+  独立した代替画面バッファはP3で実装する。端末のEast Asian Ambiguous文字は既定で1セルとし、
+  罫線を含む連続出力の行ずれを防ぐ。通常エディタの幅判定とは独立した方針とする
 - **TextEditorApp/src/PtyProcessController.h/.cpp** — `process/`のPTY実装をQtイベントループへ接続し、
   プラットフォーム別生成、入力キュー、セッションID/状態、10msごとの逐次出力、終了通知、端末セルサイズ変更を担当する。
   PTY書込み・停止・resizeはGUIスレッドから実行しない。入力待ちキューは1 MiBで上限を設ける
@@ -57,7 +58,8 @@ MainWindow (QMainWindow, TextEditorApp/src)
 - **PtyProcessTest/** — POSIX PTYのTTY接続、初期サイズ、ANSI保持、終了時drain、resize/SIGWINCH、
   起動直後にキューした入力の到達を確認し、通常neofetch出力をTerminalScreenへ適用するQt非依存のGoogleTest
 - **TerminalScreenTest/** — カーソル移動、C0制御、チャンク分割、Unicodeセル、SGR、スクロール、
-  リサイズ、標準端末照会への返信、代替画面退出時の文字属性復元を確認するQt非依存のGoogleTest
+  リサイズ、標準端末照会への返信、代替画面退出時の文字属性復元、曖昧幅文字の1セル幅と
+  罫線行の自動折り返し（UTF-8の1バイト分割を含む）を確認するQt非依存のGoogleTest
 - **LineIndexMap/** — 折り返し行の論理行⇔表示行マッピング用 B+-tree(独立ライブラリ、
   GoogleTest によるテスト完備)。詳細は [LineIndexMap/AGENTS.md](LineIndexMap/AGENTS.md) を参照
 - **TextEditorApp/** — 上記部品を組み込んだ実行可能アプリ(サンプル/動作確認用)
@@ -163,7 +165,7 @@ Qt非依存の`LineIndexMap`・`WrapAlgorithm`・`PtyProcessTest`・`TerminalScr
 # Linuxでneofetchがある場合の期待出力: [  PASSED  ] 4 tests.
 
 (cd TerminalScreenTest && qmake6 TerminalScreenTest.pro && make && ./TerminalScreenTest)
-# 期待出力: [  PASSED  ] 17 tests.
+# 期待出力: [  PASSED  ] 19 tests.
 
 # 並列折り返しのThreadSanitizer検証
 (cd TextEditorCoreTest && make distclean && \
@@ -189,6 +191,29 @@ Qt非依存の`LineIndexMap`・`WrapAlgorithm`・`PtyProcessTest`・`TerminalScr
 - P0のPTY入力経路はLinuxで自動テスト済み。Windows Direct/Workerの実機受入試験はP5で残している
 
 ## 規約・注意点
+
+### 端末の曖昧幅文字
+
+- East Asian WidthがAmbiguousの文字に、すべての端末で必ず1セルとする統一規則はない。
+  [Unicode UAX #11 §2・§5](https://www.unicode.org/reports/tr11/)は、文脈を確定できない場合は
+  狭幅を既定とするよう推奨する一方、East Asian Widthだけでは現代の端末の幅処理を
+  そのまま決定できず、用途に応じた調整が必要であると説明している
+- 本プロジェクトの端末は、`TerminalScreen::cell_width()`で曖昧幅を1セルとして扱う。
+  これはMicrosoft Editの実出力で確認した1セル前提に合わせた互換性方針であり、
+  2セル扱いそのものが常に誤りという意味ではない。
+  [xtermのcjkWidth](https://invisible-island.net/xterm/manpage/xterm.html)や
+  [minttyのCharwidth](https://mintty.github.io/mintty.1.html)も広幅・狭幅の選択を提供する
+- 端末と子アプリの`wcwidth()`等による幅認識が食い違うと、カーソル位置、罫線、
+  右端での自動折り返しがずれる。U+2502だけを例外扱いせず、曖昧幅全体の方針として扱う。
+  端末側の変更のために、通常エディタも利用する`UnicodeWidth::width()`を一律変更しない
+- 幅方針を変更するときは、画面モデル、描画、背景、カーソル、マウス座標で同じ
+  `TerminalScreen::cell_width()`を使用する。将来2セル設定を追加する場合は、既存セルの
+  継続セル情報、Document投影、子アプリとの幅認識の整合も設計する
+- 回帰確認では、罫線と末尾空白で端末幅を埋め、CR/LFなしで複数行を連続出力するケースを
+  含める。UTF-8のチャンク分割でも罫線の列位置が揃い、余分なスクロールが起きないこと、
+  全角文字は2セル、対応する結合文字は0セルのままであることを確認する
+
+### 共通規約
 
 - インデントはタブ(既存コードに合わせる)
 - `unicode.*`、`UnicodeWidth.*`、`WrapAlgorithm.*`、`LineIndexMap` は Qt 非依存として維持すること。

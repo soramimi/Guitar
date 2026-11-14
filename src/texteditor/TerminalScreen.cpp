@@ -272,7 +272,11 @@ TerminalScreen::TerminalScreen(size_t columns, size_t rows)
 int TerminalScreen::cell_width(char32_t codepoint)
 {
 	if (is_combining(codepoint)) return 0;
-	return std::clamp(UnicodeWidth::width(UnicodeWidth::type(codepoint)), 1, 2);
+	UnicodeWidth::Type const type = UnicodeWidth::type(codepoint);
+	// Terminal applications use narrow ambiguous characters (including box
+	// drawing). Keep this policy separate from the normal editor's widths.
+	if (type == UnicodeWidth::Type::Ambigous) return 1;
+	return std::clamp(UnicodeWidth::width(type), 1, 2);
 }
 
 TerminalScreen::Row TerminalScreen::blank_row() const

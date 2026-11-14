@@ -70,7 +70,7 @@ class TerminalScreen {
 public:
 	TerminalScreen(size_t columns = 80, size_t rows = 25);
 	// Width used by the terminal cell model. Combining characters occupy no new
-	// cell; other code points occupy one or two cells.
+	// cell; ambiguous characters occupy one, wide/fullwidth characters two.
 	static int cell_width(char32_t codepoint);
 
 	void reset();
