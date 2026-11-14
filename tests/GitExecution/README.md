@@ -16,9 +16,10 @@ release application objects to avoid compiling the GUI twice. Omit it to compile
 the application sources independently inside the test build directory.
 
 Tests call the real Git, GitBasicSession and process implementations in disposable
-repositories. Global/system Git settings are isolated, and no push/fetch or
-external SSH connections are made. A local SSH stub records the exact arguments
-and fails immediately. Temporary files are cleaned up automatically.
+repositories. Global/system Git settings are isolated; push/fetch use private
+local repositories, and no external SSH connections are made. A local SSH stub
+records the exact arguments and fails immediately. Temporary files are cleaned
+up automatically.
 
 Coverage includes normal/PTY argv preservation, empty values, embedded quotes,
 Windows command-line serialization, literal pathspecs, leading hyphens, reset of
@@ -26,6 +27,12 @@ one file without changing others, stage/unstage, Git's quoted output, rename
 arrows, file history and AI diff assembly. Windows serialization is checked by
 portable unit cases; execution through CreateProcessW still needs native Windows
 validation.
+
+Repository-refresh regressions use a real MainWindow with private configuration
+in child processes with parent timeouts. They check cached HEAD invalidation,
+filtered selection preservation, reset, detached/new-branch checkout, rebase
+continue/quit/abort, and tag labels after asynchronous creation/deletion. Tag
+completion is also checked after selecting another repository.
 
 AI regressions use an in-process HTTP stub and a Python loopback TLS server.
 They verify index-only diffs (including initial/root/amend commits), strict JSON

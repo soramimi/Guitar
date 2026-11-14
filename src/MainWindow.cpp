@@ -1317,7 +1317,7 @@ void MainWindow::revertAllFiles()
 	QString cmd = "git reset --hard HEAD";
 	if (askAreYouSureYouWantToRun(tr("Revert all files"), "> " + cmd)) {
 		g.resetAllFiles();
-		reopenRepository(true, { });
+		refreshCurrentRepository();
 	}
 }
 
@@ -1763,9 +1763,6 @@ void MainWindow::openRepositoryMain(OpenRepositoryOption const &opt)
 			ui->tableWidget_log->setRecords({ });
 			QApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
 		}
-	} else {
-		clearGitCommandCache();
-		clearGitObjectCache();
 	}
 
 	if (opt.new_session) {
@@ -1775,6 +1772,9 @@ void MainWindow::openRepositoryMain(OpenRepositoryOption const &opt)
 		g = new_git_runner(item.local_dir, item.ssh_key);
 	}
 	setCurrentGitRunner(g);
+	// Clearing the displayed log and invalidating Git results are independent.
+	clearGitCommandCache();
+	clearGitObjectCache();
 	if (!isValidWorkingCopy(g)) return;
 
 	AbstractPtyProcess *pty = getPtyProcess();
@@ -1881,13 +1881,6 @@ void MainWindow::openRepositoryMain(OpenRepositoryOption const &opt)
  */
 void MainWindow::openRepository(OpenRepositoryOption const &opt)
 {
-	struct DeferClearAllFilters {
-		~DeferClearAllFilters()
-		{
-			global->mainwindow->clearFilterText();
-		}
-	} defer_clear_all_filters; // 関数終了時にフィルタをクリアする
-
 	if (opt.validate) {
 		QString dir = currentWorkingCopyDir();
 		if (!QFileInfo(dir).isDir()) {
@@ -1901,6 +1894,15 @@ void MainWindow::openRepository(OpenRepositoryOption const &opt)
 			QMessageBox::warning(this, tr("Open Repository"), tr("Not a valid git repository") + "\n\n" + dir);
 			return;
 		}
+	}
+
+	// Clear filters before rebuilding: doing this afterwards restores an old
+	// row number (or -1) over the selection installed by makeCommitLog.
+	if (isIncrementalSearching()) {
+		GitHash selected_id;
+		if (auto item = currentCommitItem()) selected_id = item->commit_id;
+		clearAllFilters();
+		if (opt.keep_selection && selected_id) jumpToCommit(selected_id);
 	}
 
 	if (opt.wait_cursor) {
@@ -1919,6 +1921,17 @@ void MainWindow::reopenRepository(bool validate, OpenRepositoryOption opt)
 	opt.new_session = false;
 	opt.validate = validate;
 	openRepository(opt);
+}
+
+void MainWindow::refreshCurrentRepository(bool keep_selection)
+{
+	ASSERT_MAIN_THREAD();
+
+	OpenRepositoryOption opt;
+	opt.clear_log = false;
+	opt.do_fetch = false;
+	opt.keep_selection = keep_selection;
+	reopenRepository(true, opt);
 }
 
 void MainWindow::reopenRepositoryAsNewSession()
@@ -2990,7 +3003,7 @@ void MainWindow::push(bool set_upstream, const QString &remote, const QString &b
 			}
 		}
 		updateRemoteInfo();
-		reopenRepository(true, { });
+		refreshCurrentRepository();
 	}, { });
 }
 
@@ -3017,15 +3030,15 @@ void MainWindow::push_tags(GitRunner g)
 
 void MainWindow::delete_tags(GitRunner g, std::vector<std::string> const &names)
 {
-	runPtyGit(QString { }, g, Git_delete_tags { names }, RUN_PTY_CALLBACK {
-		updateCurrentFileList();
+	runPtyGit(QString { }, g, Git_delete_tags { names }, [this, directory = g.workingDir()](ProcessStatus *, QVariant const &) {
+		if (currentWorkingCopyDir().toStdString() == directory) refreshCurrentRepository(true);
 	}, { });
 }
 
 void MainWindow::add_tag(GitRunner g, const std::string &name, GitHash const &commit_id)
 {
-	runPtyGit(QString { }, g, Git_add_tag { name, commit_id }, RUN_PTY_CALLBACK {
-		updateCurrentFileList();
+	runPtyGit(QString { }, g, Git_add_tag { name, commit_id }, [this, directory = g.workingDir()](ProcessStatus *, QVariant const &) {
+		if (currentWorkingCopyDir().toStdString() == directory) refreshCurrentRepository(true);
 	}, { });
 }
 
@@ -3114,11 +3127,7 @@ void MainWindow::deleteBranch(GitCommitItem const &commit)
 			}
 		}
 		if (count > 0) {
-			OpenRepositoryOption opt;
-			opt.validate = true;
-			opt.wait_cursor = true;
-			opt.keep_selection = true;
-			openRepository(opt);
+			refreshCurrentRepository(true);
 		}
 	}
 }
@@ -3153,7 +3162,7 @@ void MainWindow::resetFile(const QStringList &paths)
 			for (QString const &path : paths) {
 				g.resetFile(path.toStdString());
 			}
-			reopenRepository(true, { });
+			refreshCurrentRepository();
 		}
 	}
 }
@@ -3343,11 +3352,7 @@ void MainWindow::doGitCommand(const std::function<void(GitRunner)> &callback)
 	GitRunner g = git();
 	if (g.isValidWorkingCopy()) {
 		callback(g);
-		OpenRepositoryOption opt;
-		opt.validate = false;
-		opt.wait_cursor = false;
-		opt.keep_selection = false;
-		openRepository(opt);
+		refreshCurrentRepository();
 	}
 }
 
@@ -4667,7 +4672,7 @@ void MainWindow::mergeBranch(QString const &commit, GitMergeFastForward ff, bool
 	if (!isValidWorkingCopy(g)) return;
 
 	g.mergeBranch(commit.toStdString(), ff, squash);
-	reopenRepository(true, { });
+	refreshCurrentRepository();
 }
 
 void MainWindow::mergeBranch(GitCommitItem const *commit, GitMergeFastForward ff, bool squash)
@@ -4689,7 +4694,7 @@ void MainWindow::rebaseBranch(GitCommitItem const *commit)
 	int r = QMessageBox::information(this, tr("Rebase"), text, QMessageBox::Ok, QMessageBox::Cancel);
 	if (r == QMessageBox::Ok) {
 		g.rebaseBranch(commit->commit_id.toString());
-		reopenRepository(true, { });
+		refreshCurrentRepository();
 	}
 }
 
@@ -4720,16 +4725,19 @@ void MainWindow::blame()
 void MainWindow::on_action_rebase_continue_triggered()
 {
 	git().rebase_continue();
+	refreshCurrentRepository();
 }
 
 void MainWindow::on_action_rebase_quit_triggered()
 {
 	git().rebase_quit();
+	refreshCurrentRepository();
 }
 
 void MainWindow::on_action_rebase_abort_triggered()
 {
 	git().rebase_abort();
+	refreshCurrentRepository();
 }
 
 void MainWindow::cherrypick(GitCommitItem const *commit)
@@ -4765,7 +4773,7 @@ void MainWindow::cherrypick(GitCommitItem const *commit)
 		}
 	}
 
-	reopenRepository(true, { });
+	refreshCurrentRepository();
 }
 
 void MainWindow::merge(GitCommitItem commit)
@@ -4848,11 +4856,7 @@ void MainWindow::on_action_fetch_triggered()
 		fetch(git(), false);
 	} else {
 		// In offline mode the same action is labelled "Update".
-		OpenRepositoryOption opt;
-		opt.do_fetch = false;
-		opt.clear_log = false;
-		opt.keep_selection = true;
-		reopenRepository(false, opt);
+		refreshCurrentRepository(true);
 	}
 }
 
@@ -5339,14 +5343,14 @@ void MainWindow::on_listWidget_files_customContextMenuRequested(const QPoint &po
 				for_each_selected_files([&](QString const &path) {
 					g.removeFile(path.toStdString(), true);
 				});
-				reopenRepository(false, { });
+				refreshCurrentRepository();
 			}
 		} else if (a == a_untrack) {
 			if (askAreYouSureYouWantToRun("Untrack", tr("rm --cached files"))) {
 				for_each_selected_files([&](QString const &path) {
 					g.rm_cached(path.toStdString());
 				});
-				reopenRepository(false, { });
+				refreshCurrentRepository();
 			}
 		} else if (a == a_history) {
 			execFileHistory(item);
@@ -5454,7 +5458,7 @@ void MainWindow::on_listWidget_unstaged_customContextMenuRequested(const QPoint 
 					for_each_selected_files([&](QString const &path) {
 						g.removeFile(path.toStdString(), true);
 					});
-					reopenRepository(false, { });
+					refreshCurrentRepository();
 				}
 				return;
 			}
@@ -5463,7 +5467,7 @@ void MainWindow::on_listWidget_unstaged_customContextMenuRequested(const QPoint 
 					for_each_selected_files([&](QString const &path) {
 						g.rm_cached(path.toStdString());
 					});
-					reopenRepository(false, { });
+					refreshCurrentRepository();
 				}
 				return;
 			}
@@ -5504,7 +5508,7 @@ void MainWindow::on_listWidget_staged_customContextMenuRequested(const QPoint &p
 				QListWidgetItem *item = ui->listWidget_unstaged->currentItem();
 				if (a == a_unstage) {
 					g.unstage(path.toStdString());
-					reopenRepository(false, { });
+					refreshCurrentRepository();
 				} else if (a == a_history) {
 					execFileHistory(item);
 				} else if (a == a_blame) {
@@ -5827,11 +5831,7 @@ bool MainWindow::checkoutLocalBranch(std::string const &name)
 		GitRunner g = git();
 		bool ok = g.checkout(name);
 		if (ok) {
-			// Refresh the existing session's caches before reading the new HEAD.
-			OpenRepositoryOption opt;
-			opt.clear_log = false;
-			opt.do_fetch = false;
-			reopenRepository(true, opt);
+			refreshCurrentRepository();
 			return true;
 		}
 	}
@@ -5886,14 +5886,14 @@ void MainWindow::checkout(QWidget *parent, GitCommitItem const &commit, std::fun
 			if (id.isValid()) {
 				bool ok = g.checkout_detach(id.toString());
 				if (ok) {
-					reopenRepository(true, { });
+					refreshCurrentRepository();
 				}
 			}
 		} else if (op == CheckoutDialog::Operation::CreateLocalBranch) {
 			if (!name.isEmpty() && id.isValid()) {
 				bool ok = g.checkout(name.toStdString(), id.toString());
 				if (ok) {
-					reopenRepository(true, { });
+					refreshCurrentRepository();
 				} else {
 					GitHash id = g.rev_parse(name.toStdString());
 					if (id.isValid()) {
@@ -6160,7 +6160,7 @@ void MainWindow::updateAncestorCommitMap()
 void MainWindow::refresh()
 {
 	if (!isValidWorkingCopy(git())) return;
-	reopenRepository(true, { });
+	refreshCurrentRepository(true);
 }
 
 void MainWindow::on_action_view_refresh_triggered()
@@ -6542,7 +6542,7 @@ void MainWindow::revertCommit()
 	GitCommitItem const &commit = selectedCommitItem();
 	if (commit) {
 		g.revert(commit.commit_id);
-		reopenRepository(false, { });
+		refreshCurrentRepository();
 	}
 }
 
@@ -6811,7 +6811,7 @@ void MainWindow::on_action_reset_HEAD_1_triggered()
 	if (!isValidWorkingCopy(g)) return;
 
 	g.reset_head1();
-	reopenRepository(false, { });
+	refreshCurrentRepository();
 }
 
 bool MainWindow::isOnlineMode() const
@@ -7251,9 +7251,8 @@ void MainWindow::on_action_edit_tags_triggered()
 	GitCommitItem const &commit = selectedCommitItem();
 	if (commit && GitHash::isValidID(commit.commit_id.toString())) {
 		EditTagsDialog dlg(this, &commit);
-		if (dlg.exec() == QDialog::Accepted) {
-			reopenRepository(true, { });
-		}
+		// The asynchronous tag operation refreshes after it has completed.
+		dlg.exec();
 	}
 }
 
@@ -7615,7 +7614,7 @@ void MainWindow::on_action_reset_and_clean_triggered()
 	ResetAndCleanDialog dlg(this);
 	if (dlg.exec() == QDialog::Accepted) {
 		if (dlg.perform(this)) {
-			reopenRepository(false, { });
+			refreshCurrentRepository();
 		}
 	}
 }

@@ -26,6 +26,10 @@
 #include "../../src/Terminal.h"
 #include <future>
 #include <QThread>
+#include <QAction>
+#include <QLabel>
+#include <QRadioButton>
+#include <QKeyEvent>
 
 namespace {
 QString executable;
@@ -586,6 +590,216 @@ TEST(TerminalOpen, DirectoryAndKeyAreNotShellInterpreted)
         EXPECT_FALSE(QFileInfo::exists(QDir::currentPath() + "/" + name)) << name.toStdString();
     }
 }
+namespace {
+// A private configuration and real MainWindow exercise the displayed model,
+// rather than only checking the Git commands used to rebuild it.
+class RefreshTestWindow {
+    ApplicationSettings saved_settings = global->appsettings;
+    ThemePtr saved_theme = global->theme;
+    std::shared_ptr<IncrementalSearch> saved_search = global->incremental_search;
+    QString saved_directory = global->app_app_config_dir;
+    QString saved_config = global->config_file_path;
+    MainWindow *saved_mainwindow = global->mainwindow;
+    QTemporaryDir configuration;
+public:
+    std::unique_ptr<MainWindow> window;
+    RefreshTestWindow(QString const &program, QString const &repository) {
+        EXPECT_TRUE(configuration.isValid());
+        global->appsettings = ApplicationSettings::defaultSettings();
+        global->appsettings.git_command = program;
+        global->appsettings.automatically_fetch_when_opening_the_repository = false;
+        global->appsettings.remember_and_restore_window_position = false;
+        global->appsettings.get_avatar_icon_from_network_enabled = false;
+        global->app_app_config_dir = configuration.path();
+        global->config_file_path = configuration.filePath("Guitar.ini");
+        global->theme = createLightTheme();
+        global->incremental_search = loadPlugin<IncrementalSearch, IncrementalSearchInterface>("incrementalsearchplugin");
+        EXPECT_NE(global->incremental_search, nullptr);
+        qRegisterMetaType<LogData>("LogData");
+        qRegisterMetaType<PtyProcessCompleted>("PtyProcessCompleted");
+        qRegisterMetaType<GitCommandRunner>("GitCommandRunner");
+        window = std::make_unique<MainWindow>();
+        window->autoOpenRepository(repository, false);
+        window->show();
+        QApplication::processEvents();
+    }
+    ~RefreshTestWindow() {
+        window.reset();
+        global->mainwindow = saved_mainwindow;
+        global->appsettings = saved_settings;
+        global->theme = saved_theme;
+        global->incremental_search = saved_search;
+        global->app_app_config_dir = saved_directory;
+        global->config_file_path = saved_config;
+    }
+    GitHash head() const {
+        auto data = window->currentRepositoryData();
+        for (auto const &[row, labels] : data->label_map)
+            for (auto const &label : labels)
+                if (label.kind == BranchLabel::Head) return data->commit_log.at(row).commit_id;
+        return {};
+    }
+    GitHash selectedCommit() const {
+        QApplication::processEvents();
+        auto item = window->currentCommitItem();
+        EXPECT_NE(item, nullptr);
+        return item ? item->commit_id : GitHash{};
+    }
+    bool hasTag(std::string const &name) const {
+        for (auto const &[id, tags] : window->currentRepositoryData()->tag_map)
+            for (auto const &tag : tags) if (tag.name == name) return true;
+        return false;
+    }
+    static bool waitFor(std::function<bool()> const &predicate) {
+        QElapsedTimer timer; timer.start();
+        do {
+            QApplication::processEvents();
+            if (predicate()) return true;
+            QThread::msleep(10);
+        } while (timer.elapsed() < 10000);
+        return false;
+    }
+};
+}
+TEST_F(GitExecution, RefreshInvalidatesHeadCacheAndPreservesSelection)
+{
+    if (runShutdownChild("GitExecution.RefreshInvalidatesHeadCacheAndPreservesSelection", 20000)) return;
+    auto first = direct({"rev-parse", "HEAD"}).trimmed();
+    write("safe", "second\n"); direct({"commit", "-qam", "second"});
+    auto second = direct({"rev-parse", "HEAD"}).trimmed();
+    RefreshTestWindow ui(gitProgram, root); auto &window = *ui.window;
+    ASSERT_EQ(ui.head().toString(), second.toStdString());
+    auto table = window.findChild<QWidget *>("tableWidget_log"); ASSERT_NE(table, nullptr);
+    for (QChar character : QString("baseline")) {
+        QKeyEvent search(QEvent::KeyPress, Qt::Key_unknown, Qt::NoModifier, QString(character));
+        QApplication::sendEvent(table, &search);
+    }
+    ASSERT_TRUE(window.isIncrementalSearching());
+    ASSERT_EQ(ui.selectedCommit().toString(), first.toStdString());
+    window.git().rev_parse("HEAD"); // Seed the command cache before changing HEAD externally.
+    direct({"checkout", "--detach", QString::fromUtf8(first)});
+    window.refresh();
+    EXPECT_FALSE(window.isIncrementalSearching());
+    EXPECT_EQ(ui.head().toString(), first.toStdString());
+    EXPECT_EQ(ui.selectedCommit().toString(), first.toStdString());
+    EXPECT_TRUE(window.currentBranch().flags & GitBranch::HeadDetachedAt);
+    // Reset creates an uncommitted row; HEAD must still move to the real parent.
+    direct({"checkout", "-B", "topic", QString::fromUtf8(second)}); window.refresh();
+    window.git().rev_parse("HEAD");
+    auto reset = window.findChild<QAction *>("action_reset_HEAD_1"); ASSERT_NE(reset, nullptr);
+    reset->trigger();
+    EXPECT_EQ(direct({"rev-parse", "HEAD"}).trimmed(), first);
+    EXPECT_EQ(ui.head().toString(), first.toStdString());
+    EXPECT_FALSE(ui.selectedCommit()); // Select remaining uncommitted changes.
+}
+TEST_F(GitExecution, CheckoutModesRefreshHeadAndBranchDisplay)
+{
+    if (runShutdownChild("GitExecution.CheckoutModesRefreshHeadAndBranchDisplay", 20000)) return;
+    auto first = direct({"rev-parse", "HEAD"}).trimmed();
+    write("safe", "second\n"); direct({"commit", "-qam", "second"});
+    auto second = direct({"rev-parse", "HEAD"}).trimmed();
+    RefreshTestWindow ui(gitProgram, root); auto &window = *ui.window;
+    for (bool create : {false, true}) {
+        direct({"checkout", "-B", "topic", QString::fromUtf8(second)}); window.refresh();
+        window.git().rev_parse("HEAD");
+        auto data = window.currentRepositoryData();
+        int row = data->commit_log.find_index(GitHash(first.toStdString())); ASSERT_GE(row, 0);
+        auto target = data->commit_log.at(row);
+        QTimer::singleShot(0, &window, [&, create] {
+            auto dialog = qobject_cast<QDialog *>(QApplication::activeModalWidget());
+            ASSERT_NE(dialog, nullptr);
+            auto radio = dialog->findChild<QRadioButton *>(create ? "radioButton_create_local_branch" : "radioButton_head_detached");
+            ASSERT_NE(radio, nullptr); radio->click();
+            if (create) {
+                auto combo = dialog->findChild<QComboBox *>("comboBox_branch_name"); ASSERT_NE(combo, nullptr);
+                combo->setEditText("created");
+            }
+            dialog->accept();
+        });
+        window.checkout(&window, target);
+        EXPECT_EQ(direct({"rev-parse", "HEAD"}).trimmed(), first);
+        EXPECT_EQ(ui.head().toString(), first.toStdString());
+        auto branchLabel = window.findChild<QLabel *>("label_branch_name"); ASSERT_NE(branchLabel, nullptr);
+        if (create) {
+            EXPECT_EQ(window.currentBranchName(), "created"); EXPECT_EQ(branchLabel->text(), "created");
+        } else {
+            EXPECT_TRUE(window.currentBranch().flags & GitBranch::HeadDetachedAt);
+            EXPECT_TRUE(branchLabel->text().contains("HEAD detached"));
+        }
+        EXPECT_EQ(ui.selectedCommit().toString(), first.toStdString());
+    }
+}
+TEST_F(GitExecution, RebaseControlsRefreshHeadAndBranchDisplay)
+{
+    if (runShutdownChild("GitExecution.RebaseControlsRefreshHeadAndBranchDisplay", 20000)) return;
+    auto first = direct({"rev-parse", "HEAD"}).trimmed();
+    write("safe", "second\n"); direct({"commit", "-qam", "second"});
+    auto second = direct({"rev-parse", "HEAD"}).trimmed();
+    direct({"checkout", "-b", "upstream", QString::fromUtf8(first)});
+    write("upstream", "upstream\n"); direct({"add", "upstream"}); direct({"commit", "-qm", "upstream"});
+    RefreshTestWindow ui(gitProgram, root); auto &window = *ui.window;
+    for (auto action : {"action_rebase_abort", "action_rebase_continue", "action_rebase_quit"}) {
+        direct({"checkout", "-B", "topic", QString::fromUtf8(second)});
+        QProcess rebase;
+        rebase.start(gitProgram, {"-C", root, "rebase", "--exec", "false", "upstream"});
+        ASSERT_TRUE(rebase.waitForFinished(10000)); ASSERT_NE(rebase.exitCode(), 0);
+        window.refresh(); window.git().rev_parse("HEAD");
+        auto control = window.findChild<QAction *>(action); ASSERT_NE(control, nullptr); control->trigger();
+        auto actual = direct({"rev-parse", "HEAD"}).trimmed();
+        EXPECT_EQ(ui.head().toString(), actual.toStdString()) << action;
+        EXPECT_FALSE(QFileInfo::exists(root + "/.git/rebase-merge")) << action;
+        if (std::string(action) == "action_rebase_quit")
+            EXPECT_TRUE(window.currentBranch().flags & (GitBranch::HeadDetachedAt | GitBranch::HeadDetachedFrom));
+        else
+            EXPECT_EQ(window.currentBranchName(), "topic");
+    }
+}
+TEST_F(GitExecution, TagCompletionRefreshesLabelsAndKeepsSelectedCommit)
+{
+    if (runShutdownChild("GitExecution.TagCompletionRefreshesLabelsAndKeepsSelectedCommit", 20000)) return;
+    auto first = direct({"rev-parse", "HEAD"}).trimmed();
+    write("safe", "second\n"); direct({"commit", "-qam", "second"});
+    QTemporaryDir remote; ASSERT_TRUE(remote.isValid());
+    direct({"init", "--bare", remote.path()}); direct({"remote", "add", "origin", remote.path()});
+    RefreshTestWindow ui(gitProgram, root); auto &window = *ui.window;
+    ASSERT_TRUE(window.jumpToCommit(GitHash(first.toStdString())));
+    window.addTag("refresh-test");
+    ASSERT_TRUE(RefreshTestWindow::waitFor([&] { return ui.hasTag("refresh-test"); }));
+    EXPECT_EQ(direct({"rev-parse", "refresh-test"}).trimmed(), first);
+    EXPECT_EQ(ui.selectedCommit().toString(), first.toStdString());
+    window.deleteTags(std::vector<std::string>{"refresh-test"});
+    ASSERT_TRUE(RefreshTestWindow::waitFor([&] { return !ui.hasTag("refresh-test"); }));
+    EXPECT_TRUE(direct({"tag", "--list", "refresh-test"}).trimmed().isEmpty());
+    EXPECT_EQ(ui.selectedCommit().toString(), first.toStdString());
+    // The local tag changed even if its subsequent push fails.
+    direct({"remote", "set-url", "origin", remote.path() + "/missing.git"});
+    window.addTag("local-only");
+    ASSERT_TRUE(RefreshTestWindow::waitFor([&] { return ui.hasTag("local-only"); }));
+    EXPECT_EQ(direct({"rev-parse", "local-only"}).trimmed(), first);
+    EXPECT_EQ(ui.selectedCommit().toString(), first.toStdString());
+}
+
+TEST_F(GitExecution, TagCompletionDoesNotRefreshAnotherRepository)
+{
+    if (runShutdownChild("GitExecution.TagCompletionDoesNotRefreshAnotherRepository", 20000)) return;
+    QTemporaryDir remote, other; ASSERT_TRUE(remote.isValid()); ASSERT_TRUE(other.isValid());
+    direct({"init", "--bare", remote.path()}); direct({"remote", "add", "origin", remote.path()});
+    direct({"clone", "-q", root, other.path()});
+    RefreshTestWindow ui(gitProgram, root); auto &window = *ui.window;
+    int reloads = 0, completions = 0;
+    QObject::connect(&window, &MainWindow::sigSetCommitLog, &window, [&](CommitLogExchangeData const &) { ++reloads; });
+    QObject::connect(&window, &MainWindow::sigPtyProcessCompleted, &window, [&](bool, PtyProcessCompleted const &) { ++completions; });
+    window.addTag("old-repository-tag");
+    // A completion queued during opening must check the newly selected
+    // repository, even before its GitRunner has replaced the previous one.
+    window.autoOpenRepository(other.path(), false);
+    ASSERT_TRUE(RefreshTestWindow::waitFor([&] { return completions > 0; }));
+    EXPECT_EQ(window.currentWorkingCopyDir(), other.path());
+    EXPECT_EQ(reloads, 1);
+    EXPECT_FALSE(ui.hasTag("old-repository-tag"));
+    EXPECT_EQ(direct({"tag", "--list", "old-repository-tag"}).trimmed(), "old-repository-tag");
+}
+
 int main(int argc, char **argv)
 {
     if (argc >= 2 && std::string(argv[1]) == "--echo-argv") {

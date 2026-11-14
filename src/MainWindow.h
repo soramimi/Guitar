@@ -130,6 +130,7 @@ private:
 	void openRepositoryMain(OpenRepositoryOption const &opt);
 	void openRepository(OpenRepositoryOption const &opt);
 	void reopenRepository(bool validate, OpenRepositoryOption opt);
+	void refreshCurrentRepository(bool keep_selection = false);
 	void reopenRepositoryAsNewSession();
 	void openSelectedRepository();
 	
