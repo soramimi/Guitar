@@ -36,6 +36,11 @@ logs. No external AI service or real API key is used. The AI transport has a
 commit diffs are limited to 200000 bytes and include text patches/binary summaries
 from the index, without running external diff or textconv programs.
 
+`python3 tests/GitExecution/fetch_ui_smoke.py` (from the repository root) also
+checks checkout refreshes across different commits and branches sharing one
+commit, using Xvfb and xdotool. It verifies the selected HEAD's file-list query,
+a single history reload, and no automatic fetch after checkout.
+
 Model-settings regressions use the real modal dialogs with a disposable encrypted
 Vault. They cover Custom/provider round trips, rendering and row ordering,
 protocol preservation, pending key edits, nested/parent cancellation, failed and

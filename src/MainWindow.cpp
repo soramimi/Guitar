@@ -5827,7 +5827,11 @@ bool MainWindow::checkoutLocalBranch(std::string const &name)
 		GitRunner g = git();
 		bool ok = g.checkout(name);
 		if (ok) {
-			reopenRepository(true, { });
+			// Refresh the existing session's caches before reading the new HEAD.
+			OpenRepositoryOption opt;
+			opt.clear_log = false;
+			opt.do_fetch = false;
+			reopenRepository(true, opt);
 			return true;
 		}
 	}
