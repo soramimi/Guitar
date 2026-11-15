@@ -133,7 +133,6 @@ macx {
 SOURCES += \
 	$$SRC/common/ChaCha20.cpp \
 	$$SRC/common/uuid.cpp \
-	$$SRC/easycrypto/easycrypto.cpp \
 	$$SRC/GitDiff.cpp \
 	$$SRC/MyProcess.cpp \
 	$$SRC/inet/httpstatus.cpp \
@@ -333,7 +332,6 @@ SOURCES += \
 HEADERS += \
 	$$SRC/common/ChaCha20.h \
 	$$SRC/common/uuid.h \
-	$$SRC/easycrypto/easycrypto.h \
 	$$SRC/GitCloneData.h \
 	$$SRC/GitCommitItem.h \
 	$$SRC/GitDiff.h \

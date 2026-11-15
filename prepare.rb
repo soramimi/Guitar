@@ -5,7 +5,7 @@
 #	* win.rc
 #	* Info.plist
 
-load 'version.rb'
+load "#{__dir__}/version.rb"
 
 def get_revision()
 	rev = ""

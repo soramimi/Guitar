@@ -1,21 +1,20 @@
-#include "ApplicationSettings.h"
-#include <QSaveFile>
 #include "ApplicationGlobal.h"
+#include "ApplicationSettings.h"
 #include "Logger.h"
+#include "MemoryReader.h"
 #include "MySettings.h"
+#include <QBuffer>
 #include <QDebug>
 #include <QDir>
 #include <QFileInfo>
+#include <QSaveFile>
 #include <QStandardPaths>
 #include <ai/GenerativeAI.h>
 #include <common/fmt.h>
 #include <common/joinpath.h>
 #include <common/misc.h>
-#include <easycrypto/easycrypto.h>
 #include <common/q/helper.h>
-#include <QBuffer>
 #include <vector>
-#include "MemoryReader.h"
 
 namespace {
 

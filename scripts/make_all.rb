@@ -13,8 +13,21 @@
 require 'fileutils'
 
 # Resolve key directory paths relative to this script.
-$script_dir = __dir__
-$project_dir = File.realpath("#{$script_dir}/..")
+$project_dir = File.realpath("#{__dir__}/..")
+Dir.chdir($project_dir) do
+	# Run the project's preparation script (code generation, etc.) before building.
+	load "#{$project_dir}/prepare.rb"
+	$branch_name = `git rev-parse --abbrev-ref HEAD`.strip
+	
+	# Platform detection flags.
+	$is_win = false  # true when building with MSVC on Windows
+	$is_gcc = false  # true when building with GCC on Linux
+	
+	# Build configuration flags.
+	$make_debug = false    # set to true to also build the debug configuration
+	$make_release = true   # set to false to skip the release configuration
+end
+
 $bin_dir = $project_dir + "/_bin"
 $lib_dir = $project_dir + "/lib"
 $release_dir = "#{$project_dir}/_release"
@@ -25,20 +38,9 @@ if $suffix == "master" or $suffix == "main" then
 	$suffix = ""
 end
 
-# Run the project's preparation script (code generation, etc.) before building.
-load "#{$project_dir}/prepare.rb"
-$branch_name = `git rev-parse --abbrev-ref HEAD`.strip
-
-# Platform detection flags.
-$is_win = false  # true when building with MSVC on Windows
-$is_gcc = false  # true when building with GCC on Linux
-
-# Build configuration flags.
-$make_debug = false    # set to true to also build the debug configuration
-$make_release = true   # set to false to skip the release configuration
-
+		
 # Deployment configuration.
-load "#{$script_dir}/deployconf.rb"
+load "#{__dir__}/deployconf.rb"
 
 # Windows-specific tool paths (MSVC / Qt installation locations).
 $qt_win = ""
@@ -52,7 +54,7 @@ $platform = $1
 case $platform
 when "mswin", "mingw", "cygwin"
 	$is_win = true
-	load "#{$script_dir}/winconf.rb"
+	load "#{__dir__}/winconf.rb"
 when "linux"
 	$is_gcc = true
 when "darwin"
@@ -95,7 +97,7 @@ end
 
 # Run a build script from the scripts directory.
 def run_script(command)
-	Dir.chdir($script_dir) {
+	Dir.chdir(__dir__) {
 		run command
 	}
 end

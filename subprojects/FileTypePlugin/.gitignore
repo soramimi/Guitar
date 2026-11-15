@@ -1,1 +1,9 @@
 *.lib
+/oniguruma/test-driver
+/oniguruma/compile
+/oniguruma/config.guess
+/oniguruma/config.sub
+/oniguruma/depcomp
+/oniguruma/INSTALL
+/oniguruma/install-sh
+/oniguruma/missing
