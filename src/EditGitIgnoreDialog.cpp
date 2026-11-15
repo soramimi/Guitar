@@ -4,50 +4,133 @@
 #include "TextEditDialog.h"
 #include <QFileInfo>
 #include <array>
+#include "ApplicationGlobal.h"
+#include "common/joinpath.h"
+#include "common/realpath.h"
 
-EditGitIgnoreDialog::EditGitIgnoreDialog(MainWindow *parent, QString const &gitignore_path, QString const &file)
+EditGitIgnoreDialog::EditGitIgnoreDialog(MainWindow *parent, QString const &file)
 	: QDialog(parent)
 	, ui(new Ui::EditGitIgnoreDialog)
-	, gitignore_path(gitignore_path)
 {
 	ui->setupUi(this);
 	Qt::WindowFlags flags = windowFlags();
 	flags &= ~Qt::WindowContextHelpButtonHint;
 	setWindowFlags(flags);
 
-	QFileInfo info(file);
+	working_dir_ = global->mainwindow->currentWorkingCopyDir();
+	working_dir_.replace('\\', '/');
 	
-	ui->radioButton_1->setVisible(false);
-	ui->radioButton_2->setVisible(false);
-	ui->radioButton_3->setVisible(false);
-	ui->radioButton_4->setVisible(false);
+	// gitignore_path_ = working_dir_ / ".gitignore";
+	// gitignore_path_ = misc::realpath(gitignore_path_);
+
+	file_ = file;
+	file_.replace('\\', '/');
 	
-	auto SetText = [&](QRadioButton *button, QString const &text) {
+	// ui->comboBox_file->addItem(gitignore_path_);
+	
+	updateComboBox();
+	updateRadioButtons();
+}
+
+EditGitIgnoreDialog::~EditGitIgnoreDialog()
+{
+	delete ui;
+}
+
+void EditGitIgnoreDialog::updateComboBox()
+{
+	std::vector<QString> gitignores;
+	{
+		QString workdir = working_dir_;
+		workdir.replace('\\', '/');
+		if (workdir.endsWith('/')) {
+			workdir.chop(1);
+		}
+		QString path = misc::realpath(file_);
+		path.replace('\\', '/');
+		while (1) {
+			int i = path.lastIndexOf('/');
+			if (i < 0) break;
+			QString dir = path.left(i);
+			QString gitignore = dir / ".gitignore";
+			QFileInfo info(gitignore);
+			if (info.isFile()) {
+				gitignores.push_back(gitignore);
+			}
+			if (dir == workdir) break;
+			path = dir;
+		}
+		std::sort(gitignores.begin(), gitignores.end());
+	}
+	ui->comboBox_file->clear();
+	for (QString const &gitignore : gitignores) {
+		ui->comboBox_file->addItem(gitignore);
+	}
+}
+
+void EditGitIgnoreDialog::updateRadioButtons()
+{
+	QString gitignore_file  = gitignorePath();
+	gitignore_file.replace('\\', '/');
+	
+	{
+		QRadioButton *buttons[] = {
+			ui->radioButton_1,
+			ui->radioButton_2,
+			ui->radioButton_3,
+			ui->radioButton_4,
+		};
+	
+		for (QRadioButton *button : buttons) {
+			button->setText({});
+			button->setVisible(false);
+		}
+	}
+	
+	QFileInfo info(file_);
+	
+	auto SetText = [&](QRadioButton *button, QString text) {
 		if (!text.isEmpty()) {
 			text_map_[button] = text;
 			button->setText(text);
 			button->setVisible(true);
 		}
 	};
+
+	auto SetPath = [&](QRadioButton *button, QString path) {
+		path = working_dir_ / path;
+		int i = gitignore_file.lastIndexOf('/');
+		if (i > 0) {
+			QString destdir = gitignore_file.left(i + 1);
+			if (path.startsWith(destdir)) {
+				path = path.mid(destdir.length());
+				if (!path.isEmpty()) {
+					SetText(button, path);
+				}
+			}
+		}
+	};
 	
-	SetText(ui->radioButton_1, file);
+	SetPath(ui->radioButton_1, file_);
+
 	SetText(ui->radioButton_2, "*." + info.suffix());
 
-	int i = file.indexOf('/');
+	int i = file_.indexOf('/');
 	if (i > 0) {
-		SetText(ui->radioButton_3, file.mid(0, i + 1));
-		int j = file.lastIndexOf('/');
+		SetPath(ui->radioButton_3, file_.mid(0, i + 1));
+		int j = file_.lastIndexOf('/');
 		if (i < j) {
-			SetText(ui->radioButton_4, file.mid(0, j + 1));
+			SetPath(ui->radioButton_4, file_.mid(0, j + 1));
 		}
 	}
 
+	ui->radioButton_1->setFocus();
 	ui->radioButton_1->click();
 }
 
-EditGitIgnoreDialog::~EditGitIgnoreDialog()
+QString EditGitIgnoreDialog::gitignorePath() const
 {
-	delete ui;
+	return ui->comboBox_file->currentText();
 }
 
 MainWindow *EditGitIgnoreDialog::mainwindow()
@@ -71,8 +154,14 @@ QString EditGitIgnoreDialog::text() const
 
 void EditGitIgnoreDialog::on_pushButton_edit_file_clicked()
 {
-	if (TextEditDialog::editFile(this, gitignore_path, ".gitignore", text() + '\n')) {
+	if (TextEditDialog::editFile(this, gitignorePath(), ".gitignore", text() + '\n')) {
 		mainwindow()->updateCurrentFileList();
 		done(QDialog::Rejected);
 	}
 }
+
+void EditGitIgnoreDialog::on_comboBox_file_currentTextChanged(const QString &arg1)
+{
+	updateRadioButtons();
+}
+

@@ -747,6 +747,13 @@ bool MainWindow::eventFilter(QObject *watched, QEvent *event)
 			}
 
 			if (k == Qt::Key_Escape) {
+				{
+					if (QAction *act = ui->menuBar->activeAction()) {
+						if (QMenu *menu = act->menu()) {
+							menu->close();
+						}
+					}
+				}
 				clearAllFilters();
 				updateRepositoryList(RepositoryTreeWidget::RepositoryListStyle::Standard);
 				if (shift && centralWidget()->isAncestorOf(qApp->focusWidget())) {
@@ -5400,11 +5407,11 @@ void MainWindow::on_listWidget_unstaged_customContextMenuRequested(const QPoint 
 				return;
 			}
 			if (a == a_ignore) {
-				QString gitignore_path = currentWorkingCopyDir() / ".gitignore";
 				if (items.size() == 1) {
 					QString file = getFilePath(items[0]);
-					EditGitIgnoreDialog dlg(this, gitignore_path, file);
+					EditGitIgnoreDialog dlg(this, file);
 					if (dlg.exec() == QDialog::Accepted) {
+						QString gitignore_path = dlg.gitignorePath();
 						QString appending = dlg.text();
 						if (!appending.isEmpty()) {
 							QString text;
@@ -5448,6 +5455,7 @@ void MainWindow::on_listWidget_unstaged_customContextMenuRequested(const QPoint 
 						append += path + '\n';
 					}
 				});
+				QString gitignore_path = currentWorkingCopyDir() / ".gitignore";
 				if (TextEditDialog::editFile(this, gitignore_path, ".gitignore", append)) {
 					updateCurrentFileList();
 				}

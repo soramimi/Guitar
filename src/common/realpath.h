@@ -1,12 +1,14 @@
 #ifndef REALPATH_H
 #define REALPATH_H
 
+#include <QString>
 #include <string>
 
 namespace misc {
 
 std::string realpath(const char *path);
 std::string realpath(std::string const &path);
+QString realpath(QString const &path);
 
 }
 

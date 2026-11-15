@@ -17,18 +17,24 @@ private:
 	Ui::EditGitIgnoreDialog *ui;
 	MainWindow *mainwindow();
 	
-	QString gitignore_path;
+	QString working_dir_;
+	// QString gitignore_path_;
+	QString file_;
 	std::map<QRadioButton *, QString> text_map_;
 		
+	void updateComboBox();
+	void updateRadioButtons();
 public:
-	explicit EditGitIgnoreDialog(MainWindow *parent, QString const &gitignore_path, QString const &file);
+	explicit EditGitIgnoreDialog(MainWindow *parent, QString const &file);
 	~EditGitIgnoreDialog() override;
 
 	QString text() const;
 
+	QString gitignorePath() const;
 private slots:
 	void on_pushButton_edit_file_clicked();
 
+	void on_comboBox_file_currentTextChanged(const QString &arg1);
 };
 
 #endif // EDITGITIGNOREDIALOG_H

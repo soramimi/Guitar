@@ -70,3 +70,8 @@ std::string misc::realpath(std::string const &path)
 {
 	return realpath(path.c_str());
 }
+
+QString misc::realpath(QString const &path)
+{
+	return QString::fromStdString(misc::realpath(path.toStdString()));
+}
