@@ -5407,34 +5407,36 @@ void MainWindow::on_listWidget_unstaged_customContextMenuRequested(const QPoint 
 				return;
 			}
 			if (a == a_ignore) {
-				if (items.size() == 1) {
-					QString file = getFilePath(items[0]);
-					EditGitIgnoreDialog dlg(this, file);
+				{ //if (items.size() == 1) {
+					QStringList files;
+					for (QListWidgetItem *item : items) {
+						files.push_back(getFilePath(item));
+					}
+					EditGitIgnoreDialog dlg(this, files);
 					if (dlg.exec() == QDialog::Accepted) {
 						QString gitignore_path = dlg.gitignorePath();
-						QString appending = dlg.text();
-						if (!appending.isEmpty()) {
+						QStringList list = dlg.files();
+						if (!list.empty()) {
 							QString text;
-
-							QString path = gitignore_path;
-							path.replace('/', QDir::separator());
-
 							{
-								QFile file(path);
+								QFile file(gitignore_path);
 								if (file.open(QFile::ReadOnly)) {
-									text += QString::fromUtf8(file.readAll());
+									text = QString::fromUtf8(file.readAll());
 								}
 							}
-
-							int n = text.size();
-							if (n > 0 && text[int(n - 1)] != '\n') {
-								text += '\n'; // 最後に改行を追加
+							for (QString const &file : list) {
+								if (!file.isEmpty()) {
+									
+									int n = text.size();
+									if (n > 0 && text[int(n - 1)] != '\n') {
+										text += '\n'; // 最後に改行を追加
+									}
+									
+									text += file + '\n';
+								}
 							}
-
-							text += appending + '\n';
-
 							{
-								QFile file(path);
+								QFile file(gitignore_path);
 								if (file.open(QFile::WriteOnly)) {
 									file.write(text.toUtf8());
 								}

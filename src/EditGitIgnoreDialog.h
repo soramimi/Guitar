@@ -18,16 +18,17 @@ private:
 	MainWindow *mainwindow();
 	
 	QString working_dir_;
-	QString file_;
+	// QString file_;
+	QStringList files_;
 	std::map<QRadioButton *, QString> text_map_;
 		
 	void updateComboBox();
 	void updateRadioButtons();
 public:
-	explicit EditGitIgnoreDialog(MainWindow *parent, QString const &file);
+	explicit EditGitIgnoreDialog(MainWindow *parent, QStringList const &file);
 	~EditGitIgnoreDialog() override;
-
-	QString text() const;
+	
+	QStringList files() const;
 
 	QString gitignorePath() const;
 private slots:
