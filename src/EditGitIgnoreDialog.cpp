@@ -39,7 +39,23 @@ EditGitIgnoreDialog::EditGitIgnoreDialog(MainWindow *parent, const QStringList &
 	
 	for (QString const &file : files) {
 		QString f = QDir::fromNativeSeparators(file);
-		files_.push_back(f);
+		if (f.isEmpty() || QDir::isAbsolutePath(f) || f.contains('\n') || f.contains('\r') || f.contains(QChar(0))) {
+			validation_error_ = tr("The selected paths cannot be represented safely in .gitignore.");
+			break;
+		}
+		bool directory = f.endsWith('/');
+		f = QDir::cleanPath(f);
+		if (f == "." || isOutsideDirectory(f)) {
+			validation_error_ = tr("The selected paths must be inside the repository.");
+			break;
+		}
+		// Do not hide the ignore configuration itself, including nested files.
+		if (QFileInfo(f).fileName() == ".gitignore") continue;
+		if (directory) f += '/';
+		if (!files_.contains(f)) files_.push_back(f);
+	}
+	if (validation_error_.isEmpty() && files_.isEmpty()) {
+		validation_error_ = tr("No files to ignore. .gitignore files are excluded.");
 	}
 	
 	updateComboBox();
@@ -53,26 +69,33 @@ EditGitIgnoreDialog::~EditGitIgnoreDialog()
 
 void EditGitIgnoreDialog::updateComboBox()
 {
-	if (files_.empty()) return;
-	QString file = files_.front();
-	
+	QSignalBlocker blocker(ui->comboBox_file);
+	ui->comboBox_file->clear();
+	if (!validation_error_.isEmpty()) return;
 	QDir workdir(working_dir_);
 	// Keep repository paths lexical: resolving symlinks can leave the worktree,
 	// and the selected file may already have been deleted.
-	QString dir = QFileInfo(workdir.absoluteFilePath(file)).absolutePath();
+	QString dir = QFileInfo(workdir.absoluteFilePath(files_.front())).absolutePath();
 	QStringList gitignores;
-	while (dir != working_dir_) {
+	while (true) {
 		if (isOutsideDirectory(workdir.relativeFilePath(dir))) break;
+		QDir destdir(dir);
+		bool common = true;
+		for (QString const &file : files_) {
+			QString relative = destdir.relativeFilePath(workdir.absoluteFilePath(file));
+			if (relative == "." || isOutsideDirectory(relative)) {
+				common = false;
+				break;
+			}
+		}
 		QString gitignore = QDir(dir).filePath(".gitignore");
-		if (QFileInfo(gitignore).isFile()) {
+		// Keep the root as a creation target when it does not exist yet.
+		if (common && (dir == working_dir_ || QFileInfo(gitignore).isFile())) {
 			gitignores.prepend(gitignore);
 		}
+		if (dir == working_dir_) break;
 		dir = QDir::cleanPath(dir + "/..");
 	}
-	// The root file is also the creation target when no .gitignore exists yet.
-	gitignores.prepend(workdir.filePath(".gitignore"));
-	QSignalBlocker blocker(ui->comboBox_file);
-	ui->comboBox_file->clear();
 	for (QString const &gitignore : gitignores) {
 		ui->comboBox_file->addItem(gitignore);
 	}
@@ -80,8 +103,6 @@ void EditGitIgnoreDialog::updateComboBox()
 
 void EditGitIgnoreDialog::updateRadioButtons()
 {
-	QDir destdir(QFileInfo(gitignorePath()).absolutePath());
-	
 	text_map_.clear();
 	
 	QRadioButton *buttons[] = {
@@ -90,7 +111,7 @@ void EditGitIgnoreDialog::updateRadioButtons()
 		ui->radioButton_3,
 		ui->radioButton_4,
 	};
-	int button_index = 0;
+	size_t button_index = 0;
 	
 	{
 		for (QRadioButton *button : buttons) {
@@ -98,6 +119,11 @@ void EditGitIgnoreDialog::updateRadioButtons()
 			button->setVisible(false);
 		}
 	}
+	ui->label_error->setText(validation_error_);
+	ui->label_error->setVisible(!validation_error_.isEmpty());
+	ui->pushButton_2->setEnabled(false);
+	ui->pushButton_edit_file->setEnabled(false);
+	if (!validation_error_.isEmpty() || gitignorePath().isEmpty() || files_.isEmpty()) return;
 	
 	auto SetText = [&](QString text) {
 		if (!text.isEmpty() && button_index < std::size(buttons)) {
@@ -109,12 +135,7 @@ void EditGitIgnoreDialog::updateRadioButtons()
 	};
 
 	auto SetPath = [&](QString path) {
-		bool directory = path.endsWith('/');
-		path = destdir.relativeFilePath(QDir(working_dir_).absoluteFilePath(path));
-		if (path != "." && !isOutsideDirectory(path)) {
-			// Anchor individual paths; a bare basename also matches descendants.
-			SetText("/" + escapeIgnorePattern(path) + (directory ? "/" : ""));
-		}
+		SetText(patternForPath(path));
 	};
 	
 	QString file = files_.front();
@@ -135,23 +156,25 @@ void EditGitIgnoreDialog::updateRadioButtons()
 			}
 		}
 	} else if (files_.size() > 1) {
-		QFileInfo info(file);
-		QString path = info.dir().filePath({});
-		path = destdir.relativeFilePath(QDir(working_dir_).absoluteFilePath(path));
-		QString suffix = QString(" <%1 files>").arg(files_.size());
-		if (path == ".") {
-			path = "/";
-		} else {
-			path = "/" + path;
-			suffix = "/" + suffix;
-		}
-		SetText(escapeIgnorePattern(path) + suffix);
-	} else {
-		Q_ASSERT(0);
+		SetText(tr("%1 selected files").arg(files_.size()));
+		ui->radioButton_1->setToolTip(this->files().join('\n'));
 	}
 
 	ui->radioButton_1->setFocus();
 	ui->radioButton_1->click();
+	bool valid = !this->files().isEmpty();
+	ui->pushButton_2->setEnabled(valid);
+	ui->pushButton_edit_file->setEnabled(valid);
+}
+
+QString EditGitIgnoreDialog::patternForPath(QString const &path) const
+{
+	if (gitignorePath().isEmpty()) return {};
+	QDir destdir(QFileInfo(gitignorePath()).absolutePath());
+	QString relative = destdir.relativeFilePath(QDir(working_dir_).absoluteFilePath(path));
+	if (relative == "." || isOutsideDirectory(relative)) return {};
+	// Anchor and escape literal paths for both single and multiple selections.
+	return "/" + escapeIgnorePattern(relative) + (path.endsWith('/') ? "/" : "");
 }
 
 QString EditGitIgnoreDialog::gitignorePath() const
@@ -159,13 +182,9 @@ QString EditGitIgnoreDialog::gitignorePath() const
 	return ui->comboBox_file->currentText();
 }
 
-MainWindow *EditGitIgnoreDialog::mainwindow()
-{
-	return qobject_cast<MainWindow *>(parent());
-}
-
 QStringList EditGitIgnoreDialog::files() const
 {
+	if (!validation_error_.isEmpty() || gitignorePath().isEmpty()) return {};
 	if (files_.size() == 1) {
 		std::array<QRadioButton *, 4> arr = {ui->radioButton_1, ui->radioButton_2, ui->radioButton_3, ui->radioButton_4};
 		for (auto button : arr) {
@@ -178,14 +197,9 @@ QStringList EditGitIgnoreDialog::files() const
 		}
 	} else if (files_.size() > 1) {
 		QStringList ret;
-		QDir destdir(QFileInfo(gitignorePath()).absolutePath());
 		for (QString const &file : files_) {
-			QString path = destdir.relativeFilePath(QDir(working_dir_).absoluteFilePath(file));
-			if (path == ".") {
-				path = "/";
-			} else {
-				path = "/" + path;
-			}
+			QString path = patternForPath(file);
+			if (path.isEmpty()) return {};
 			ret.push_back(path);
 		}
 		return ret;
@@ -193,15 +207,25 @@ QStringList EditGitIgnoreDialog::files() const
 	return {};
 }
 
+void EditGitIgnoreDialog::accept()
+{
+	QStringList patterns = files();
+	if (patterns.isEmpty()) return;
+	QByteArray text;
+	if (!TextEditDialog::readFile(this, gitignorePath(), &text)) return;
+	if (!text.isEmpty() && !text.endsWith('\n')) text += '\n';
+	text += patterns.join('\n').toUtf8() + '\n';
+	if (TextEditDialog::writeFile(this, gitignorePath(), text)) {
+		QDialog::accept();
+	}
+}
+
 void EditGitIgnoreDialog::on_pushButton_edit_file_clicked()
 {
 	QStringList list = files();
-	if (list.size() == 1) {
-		QString file = list.front();
-		if (TextEditDialog::editFile(this, gitignorePath(), ".gitignore", file + '\n')) {
-			mainwindow()->updateCurrentFileList();
-			done(QDialog::Rejected);
-		}
+	if (list.isEmpty()) return;
+	if (TextEditDialog::editFile(this, gitignorePath(), ".gitignore", list.join('\n') + '\n')) {
+		QDialog::accept();
 	}
 }
 

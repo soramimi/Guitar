@@ -20,6 +20,8 @@ public:
 	void setText(QString const &text, bool readonly);
 	QString text() const;
 
+	static bool readFile(QWidget *parent, QString const &path, QByteArray *data);
+	static bool writeFile(QWidget *parent, QString const &path, QByteArray const &data);
 	static bool editFile(QWidget *parent, QString path, QString const &title, QString const &append = QString());
 };
 

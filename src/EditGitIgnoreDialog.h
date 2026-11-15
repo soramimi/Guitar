@@ -15,22 +15,24 @@ class EditGitIgnoreDialog : public QDialog {
 	Q_OBJECT
 private:
 	Ui::EditGitIgnoreDialog *ui;
-	MainWindow *mainwindow();
 	
 	QString working_dir_;
-	// QString file_;
 	QStringList files_;
+	QString validation_error_;
 	std::map<QRadioButton *, QString> text_map_;
 		
 	void updateComboBox();
 	void updateRadioButtons();
+	QString patternForPath(QString const &path) const;
 public:
-	explicit EditGitIgnoreDialog(MainWindow *parent, QStringList const &file);
+	explicit EditGitIgnoreDialog(MainWindow *parent, QStringList const &files);
 	~EditGitIgnoreDialog() override;
 	
 	QStringList files() const;
 
 	QString gitignorePath() const;
+public slots:
+	void accept() override;
 private slots:
 	void on_pushButton_edit_file_clicked();
 

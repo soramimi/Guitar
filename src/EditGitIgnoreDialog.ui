@@ -18,6 +18,12 @@
     <widget class="QComboBox" name="comboBox_file"/>
    </item>
    <item>
+    <widget class="QLabel" name="label_error">
+     <property name="text"><string/></property>
+     <property name="wordWrap"><bool>true</bool></property>
+    </widget>
+   </item>
+   <item>
     <widget class="Line" name="line">
      <property name="orientation">
       <enum>Qt::Orientation::Horizontal</enum>

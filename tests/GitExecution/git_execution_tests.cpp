@@ -25,6 +25,7 @@
 #include "../../src/Logger.h"
 #include "../../src/Terminal.h"
 #include "../../src/EditGitIgnoreDialog.h"
+#include "../../src/TextEditDialog.h"
 #include "../../src/common/realpath.h"
 #include <future>
 #include <QThread>
@@ -32,6 +33,9 @@
 #include <QLabel>
 #include <QRadioButton>
 #include <QKeyEvent>
+#include <QMessageBox>
+#include <QScopeGuard>
+#include <sys/resource.h>
 
 namespace {
 QString executable;
@@ -55,6 +59,15 @@ protected:
     }
     QByteArray read(QString const &name) {
         QFile f(root + '/' + name); EXPECT_TRUE(f.open(QIODevice::ReadOnly)); return f.readAll();
+    }
+    QByteArray ignored(QStringList const &names) {
+        QProcess process;
+        process.start(gitProgram, {"-C", root, "check-ignore", "--no-index", "-z", "--stdin"});
+        EXPECT_TRUE(process.waitForStarted());
+        for (auto const &name : names) process.write(name.toUtf8() + '\0');
+        process.closeWriteChannel(); EXPECT_TRUE(process.waitForFinished(10000));
+        EXPECT_EQ(process.exitCode(), 0) << process.readAllStandardError().constData();
+        return process.readAllStandardOutput();
     }
     QStringList staged() {
         QStringList names;
@@ -667,6 +680,27 @@ struct RestoreCurrentDirectory {
     QString path = QDir::currentPath();
     ~RestoreCurrentDirectory() { QDir::setCurrent(path); }
 };
+
+QRadioButton *ignoreChoice(EditGitIgnoreDialog &dialog, QString const &pattern)
+{
+    for (auto button : dialog.findChildren<QRadioButton *>())
+        if (!button->isHidden() && button->text() == pattern) return button;
+    return nullptr;
+}
+
+struct DismissMessageBoxes {
+    QTimer timer;
+    int count = 0;
+    DismissMessageBoxes() {
+        QObject::connect(&timer, &QTimer::timeout, [&] {
+            for (auto widget : QApplication::topLevelWidgets()) {
+                auto box = qobject_cast<QMessageBox *>(widget);
+                if (box && box->isVisible()) { ++count; box->accept(); }
+            }
+        });
+        timer.start(10);
+    }
+};
 }
 TEST_F(GitExecution, IgnoreDialogFindsAncestorsFromAnotherDirectoryForMissingFile)
 {
@@ -676,31 +710,30 @@ TEST_F(GitExecution, IgnoreDialogFindsAncestorsFromAnotherDirectoryForMissingFil
     RestoreCurrentDirectory restore;
     RefreshTestWindow ui(gitProgram, root);
     QTemporaryDir launcher; ASSERT_TRUE(launcher.isValid()); ASSERT_TRUE(QDir::setCurrent(launcher.path()));
-    EditGitIgnoreDialog dialog(ui.window.get(), "sub/deep/missing.log");
+    EditGitIgnoreDialog dialog(ui.window.get(), {"sub/deep/missing.log"});
     auto combo = dialog.findChild<QComboBox *>("comboBox_file"); ASSERT_NE(combo, nullptr);
     ASSERT_EQ(combo->count(), 3);
     EXPECT_EQ(combo->itemText(0), root + "/.gitignore");
     EXPECT_EQ(combo->itemText(1), root + "/sub/.gitignore");
     EXPECT_EQ(combo->itemText(2), root + "/sub/deep/.gitignore");
-    EXPECT_EQ(dialog.text(), "/sub/deep/missing.log");
-    combo->setCurrentIndex(1); EXPECT_EQ(dialog.text(), "/deep/missing.log");
-    auto directory = dialog.findChild<QRadioButton *>("radioButton_4"); ASSERT_NE(directory, nullptr);
-    directory->click(); EXPECT_EQ(dialog.text(), "/deep/");
+    EXPECT_EQ(dialog.files().join('\n'), "/sub/deep/missing.log");
+    combo->setCurrentIndex(1); EXPECT_EQ(dialog.files().join('\n'), "/deep/missing.log");
+    auto directory = ignoreChoice(dialog, "/deep/"); ASSERT_NE(directory, nullptr);
+    directory->click(); EXPECT_EQ(dialog.files().join('\n'), "/deep/");
     combo->setCurrentIndex(2);
-    EXPECT_TRUE(directory->isHidden()); EXPECT_EQ(dialog.text(), "/missing.log");
+    EXPECT_TRUE(directory->isHidden()); EXPECT_EQ(dialog.files().join('\n'), "/missing.log");
 }
 TEST_F(GitExecution, IgnoreDialogProvidesCreationTargetWithoutExistingIgnoreFiles)
 {
     if (runShutdownChild("GitExecution.IgnoreDialogProvidesCreationTargetWithoutExistingIgnoreFiles", 20000)) return;
     write("new.log");
     RefreshTestWindow ui(gitProgram, root);
-    EditGitIgnoreDialog dialog(ui.window.get(), "new.log");
+    EditGitIgnoreDialog dialog(ui.window.get(), {"new.log"});
     EXPECT_EQ(dialog.gitignorePath(), root + "/.gitignore");
-    EXPECT_EQ(dialog.text(), "/new.log");
+    EXPECT_EQ(dialog.files().join('\n'), "/new.log");
     auto extension = dialog.findChild<QRadioButton *>("radioButton_2"); ASSERT_NE(extension, nullptr);
-    extension->click(); EXPECT_EQ(dialog.text(), "*.log");
-    QFile file(dialog.gitignorePath()); ASSERT_TRUE(file.open(QIODevice::WriteOnly));
-    auto pattern = dialog.text().toUtf8() + '\n'; ASSERT_EQ(file.write(pattern), pattern.size()); file.close();
+    extension->click(); EXPECT_EQ(dialog.files().join('\n'), "*.log");
+    dialog.accept(); ASSERT_EQ(dialog.result(), QDialog::Accepted);
     EXPECT_EQ(direct({"check-ignore", "--", "new.log"}).trimmed(), "new.log");
 }
 TEST_F(GitExecution, IgnoreDialogKeepsSymlinkedRepositoryAndFileInsideLexicalRoot)
@@ -716,13 +749,13 @@ TEST_F(GitExecution, IgnoreDialogKeepsSymlinkedRepositoryAndFileInsideLexicalRoo
     RestoreCurrentDirectory restore;
     RefreshTestWindow ui(gitProgram, alias);
     ASSERT_TRUE(QDir::setCurrent(alias));
-    EditGitIgnoreDialog dialog(ui.window.get(), "sub/test.log");
+    EditGitIgnoreDialog dialog(ui.window.get(), {"sub/test.log"});
     auto combo = dialog.findChild<QComboBox *>("comboBox_file"); ASSERT_NE(combo, nullptr);
     ASSERT_EQ(combo->count(), 2);
     EXPECT_EQ(combo->itemText(0), alias + "/.gitignore");
     EXPECT_EQ(combo->itemText(1), alias + "/sub/.gitignore");
-    EXPECT_EQ(dialog.text(), "/sub/test.log");
-    combo->setCurrentIndex(1); EXPECT_EQ(dialog.text(), "/test.log");
+    EXPECT_EQ(dialog.files().join('\n'), "/sub/test.log");
+    combo->setCurrentIndex(1); EXPECT_EQ(dialog.files().join('\n'), "/test.log");
 }
 TEST_F(GitExecution, IgnoreDialogFilePatternsMatchOnlyTheSelectedLiteralPath)
 {
@@ -732,11 +765,11 @@ TEST_F(GitExecution, IgnoreDialogFilePatternsMatchOnlyTheSelectedLiteralPath)
     for (QString const &name : {QString("test.log"), QString::fromUtf8("日本語 [1]*?.log"), QString("back\\slash.log"), QString("trailing ")}) {
         QString selected = "sub/" + name, descendant = "sub/keep/" + name;
         write(selected); write(descendant); write("sub/lookalike.log");
-        EditGitIgnoreDialog dialog(ui.window.get(), selected);
+        EditGitIgnoreDialog dialog(ui.window.get(), {selected});
         auto combo = dialog.findChild<QComboBox *>("comboBox_file"); ASSERT_NE(combo, nullptr);
         combo->setCurrentText(root + "/sub/.gitignore");
         QFile file(dialog.gitignorePath()); ASSERT_TRUE(file.open(QIODevice::WriteOnly));
-        auto pattern = dialog.text().toUtf8() + '\n'; ASSERT_EQ(file.write(pattern), pattern.size()); file.close();
+        auto pattern = dialog.files().join('\n').toUtf8() + '\n'; ASSERT_EQ(file.write(pattern), pattern.size()); file.close();
         QProcess process;
         process.start(gitProgram, {"-C", root, "check-ignore", "--no-index", "-z", "--stdin"});
         ASSERT_TRUE(process.waitForStarted());
@@ -752,14 +785,169 @@ TEST_F(GitExecution, IgnoreDialogDirectoryPatternDoesNotMatchDeeperNamesakes)
     ASSERT_TRUE(QDir().mkpath(root + "/sub/deep")); ASSERT_TRUE(QDir().mkpath(root + "/sub/keep/deep"));
     write("sub/.gitignore", ""); write("sub/deep/test.log"); write("sub/keep/deep/test.log");
     RefreshTestWindow ui(gitProgram, root);
-    EditGitIgnoreDialog dialog(ui.window.get(), "sub/deep/test.log");
+    EditGitIgnoreDialog dialog(ui.window.get(), {"sub/deep/test.log"});
     auto combo = dialog.findChild<QComboBox *>("comboBox_file"); ASSERT_NE(combo, nullptr);
     combo->setCurrentText(root + "/sub/.gitignore");
-    auto directory = dialog.findChild<QRadioButton *>("radioButton_4"); ASSERT_NE(directory, nullptr);
+    auto directory = ignoreChoice(dialog, "/deep/"); ASSERT_NE(directory, nullptr);
     directory->click();
     QFile file(dialog.gitignorePath()); ASSERT_TRUE(file.open(QIODevice::WriteOnly));
-    auto pattern = dialog.text().toUtf8() + '\n'; ASSERT_EQ(file.write(pattern), pattern.size()); file.close();
+    auto pattern = dialog.files().join('\n').toUtf8() + '\n'; ASSERT_EQ(file.write(pattern), pattern.size()); file.close();
     EXPECT_EQ(direct({"check-ignore", "--", "sub/deep/test.log", "sub/keep/deep/test.log"}).trimmed(), "sub/deep/test.log");
+}
+TEST_F(GitExecution, IgnoreDialogMultiplePathsUseOnlyCommonAncestors)
+{
+    if (runShutdownChild("GitExecution.IgnoreDialogMultiplePathsUseOnlyCommonAncestors", 20000)) return;
+    ASSERT_TRUE(QDir().mkpath(root + "/sub/left")); ASSERT_TRUE(QDir().mkpath(root + "/sub/right"));
+    write("sub/.gitignore", "# keep\n"); write("sub/left/.gitignore", ""); write("sub/right/.gitignore", "");
+    QStringList selected{"sub/left/a.log", "sub/right/b.log"};
+    for (auto const &name : selected) write(name);
+    RefreshTestWindow ui(gitProgram, root);
+    for (bool reverse : {false, true}) {
+        auto names = selected; if (reverse) std::reverse(names.begin(), names.end());
+        EditGitIgnoreDialog dialog(ui.window.get(), names);
+        auto combo = dialog.findChild<QComboBox *>("comboBox_file"); ASSERT_NE(combo, nullptr);
+        ASSERT_EQ(combo->count(), 2); EXPECT_EQ(combo->itemText(0), root + "/.gitignore");
+        EXPECT_EQ(combo->itemText(1), root + "/sub/.gitignore");
+        combo->setCurrentIndex(1); dialog.accept(); ASSERT_EQ(dialog.result(), QDialog::Accepted);
+        EXPECT_TRUE(read("sub/.gitignore").startsWith("# keep\n"));
+        EXPECT_EQ(ignored(selected), selected[0].toUtf8() + '\0' + selected[1].toUtf8() + '\0');
+    }
+}
+TEST_F(GitExecution, IgnoreDialogMultipleLiteralPathsPreserveExistingBytes)
+{
+    if (runShutdownChild("GitExecution.IgnoreDialogMultipleLiteralPathsPreserveExistingBytes", 20000)) return;
+    ASSERT_TRUE(QDir().mkpath(root + "/sub/keep"));
+    QByteArray original = QByteArray("# existing\n") + char(0xff) + '\n';
+    write("sub/.gitignore", original);
+    QStringList selected, others;
+    for (QString const &name : QStringList{"a[1].log", "back\\slash.log", "trailing ", "日本語 *?.log"}) {
+        selected << "sub/" + name; others << "sub/keep/" + name;
+        write(selected.back()); write(others.back());
+    }
+    write("sub/a1.log"); others << "sub/a1.log";
+    RefreshTestWindow ui(gitProgram, root);
+    EditGitIgnoreDialog dialog(ui.window.get(), selected);
+    auto combo = dialog.findChild<QComboBox *>("comboBox_file"); ASSERT_NE(combo, nullptr);
+    combo->setCurrentText(root + "/sub/.gitignore"); dialog.accept();
+    ASSERT_EQ(dialog.result(), QDialog::Accepted); EXPECT_TRUE(read("sub/.gitignore").startsWith(original));
+    QByteArray expected; for (auto const &name : selected) expected += name.toUtf8() + '\0';
+    EXPECT_EQ(ignored(selected + others), expected);
+}
+TEST_F(GitExecution, IgnoreDialogEditsAllSelectedFilesBeforeSaving)
+{
+    if (runShutdownChild("GitExecution.IgnoreDialogEditsAllSelectedFilesBeforeSaving", 20000)) return;
+    write(".gitignore", "# keep"); write("one.log"); write("two.log");
+    RefreshTestWindow ui(gitProgram, root);
+    EditGitIgnoreDialog dialog(ui.window.get(), {"one.log", "two.log"});
+    QTimer::singleShot(0, &dialog, [&] {
+        auto editor = dialog.findChild<TextEditDialog *>(); ASSERT_NE(editor, nullptr);
+        EXPECT_EQ(editor->text(), "# keep\n/one.log\n/two.log\n");
+        editor->setText(editor->text() + "# edited\n", false); editor->accept();
+    });
+    auto edit = dialog.findChild<QPushButton *>("pushButton_edit_file"); ASSERT_NE(edit, nullptr);
+    edit->click(); EXPECT_EQ(dialog.result(), QDialog::Accepted);
+    EXPECT_EQ(read(".gitignore"), "# keep\n/one.log\n/two.log\n# edited\n");
+    EXPECT_EQ(ignored({"one.log", "two.log"}), QByteArray("one.log\0two.log\0", 16));
+}
+TEST_F(GitExecution, IgnoreDialogExcludesConfigurationAndRejectsInvalidInput)
+{
+    if (runShutdownChild("GitExecution.IgnoreDialogExcludesConfigurationAndRejectsInvalidInput", 20000)) return;
+    ASSERT_TRUE(QDir().mkpath(root + "/sub")); write(".gitignore", "# keep\n"); write("sub/.gitignore", "# nested\n");
+    write("new.log"); RefreshTestWindow ui(gitProgram, root);
+    {
+        EditGitIgnoreDialog dialog(ui.window.get(), {".gitignore", "sub/.gitignore", "new.log", "new.log"});
+        EXPECT_EQ(dialog.files(), (QStringList{"/new.log"})); dialog.accept();
+        EXPECT_EQ(dialog.result(), QDialog::Accepted);
+        EXPECT_EQ(ignored({".gitignore", "sub/.gitignore", "new.log"}), QByteArray("new.log\0", 8));
+    }
+    auto saved = read(".gitignore");
+    for (auto const &names : QList<QStringList>{{}, {".gitignore", "sub/.gitignore"}, {"bad\n*.log", "other"}, {"../outside", "other"}, {""}}) {
+        EditGitIgnoreDialog dialog(ui.window.get(), names);
+        EXPECT_TRUE(dialog.files().isEmpty());
+        auto ok = dialog.findChild<QPushButton *>("pushButton_2"); ASSERT_NE(ok, nullptr); EXPECT_FALSE(ok->isEnabled());
+        auto edit = dialog.findChild<QPushButton *>("pushButton_edit_file"); ASSERT_NE(edit, nullptr); EXPECT_FALSE(edit->isEnabled());
+        auto error = dialog.findChild<QLabel *>("label_error"); ASSERT_NE(error, nullptr); EXPECT_FALSE(error->text().isEmpty());
+        dialog.accept(); EXPECT_EQ(dialog.result(), QDialog::Rejected);
+        EXPECT_EQ(read(".gitignore"), saved);
+    }
+}
+TEST_F(GitExecution, IgnoreDialogReadFailureKeepsExistingRulesAndDialogOpen)
+{
+    if (runShutdownChild("GitExecution.IgnoreDialogReadFailureKeepsExistingRulesAndDialogOpen", 20000)) return;
+    QByteArray original = "# keep\n*.keep\n"; write(".gitignore", original);
+    RefreshTestWindow ui(gitProgram, root); EditGitIgnoreDialog dialog(ui.window.get(), {"one.log", "two.log"});
+    auto path = root + "/.gitignore"; auto permissions = QFile::permissions(path);
+    auto restore = qScopeGuard([&] { QFile::setPermissions(path, permissions); });
+    ASSERT_TRUE(QFile::setPermissions(path, QFile::WriteOwner));
+    DismissMessageBoxes errors; dialog.accept();
+    EXPECT_EQ(errors.count, 1); EXPECT_EQ(dialog.result(), QDialog::Rejected);
+    ASSERT_TRUE(QFile::setPermissions(path, permissions)); EXPECT_EQ(read(".gitignore"), original);
+}
+TEST_F(GitExecution, IgnoreDialogWriteFailureDoesNotFallBackToTruncatingOriginal)
+{
+    if (runShutdownChild("GitExecution.IgnoreDialogWriteFailureDoesNotFallBackToTruncatingOriginal", 20000)) return;
+    ASSERT_TRUE(QDir().mkpath(root + "/locked"));
+    QByteArray original = "# keep\n*.keep\n"; write("locked/.gitignore", original);
+    RefreshTestWindow ui(gitProgram, root); EditGitIgnoreDialog dialog(ui.window.get(), {"locked/one.log", "locked/two.log"});
+    auto combo = dialog.findChild<QComboBox *>("comboBox_file"); ASSERT_NE(combo, nullptr);
+    combo->setCurrentText(root + "/locked/.gitignore");
+    auto path = root + "/locked"; auto permissions = QFile::permissions(path);
+    auto restore = qScopeGuard([&] { QFile::setPermissions(path, permissions); });
+    ASSERT_TRUE(QFile::setPermissions(path, QFile::ReadOwner | QFile::ExeOwner));
+    DismissMessageBoxes errors; dialog.accept();
+    EXPECT_EQ(errors.count, 1); EXPECT_EQ(dialog.result(), QDialog::Rejected);
+    EXPECT_EQ(read("locked/.gitignore"), original);
+}
+TEST_F(GitExecution, IgnoreSaveShortWriteOrCommitFailurePreservesOriginal)
+{
+    if (runShutdownChild("GitExecution.IgnoreSaveShortWriteOrCommitFailurePreservesOriginal", 20000)) return;
+    QByteArray original = "# keep\n*.keep\n"; write(".gitignore", original);
+    struct rlimit previous; ASSERT_EQ(getrlimit(RLIMIT_FSIZE, &previous), 0);
+    auto handler = std::signal(SIGXFSZ, SIG_IGN);
+    auto restore = qScopeGuard([&] { setrlimit(RLIMIT_FSIZE, &previous); std::signal(SIGXFSZ, handler); });
+    auto limit = previous; limit.rlim_cur = 1024; ASSERT_EQ(setrlimit(RLIMIT_FSIZE, &limit), 0);
+    DismissMessageBoxes errors;
+    EXPECT_FALSE(TextEditDialog::writeFile(nullptr, root + "/.gitignore", QByteArray(8192, 'x')));
+    EXPECT_EQ(errors.count, 1); EXPECT_EQ(read(".gitignore"), original);
+}
+TEST_F(GitExecution, IgnoreEditorKeepsDraftAfterSaveFailureAndCanRetry)
+{
+    if (runShutdownChild("GitExecution.IgnoreEditorKeepsDraftAfterSaveFailureAndCanRetry", 20000)) return;
+    ASSERT_TRUE(QDir().mkpath(root + "/locked")); write("locked/.gitignore", "# keep\n");
+    RefreshTestWindow ui(gitProgram, root);
+    EditGitIgnoreDialog dialog(ui.window.get(), {"locked/one.log", "locked/two.log"});
+    auto combo = dialog.findChild<QComboBox *>("comboBox_file"); ASSERT_NE(combo, nullptr);
+    combo->setCurrentText(root + "/locked/.gitignore");
+    auto path = root + "/locked"; auto permissions = QFile::permissions(path);
+    auto restore = qScopeGuard([&] { QFile::setPermissions(path, permissions); });
+    QString draft = "# keep\n/one.log\n/two.log\n# user edits\n";
+    DismissMessageBoxes errors; QTimer actions; int attempts = 0;
+    QObject::connect(&actions, &QTimer::timeout, &dialog, [&] {
+        auto editor = dialog.findChild<TextEditDialog *>();
+        if (!editor || !editor->isVisible()) return;
+        if (attempts == 0) {
+            editor->setText(draft, false);
+            ASSERT_TRUE(QFile::setPermissions(path, QFile::ReadOwner | QFile::ExeOwner));
+        } else {
+            EXPECT_EQ(editor->text(), draft);
+            EXPECT_EQ(read("locked/.gitignore"), "# keep\n");
+            ASSERT_TRUE(QFile::setPermissions(path, permissions));
+        }
+        ++attempts; editor->accept();
+    });
+    actions.start(10);
+    auto edit = dialog.findChild<QPushButton *>("pushButton_edit_file"); ASSERT_NE(edit, nullptr); edit->click();
+    EXPECT_EQ(errors.count, 1); EXPECT_EQ(attempts, 2); EXPECT_EQ(dialog.result(), QDialog::Accepted);
+    EXPECT_EQ(read("locked/.gitignore"), draft.toUtf8());
+}
+TEST_F(GitExecution, IgnoreEditorRejectsInvalidUtf8WithoutRewritingRules)
+{
+    if (runShutdownChild("GitExecution.IgnoreEditorRejectsInvalidUtf8WithoutRewritingRules", 20000)) return;
+    QByteArray original = QByteArray("# existing\n") + char(0xff) + '\n'; write(".gitignore", original);
+    RefreshTestWindow ui(gitProgram, root); EditGitIgnoreDialog dialog(ui.window.get(), {"one.log", "two.log"});
+    DismissMessageBoxes errors;
+    auto edit = dialog.findChild<QPushButton *>("pushButton_edit_file"); ASSERT_NE(edit, nullptr); edit->click();
+    EXPECT_EQ(errors.count, 1); EXPECT_EQ(dialog.result(), QDialog::Rejected); EXPECT_EQ(read(".gitignore"), original);
 }
 TEST(Paths, RealpathReturnsAnAbsolutePath)
 {
