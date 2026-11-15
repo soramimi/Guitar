@@ -44,7 +44,7 @@ std::string misc::realpath(const char *path)
 	}
 	char tmp[MAX_PATH];
 	if (_fullpath(tmp, s.c_str(), MAX_PATH)) {
-		return misc::normalizePathSeparator(s);
+		return misc::normalizePathSeparator(std::string(tmp));
 	}
 #else
 	std::string s;

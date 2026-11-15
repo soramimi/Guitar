@@ -24,6 +24,8 @@
 #include "../../src/AvatarLoader.h"
 #include "../../src/Logger.h"
 #include "../../src/Terminal.h"
+#include "../../src/EditGitIgnoreDialog.h"
+#include "../../src/common/realpath.h"
 #include <future>
 #include <QThread>
 #include <QAction>
@@ -660,6 +662,111 @@ public:
         return false;
     }
 };
+
+struct RestoreCurrentDirectory {
+    QString path = QDir::currentPath();
+    ~RestoreCurrentDirectory() { QDir::setCurrent(path); }
+};
+}
+TEST_F(GitExecution, IgnoreDialogFindsAncestorsFromAnotherDirectoryForMissingFile)
+{
+    if (runShutdownChild("GitExecution.IgnoreDialogFindsAncestorsFromAnotherDirectoryForMissingFile", 20000)) return;
+    ASSERT_TRUE(QDir().mkpath(root + "/sub/deep"));
+    write(".gitignore", ""); write("sub/.gitignore", ""); write("sub/deep/.gitignore", "");
+    RestoreCurrentDirectory restore;
+    RefreshTestWindow ui(gitProgram, root);
+    QTemporaryDir launcher; ASSERT_TRUE(launcher.isValid()); ASSERT_TRUE(QDir::setCurrent(launcher.path()));
+    EditGitIgnoreDialog dialog(ui.window.get(), "sub/deep/missing.log");
+    auto combo = dialog.findChild<QComboBox *>("comboBox_file"); ASSERT_NE(combo, nullptr);
+    ASSERT_EQ(combo->count(), 3);
+    EXPECT_EQ(combo->itemText(0), root + "/.gitignore");
+    EXPECT_EQ(combo->itemText(1), root + "/sub/.gitignore");
+    EXPECT_EQ(combo->itemText(2), root + "/sub/deep/.gitignore");
+    EXPECT_EQ(dialog.text(), "/sub/deep/missing.log");
+    combo->setCurrentIndex(1); EXPECT_EQ(dialog.text(), "/deep/missing.log");
+    auto directory = dialog.findChild<QRadioButton *>("radioButton_4"); ASSERT_NE(directory, nullptr);
+    directory->click(); EXPECT_EQ(dialog.text(), "/deep/");
+    combo->setCurrentIndex(2);
+    EXPECT_TRUE(directory->isHidden()); EXPECT_EQ(dialog.text(), "/missing.log");
+}
+TEST_F(GitExecution, IgnoreDialogProvidesCreationTargetWithoutExistingIgnoreFiles)
+{
+    if (runShutdownChild("GitExecution.IgnoreDialogProvidesCreationTargetWithoutExistingIgnoreFiles", 20000)) return;
+    write("new.log");
+    RefreshTestWindow ui(gitProgram, root);
+    EditGitIgnoreDialog dialog(ui.window.get(), "new.log");
+    EXPECT_EQ(dialog.gitignorePath(), root + "/.gitignore");
+    EXPECT_EQ(dialog.text(), "/new.log");
+    auto extension = dialog.findChild<QRadioButton *>("radioButton_2"); ASSERT_NE(extension, nullptr);
+    extension->click(); EXPECT_EQ(dialog.text(), "*.log");
+    QFile file(dialog.gitignorePath()); ASSERT_TRUE(file.open(QIODevice::WriteOnly));
+    auto pattern = dialog.text().toUtf8() + '\n'; ASSERT_EQ(file.write(pattern), pattern.size()); file.close();
+    EXPECT_EQ(direct({"check-ignore", "--", "new.log"}).trimmed(), "new.log");
+}
+TEST_F(GitExecution, IgnoreDialogKeepsSymlinkedRepositoryAndFileInsideLexicalRoot)
+{
+    if (runShutdownChild("GitExecution.IgnoreDialogKeepsSymlinkedRepositoryAndFileInsideLexicalRoot", 20000)) return;
+    auto real = root + "/real", alias = root + "/alias";
+    direct({"clone", "-q", root, real});
+    ASSERT_TRUE(QDir().mkpath(real + "/sub"));
+    write(".gitignore", ""); write("real/.gitignore", ""); write("real/sub/.gitignore", "");
+    write("external.log");
+    ASSERT_TRUE(QFile::link(real, alias));
+    ASSERT_TRUE(QFile::link(root + "/external.log", real + "/sub/test.log"));
+    RestoreCurrentDirectory restore;
+    RefreshTestWindow ui(gitProgram, alias);
+    ASSERT_TRUE(QDir::setCurrent(alias));
+    EditGitIgnoreDialog dialog(ui.window.get(), "sub/test.log");
+    auto combo = dialog.findChild<QComboBox *>("comboBox_file"); ASSERT_NE(combo, nullptr);
+    ASSERT_EQ(combo->count(), 2);
+    EXPECT_EQ(combo->itemText(0), alias + "/.gitignore");
+    EXPECT_EQ(combo->itemText(1), alias + "/sub/.gitignore");
+    EXPECT_EQ(dialog.text(), "/sub/test.log");
+    combo->setCurrentIndex(1); EXPECT_EQ(dialog.text(), "/test.log");
+}
+TEST_F(GitExecution, IgnoreDialogFilePatternsMatchOnlyTheSelectedLiteralPath)
+{
+    if (runShutdownChild("GitExecution.IgnoreDialogFilePatternsMatchOnlyTheSelectedLiteralPath", 20000)) return;
+    ASSERT_TRUE(QDir().mkpath(root + "/sub/keep")); write("sub/.gitignore", "");
+    RefreshTestWindow ui(gitProgram, root);
+    for (QString const &name : {QString("test.log"), QString::fromUtf8("日本語 [1]*?.log"), QString("back\\slash.log"), QString("trailing ")}) {
+        QString selected = "sub/" + name, descendant = "sub/keep/" + name;
+        write(selected); write(descendant); write("sub/lookalike.log");
+        EditGitIgnoreDialog dialog(ui.window.get(), selected);
+        auto combo = dialog.findChild<QComboBox *>("comboBox_file"); ASSERT_NE(combo, nullptr);
+        combo->setCurrentText(root + "/sub/.gitignore");
+        QFile file(dialog.gitignorePath()); ASSERT_TRUE(file.open(QIODevice::WriteOnly));
+        auto pattern = dialog.text().toUtf8() + '\n'; ASSERT_EQ(file.write(pattern), pattern.size()); file.close();
+        QProcess process;
+        process.start(gitProgram, {"-C", root, "check-ignore", "--no-index", "-z", "--stdin"});
+        ASSERT_TRUE(process.waitForStarted());
+        process.write(selected.toUtf8() + '\0' + descendant.toUtf8() + '\0' + "sub/lookalike.log" + '\0');
+        process.closeWriteChannel(); ASSERT_TRUE(process.waitForFinished(10000));
+        ASSERT_EQ(process.exitCode(), 0) << process.readAllStandardError().constData();
+        EXPECT_EQ(process.readAllStandardOutput(), selected.toUtf8() + '\0') << name.toStdString();
+    }
+}
+TEST_F(GitExecution, IgnoreDialogDirectoryPatternDoesNotMatchDeeperNamesakes)
+{
+    if (runShutdownChild("GitExecution.IgnoreDialogDirectoryPatternDoesNotMatchDeeperNamesakes", 20000)) return;
+    ASSERT_TRUE(QDir().mkpath(root + "/sub/deep")); ASSERT_TRUE(QDir().mkpath(root + "/sub/keep/deep"));
+    write("sub/.gitignore", ""); write("sub/deep/test.log"); write("sub/keep/deep/test.log");
+    RefreshTestWindow ui(gitProgram, root);
+    EditGitIgnoreDialog dialog(ui.window.get(), "sub/deep/test.log");
+    auto combo = dialog.findChild<QComboBox *>("comboBox_file"); ASSERT_NE(combo, nullptr);
+    combo->setCurrentText(root + "/sub/.gitignore");
+    auto directory = dialog.findChild<QRadioButton *>("radioButton_4"); ASSERT_NE(directory, nullptr);
+    directory->click();
+    QFile file(dialog.gitignorePath()); ASSERT_TRUE(file.open(QIODevice::WriteOnly));
+    auto pattern = dialog.text().toUtf8() + '\n'; ASSERT_EQ(file.write(pattern), pattern.size()); file.close();
+    EXPECT_EQ(direct({"check-ignore", "--", "sub/deep/test.log", "sub/keep/deep/test.log"}).trimmed(), "sub/deep/test.log");
+}
+TEST(Paths, RealpathReturnsAnAbsolutePath)
+{
+    QTemporaryDir directory; ASSERT_TRUE(directory.isValid());
+    QFile file(directory.filePath("test.log")); ASSERT_TRUE(file.open(QIODevice::WriteOnly)); file.close();
+    RestoreCurrentDirectory restore; ASSERT_TRUE(QDir::setCurrent(directory.path()));
+    EXPECT_EQ(misc::realpath(QString("test.log")), directory.filePath("test.log"));
 }
 TEST_F(GitExecution, RefreshInvalidatesHeadCacheAndPreservesSelection)
 {

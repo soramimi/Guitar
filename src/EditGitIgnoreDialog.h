@@ -18,7 +18,6 @@ private:
 	MainWindow *mainwindow();
 	
 	QString working_dir_;
-	// QString gitignore_path_;
 	QString file_;
 	std::map<QRadioButton *, QString> text_map_;
 		
