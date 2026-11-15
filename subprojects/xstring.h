@@ -7,6 +7,54 @@
 #include <utility>
 #include <algorithm>
 
+class xstringview {
+private:
+	char const *ptr = nullptr;
+	size_t len = 0;
+public:
+	xstringview()
+		: ptr(nullptr)
+		, len(0)
+	{
+	}
+	xstringview(char const *p, size_t n)
+		: ptr(p)
+		, len(n)
+	{
+	}
+	xstringview(char const *p)
+		: ptr(p)
+		, len(p ? strlen(p) : 0)
+	{
+	}
+	xstringview(std::string_view sv)
+		: ptr(sv.data())
+		, len(sv.size())
+	{
+	}
+	xstringview(std::string const &sv)
+		: ptr(sv.data())
+		, len(sv.size())
+	{
+	}
+	bool empty() const
+	{
+		return len == 0;
+	}
+	char const *data() const
+	{
+		return ptr;
+	}
+	size_t size() const
+	{
+		return len;
+	}
+	std::string_view view() const
+	{
+		return std::string_view(ptr, len);
+	}
+};
+
 class xstring {
 private:
 	struct core_t {
@@ -75,9 +123,9 @@ public:
 	}
 	xstring(char const *p)
 	{
-		if (p) assign(std::string_view(p));
+		if (p) assign(xstringview(p));
 	}
-	xstring(std::string_view sv)
+	xstring(xstringview sv)
 	{
 		assign(sv);
 	}
@@ -135,7 +183,7 @@ public:
 	{
 		return data();
 	}
-	void assign(std::string_view s)
+	void assign(xstringview s)
 	{
 		if (!s.empty()) {
 			size_t n = s.size();

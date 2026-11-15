@@ -242,6 +242,8 @@ std::string convert_romaji_to_katakana(std::string_view const &romaji)
 				}
 				continue;
 			}
+		} else if (*ptr == '-') {
+			Write("ー");
 		}
 		bool match = false;
 		for (KanaRoma const &item : kana_roma_table) {

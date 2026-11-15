@@ -83,6 +83,12 @@ bool IncrementalSearch::open()
 		}
 		// test
 		{
+			std::string s = convertRomajiToKatakana("nya-su");
+			if (s != "ニャース") {
+				throw QString("Failed to convert romaji to katakana: " + QString::fromStdString(s));
+			}
+		}
+		{
 			std::string s = convertRomajiToKatakana("wagahaihanekodearu");
 			if (s != "ワガハイハネコデアル") {
 				throw QString("Failed to convert romaji to katakana: " + QString::fromStdString(s));
@@ -172,16 +178,16 @@ xstring IncrementalSearch::to_kana(const xstring &text, std::vector<incrementals
 	return kana;
 }
 
-std::string IncrementalSearch::convertRomajiToKatakana(std::string const &in)
+std::string IncrementalSearch::convertRomajiToKatakana(const xstringview &in)
 {
-	return convert_romaji_to_katakana(in);
+	return convert_romaji_to_katakana(in.view());
 }
 
-IncrementalSearchFilter IncrementalSearch::makeFilter(std::string const &filtertext)
+IncrementalSearchFilter IncrementalSearch::makeFilter(const xstringview &filtertext)
 {
 	IncrementalSearchFilter filter;
 	filter.original_text = filtertext;
-	filter.katakana_text = convert_romaji_to_katakana(filtertext);
+	filter.katakana_text = convert_romaji_to_katakana(filtertext.view());
 	return filter;
 }
 

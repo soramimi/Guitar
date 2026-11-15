@@ -69,8 +69,8 @@ public:
 	IncrementalSearch();
 	~IncrementalSearch();
 	virtual bool open();
-	virtual std::string convertRomajiToKatakana(std::string const &a);
-	virtual IncrementalSearchFilter makeFilter(const std::string &filtertext);
+	virtual std::string convertRomajiToKatakana(xstringview const &a);
+	virtual IncrementalSearchFilter makeFilter(const xstringview &filtertext);
 	virtual incrementalsearch::Result match(const xstring &text, const IncrementalSearchFilter &filter) const;
 };
 
