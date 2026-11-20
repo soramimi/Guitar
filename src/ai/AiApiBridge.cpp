@@ -114,6 +114,8 @@ struct AiChatResponseParser : public GenerativeAI::AbstractVisitor<AiResult> {
 						choice.message.role = reader.string();
 					} else if (reader.match("{choices[{message{content")) {
 						choice.message.content = reader.string();
+					} else if (reader.match("{choices[{message{refusal")) {
+						ret.d.error_message = reader.string();
 					} else if (reader.match("{choices[{message{tool_calls[**")) {
 						reader.nest();
 						AiResponseEx::OpenAiChoice::Message::ToolCall toolcall;
@@ -245,8 +247,16 @@ struct AiChatResponseParser : public GenerativeAI::AbstractVisitor<AiResult> {
 						item.call_id = reader.string();
 					} else if (reader.match("{output[{name")) {
 						item.name = reader.string();
-					} else if (reader.match("{output[{content[{text")) {
-						item.content.push_back({ reader.string() });
+					} else if (reader.match("{output[{content[**")) {
+						AiResponseEx::OpenAiOutputItem::Content content;
+						reader.nest([&](){
+							if (reader.match("@{type")) {
+								content.type = reader.string();
+							} else if (reader.match("@{text") || reader.match("@{refusal")) {
+								content.text = reader.string();
+							}
+						});
+						item.content.push_back(content);
 					} else if (reader.match("{output[{finish_reason")) {
 						ret.d.stop_reason = reader.string();
 					}
@@ -262,6 +272,8 @@ struct AiChatResponseParser : public GenerativeAI::AbstractVisitor<AiResult> {
 					ret.d.completed = false;
 					ret.d.error_status = ret.d.ex.stop_reason;
 				}
+			} else if (reader.match("{stop_details{explanation")) {
+				ret.d.error_message = reader.string();
 			} else if (reader.match("{usage{input_tokens")) {
 				ret.d.ex.usage.input_tokens = reader.number();
 			} else if (reader.match("{usage{cache_creation_input_tokens")) {
@@ -299,7 +311,12 @@ struct AiChatResponseParser : public GenerativeAI::AbstractVisitor<AiResult> {
 				for (AiResponseEx::OpenAiOutputItem const &item1 : ret.d.ex.openai.output) {
 					if (item1.status == "completed") {
 						for (AiResponseEx::OpenAiOutputItem::Content const &item2 : item1.content) {
-							ret.d.content += item2.text;
+							if (item2.type == "refusal") {
+								ret.d.error_status = "refusal";
+								ret.d.error_message += item2.text;
+							} else {
+								ret.d.content += item2.text;
+							}
 						}
 					}
 				}
@@ -1047,8 +1064,6 @@ AiResult AiApiBridge::request(GenerativeAI::EndPoint::Type eptype, std::string c
 			}
 		}
 
-
-
 		{
 			AiHttp http(m->cancelled);
 
@@ -1068,6 +1083,7 @@ AiResult AiApiBridge::request(GenerativeAI::EndPoint::Type eptype, std::string c
 				char const *data = http.content_data();
 				size_t size = http.content_length();
 				response_json.assign(data, size);
+// logprintf(LOG_RAW, response_json.c_str());
 			}
 
 			std::string_view httpstat = http_status_text(ret);

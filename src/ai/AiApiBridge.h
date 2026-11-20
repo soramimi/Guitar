@@ -32,6 +32,7 @@ struct AiResponseEx {
 		std::string call_id;
 		std::string name;
 		struct Content {
+			std::string type;
 			std::string text;
 		};
 		std::vector<Content> content;
