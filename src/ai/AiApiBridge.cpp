@@ -115,7 +115,9 @@ struct AiChatResponseParser : public GenerativeAI::AbstractVisitor<AiResult> {
 					} else if (reader.match("{choices[{message{content")) {
 						choice.message.content = reader.string();
 					} else if (reader.match("{choices[{message{refusal")) {
-						ret.d.error_message = reader.string();
+						if (!reader.isnull()) {
+							ret.d.error_message = reader.string();
+						}
 					} else if (reader.match("{choices[{message{tool_calls[**")) {
 						reader.nest();
 						AiResponseEx::OpenAiChoice::Message::ToolCall toolcall;
@@ -1083,7 +1085,7 @@ AiResult AiApiBridge::request(GenerativeAI::EndPoint::Type eptype, std::string c
 				char const *data = http.content_data();
 				size_t size = http.content_length();
 				response_json.assign(data, size);
-// logprintf(LOG_RAW, response_json.c_str());
+logprintf(LOG_RAW, response_json.c_str());
 			}
 
 			std::string_view httpstat = http_status_text(ret);
