@@ -69,7 +69,7 @@ linux {
 haiku:LIBS += -lssl -lcrypto -lnetwork
 macx:INCLUDEPATH += /opt/homebrew/include
 macx:LIBS += /opt/homebrew/lib/libssl.a /opt/homebrew/lib/libcrypto.a
-win32:LIBS += -llibcrypto -llibssl
+win32:LIBS += -llibcrypto -llibssl -lcrypt32
 
 win32:LIBS += -lbcrypt
 

@@ -5,6 +5,7 @@
 #include <condition_variable>
 #include <cstdlib>
 #include <cstring>
+#include <iterator>
 #include <limits>
 #include <mutex>
 #include <thread>
@@ -13,7 +14,9 @@
 #include <winsock2.h>
 #include <windows.h>
 #include <WS2tcpip.h>
+#include <wincrypt.h>
 #pragma comment(lib, "ws2_32.lib")
+#pragma comment(lib, "crypt32.lib")
 typedef SOCKET socket_t;
 #pragma warning(disable:4996)
 #else
@@ -112,6 +115,105 @@ int x_strnicmp(char const *s1, char const *s2, size_t n)
 #endif
 }
 
+#if defined(_WIN32) && USE_OPENSSL
+bool add_windows_certificate(HCERTSTORE store, X509 *certificate, PCCERT_CONTEXT *out = nullptr)
+{
+	unsigned char *der = nullptr;
+	int size = i2d_X509(certificate, &der);
+	bool added = size > 0 && CertAddEncodedCertificateToStore(store, X509_ASN_ENCODING,
+			der, static_cast<DWORD>(size), CERT_STORE_ADD_ALWAYS, out);
+	OPENSSL_free(der);
+	return added;
+}
+
+int verify_windows_certificate(X509_STORE_CTX *context)
+{
+	auto *ssl = static_cast<SSL *>(X509_STORE_CTX_get_ex_data(context, SSL_get_ex_data_X509_STORE_CTX_idx()));
+	char const *hostname = ssl ? SSL_get_servername(ssl, TLSEXT_NAMETYPE_host_name) : nullptr;
+	wchar_t wide_hostname[256];
+	if (!hostname || !MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, hostname, -1,
+			wide_hostname, static_cast<int>(std::size(wide_hostname)))) {
+		return X509_V_ERR_HOSTNAME_MISMATCH;
+	}
+
+	X509 *certificate = X509_STORE_CTX_get0_cert(context);
+	if (!certificate) return X509_V_ERR_APPLICATION_VERIFICATION;
+
+	// Retain OpenSSL's DNS wildcard rules and require an IP SAN for IP literals.
+	IN_ADDR ipv4;
+	IN6_ADDR ipv6;
+	if (InetPtonA(AF_INET, hostname, &ipv4) == 1 || InetPtonA(AF_INET6, hostname, &ipv6) == 1) {
+		if (X509_check_ip_asc(certificate, hostname, 0) != 1) return X509_V_ERR_IP_ADDRESS_MISMATCH;
+	} else if (X509_check_host(certificate, hostname, 0, X509_CHECK_FLAG_NO_PARTIAL_WILDCARDS, nullptr) != 1) {
+		return X509_V_ERR_HOSTNAME_MISMATCH;
+	}
+
+	auto close_store = [](HCERTSTORE store) { CertCloseStore(store, 0); };
+	std::unique_ptr<void, decltype(close_store)> issuers(CertOpenStore(CERT_STORE_PROV_MEMORY, 0, 0, 0, nullptr), close_store);
+	if (!issuers) return X509_V_ERR_STORE_LOOKUP;
+
+	PCCERT_CONTEXT leaf_context = nullptr;
+	if (!add_windows_certificate(issuers.get(), certificate, &leaf_context)) return X509_V_ERR_APPLICATION_VERIFICATION;
+	std::unique_ptr<CERT_CONTEXT const, decltype(&CertFreeCertificateContext)> leaf(leaf_context, CertFreeCertificateContext);
+
+	STACK_OF(X509) *untrusted = X509_STORE_CTX_get0_untrusted(context);
+	for (int i = 0; i < sk_X509_num(untrusted); i++) {
+		X509 *issuer = sk_X509_value(untrusted, i);
+		if (issuer != certificate && !add_windows_certificate(issuers.get(), issuer)) return X509_V_ERR_APPLICATION_VERIFICATION;
+	}
+
+	char server_auth[] = szOID_PKIX_KP_SERVER_AUTH;
+	char *usages[] = {server_auth};
+	CERT_CHAIN_PARA chain_parameters{};
+	chain_parameters.cbSize = sizeof(chain_parameters);
+	chain_parameters.RequestedUsage.Usage = {1, usages};
+	PCCERT_CHAIN_CONTEXT chain_context = nullptr;
+	// Keep certificate verification from issuing network requests of its own.
+	if (!CertGetCertificateChain(nullptr, leaf.get(), nullptr, issuers.get(), &chain_parameters,
+			CERT_CHAIN_CACHE_ONLY_URL_RETRIEVAL, nullptr, &chain_context)) {
+		return X509_V_ERR_STORE_LOOKUP;
+	}
+	std::unique_ptr<CERT_CHAIN_CONTEXT const, decltype(&CertFreeCertificateChain)> chain(chain_context, CertFreeCertificateChain);
+
+	SSL_EXTRA_CERT_CHAIN_POLICY_PARA tls_policy{};
+	tls_policy.cbSize = sizeof(tls_policy);
+	tls_policy.dwAuthType = AUTHTYPE_SERVER;
+	tls_policy.pwszServerName = wide_hostname;
+	CERT_CHAIN_POLICY_PARA policy{};
+	policy.cbSize = sizeof(policy);
+	policy.pvExtraPolicyPara = &tls_policy;
+	CERT_CHAIN_POLICY_STATUS status{};
+	status.cbSize = sizeof(status);
+	if (!CertVerifyCertificateChainPolicy(CERT_CHAIN_POLICY_SSL, chain.get(), &policy, &status)) {
+		return X509_V_ERR_APPLICATION_VERIFICATION;
+	}
+	if (chain->TrustStatus.dwErrorStatus & CERT_TRUST_IS_EXPLICIT_DISTRUST) return X509_V_ERR_CERT_REJECTED;
+	switch (static_cast<HRESULT>(status.dwError)) {
+	case ERROR_SUCCESS: return X509_V_OK;
+	case CERT_E_UNTRUSTEDROOT:
+	case CERT_E_CHAINING: return X509_V_ERR_UNABLE_TO_GET_ISSUER_CERT_LOCALLY;
+	case CERT_E_CN_NO_MATCH: return X509_V_ERR_HOSTNAME_MISMATCH;
+	case CERT_E_EXPIRED: return X509_V_ERR_CERT_HAS_EXPIRED;
+	case CERT_E_WRONG_USAGE: return X509_V_ERR_INVALID_PURPOSE;
+	case CERT_E_REVOKED: return X509_V_ERR_CERT_REVOKED;
+	case TRUST_E_EXPLICIT_DISTRUST: return X509_V_ERR_CERT_REJECTED;
+	case TRUST_E_CERT_SIGNATURE: return X509_V_ERR_CERT_SIGNATURE_FAILURE;
+	default: return X509_V_ERR_APPLICATION_VERIFICATION;
+	}
+}
+
+int verify_server_certificate(X509_STORE_CTX *context, void *)
+{
+	int error = verify_windows_certificate(context);
+	if (error == X509_V_ERR_UNABLE_TO_GET_ISSUER_CERT_LOCALLY) {
+		// Preserve PEM trust configured through the OpenSSL paths or load_cacert().
+		return X509_verify_cert(context) == 1;
+	}
+	X509_STORE_CTX_set_error(context, error);
+	return error == X509_V_OK;
+}
+#endif
+
 } // namespace
 
 struct WebContext::Private {
@@ -134,6 +236,8 @@ struct WebClient::Private {
 	size_t content_offset = 0;
 	std::string last_host_name;
 	int last_port = 0;
+	std::string last_tls_host;
+	int last_tls_port = 0;
 	bool keep_alive = false;
 	socket_t sock = INVALID_SOCKET;
 	SSL *ssl = nullptr;
@@ -820,7 +924,7 @@ bool WebClient::http_getpost(InetClient::Request const &request, InetClient::Pos
 	std::string hostname = server_req.url().host();
 	int port = get_port(&server_req.url(), "http", "tcp");
 
-	m->keep_alive = opt.keep_alive && hostname == m->last_host_name && port == m->last_port;
+	m->keep_alive = opt.keep_alive && !m->ssl && hostname == m->last_host_name && port == m->last_port;
 	if (!m->keep_alive) close();
 
 	if (m->sock == INVALID_SOCKET) {
@@ -900,8 +1004,14 @@ bool WebClient::https_getpost(InetClient::Request const &request_req, InetClient
 
 	std::string hostname = server_req.url().host();
 	int port = get_port(&server_req.url(), "https", "tcp");
+	std::string const &tls_host = request_req.url().host();
+	if (tls_host.empty()) throw InetClient::Error("Missing TLS server hostname", InetClient::Error::Security);
+	int tls_port = get_port(&request_req.url(), "https", "tcp");
+	bool strict = m->webcx->m->strict_certificate_verification;
 
-	m->keep_alive = opt.keep_alive && hostname == m->last_host_name && port == m->last_port;
+	m->keep_alive = opt.keep_alive && m->ssl && hostname == m->last_host_name && port == m->last_port
+			&& tls_host == m->last_tls_host && tls_port == m->last_tls_port
+			&& (!strict || (SSL_get_verify_mode(m->ssl) & SSL_VERIFY_PEER));
 	if (!m->keep_alive) close();
 
 	socket_t sock = m->sock;
@@ -919,10 +1029,10 @@ bool WebClient::https_getpost(InetClient::Request const &request_req, InetClient
 		try {
 			if (proxy) { // Connect through proxy
 				char port_str[16];
-				snprintf(port_str, sizeof(port_str), ":%u", get_port(&request_req.url(), "https", "tcp"));
+			snprintf(port_str, sizeof(port_str), ":%d", tls_port);
 
 				std::string str = "CONNECT ";
-				str += request_req.url().host();
+			str += tls_host;
 				str += port_str;
 				str += " HTTP/1.0\r\n\r\n";
 				send_(sock, str.c_str(), (int)str.size());
@@ -969,11 +1079,12 @@ bool WebClient::https_getpost(InetClient::Request const &request_req, InetClient
 			SSL_set_options(ssl, SSL_OP_NO_SSLv3);
 			
 			// Set hostname for SNI and certificate verification
+			SSL_set_verify(ssl, strict ? SSL_VERIFY_PEER : SSL_VERIFY_NONE, nullptr);
 			SSL_set_hostflags(ssl, X509_CHECK_FLAG_NO_PARTIAL_WILDCARDS);
-			if (!SSL_set1_host(ssl, hostname.c_str())) {
+			if (!SSL_set1_host(ssl, tls_host.c_str())
+					|| !SSL_set_tlsext_host_name(ssl, tls_host.c_str())) {
 				throw InetClient::Error(get_ssl_error());
 			}
-			SSL_set_tlsext_host_name(ssl, hostname.c_str());
 
 			int ret = SSL_set_fd(ssl, (int)sock);
 			if (ret != 1) {
@@ -992,27 +1103,26 @@ bool WebClient::https_getpost(InetClient::Request const &request_req, InetClient
 			}
 
 			// Connect SSL
+			ERR_clear_error();
 			ret = SSL_connect(ssl);
+			int ssl_error = ret == 1 ? SSL_ERROR_NONE : SSL_get_error(ssl, ret);
+			long verify_result = SSL_get_verify_result(ssl);
+			if (verify_result != X509_V_OK) {
+				std::string message = "Certificate verification failed: ";
+				message += X509_verify_cert_error_string(verify_result);
+				output_debug_string((message + "\n").c_str());
+				if (strict) throw InetClient::Error(message, InetClient::Error::Security);
+			}
 			if (ret != 1) {
-				int err = SSL_get_error(ssl, ret);
 				std::string error_msg = get_ssl_error();
-				throw InetClient::Error("SSL connection failed: " + error_msg + " (code: " + std::to_string(err) + ")");
+				throw InetClient::Error("SSL connection failed: " + error_msg + " (code: " + std::to_string(ssl_error) + ")");
 			}
 
 			X509 *x509 = SSL_get_peer_certificate(ssl);
 			if (!x509) {
 				throw InetClient::Error("Server did not present a certificate");
 			}
-			
-			// Verify certificate
-			long verify_result = SSL_get_verify_result(ssl);
-			if (verify_result != X509_V_OK) {
-				std::string err = X509_verify_cert_error_string(verify_result);
-				output_debug_string(("Certificate verification failed: " + err + "\n").c_str());
-				if (m->webcx->m->strict_certificate_verification) {
-					throw InetClient::Error("Certificate verification failed: " + err, InetClient::Error::Security);
-				}
-			}
+			X509_free(x509);
 
 			// Log certificate info in debug mode if needed
 			if (0) {
@@ -1022,8 +1132,6 @@ bool WebClient::https_getpost(InetClient::Request const &request_req, InetClient
 				std::string version = SSL_get_cipher_version(ssl);
 				output_debug_string((version + "\n").c_str());
 			}
-			
-			X509_free(x509);
 		} catch (...) {
 			// Clean up resources on error
 			if (ssl) {
@@ -1041,10 +1149,12 @@ bool WebClient::https_getpost(InetClient::Request const &request_req, InetClient
 	// Update connection state
 	m->last_host_name = hostname;
 	m->last_port = port;
+	m->last_tls_host = tls_host;
+	m->last_tls_port = tls_port;
 
 	// Prepare request
 	constexpr int standard_port = 443;
-	set_default_header(request_req, port == standard_port, postdata, opt);
+	set_default_header(request_req, tls_port == standard_port, postdata, opt);
 	std::string request = make_http_request(request_req, postdata, proxy, true);
 
 	// Send request
@@ -1450,6 +1560,8 @@ void WebClient::close()
 	// Reset connection state
 	m->last_host_name = "";
 	m->last_port = 0;
+	m->last_tls_host.clear();
+	m->last_tls_port = 0;
 	m->keep_alive = false;
 }
 
@@ -1537,8 +1649,12 @@ WebContext::WebContext()
 	SSL_load_error_strings();
 	SSL_library_init();
 	m->ctx = SSL_CTX_new(TLS_client_method());
+	if (!m->ctx) return;
 	SSL_CTX_set_default_verify_paths(m->ctx);
 	SSL_CTX_set_min_proto_version(m->ctx, TLS1_2_VERSION);
+#ifdef _WIN32
+	SSL_CTX_set_cert_verify_callback(m->ctx, verify_server_certificate, nullptr);
+#endif
 #endif
 }
 
@@ -1594,8 +1710,7 @@ const WebProxy *WebContext::https_proxy() const
 bool WebContext::load_cacert(char const *path)
 {
 #if USE_OPENSSL
-	int r = SSL_CTX_load_verify_locations(m->ctx, path, nullptr);
-	return r == 1;
+	return m->ctx && SSL_CTX_load_verify_locations(m->ctx, path, nullptr) == 1;
 #else
 	return false;
 #endif
@@ -1622,10 +1737,10 @@ std::string WebClient::quick_get(std::string const &url)
 	wc.set_http_version(WebClient::HTTP_1_1);
 	wc.set_keep_alive_enabled(false);
 	WebClient http(&wc);
-	if (http.get(InetClient::Request(url))) {
+	if (http.get(InetClient::Request(url)) / 100 == 2) {
 		return {http.content_data(), http.content_length()};
 	}
-	return {};
+	return http.error().what();
 }
 
 std::string WebClient::checkip()

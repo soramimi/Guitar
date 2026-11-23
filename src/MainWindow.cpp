@@ -7587,17 +7587,4 @@ void debug();
 
 void MainWindow::test()
 {
-#if 1
-	global->writeLog(std::string_view("Hello, world\r"));
-#else
-	debug();
-	// FILE *fp = fopen("c:\\a\\longtext.txt", "wb");
-	// if (fp) {
-	// 	static constexpr std::string_view text = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-	// 	for (int i = 0; i < 3000; i++) {
-	// 		putc(text[rand() % text.size()], fp);
-	// 	}
-	// 	fclose(fp);
-	// }
-#endif
 }
