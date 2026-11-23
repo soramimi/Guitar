@@ -176,6 +176,32 @@ void ApplicationGlobal::selftest()
 			if (!(r.parts[2].text == "である" && !r.parts[2].match)) {
 				throw QString("Failed to match romaji filter with IncrementalSearchPlugin. Expected part 2 to be \"である\", got \"" + toQString(r.parts[2].text) + "\"");
 			}
+			{
+				IncrementalSearchFilter filter = global->incremental_search->makeFilter("toukyouto");
+				incrementalsearch::Result r = global->incremental_search->match("東京都", filter);
+				if (!r) {
+					throw QString("Failed to match romaji filter with IncrementalSearchPlugin. Expected match, got no match.");
+				}
+			}
+			{
+				std::string s;
+				s = global->incremental_search->convertRomajiToKatakana("kona");
+				if (s != "コナ") {
+					throw QString("Failed to convert romaji to katakana: ") + QString::fromStdString(s);
+				}
+				s = global->incremental_search->convertRomajiToKatakana("konna");
+				if (s != "コンア") {
+					throw QString("Failed to convert romaji to katakana: ") + QString::fromStdString(s);
+				}
+				s = global->incremental_search->convertRomajiToKatakana("konnna");
+				if (s != "コンナ") {
+					throw QString("Failed to convert romaji to katakana: ") + QString::fromStdString(s);
+				}
+				s = global->incremental_search->convertRomajiToKatakana("konnnya");
+				if (s != "コンニャ") {
+					throw QString("Failed to convert romaji to katakana: ") + QString::fromStdString(s);
+				}
+			}				
 		} catch (QString const &e) {
 			qDebug() << e;
 		}

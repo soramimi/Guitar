@@ -221,22 +221,32 @@ incrementalsearch::Result IncrementalSearch::match(xstring const &text, const In
 			ptr = match + filter.original_text.size();
 		}
 		// 文字列をカタカナに変換してマッチさせる
-		if (!filter.katakana_text.empty()) {
+		if (!text.empty() && !filter.katakana_text.empty()) {
 			std::vector<Element> parts;
-			xstring kana = to_kana(text, &parts);
-			(void)kana;
-			for (size_t i = 0; i < parts.size(); i++) {
-				bool match = to_std_string_view(parts[i].kana.text).find(to_std_string_view(filter.katakana_text)) != xstring::npos;
-				if (!match) continue;
-				// マッチした部分を追加
-				size_t pos = parts[i].source.pos;
-				size_t end = parts[i].source.end;
+			auto kana = to_kana(text, &parts);
+			auto reading = to_std_string_view(kana);
+			auto needle = to_std_string_view(filter.katakana_text);
+			size_t first = 0;
+			size_t last = 0;
+			size_t search_pos = 0;
+			while (true) {
+				size_t match_pos = reading.find(needle, search_pos);
+				if (match_pos == std::string_view::npos) break;
+				size_t match_end = match_pos + needle.size();
+				// 一致した読みが触れる形態素を、元の文字列の範囲へ戻す。
+				while (first < parts.size() && parts[first].kana.end <= match_pos) ++first;
+				last = std::max(last, first);
+				while (last < parts.size() && parts[last].kana.pos < match_end) ++last;
+				size_t pos = parts[first].source.pos;
+				size_t end = parts[last - 1].source.end;
 				Element part;
 				part.match = true;
 				part.source.pos = pos;
 				part.source.end = end;
 				part.source.text = text.substr(pos, end - pos);
 				matched_list.push_back(part);
+				// 重なり合う一致も検索し、ハイライト範囲を取りこぼさない。
+				search_pos = match_pos + 1;
 			}
 		}
 		// マッチした部分を位置順にソート
@@ -267,7 +277,7 @@ incrementalsearch::Result IncrementalSearch::match(xstring const &text, const In
 			} else { // マッチした部分を追加
 				ret.parts.push_back(part);
 			}
-			pos = part.end;
+			pos = std::max(pos, part.end);
 		}
 		// 最後のフィルタ以降の部分
 		if (pos < text.size()) {

@@ -237,7 +237,7 @@ std::string convert_romaji_to_katakana(std::string_view const &romaji)
 			} else {
 				Write("ン");
 				ptr++;
-				if (ptr < end && *ptr == 'n' && (end - ptr == 1 || !strchr("aiueoy", ptr[1]))) {
+				if (ptr < end && *ptr == 'n') {
 					ptr++;
 				}
 				continue;
