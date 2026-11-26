@@ -141,7 +141,8 @@ end
 
 def make_installer()
 	if $is_win then
-		run "\"#{$innosetup}\" #{$project_dir}/scripts/Guitar.iss /DProjectRoot=\"#{$project_dir}\" /O\"#{$release_dir}\" /F\"#{$win_installer_name}\""
+		version = [$version_a, $version_b, $version_c, $version_d].join(".")
+		run "\"#{$innosetup}\" \"#{$project_dir}/scripts/Guitar.iss\" /DProjectRoot=\"#{$project_dir}\" /DMyAppVersion=\"#{version}\" /O\"#{$release_dir}\" /F\"#{$win_installer_name}\""
 	end
 	if $is_gcc then
 		puts "Linux installer not implemented yet."

@@ -4,7 +4,6 @@
 ; #define ProjectRoot "C:\develop\Guitar"
 
 #define MyAppName "Guitar"
-#define MyAppVersion ""
 #define MyAppPublisher "soramimi.jp"
 #define MyAppURL "https://github.com/soramimi/Guitar"
 #define MyAppExeName "Guitar.exe"
@@ -15,6 +14,7 @@
 AppId={{ABEB3E90-6421-4A6D-AA59-3C480FF810EB}
 AppName={#MyAppName}
 AppVersion={#MyAppVersion}
+VersionInfoVersion={#MyAppVersion}
 AppVerName={#MyAppName}
 AppPublisher={#MyAppPublisher}
 AppPublisherURL={#MyAppURL}
@@ -33,7 +33,7 @@ ArchitecturesAllowed=x64compatible
 ; the 64-bit view of the registry.
 ArchitecturesInstallIn64BitMode=x64compatible
 DisableProgramGroupPage=yes
-LicenseFile=C:\develop\Guitar\LICENSE.txt
+LicenseFile={#ProjectRoot}\LICENSE.txt
 ; Uncomment the following line to run in non administrative install mode (install for current user only).
 ;PrivilegesRequired=lowest
 OutputDir=C:\a

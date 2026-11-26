@@ -1,6 +1,9 @@
 name: AppImage
 
 on:
+  push:
+    tags:
+      - 'v*'
   schedule:
     - cron: "0 20 * * *"
   workflow_dispatch:
@@ -8,25 +11,27 @@ on:
 jobs:
   build-appimage:
     runs-on: ubuntu-24.04
+    permissions:
+      contents: write
     
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
       with:
         fetch-depth: 0
+        persist-credentials: false
         
     - name: Install dependencies
       run: |
         sudo apt-get update
         sudo apt-get install -y \
           build-essential \
+          autoconf automake libtool \
           ruby \
           qmake6 \
-          libqt6core6 \
-          libqt6gui6 \
-          libqt6svg6-dev \
           libqt6core5compat6-dev \
           zlib1g-dev \
+          libzstd-dev zstd \
           libgl1-mesa-dev \
           libssl-dev \
           libsodium-dev \
@@ -34,8 +39,8 @@ jobs:
           libsecret-1-dev \
           qt6-base-dev \
           qt6-svg-dev \
+          mecab-utils \
           wget \
-          fuse \
           desktop-file-utils
           
     - name: Prepare environment
@@ -54,15 +59,16 @@ jobs:
         
     - name: Create AppDir structure
       run: |
+        umask 022
         mkdir -p AppDir/usr/bin
         mkdir -p AppDir/usr/lib/soramimi.jp
         mkdir -p AppDir/usr/share/applications
-        mkdir -p AppDir/usr/share/icons/hicolor/256x256/apps
+        mkdir -p AppDir/usr/share/icons/hicolor/scalable/apps
         
         # Copy binary
-        cp _bin/Guitar AppDir/usr/bin/
-        cp lib/soramimi.jp/libfiletypeplugin.so AppDir/usr/lib/soramimi.jp/
-        cp lib/soramimi.jp/libincrementalsearchplugin.so AppDir/usr/lib/soramimi.jp/
+        install -m 755 _bin/Guitar AppDir/usr/bin/
+        install -m 644 lib/soramimi.jp/libfiletypeplugin.so AppDir/usr/lib/soramimi.jp/
+        install -m 644 lib/soramimi.jp/libincrementalsearchplugin.so AppDir/usr/lib/soramimi.jp/
         
         # Create desktop file
         cat > AppDir/usr/share/applications/guitar.desktop << 'EOF'
@@ -76,17 +82,14 @@ jobs:
         StartupNotify=true
         EOF
         
-        # Create icon (using a placeholder if no icon exists)
-        if [ -f "image/guitar.png" ]; then
-          cp image/guitar.png AppDir/usr/share/icons/hicolor/256x256/apps/guitar.png
-        else
-          # Create a simple placeholder icon
-          convert -size 256x256 xc:blue -fill white -gravity center -pointsize 72 -annotate +0+0 "Guitar" AppDir/usr/share/icons/hicolor/256x256/apps/guitar.png || echo "No convert available, using text file as icon"
-          echo "Guitar" > AppDir/usr/share/icons/hicolor/256x256/apps/guitar.png
-        fi
+        install -m 644 LinuxDesktop/Guitar.svg AppDir/usr/share/icons/hicolor/scalable/apps/guitar.svg
         
     - name: Create AppImage
       run: |
+        umask 022
+        export APPIMAGE_EXTRACT_AND_RUN=1
+        export PATH="$PWD:$PATH"
+        export QMAKE="$(command -v qmake6)"
         export QML_SOURCES_PATHS=""
         ./linuxdeploy-x86_64.AppImage --appdir AppDir --plugin qt --output appimage
         
@@ -102,8 +105,8 @@ jobs:
         
     - name: Test AppImage
       run: |
-        ls -la *.AppImage
-        file *.AppImage
+        ls -la Guitar-*.AppImage
+        file Guitar-*.AppImage
         
     - name: Upload AppImage
       uses: actions/upload-artifact@v4
