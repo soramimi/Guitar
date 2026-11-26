@@ -3,8 +3,8 @@
 $product_name = "Guitar"
 $copyright_year = 2026
 $version_a = 1
-$version_b = 4
-$version_c = 1
+$version_b = 5
+$version_c = 0
 $version_d = 0
 
 # Future plans
@@ -15,6 +15,20 @@ $version_d = 0
 #
 
 # History
+#
+# v1.5.0 (Unreleased)
+# - Overhaul generative AI model management: discover and test models, add and reorder entries, and choose a default model
+# - Improve custom provider configuration, add support for PLaMo, OrcaRouter, Requesty, and Kilo Gateway, and update model presets
+# - Store AI API keys in an encrypted local vault and generate commit messages from staged changes
+# - Improve Japanese romaji incremental search for kana and kanji readings, including long vowels, and reduce the size of the bundled MeCab dictionary
+# - Speed up commit history loading with batched reads, avoid unnecessary history reloads after fetch, and improve diff rendering and text wrapping performance
+# - Add an inline diff view alongside the side-by-side view and a configurable fixed-width font for log and diff views
+# - Add a Reset and Clean dialog for hard reset, cleaning untracked files, and fetching with prune
+# - Add multiple selected files to a chosen .gitignore in one operation
+# - Assign F5 to Fetch and refresh the repository view after local branch checkout or commit
+# - Improve light and dark theme rendering and embed the log panel in the main window
+# - Fix Git operations on filenames with spaces, quotes, and other special characters
+# - Improve Git pack and submodule object handling and verify HTTPS server certificates against the Windows certificate store
 #
 # v1.4.1 2026-07-09
 # - Show full datetime in commit log
